@@ -6,8 +6,6 @@ PeerMessenger::PeerMessenger() {
 }
 
 PeerMessenger::~PeerMessenger() {
-	if(_messenger)
-		_messenger->deinitialise();
 }
 
 void PeerMessenger::setMessenger(PeerMessenger *messenger) {
