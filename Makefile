@@ -13,7 +13,7 @@ $(libabacus_name) : ldflags += -shared -ldl
 
 abacusd_objects = abacusd
 abacusd_name = bin/abacusd
-$(abacusd_name) : ldflags += -labacus
+$(abacusd_name) : ldflags += -labacus -lpthread
 $(abacusd_name) : $(libabacus_name)
 
 modules = udpmessenger
