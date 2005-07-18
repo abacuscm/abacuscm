@@ -13,7 +13,6 @@ private:
 	int _sock;
 	
 	bool startup();
-	void shutdown();
 public:
 	UDPPeerMessenger();
 	virtual ~UDPPeerMessenger();
@@ -29,7 +28,7 @@ UDPPeerMessenger::UDPPeerMessenger() {
 
 UDPPeerMessenger::~UDPPeerMessenger() {
 	if(_sock > 0)
-		shutdown();
+		deinitialise();
 }
 
 bool UDPPeerMessenger::initialise() {
