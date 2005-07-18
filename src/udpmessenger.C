@@ -19,7 +19,8 @@ public:
 
 	virtual bool initialise();
 	virtual void deinitialise();
-	virtual bool SendMessage(uint32_t server_id, const Message * message);
+	virtual bool sendMessage(uint32_t server_id, const Message * message);
+	virtual Message* getMessage();
 };
 
 UDPPeerMessenger::UDPPeerMessenger() {
@@ -80,9 +81,15 @@ err:
 	return false;
 }
 
-bool UDPPeerMessenger::SendMessage(uint32_t server_id, const Message * message) {
+bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) {
 	NOT_IMPLEMENTED();
 	return false;
+}
+
+Message* UDPPeerMessenger::getMessage() {
+	NOT_IMPLEMENTED();
+	sleep(10);
+	return NULL;
 }
 
 static UDPPeerMessenger _udpPeerMessenger;
