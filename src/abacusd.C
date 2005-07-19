@@ -9,7 +9,6 @@
 #include "peermessenger.h"
 #include "queue.h"
 #include "message.h"
-#include "quitmessage.h"
 
 using namespace std;
 
