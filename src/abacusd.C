@@ -7,6 +7,7 @@
 #include "logger.h"
 #include "moduleloader.h"
 #include "peermessenger.h"
+#include "queue.h"
 
 using namespace std;
 
@@ -17,6 +18,9 @@ static pthread_t thread_message_handler;
 
 // This variable indicates that we are still running.
 static volatile bool abacusd_running = true;
+
+// All the various Queue<>s
+static Queue<int> message_queue;
 
 static bool load_modules() {
 	Config &config = Config::getConfig();
@@ -34,6 +38,9 @@ static bool load_modules() {
 static void* peer_listener(void *) {
 	PeerMessenger* messenger = PeerMessenger::getMessenger();
 	log(LOG_INFO, "Starting PeerListener thread.");
+
+	for(int i = 10; i >= 0; i--)
+		message_queue.enqueue(i);
 
 	while(abacusd_running) {
 		Message * message = messenger->getMessage();
@@ -53,8 +60,10 @@ static void* peer_listener(void *) {
  * to terminate, which will call thread_quit() for us.
  */
 static void* message_handler(void *) {
-	// for now we do nothing ...
-	NOT_IMPLEMENTED();
+	int v;
+	while((v = message_queue.dequeue()) != 0)
+		log(LOG_DEBUG, "Dequeue'ed %d.", v);
+	
 	return NULL;
 }
 
