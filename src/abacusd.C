@@ -2,6 +2,7 @@
 #include <sys/wait.h>
 #include <iostream>
 #include <unistd.h>
+#include <signal.h>
 
 #include "config.h"
 #include "logger.h"
@@ -23,6 +24,40 @@ static volatile bool abacusd_running = true;
 // All the various Queue<>s
 static Queue<Message*> message_queue;
 
+/**
+ * This signal handler sets abacusd_running to false
+ * to make things terminate.  The only "thread" that
+ * is directly affected is the peer_listener.  Once it
+ * terminates all the others will follow as soon as their
+ * queue's empty out.
+ */
+void signal_die(int) {
+	abacusd_running = false;
+}
+
+/**
+ * Set up the signals we need to catch...
+ */
+static bool setup_signals() {
+	struct sigaction action;
+
+	memset(&action, 0, sizeof(action));
+	action.sa_handler = signal_die;
+
+	if(sigaction(SIGTERM, &action, NULL) < 0)
+		goto err;
+	if(sigaction(SIGINT, &action, NULL) < 0)
+		goto err;
+
+	return true;
+err:
+	lerror("sigaction");
+	return false;
+}
+
+/**
+ * Load all the required modules...
+ */
 static bool load_modules() {
 	Config &config = Config::getConfig();
 	
@@ -75,6 +110,9 @@ int main(int argc, char ** argv) {
 		config_file = argv[1];
 	
 	if(!config.load(config_file))
+		return -1;
+
+	if(!setup_signals())
 		return -1;
 
 	if(!load_modules())
