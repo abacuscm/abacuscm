@@ -8,6 +8,8 @@
 #include "moduleloader.h"
 #include "peermessenger.h"
 #include "queue.h"
+#include "message.h"
+#include "quitmessage.h"
 
 using namespace std;
 
@@ -20,7 +22,7 @@ static pthread_t thread_message_handler;
 static volatile bool abacusd_running = true;
 
 // All the various Queue<>s
-static Queue<int> message_queue;
+static Queue<Message*> message_queue;
 
 static bool load_modules() {
 	Config &config = Config::getConfig();
@@ -39,18 +41,13 @@ static void* peer_listener(void *) {
 	PeerMessenger* messenger = PeerMessenger::getMessenger();
 	log(LOG_INFO, "Starting PeerListener thread.");
 
-	for(int i = 10; i >= 0; i--)
-		message_queue.enqueue(i);
-
 	while(abacusd_running) {
 		Message * message = messenger->getMessage();
-		if(message) {
-			NOT_IMPLEMENTED();
-		} else
+		if(message)
+			message_queue.enqueue(message);
+		else
 			log(LOG_WARNING, "Failed to get message!");
 	}
-	
-	log(LOG_INFO, "Terminating PeerListener thread.");
 	return NULL;
 }
 
@@ -60,13 +57,17 @@ static void* peer_listener(void *) {
  * to terminate, which will call thread_quit() for us.
  */
 static void* message_handler(void *) {
-	int v;
-	while((v = message_queue.dequeue()) != 0)
-		log(LOG_DEBUG, "Dequeue'ed %d.", v);
-	
+	log(LOG_INFO, "message_handler() ready to process messages.");
+	for(Message *m = message_queue.dequeue(); m; m = message_queue.dequeue())
+		m->process();
+	log(LOG_INFO, "Shutting down message_handler().");
 	return NULL;
 }
 
+/**
+ * Set everything up to do what it's supposed to do and then wait for
+ * it all to tear down again...
+ */
 int main(int argc, char ** argv) {
 	const char * config_file = DEFAULT_SERVER_CONFIG;
 	Config &config = Config::getConfig();
@@ -84,14 +85,16 @@ int main(int argc, char ** argv) {
 		return -1;
 
 	log(LOG_INFO, "Starting abacusd.");
-	log(LOG_DEBUG, "Blocking ..., hit <ENTER>");
 
 	pthread_create(&thread_peer_listener, NULL, peer_listener, NULL);
 	pthread_create(&thread_message_handler, NULL, message_handler, NULL);
 
-	wait(NULL);
+	log(LOG_DEBUG, "abacusd is up and running.");
+
 
 	pthread_join(thread_peer_listener, NULL);
+	
+	message_queue.enqueue(NULL);
 	pthread_join(thread_message_handler, NULL);
 
 	log(LOG_INFO, "abacusd is shut down.");
