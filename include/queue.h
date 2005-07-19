@@ -18,6 +18,7 @@ public:
 
 	~Queue() {
 		pthread_mutex_destroy(&_m);
+		pthread_mutex_destroy(&_e);
 	}
 
 	T dequeue() {
