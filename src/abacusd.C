@@ -11,6 +11,7 @@
 #include "queue.h"
 #include "message.h"
 #include "sigsegv.h"
+#include "dbcon.h"
 
 using namespace std;
 
@@ -74,6 +75,22 @@ static bool load_modules() {
 }
 
 /**
+ * initialise the system.  This will check whether we are recovering
+ * from an existing competition (ie, are we already connected or not).
+ */
+static bool initialise() {
+	DbCon *db = DbCon::getInstance();
+
+	if(!db)
+		return false;
+
+	DbCon::releaseInstance(db);
+
+	NOT_IMPLEMENTED();
+	return false;
+}
+
+/**
  * This thread is responsible for listening for messages, pushing them
  * onto the message queue.
  */
@@ -129,6 +146,9 @@ int main(int argc, char ** argv) {
 
 	log(LOG_INFO, "Starting abacusd.");
 
+	if(!initialise())
+		return -1;
+	
 	pthread_create(&thread_peer_listener, NULL, peer_listener, NULL);
 	pthread_create(&thread_message_handler, NULL, message_handler, NULL);
 

@@ -1,5 +1,6 @@
 #include "dbcon.h"
 #include "logger.h"
+#include "config.h"
 
 #include <mysql/mysql.h>
 
@@ -28,8 +29,11 @@ MySQL::~MySQL() {
 }
 
 bool MySQL::ok() {
-	NOT_IMPLEMENTED();
-	return false;
+	if(mysql_ping(&_mysql)) {
+		log(LOG_INFO, "MySQL: %s", mysql_error(&_mysql));
+		return false;
+	} else
+		return true;
 }
 	
 uint32_t MySQL::name2server_id(const string& name) {
@@ -48,8 +52,23 @@ bool MySQL::setServerAttribute(uint32_t server_id, const string& attribute, cons
 }
 
 bool MySQL::init() {
-	NOT_IMPLEMENTED();
-	return false;
+	Config &config = Config::getConfig();
+	
+	string host = config["mysql"]["host"];
+	string user = config["mysql"]["user"];
+	string pass = config["mysql"]["password"];
+	string db   = config["mysql"]["db"];
+	unsigned int port = atol(config["mysql"]["port"].c_str());
+	
+	mysql_init(&_mysql);
+
+	if(!mysql_real_connect(&_mysql, host.c_str(), user.c_str(), pass.c_str(), db.c_str(), port, NULL, 0)) {
+		log(LOG_ERR, "MySQL Error: %s", mysql_error(&_mysql));
+		return false;
+	}
+
+	log(LOG_INFO, "Established connection to MySQL Server.");
+	return true;
 }
 
 /////////////////////////////////////////////////////////////
