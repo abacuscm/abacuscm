@@ -8,7 +8,7 @@ name=netsniff
 default : all
 
 libabacus_name = lib/libabacus.so
-libabacus_objects = config logger moduleloader peermessenger messagebuilder message
+libabacus_objects = config logger moduleloader peermessenger messagebuilder message dbcon
 $(libabacus_name) : ldflags += -shared -ldl
 
 abacusd_objects = abacusd sigsegv
@@ -16,9 +16,11 @@ abacusd_name = bin/abacusd
 $(abacusd_name) : ldflags += -labacus -lpthread
 $(abacusd_name) : $(libabacus_name)
 
-modules = udpmessenger
+modules = udpmessenger dbmysql
 modules_d = $(foreach mod,$(modules),modules/mod_$(mod).so)
 $(modules_d) : ldflags += -shared -labacus
+
+modules/mod_dbmysql.so : ldflags += -lmysqlclient
 
 ###############################################################
 depfiles=$(foreach m,$(libabacus_objects) $(abacusd_objects) $(modules),deps/$(m).d)

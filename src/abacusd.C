@@ -67,6 +67,9 @@ static bool load_modules() {
 	if(!ModuleLoader::loadModule(config["modules"]["peermessenger"]))
 		return false;
 	
+	if(!ModuleLoader::loadModule(config["modules"]["dbconnector"]))
+		return false;
+	
 	return true;
 }
 
