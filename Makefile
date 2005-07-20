@@ -1,7 +1,7 @@
 cc=g++
 cflags=-g -ggdb -O2 -Iinclude -W -Wall -fpic
 dflags=-Iinclude
-ldflags=-g -ggdb -O2 -Llib
+ldflags=-rdynamic -g -ggdb -O2 -Llib
 name=netsniff
 
 .PHONY: default
@@ -11,7 +11,7 @@ libabacus_name = lib/libabacus.so
 libabacus_objects = config logger moduleloader peermessenger messagebuilder message
 $(libabacus_name) : ldflags += -shared -ldl
 
-abacusd_objects = abacusd
+abacusd_objects = abacusd sigsegv
 abacusd_name = bin/abacusd
 $(abacusd_name) : ldflags += -labacus -lpthread
 $(abacusd_name) : $(libabacus_name)
@@ -43,6 +43,10 @@ modules/mod_%.so : obj/%.o
 obj/%.o : src/%.C Makefile
 	@[ -d obj ] || mkdir obj
 	$(cc) $(cflags) -o $@ -c $<
+
+obj/%.o : src/%.c Makefile
+	@[ -d obj ] || mkdir obj
+	$(cc) -x c $(cflags) -o $@ -c $<
 
 .PHONY: clean
 clean :

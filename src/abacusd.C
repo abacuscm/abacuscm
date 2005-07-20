@@ -10,6 +10,7 @@
 #include "peermessenger.h"
 #include "queue.h"
 #include "message.h"
+#include "sigsegv.h"
 
 using namespace std;
 
@@ -36,39 +37,6 @@ void signal_die(int) {
 }
 
 /**
- * This handler will hopefully not get called often.  It basically
- * outputs a bit of info that _might_ be usefull in debugging a 
- * segmentation fault.  On the other hand - it might cause more
- * SEGVs.  In which case we're done for.
- */
-
-static void signal_segv(int signum, siginfo_t* info, void*ptr) {
-	static const char *si_codes[3] = {"", "SEGV_MAPERR", "SEGV_ACCERR"};
-	
-	int i;
-	ucontext_t *ucontext = (ucontext_t*)ptr;
-	
-	log(LOG_EMERG, "Received SIGSEGV, dumping info (might cause more SIGSEGVs - won't be caught).");
-	log(LOG_EMERG, "info.si_signo = %d.", signum);
-	log(LOG_EMERG, "info.si_errno = %d.", info->si_errno);
-	log(LOG_EMERG, "info.si_code  = %d (%s).", info->si_code, si_codes[info->si_code]);
-	log(LOG_EMERG, "info.si_addr  = %p.", info->si_addr);
-	for(i = 0; i < NGREG; i++)
-		log(LOG_EMERG, "reg[%02d]       = 0x%016lx",
-				i, ucontext->uc_mcontext.gregs[i]);
-#if defined(REG_RIP)
-	log(LOG_EMERG, "RIP           = %p.",
-			(void*)ucontext->uc_mcontext.gregs[REG_RIP]);
-#elif defined(REG_EIP)
-	log(LOG_EMERG, "EIP           = %p.",
-			(void*)ucontext->uc_mcontext.gregs[REG_EIP]);
-#else
-	log(LOG_EMERG, "Unable to retrieve Instruction Pointer.");
-#endif
-	log(LOG_EMERG, "Bailing (no shutdown).");
-	exit (-1);
-}
-/**
  * Set up the signals we need to catch...
  */
 static bool setup_signals() {
@@ -82,10 +50,7 @@ static bool setup_signals() {
 	if(sigaction(SIGINT, &action, NULL) < 0)
 		goto err;
 
-	action.sa_sigaction = signal_segv;
-	action.sa_flags = SA_SIGINFO;
-	if(sigaction(SIGSEGV, &action, NULL) < 0)
-		goto err;
+	setup_sigsegv();
 
 	return true;
 err:
