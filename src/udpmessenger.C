@@ -88,7 +88,7 @@ bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) 
 
 Message* UDPPeerMessenger::getMessage() {
 	NOT_IMPLEMENTED();
-	sleep(10);
+	sleep(1);
 	return NULL;
 }
 
