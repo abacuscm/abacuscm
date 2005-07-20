@@ -8,6 +8,25 @@
 #include "logger.h"
 #include "config.h"
 
+#define SIGNATURE_SIZE		128
+#define ST_MESSAGE_SIZE		141
+
+#define BUFFER_SIZE			10000
+
+struct st_message {
+	uint8_t signature[SIGNATURE_SIZE];
+	uint32_t server_id;
+	uint32_t seq_num;
+	uint16_t message_type;
+	uint16_t length;
+	uint8_t data[1];
+} __attribute__ ((packed));
+
+struct st_signature {
+	uint8_t md5[16];
+	uint8_t padding[SIGNATURE_SIZE - 16];
+} __attribute__ ((packed));
+
 class UDPPeerMessenger : public PeerMessenger {
 private:
 	int _sock;
@@ -87,6 +106,17 @@ bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) 
 }
 
 Message* UDPPeerMessenger::getMessage() {
+	ssize_t bytes_received;
+	struct sockaddr_in from;
+	socklen_t fromlen = sizeof(from);
+	union {
+		uint8_t buffer[BUFFER_SIZE];
+		struct st_message message;
+	};
+
+	bytes_received = recvfrom(_sock, buffer, BUFFER_SIZE, MSG_TRUNC, (struct sockaddr*)&from, &fromlen);
+	log(LOG_DEBUG, "received a packet of size %d", bytes_received);
+
 	NOT_IMPLEMENTED();
 	sleep(1);
 	return NULL;
@@ -97,5 +127,12 @@ static UDPPeerMessenger _udpPeerMessenger;
 static void udp_peer_messenger_init() __attribute__ ((constructor));
 static void udp_peer_messenger_init()
 {
-	PeerMessenger::setMessenger(&_udpPeerMessenger);
+	// double check that gcc actually did the right thing with the __attribute__ ((packed)).
+	// If we don't register the messenger abacusd will detect it and abort.
+	if(sizeof(st_message) != ST_MESSAGE_SIZE)
+		log(LOG_ERR, "Compilation error detected, sizeof(struct st_message) should be %d but is in fact %d", ST_MESSAGE_SIZE, sizeof(st_message));
+	else if(sizeof(st_signature) != SIGNATURE_SIZE)
+		log(LOG_ERR, "Compilation error detected, sizeof(struct st_signature) should be %d but is in fact %d", SIGNATURE_SIZE, sizeof(st_signature));
+	else
+		PeerMessenger::setMessenger(&_udpPeerMessenger);
 }
