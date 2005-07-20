@@ -1,6 +1,7 @@
 #ifndef __MESSAGEBUILDER_H__
 #define __MESSAGEBUILDER_H__
 
+#include <stdint.h>
 #include <map>
 
 class Message;
