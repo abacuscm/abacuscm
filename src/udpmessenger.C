@@ -115,7 +115,7 @@ Message* UDPPeerMessenger::getMessage() {
 	};
 
 	bytes_received = recvfrom(_sock, buffer, BUFFER_SIZE, MSG_TRUNC, (struct sockaddr*)&from, &fromlen);
-	log(LOG_DEBUG, "received a packet of size %d", bytes_received);
+	log(LOG_DEBUG, "received a packet of size %d", (int)bytes_received);
 
 	NOT_IMPLEMENTED();
 	sleep(1);
@@ -130,9 +130,9 @@ static void udp_peer_messenger_init()
 	// double check that gcc actually did the right thing with the __attribute__ ((packed)).
 	// If we don't register the messenger abacusd will detect it and abort.
 	if(sizeof(st_message) != ST_MESSAGE_SIZE)
-		log(LOG_ERR, "Compilation error detected, sizeof(struct st_message) should be %d but is in fact %d", ST_MESSAGE_SIZE, sizeof(st_message));
+		log(LOG_ERR, "Compilation error detected, sizeof(struct st_message) should be %d but is in fact %d", ST_MESSAGE_SIZE, (int)sizeof(st_message));
 	else if(sizeof(st_signature) != SIGNATURE_SIZE)
-		log(LOG_ERR, "Compilation error detected, sizeof(struct st_signature) should be %d but is in fact %d", SIGNATURE_SIZE, sizeof(st_signature));
+		log(LOG_ERR, "Compilation error detected, sizeof(struct st_signature) should be %d but is in fact %d", SIGNATURE_SIZE, (int)sizeof(st_signature));
 	else
 		PeerMessenger::setMessenger(&_udpPeerMessenger);
 }
