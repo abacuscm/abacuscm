@@ -1,0 +1,1 @@
+#define TYPE_ID_CREATESERVER			0x0001

@@ -10,11 +10,13 @@
 
 CREATE TABLE PeerMessage (
   server_id int(10) unsigned NOT NULL default '0',
-  seqnum int(10) unsigned NOT NULL default '0',
+  message_id int(10) unsigned NOT NULL default '0',
+  message_type_id int(10) unsigned NOT NULL default '0',
+  time int(10) unsigned NOT NULL default '0',
   signature varchar(128) binary default NULL,
   data blob,
   processed tinyint(1) default NULL,
-  PRIMARY KEY  (server_id,seqnum),
+  PRIMARY KEY  (server_id,message_id),
   KEY processed (processed)
 ) TYPE=MyISAM;
 

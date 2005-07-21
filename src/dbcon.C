@@ -38,9 +38,9 @@ DbCon* DbCon::getInstance() {
 	return tmp;
 }
 
-void DbCon::releaseInstance(DbCon* i) {
+void DbCon::release() {
 	pthread_mutex_lock(&_lock);
-	_con_stack.push(i);
+	_con_stack.push(this);
 	pthread_mutex_unlock(&_lock);
 }
 

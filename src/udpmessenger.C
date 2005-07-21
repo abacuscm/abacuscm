@@ -7,14 +7,14 @@
 #include "peermessenger.h"
 #include "logger.h"
 #include "config.h"
+#include "message.h"
 
-#define SIGNATURE_SIZE		128
 #define ST_MESSAGE_SIZE		141
 
 #define BUFFER_SIZE			10000
 
 struct st_message {
-	uint8_t signature[SIGNATURE_SIZE];
+	uint8_t signature[MESSAGE_SIGNATURE_SIZE];
 	uint32_t server_id;
 	uint32_t seq_num;
 	uint16_t message_type;
@@ -24,7 +24,7 @@ struct st_message {
 
 struct st_signature {
 	uint8_t md5[16];
-	uint8_t padding[SIGNATURE_SIZE - 16];
+	uint8_t padding[MESSAGE_SIGNATURE_SIZE - 16];
 } __attribute__ ((packed));
 
 class UDPPeerMessenger : public PeerMessenger {
@@ -131,8 +131,8 @@ static void udp_peer_messenger_init()
 	// If we don't register the messenger abacusd will detect it and abort.
 	if(sizeof(st_message) != ST_MESSAGE_SIZE)
 		log(LOG_ERR, "Compilation error detected, sizeof(struct st_message) should be %d but is in fact %d", ST_MESSAGE_SIZE, (int)sizeof(st_message));
-	else if(sizeof(st_signature) != SIGNATURE_SIZE)
-		log(LOG_ERR, "Compilation error detected, sizeof(struct st_signature) should be %d but is in fact %d", SIGNATURE_SIZE, (int)sizeof(st_signature));
+	else if(sizeof(st_signature) != MESSAGE_SIGNATURE_SIZE)
+		log(LOG_ERR, "Compilation error detected, sizeof(struct st_signature) should be %d but is in fact %d", MESSAGE_SIGNATURE_SIZE, (int)sizeof(st_signature));
 	else
 		PeerMessenger::setMessenger(&_udpPeerMessenger);
 }

@@ -4,6 +4,8 @@
 #include <string>
 #include <stdint.h>
 
+class Message;
+
 class DbCon {
 public:
 	DbCon();
@@ -30,13 +32,26 @@ public:
 	virtual bool setServerAttribute(uint32_t server_id, const std::string& attribute, const std::string& value) = 0;
 
 	/**
+	 * Function to insert locally generated messages, ie, this _must_ generate
+	 * a message_id, call Message::setMessageId() _and_ then call
+	 * Message::getSignature() and insert that into the DB too.
+	 */
+	virtual bool putLocalMessage(Message *message) = 0;
+
+	/**
+	 * This function gets called to insert remotely received messages only.
+	 * This means the DB needs to insert all fields in one go.
+	 */
+	virtual bool putRemoteMessage(const Message* message) = 0;
+	
+	/**
 	 * Functions to register a DbCon functor (function to create DbCons),
 	 * get a DbCon and to release one.  This allows for connection pooling
 	 * and re-use.  I don't think I'm going to kill them, there should only
 	 * ever be three or four ...
 	 */
 	static DbCon *getInstance();
-	static void releaseInstance(DbCon *con);
+	void release();
 	static bool registerFunctor(DbCon* (*functor)());
 };
 

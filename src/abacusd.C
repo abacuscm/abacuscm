@@ -10,6 +10,7 @@
 #include "peermessenger.h"
 #include "queue.h"
 #include "message.h"
+#include "message_createserver.h"
 #include "sigsegv.h"
 #include "dbcon.h"
 
@@ -92,20 +93,23 @@ static bool initialise() {
 		return false;
 
 	uint32_t local_id = db->name2server_id(localname);
+	db->release();
+	
 	if(local_id == ~0U) {
 		return false;
 	} else if(!local_id) {
-		log(LOG_INFO, "Unable to determine local server_id, initialising.");
-
+		Message *init = new Message_CreateServer(localname, 1);
+		if(init->makeMessage())
+			message_queue.enqueue(init);
+		else {
+			delete init;
+			return false;
+		}
 	} else {
 		log(LOG_INFO, "Contest already initialised, resuming.");
 	}
 
-	
-	DbCon::releaseInstance(db);
-
-	NOT_IMPLEMENTED();
-	return false;
+	return true;
 }
 
 /**
