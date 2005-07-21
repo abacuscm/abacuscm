@@ -3,12 +3,15 @@
 #include "config.h"
 
 #include <mysql/mysql.h>
+#include <sstream>
 
 using namespace std;
 
 class MySQL : public DbCon {
 private:
 	MYSQL _mysql;
+
+	string escape_string(const string& str);
 public:
 	MySQL();
 	virtual ~MySQL();
@@ -28,6 +31,20 @@ MySQL::~MySQL() {
 	NOT_IMPLEMENTED();
 }
 
+string MySQL::escape_string(const string& str) {
+	if(str.length() > 512) {
+		char *tmp_buffer = new char[str.length() * 2 + 1];
+		mysql_real_escape_string(&_mysql, tmp_buffer, str.c_str(), str.length());
+		string tmp_string(tmp_buffer);
+		delete []tmp_buffer;
+		return tmp_string;
+	} else {
+		char tmp_buffer[1025];
+		mysql_real_escape_string(&_mysql, tmp_buffer, str.c_str(), str.length());
+		return string(tmp_buffer);
+	}
+}
+
 bool MySQL::ok() {
 	if(mysql_ping(&_mysql)) {
 		log(LOG_INFO, "MySQL: %s", mysql_error(&_mysql));
@@ -37,7 +54,11 @@ bool MySQL::ok() {
 }
 	
 uint32_t MySQL::name2server_id(const string& name) {
-	NOT_IMPLEMENTED();
+	ostringstream query;
+	query << "SELECT server_id FROM Server WHERE server_name='" << escape_string(name) << "'";
+
+	// TODO: xxxx
+
 	return ~0;
 }
 	

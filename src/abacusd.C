@@ -79,11 +79,29 @@ static bool load_modules() {
  * from an existing competition (ie, are we already connected or not).
  */
 static bool initialise() {
-	DbCon *db = DbCon::getInstance();
+	string localname = Config::getConfig()["initialisation"]["name"];
+	if(localname == string("")) {
+		log(LOG_ERR, "Unable to determine local node name.");
+		return false;
+	}
+	
+	log(LOG_INFO, "Local node name: %s", localname.c_str());
 
+	DbCon *db = DbCon::getInstance();	
 	if(!db)
 		return false;
 
+	uint32_t local_id = db->name2server_id(localname);
+	if(local_id == ~0U) {
+		return false;
+	} else if(!local_id) {
+		log(LOG_INFO, "Unable to determine local server_id, initialising.");
+
+	} else {
+		log(LOG_INFO, "Contest already initialised, resuming.");
+	}
+
+	
 	DbCon::releaseInstance(db);
 
 	NOT_IMPLEMENTED();
