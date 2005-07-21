@@ -5,6 +5,8 @@
 #include <mysql/mysql.h>
 #include <sstream>
 
+#define log_mysql_error()	log(LOG_ERR,"%s: %s", __PRETTY_FUNCTION__, mysql_error(&_mysql))
+
 using namespace std;
 
 class MySQL : public DbCon {
@@ -54,12 +56,29 @@ bool MySQL::ok() {
 }
 	
 uint32_t MySQL::name2server_id(const string& name) {
+	uint32_t server_id = 0;
 	ostringstream query;
 	query << "SELECT server_id FROM Server WHERE server_name='" << escape_string(name) << "'";
 
-	// TODO: xxxx
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return ~0U;
+	}
 
-	return ~0;
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if(!res) {
+		log_mysql_error();
+		return ~0U;
+	}
+
+	MYSQL_ROW row = mysql_fetch_row(res);
+	
+	if(row)
+		server_id = atol(row[0]);
+	
+	mysql_free_result(res);
+	
+	return server_id;
 }
 	
 string MySQL::getServerAttribute(uint32_t server_id, const string& attribute) {
