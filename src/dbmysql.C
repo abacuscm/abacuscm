@@ -30,7 +30,7 @@ MySQL::MySQL() {
 }
 
 MySQL::~MySQL() {
-	NOT_IMPLEMENTED();
+	MYSQL_close(&_mysql);
 }
 
 string MySQL::escape_string(const string& str) {
