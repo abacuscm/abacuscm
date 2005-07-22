@@ -26,6 +26,10 @@ uint32_t Message_CreateServer::store(uint8_t *buffer, uint32_t size) {
 }
 
 uint32_t Message_CreateServer::load(const uint8_t *buffer, uint32_t size) {
+	if(size < sizeof(uint32_t) ||
+			strnlen((char*)buffer + sizeof(uint32_t), size - sizeof(uint32_t))
+			== size - sizeof(uint32_t))
+		return ~0U;
 	_server_id = *(uint32_t*)buffer;
 	buffer += sizeof(uint32_t);
 	_name = (char*)buffer;
