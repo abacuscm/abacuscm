@@ -87,7 +87,7 @@ uint32_t MySQL::name2server_id(const string& name) {
 	MYSQL_ROW row = mysql_fetch_row(res);
 	
 	if(row)
-		server_id = atol(row[1]);
+		server_id = atol(row[0]);
 	
 	mysql_free_result(res);
 	
@@ -131,7 +131,7 @@ bool MySQL::putLocalMessage(Message* message) {
 	if(res) {
 		MYSQL_ROW row = mysql_fetch_row(res);
 		if(row)
-			message_id = atol(row[1]);
+			message_id = atol(row[0]);
 	}
 	mysql_free_result(res);
 
