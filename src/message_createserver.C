@@ -1,5 +1,6 @@
 #include "message_createserver.h"
 #include "logger.h"
+#include "dbcon.h"
 
 #include "message_type_ids.h"
 
@@ -41,7 +42,11 @@ void Message_CreateServer::addAttribute(const string& /* name */, const string& 
 }
 
 void Message_CreateServer::process() const {
-	NOT_IMPLEMENTED();
+	DbCon *db = DbCon::getInstance();
+	if(!db)
+		return;
+	db->addServer(_name, _server_id);
+	db->release();
 }
 
 uint16_t Message_CreateServer::message_type_id() const {

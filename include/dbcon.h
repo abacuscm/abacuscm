@@ -43,6 +43,11 @@ public:
 	 * This means the DB needs to insert all fields in one go.
 	 */
 	virtual bool putRemoteMessage(const Message* message) = 0;
+
+	/**
+	 * Used to add a new server to the system.
+	 */
+	virtual bool addServer(const std::string& name, uint32_t id) = 0;
 	
 	/**
 	 * Functions to register a DbCon functor (function to create DbCons),

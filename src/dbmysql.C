@@ -27,7 +27,8 @@ public:
 	virtual bool setServerAttribute(uint32_t server_id, const string& attribute, const string& value);
 	virtual bool putLocalMessage(Message*);
 	virtual bool putRemoteMessage(const Message*);
-
+	virtual bool addServer(const string& name, uint32_t id);
+	
 	bool init();
 };
 
@@ -130,7 +131,7 @@ bool MySQL::putLocalMessage(Message* message) {
 	MYSQL_RES *res = mysql_use_result(&_mysql);
 	if(res) {
 		MYSQL_ROW row = mysql_fetch_row(res);
-		if(row)
+		if(row && row[0])
 			message_id = atol(row[0]);
 	}
 	mysql_free_result(res);
@@ -163,6 +164,19 @@ bool MySQL::putLocalMessage(Message* message) {
 bool MySQL::putRemoteMessage(const Message*) {
 	NOT_IMPLEMENTED();
 	return false;
+}
+	
+bool MySQL::addServer(const string& name, uint32_t id) {
+	ostringstream query;
+
+	query << "INSERT INTO Server(server_id, server_name) VALUES (" << id << ", '" << escape_string(name) << "')";
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	}
+
+	return true;
 }
 
 bool MySQL::init() {
