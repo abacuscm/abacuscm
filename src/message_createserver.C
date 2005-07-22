@@ -36,7 +36,7 @@ uint32_t Message_CreateServer::load(const uint8_t *buffer, uint32_t size) {
 	return storageRequired();
 }
 
-void Message_CreateServer::addAttribute(const string& name, const string& value) {
+void Message_CreateServer::addAttribute(const string& /* name */, const string& /* value */) {
 	NOT_IMPLEMENTED();
 }
 
