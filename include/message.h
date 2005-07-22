@@ -25,7 +25,7 @@ protected:
 	 * Protected since the makeBlob() function should be used to
 	 * initiate the build process.
 	 */
-	virtual uint32_t storageRequired();
+	virtual uint32_t storageRequired() = 0;
 
 	/**
 	 * This function is required to transform the message object
@@ -40,7 +40,7 @@ protected:
 	 * Protected since the makeBlob() function should be used to
 	 * initiate the build process.
 	 */
-	virtual uint32_t store(uint8_t *buffer, uint32_t size);
+	virtual uint32_t store(uint8_t *buffer, uint32_t size) = 0;
 
 	/**
 	 * This function needs to rebuild the internal message state
@@ -52,7 +52,7 @@ protected:
 	 * Protected since the loadBlob() function should be used to
 	 * initiate the load process.
 	 */
-	virtual uint32_t load(const uint8_t *buffer, uint32_t size);
+	virtual uint32_t load(const uint8_t *buffer, uint32_t size) = 0;
 public:
 	Message();
 	virtual ~Message();

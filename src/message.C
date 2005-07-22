@@ -59,17 +59,19 @@ bool Message::makeMessage() {
 	}
 }
 
+/*
 uint32_t Message::storageRequired() {
 	return 0;
 }
 
-uint32_t Message::store(uint8_t * /* buffer */, uint32_t /* size */) {
+uint32_t Message::store(uint8_t * buffer, uint32_t size) {
 	return 0;
 }
 
-uint32_t Message::load(const uint8_t * /* buffer */, uint32_t /* size */) {
+uint32_t Message::load(const uint8_t * buffer, uint32_t size) {
 	return 0;
 }
+*/
 
 void Message::setMessageId(uint32_t id) {
 	if(!_server_id || !_time || !_blob || !_blob_size)
