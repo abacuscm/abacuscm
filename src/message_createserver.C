@@ -25,7 +25,7 @@ uint32_t Message_CreateServer::storageRequired() {
 uint32_t Message_CreateServer::store(uint8_t *buffer, uint32_t size) {
 	if(size < storageRequired())
 		return ~0U;
-	char* pos = (char*)pos;
+	char* pos = (char*)buffer;
 	*(uint32_t*)pos = _server_id; pos += sizeof(uint32_t);
 	strcpy(pos, _name.c_str()); pos += _name.length() + 1;
 	AttribMap::const_iterator i;
