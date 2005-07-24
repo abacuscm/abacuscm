@@ -25,9 +25,19 @@ uint32_t Message_CreateServer::storageRequired() {
 uint32_t Message_CreateServer::store(uint8_t *buffer, uint32_t size) {
 	if(size < storageRequired())
 		return ~0U;
-	*(uint32_t*)buffer = _server_id;
-	strcpy((char*)buffer + sizeof(_server_id), _name.c_str());
-	return storageRequired();
+	char* pos = (char*)pos;
+	*(uint32_t*)pos = _server_id; pos += sizeof(uint32_t);
+	strcpy(pos, _name.c_str()); pos += _name.length() + 1;
+	AttribMap::const_iterator i;
+	for(i = _attribs.begin(); i != _attribs.end(); ++i) {
+		strcpy(pos, i->first.c_str()); pos += i->first.length() + 1;
+		strcpy(pos, i->second.c_str()); pos += i->second.length() + 1;
+	}
+	uint32_t used = (uint8_t*)pos - buffer;
+	if(used > size)
+		log(LOG_CRIT, "Buffer overrun in Message_CreateServer::store (server_id=%d, message_id=%d) - expect segfault!", server_id(), message_id());
+
+	return used;
 }
 
 uint32_t Message_CreateServer::load(const uint8_t *buffer, uint32_t size) {
