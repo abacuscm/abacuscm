@@ -13,6 +13,8 @@
 #include "message_createserver.h"
 #include "sigsegv.h"
 #include "dbcon.h"
+#include "socket.h"
+#include "clientlistener.h"
 
 using namespace std;
 
@@ -20,12 +22,17 @@ using namespace std;
 // source file.
 static pthread_t thread_peer_listener;
 static pthread_t thread_message_handler;
+static set<pthread_t> worker_threads;
+static pthread_t thread_socket_selector;
 
 // This variable indicates that we are still running.
 static volatile bool abacusd_running = true;
 
 // All the various Queue<>s
 static Queue<Message*> message_queue;
+static Queue<Socket*> wait_queue;
+
+static SocketPool socket_pool;
 
 /**
  * This signal handler sets abacusd_running to false
@@ -118,6 +125,14 @@ static bool initialise() {
 		log(LOG_INFO, "Contest already initialised, resuming.");
 	}
 
+	ClientListener *cl = new ClientListener();
+	if(!cl->init(&socket_pool)) {
+		delete cl;
+		return false;
+	}
+	
+	socket_pool.insert(cl);
+	
 	return true;
 }
 

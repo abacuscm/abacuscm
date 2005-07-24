@@ -8,11 +8,22 @@ name=netsniff
 default : all
 
 libabacus_name = lib/libabacus.so
-libabacus_objects = config logger moduleloader peermessenger messagebuilder message dbcon message_createserver server
+libabacus_objects = config \
+	logger \
+	moduleloader \
+	peermessenger \
+	messagebuilder \
+	message \
+	dbcon \
+	message_createserver \
+	server \
+	socket \
+	clientlistener
 $(libabacus_name) : ldflags += -shared -ldl
 
-abacusd_objects = abacusd sigsegv
 abacusd_name = bin/abacusd
+abacusd_objects = abacusd \
+	sigsegv
 $(abacusd_name) : ldflags += -labacus -lpthread
 $(abacusd_name) : $(libabacus_name)
 
