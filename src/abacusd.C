@@ -35,7 +35,11 @@ static Queue<Message*> message_queue;
  * queue's empty out.
  */
 void signal_die(int) {
-	abacusd_running = false;
+	// It needs to be the peer_listener thread that receives this!
+	if(pthread_self() != thread_peer_listener)
+		pthread_kill(thread_peer_listener, SIGTERM);
+	else
+		abacusd_running = false;
 }
 
 /**
@@ -80,7 +84,8 @@ static bool load_modules() {
  * from an existing competition (ie, are we already connected or not).
  */
 static bool initialise() {
-	string localname = Config::getConfig()["initialisation"]["name"];
+	Config& config = Config::getConfig();
+	string localname = config["initialisation"]["name"];
 	if(localname == string("")) {
 		log(LOG_ERR, "Unable to determine local node name.");
 		return false;
@@ -98,7 +103,11 @@ static bool initialise() {
 	if(local_id == ~0U) {
 		return false;
 	} else if(!local_id) {
-		Message *init = new Message_CreateServer(localname, 1);
+		Message_CreateServer *init = new Message_CreateServer(localname, 1);
+		ConfigSection::const_iterator i;
+		for(i = config["init_attribs"].begin(); i != config["init_attribs"].end(); ++i)
+			init->addAttribute(i->first, i->second);
+		
 		if(init->makeMessage())
 			message_queue.enqueue(init);
 		else {
@@ -137,8 +146,22 @@ static void* peer_listener(void *) {
  */
 static void* message_handler(void *) {
 	log(LOG_INFO, "message_handler() ready to process messages.");
-	for(Message *m = message_queue.dequeue(); m; m = message_queue.dequeue())
-		m->process();
+	for(Message *m = message_queue.dequeue(); m; m = message_queue.dequeue()) {
+		if(m->process()) {
+			DbCon *db = DbCon::getInstance();
+			if(db) {
+				db->markProcessed(m->server_id(), m->message_id());
+				db->release();
+			} else {
+				log(LOG_ERR, "Unable to mark message (%d, %d) as processed!",
+						m->server_id(), m->message_id());
+			}
+		} else {
+			log(LOG_CRIT, "Failure to process message (%d, %d)!!!  "
+					"This is A HUGE PROBLEM!!!  Fix it and restart abacusd!!!",
+					m->server_id(), m->message_id());
+		}
+	}
 	log(LOG_INFO, "Shutting down message_handler().");
 	return NULL;
 }

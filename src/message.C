@@ -18,7 +18,7 @@ Message::~Message() {
 }
 
 bool Message::makeMessage() {
-	if(_server_id || _message_id) {
+	if(_server_id || _message_id || _time) {
 		log(LOG_ERR, "Weird, trying to make a message from an already perfectly good message!");
 		return false;
 	}
@@ -74,7 +74,7 @@ uint32_t Message::load(const uint8_t * buffer, uint32_t size) {
 */
 
 void Message::setMessageId(uint32_t id) {
-	if(!_server_id || !_time || !_blob || !_blob_size)
+	if(!_server_id && !_time)
 		return;
 	_message_id = id;
 	_signature = new uint8_t[MESSAGE_SIGNATURE_SIZE];

@@ -45,6 +45,13 @@ public:
 	virtual bool putRemoteMessage(const Message* message) = 0;
 
 	/**
+	 * This function is used to mark a message as processed.  This means
+	 * that it will not get loaded from the database for processing upon
+	 * restart!
+	 */
+	virtual bool markProcessed(uint32_t server_id, uint32_t message_id) = 0;
+
+	/**
 	 * Used to add a new server to the system.
 	 */
 	virtual bool addServer(const std::string& name, uint32_t id) = 0;

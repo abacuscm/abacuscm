@@ -26,10 +26,10 @@ CREATE TABLE PeerMessage (
 
 CREATE TABLE PeerMessageNoAck (
   server_id int(10) unsigned NOT NULL default '0',
-  seqnum int(10) unsigned NOT NULL default '0',
+  message_id int(10) unsigned NOT NULL default '0',
   ack_server_id int(10) unsigned NOT NULL default '0',
   lastsent int(10) unsigned default NULL,
-  PRIMARY KEY  (server_id,seqnum,ack_server_id),
+  PRIMARY KEY  (server_id,message_id,ack_server_id),
   KEY lastsent (lastsent)
 ) TYPE=MyISAM;
 

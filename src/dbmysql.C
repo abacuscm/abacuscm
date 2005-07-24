@@ -27,6 +27,7 @@ public:
 	virtual bool setServerAttribute(uint32_t server_id, const string& attribute, const string& value);
 	virtual bool putLocalMessage(Message*);
 	virtual bool putRemoteMessage(const Message*);
+	virtual bool markProcessed(uint32_t server_id, uint32_t message_id);
 	virtual bool addServer(const string& name, uint32_t id);
 	
 	bool init();
@@ -96,13 +97,44 @@ uint32_t MySQL::name2server_id(const string& name) {
 }
 	
 string MySQL::getServerAttribute(uint32_t server_id, const string& attribute) {
-	NOT_IMPLEMENTED();
-	return "";
+	string value = "";
+	ostringstream query;
+	query << "SELECT value FROM ServerAttributes WHERE server_id=" <<
+		server_id << ", '" << escape_string(attribute) << "'";
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return "";
+	}
+
+	MYSQL_RES *res = mysql_store_result(&_mysql);
+	if(res) {
+		MYSQL_ROW row = mysql_fetch_row(res);
+		if(row && row[0])
+			value = row[0];
+		mysql_free_result(res);
+	}
+	return value;
 }
 
 bool MySQL::setServerAttribute(uint32_t server_id, const string& attribute, const string& value) {
-	NOT_IMPLEMENTED();
-	return false;
+	string esc_attribute = escape_string(attribute);
+	string esc_value = escape_string(value);
+	ostringstream query;
+	query << "INSERT INTO ServerAttributes (server_id, attribute, value) "
+		"VALUES(" << server_id << ", '" << esc_attribute << 
+		"', '" << esc_value << "')";
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		// most likely cause is that the attribute already exists, update it.
+		query.str("");
+		query << "UPDATE ServerAttributes SET value='" << esc_value <<
+			"' WHERE server_id=" << server_id << " AND attribute='" <<
+			esc_attribute << "'";
+		if(mysql_query(&_mysql, query.str().c_str())) {
+			log_mysql_error();
+			return false;
+		}
+	}
+	return true;
 }
 
 bool MySQL::putLocalMessage(Message* message) {
@@ -165,7 +197,18 @@ bool MySQL::putRemoteMessage(const Message*) {
 	NOT_IMPLEMENTED();
 	return false;
 }
-	
+
+bool MySQL::markProcessed(uint32_t server_id, uint32_t message_id) {
+	ostringstream query;
+	query << "UPDATE PeerMessage SET processed=1 WHERE server_id=" <<
+		server_id << " AND message_id=" << message_id;
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	} else
+		return true;
+}
+
 bool MySQL::addServer(const string& name, uint32_t id) {
 	ostringstream query;
 

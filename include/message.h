@@ -61,7 +61,7 @@ public:
 	 * This function is a placeholder for implementing the
 	 * functionality required to act upon the message.
 	 */
-	virtual void process() const = 0;
+	virtual bool process() const = 0;
 
 	uint32_t server_id() const { return _server_id; };
 	uint32_t message_id() const { return _message_id; };
@@ -98,6 +98,10 @@ public:
 	 */
 	void setMessageId(uint32_t id);
 
+	/**
+	 * Returns a pointer to the cryptographic signature for this
+	 * message.
+	 */
 	const uint8_t* getSignature() const { return _signature; };
 };
 

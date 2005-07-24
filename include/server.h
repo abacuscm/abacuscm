@@ -1,9 +1,11 @@
 #ifndef __SERVER_H__
 #define __SERVER_H__
 
+#include <stdint.h>
+
 class Server {
 public:
-	static uint32_t getId() { NOT_IMPLEMENTED(); return 1; };
+	static uint32_t getId();
 };
 
 #endif
