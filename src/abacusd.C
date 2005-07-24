@@ -16,14 +16,18 @@
 #include "socket.h"
 #include "clientlistener.h"
 
+#define DEFAULT_MIN_IDLE_WORKERS		5
+#define DEFAULT_MAX_IDLE_WORKERS		10
+#define MIN_MAX_TOTAL_WORKERS			50
+
 using namespace std;
 
 // some globals, the static keyword keeps them inside _this_
 // source file.
 static pthread_t thread_peer_listener;
 static pthread_t thread_message_handler;
-static set<pthread_t> worker_threads;
 static pthread_t thread_socket_selector;
+static pthread_t thread_worker_spawner;
 
 // This variable indicates that we are still running.
 static volatile bool abacusd_running = true;
@@ -33,6 +37,14 @@ static Queue<Message*> message_queue;
 static Queue<Socket*> wait_queue;
 
 static SocketPool socket_pool;
+
+// num_idle_workers counts the number of currently blocking
+// worker threads, lock_numworkers protects it.
+static volatile uint32_t num_idle_workers = 0;
+static volatile uint32_t total_num_workers = 0;
+static pthread_mutex_t lock_numworkers;
+static uint32_t min_idle_workers;
+static uint32_t max_idle_workers;
 
 /**
  * This signal handler sets abacusd_running to false
@@ -182,6 +194,131 @@ static void* message_handler(void *) {
 }
 
 /**
+ * A worker thread.  These threads handles clients and run in detached mode.
+ * They need to terminate either when dequeueing a NULL Socket* or if the
+ * max block count is reached.
+ */
+void* worker_thread(void *) {
+	pthread_mutex_lock(&lock_numworkers);
+	total_num_workers++;
+	log(LOG_DEBUG, "Creating worker thread (now has %d).", total_num_workers);
+	while(true) {
+		if(num_idle_workers == max_idle_workers)
+			break;
+		++num_idle_workers;
+		pthread_mutex_unlock(&lock_numworkers);
+		
+		Socket *s = wait_queue.dequeue();
+
+		pthread_mutex_lock(&lock_numworkers);
+		if(--num_idle_workers < min_idle_workers)
+			pthread_kill(thread_worker_spawner, SIGUSR1);
+		if(!s)
+			break;
+		pthread_mutex_unlock(&lock_numworkers);
+
+		if(s->process()) {
+			socket_pool.insert(s);
+			pthread_kill(thread_socket_selector, SIGUSR1);
+		} else
+			delete s;
+		pthread_mutex_lock(&lock_numworkers);			
+	}
+
+	total_num_workers--;
+	log(LOG_DEBUG, "Worker thread starving, %d left.", total_num_workers);
+	if(!total_num_workers)
+		pthread_kill(thread_worker_spawner, SIGUSR1);
+	pthread_mutex_unlock(&lock_numworkers);
+	return NULL;
+}
+
+/**
+ * Worker spawner.  This thread spawns more workers as required.
+ * It expects to get sent a SIGUSR1 whenever the number of idle
+ * workers reaches the minimum, at which point it will spawn a
+ * few.
+ */
+void* worker_spawner(void*) {
+	Config& config = Config::getConfig();
+	uint32_t initial_workers = atol(config["workers"]["init"].c_str());
+	uint32_t max_num_workers = atol(config["workers"]["max"].c_str());
+	max_idle_workers = atol(config["workers"]["max_idle"].c_str());
+	min_idle_workers = atol(config["workers"]["min_idle"].c_str());
+
+	if(max_num_workers < MIN_MAX_TOTAL_WORKERS) {
+		log(LOG_NOTICE, "Increasing the maximum number of total workers "
+				"from %u to %u.", max_num_workers, MIN_MAX_TOTAL_WORKERS);
+		max_num_workers = MIN_MAX_TOTAL_WORKERS;
+	}
+
+	if(min_idle_workers == 0) {
+		log(LOG_NOTICE, "Defaulting to %u minimum number of idle workers.",
+				DEFAULT_MIN_IDLE_WORKERS);
+		min_idle_workers = DEFAULT_MIN_IDLE_WORKERS;
+	}
+
+	if(max_idle_workers <= min_idle_workers) {
+		max_idle_workers = min_idle_workers + 
+			(DEFAULT_MAX_IDLE_WORKERS - DEFAULT_MIN_IDLE_WORKERS);
+		log(LOG_NOTICE, "Defaulting to %u maximum number of idle workers.",
+				max_idle_workers);
+	}
+
+	if(initial_workers <= min_idle_workers ||
+			initial_workers >= max_idle_workers) {
+		// +1 couses the division to be rounded up!
+		initial_workers = (min_idle_workers + max_idle_workers + 1) / 2;
+		log(LOG_NOTICE, "Defaulting to %u initial woker threads.",
+				initial_workers);
+	}
+
+	if(max_num_workers < 2 * max_idle_workers) {
+		log(LOG_NOTICE, "Increasing the maximum number of workers threads "
+				"to %u from %u.", 2 * max_idle_workers, max_num_workers);
+		max_num_workers = 2 * max_idle_workers;
+	}
+
+	while(initial_workers--) {
+		pthread_t tmp;
+		if(pthread_create(&tmp, NULL, worker_thread, NULL) == 0)
+			pthread_detach(tmp);
+	}
+
+	sigset_t sigset;
+	if(sigemptyset(&sigset))
+		lerror("sigemptyset");
+	else if(sigaddset(&sigset, SIGUSR1))
+		lerror("sigaddset");
+	else if(pthread_sigmask(SIG_BLOCK, &sigset, NULL))
+		lerror("pthread_sigmask");
+	else while(abacusd_running) {
+		int signum;
+		sigwait(&sigset, &signum);
+
+		pthread_mutex_lock(&lock_numworkers);
+		uint32_t tospawn = min_idle_workers - num_idle_workers;
+		uint32_t max_create = max_num_workers - total_num_workers;
+		pthread_mutex_unlock(&lock_numworkers);
+		if(max_create < tospawn)
+			tospawn = max_create;
+
+		while(tospawn) {
+			pthread_t tmp;
+			if(pthread_create(&tmp, NULL, worker_thread, NULL) == 0)
+				pthread_detach(tmp);
+		}
+	}
+
+	while(total_num_workers) {
+		int signum;
+		sigwait(&sigset, &signum);
+	}
+
+	return NULL;
+}
+
+/**
  * Set everything up to do what it's supposed to do and then wait for
  * it all to tear down again...
  */
@@ -211,14 +348,15 @@ int main(int argc, char ** argv) {
 	
 	pthread_create(&thread_peer_listener, NULL, peer_listener, NULL);
 	pthread_create(&thread_message_handler, NULL, message_handler, NULL);
+	pthread_create(&thread_worker_spawner, NULL, worker_spawner, NULL);
 
 	log(LOG_DEBUG, "abacusd is up and running.");
-
 
 	pthread_join(thread_peer_listener, NULL);
 	
 	message_queue.enqueue(NULL);
 	pthread_join(thread_message_handler, NULL);
+	pthread_join(thread_worker_spawner, NULL);
 
 	log(LOG_INFO, "abacusd is shut down.");
 	return 0;
