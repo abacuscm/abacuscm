@@ -32,7 +32,7 @@ public:
 
 	void enqueue(T v) {
 		pthread_mutex_lock(&_m);
-		pthread_cond_broadcast(&_e);
+		pthread_cond_signal(&_e);
 		_q.push(v);
 		pthread_mutex_unlock(&_m);
 	}
