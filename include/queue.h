@@ -8,32 +8,22 @@ class Queue {
 private:
 	std::queue<T> _q; // queue.
 	pthread_mutex_t _m; // mutex.
-	pthread_mutex_t _e; // empty lock.
+	pthread_cond_t _e; // empty condition.
 public:
 	Queue() {
 		pthread_mutex_init(&_m, NULL);
-		pthread_mutex_init(&_e, NULL);
-		pthread_mutex_lock(&_e);
+		pthread_cond_init(&_e, NULL);
 	}
 
 	~Queue() {
 		pthread_mutex_destroy(&_m);
-		pthread_mutex_destroy(&_e);
+		pthread_cond_destroy(&_e);
 	}
 
 	T dequeue() {
-		// I'm sure we can invent some fancy do {} while() but there
-		// is no correct test for whether we correctly dequeue'ed
-		// something :).  Alternatively we could use tail-recursion
-		// but that could potentially stack-overflow.  Unless the
-		// compiler is smart enough.
-retry:
 		pthread_mutex_lock(&_m);
-		if(_q.empty()) {
-			pthread_mutex_unlock(&_m);
-			pthread_mutex_lock(&_e);
-			goto retry;
-		}
+		while(_q.empty())
+			pthread_cond_wait(&_e, &_m);
 		T t = _q.front();
 		_q.pop();
 		pthread_mutex_unlock(&_m);
@@ -42,8 +32,7 @@ retry:
 
 	void enqueue(T v) {
 		pthread_mutex_lock(&_m);
-		if(_q.empty())
-			pthread_mutex_unlock(&_e);
+		pthread_cond_broadcast(&_e);
 		_q.push(v);
 		pthread_mutex_unlock(&_m);
 	}
