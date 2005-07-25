@@ -17,3 +17,7 @@ void Socket::addToSet(int &n, fd_set *set) {
 		n = _sock + 1;
 	FD_SET(_sock, set);
 }
+
+bool Socket::isInSet(fd_set *set) {
+	return FD_ISSET(sockfd(), set);
+}
