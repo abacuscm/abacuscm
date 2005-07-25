@@ -54,11 +54,11 @@ static uint32_t max_idle_workers;
  * queue's empty out.
  */
 void signal_die(int) {
-	// It needs to be the peer_listener thread that receives this!
-	if(pthread_self() != thread_peer_listener)
-		pthread_kill(thread_peer_listener, SIGTERM);
-	else
+	if(abacusd_running) {
 		abacusd_running = false;
+		pthread_kill(thread_peer_listener, SIGTERM);
+		pthread_kill(thread_worker_spawner, SIGUSR1);
+	}
 }
 
 /**
@@ -209,7 +209,6 @@ void* worker_thread(void *) {
 		pthread_mutex_unlock(&lock_numworkers);
 		
 		Socket *s = wait_queue.dequeue();
-
 		pthread_mutex_lock(&lock_numworkers);
 		if(--num_idle_workers < min_idle_workers)
 			pthread_kill(thread_worker_spawner, SIGUSR1);
@@ -226,7 +225,7 @@ void* worker_thread(void *) {
 	}
 
 	total_num_workers--;
-	log(LOG_DEBUG, "Worker thread starving, %d left.", total_num_workers);
+	log(LOG_DEBUG, "Worker thread dying, %d left.", total_num_workers);
 	if(!total_num_workers)
 		pthread_kill(thread_worker_spawner, SIGUSR1);
 	pthread_mutex_unlock(&lock_numworkers);
@@ -296,6 +295,9 @@ void* worker_spawner(void*) {
 		int signum;
 		sigwait(&sigset, &signum);
 
+		if(!abacusd_running)
+			break;
+
 		pthread_mutex_lock(&lock_numworkers);
 		uint32_t tospawn = min_idle_workers - num_idle_workers;
 		uint32_t max_create = max_num_workers - total_num_workers;
@@ -309,6 +311,10 @@ void* worker_spawner(void*) {
 				pthread_detach(tmp);
 		}
 	}
+
+	log(LOG_INFO, "Waiting for workers to die ...");
+	for(uint32_t i = 0; i < total_num_workers; i++)
+		wait_queue.enqueue(NULL);
 
 	while(total_num_workers) {
 		int signum;
