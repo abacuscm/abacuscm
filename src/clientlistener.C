@@ -47,8 +47,10 @@ bool ClientListener::process() {
 	sockaddr_in addr;
 	socklen_t size = sizeof(addr);
 	int res = accept(sockfd(), (sockaddr*)&addr, &size);
-	if(res < 0)
+	if(res < 0) {
+		lerror("accept");
 		return true;
+	}
 
 	log(LOG_INFO, "Accepted new connection from %s.", inet_ntoa(addr.sin_addr));
 	return true;

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <signal.h>
+#include <errno.h>
 
 #include "config.h"
 #include "logger.h"
@@ -43,6 +44,7 @@ static SocketPool socket_pool;
 static volatile uint32_t num_idle_workers = 0;
 static volatile uint32_t total_num_workers = 0;
 static pthread_mutex_t lock_numworkers;
+static pthread_cond_t cond_numworkers;
 static uint32_t min_idle_workers;
 static uint32_t max_idle_workers;
 
@@ -53,12 +55,21 @@ static uint32_t max_idle_workers;
  * terminates all the others will follow as soon as their
  * queue's empty out.
  */
-void signal_die(int) {
+static void signal_die(int) {
 	if(abacusd_running) {
 		abacusd_running = false;
 		pthread_kill(thread_peer_listener, SIGTERM);
-		pthread_kill(thread_worker_spawner, SIGUSR1);
 	}
+}
+
+/**
+ * Need this because we want to signal the socket_selector
+ * with SIGUSR1 to cause it to reload it's state, but at the
+ * same time we don't want to get nuked from existance, and
+ * setting to SIG_IGN causes the signal to be discarded and
+ * doesn't cause select(2) to return EINTR.
+ */
+static void signal_nothing(int) {
 }
 
 /**
@@ -73,6 +84,10 @@ static bool setup_signals() {
 	if(sigaction(SIGTERM, &action, NULL) < 0)
 		goto err;
 	if(sigaction(SIGINT, &action, NULL) < 0)
+		goto err;
+
+	action.sa_handler = signal_nothing;
+	if(sigaction(SIGUSR1, &action, NULL) < 0)
 		goto err;
 
 	setup_sigsegv();
@@ -228,6 +243,7 @@ void* worker_thread(void *) {
 	log(LOG_DEBUG, "Worker thread dying, %d left.", total_num_workers);
 	if(!total_num_workers)
 		pthread_kill(thread_worker_spawner, SIGUSR1);
+	pthread_cond_signal(&cond_numworkers);
 	pthread_mutex_unlock(&lock_numworkers);
 	return NULL;
 }
@@ -278,6 +294,9 @@ void* worker_spawner(void*) {
 		max_num_workers = 2 * max_idle_workers;
 	}
 
+	pthread_mutex_init(&lock_numworkers, NULL);
+	pthread_cond_init(&cond_numworkers, NULL);
+	
 	while(initial_workers--) {
 		pthread_t tmp;
 		if(pthread_create(&tmp, NULL, worker_thread, NULL) == 0)
@@ -291,14 +310,13 @@ void* worker_spawner(void*) {
 		lerror("sigaddset");
 	else if(pthread_sigmask(SIG_BLOCK, &sigset, NULL))
 		lerror("pthread_sigmask");
-	else while(abacusd_running) {
-		int signum;
-		sigwait(&sigset, &signum);
+	else while(true) {
+		pthread_mutex_lock(&lock_numworkers);
+		pthread_cond_wait(&cond_numworkers, &lock_numworkers);
 
 		if(!abacusd_running)
 			break;
-
-		pthread_mutex_lock(&lock_numworkers);
+		
 		uint32_t tospawn = min_idle_workers - num_idle_workers;
 		uint32_t max_create = max_num_workers - total_num_workers;
 		pthread_mutex_unlock(&lock_numworkers);
@@ -316,11 +334,37 @@ void* worker_spawner(void*) {
 	for(uint32_t i = 0; i < total_num_workers; i++)
 		wait_queue.enqueue(NULL);
 
-	while(total_num_workers) {
-		int signum;
-		sigwait(&sigset, &signum);
-	}
+	while(total_num_workers)
+		pthread_cond_wait(&cond_numworkers, &lock_numworkers);
+	pthread_mutex_unlock(&lock_numworkers);
 
+	pthread_cond_destroy(&cond_numworkers);
+	pthread_mutex_destroy(&lock_numworkers);
+
+	return NULL;
+}
+
+void* socket_selector(void*) {
+	while(abacusd_running) {
+		fd_set sockets;
+		int n = 0;
+		FD_ZERO(&sockets);
+
+		SocketPool::iterator i;
+		for(i = socket_pool.begin(); i != socket_pool.end(); ++i)
+			(*i)->addToSet(&n, &sockets);
+
+		if(select(n, &sockets, NULL, NULL, NULL) < 0) {
+			if(errno != EINTR)
+				lerror("select");
+		} else for(i = socket_pool.begin(); i != socket_pool.end(); ++i)
+			if((*i)->isInSet(&sockets)) {
+				Socket *s = *i;
+				socket_pool.erase(i);
+				wait_queue.enqueue(s);
+			}
+			
+	}
 	return NULL;
 }
 
@@ -355,14 +399,27 @@ int main(int argc, char ** argv) {
 	pthread_create(&thread_peer_listener, NULL, peer_listener, NULL);
 	pthread_create(&thread_message_handler, NULL, message_handler, NULL);
 	pthread_create(&thread_worker_spawner, NULL, worker_spawner, NULL);
+	pthread_create(&thread_socket_selector, NULL, socket_selector, NULL);
 
 	log(LOG_DEBUG, "abacusd is up and running.");
 
 	pthread_join(thread_peer_listener, NULL);
-	
+
+	/*
+	 * peer_listener gets killed with SIGTERM, at which point we
+	 * drop through the join() above, and now some of the threads
+	 * need some encouraging to commit suicide.
+	 */
+	pthread_kill(thread_socket_selector, SIGTERM);
 	message_queue.enqueue(NULL);
+	pthread_mutex_lock(&lock_numworkers);
+	pthread_cond_signal(&cond_numworkers);
+	pthread_mutex_unlock(&lock_numworkers);
+
+	// Now we can join() them too since they should die shortly.
 	pthread_join(thread_message_handler, NULL);
 	pthread_join(thread_worker_spawner, NULL);
+	pthread_join(thread_socket_selector, NULL);
 
 	log(LOG_INFO, "abacusd is shut down.");
 	return 0;

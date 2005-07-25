@@ -19,7 +19,7 @@ public:
 	 */
 	virtual bool process() = 0;
 
-	void addToSet(int &n, fd_set *set);
+	void addToSet(int *n, fd_set *set);
 	bool isInSet(fd_set *set);
 };
 
