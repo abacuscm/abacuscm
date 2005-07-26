@@ -226,7 +226,7 @@ void* worker_thread(void *) {
 		Socket *s = wait_queue.dequeue();
 		pthread_mutex_lock(&lock_numworkers);
 		if(--num_idle_workers < min_idle_workers)
-			pthread_kill(thread_worker_spawner, SIGUSR1);
+			pthread_cond_signal(&cond_numworkers);
 		if(!s)
 			break;
 		pthread_mutex_unlock(&lock_numworkers);
@@ -242,8 +242,7 @@ void* worker_thread(void *) {
 	total_num_workers--;
 	log(LOG_DEBUG, "Worker thread dying, %d left.", total_num_workers);
 	if(!total_num_workers)
-		pthread_kill(thread_worker_spawner, SIGUSR1);
-	pthread_cond_signal(&cond_numworkers);
+		pthread_cond_signal(&cond_numworkers);
 	pthread_mutex_unlock(&lock_numworkers);
 	return NULL;
 }
