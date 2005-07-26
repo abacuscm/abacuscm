@@ -79,6 +79,6 @@ void log(int priority, const char* format, ...) {
 
 void (*clog)(int priority, const char* format, ...) = log;
 
-void lerror(const char* prefix) {
-	log(LOG_ERR, "%s: %s", prefix, strerror(errno));
+void real_lerror(const char*fname, int line_num, const char* prefix) {
+	log(LOG_ERR, "%s (line %d): %s: %s", fname, line_num, prefix, strerror(errno));
 }

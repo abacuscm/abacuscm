@@ -6,7 +6,9 @@
 
 #ifdef __cplusplus
 void log(int priority, const char* format, ...) __attribute__ ((format (printf, 2, 3)));
-void lerror(const char* prefix);
+void real_lerror(const char* fname, int line_num, const char* prefix);
+
+#define lerror(x) real_lerror(__FILE__, __LINE__, x)
 
 #define NOT_IMPLEMENTED() log(LOG_DEBUG, "%s (%s:%d) not implemented.", __PRETTY_FUNCTION__, __FILE__, __LINE__)
 #else
