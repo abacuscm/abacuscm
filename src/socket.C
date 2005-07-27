@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include "socket.h"
 #include "logger.h"
 
@@ -6,6 +8,8 @@ Socket::Socket() {
 }
 
 Socket::~Socket() {
+	if(_sock > 0)
+		close(_sock);
 }
 
 void Socket::addToSet(int *n, fd_set *set) {

@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 
 #include "clientlistener.h"
+#include "clientconnection.h"
 #include "logger.h"
 
 ClientListener::ClientListener() {
@@ -55,6 +56,9 @@ bool ClientListener::process() {
 		lerror("accept");
 		return true;
 	}
+
+	ClientConnection *client = new ClientConnection(res);
+	_pool->insert(client);
 
 	log(LOG_INFO, "Accepted new connection from %s.", inet_ntoa(addr.sin_addr));
 	return true;

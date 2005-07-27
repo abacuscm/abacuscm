@@ -18,8 +18,9 @@ libabacus_objects = config \
 	message_createserver \
 	server \
 	socket \
-	clientlistener
-$(libabacus_name) : ldflags += -shared -ldl
+	clientlistener \
+	clientconnection
+$(libabacus_name) : ldflags += -shared -ldl -lssl
 
 abacusd_name = bin/abacusd
 abacusd_objects = abacusd \

@@ -16,6 +16,7 @@
 #include "dbcon.h"
 #include "socket.h"
 #include "clientlistener.h"
+#include "clientconnection.h"
 
 #define DEFAULT_MIN_IDLE_WORKERS		5
 #define DEFAULT_MAX_IDLE_WORKERS		10
@@ -151,6 +152,9 @@ static bool initialise() {
 	} else {
 		log(LOG_INFO, "Contest already initialised, resuming.");
 	}
+
+	if(!ClientConnection::init())
+		return false;
 
 	ClientListener *cl = new ClientListener();
 	if(!cl->init(&socket_pool)) {
