@@ -326,7 +326,7 @@ void* worker_spawner(void*) {
 		if(max_create < tospawn)
 			tospawn = max_create;
 
-		while(tospawn) {
+		while(tospawn--) {
 			pthread_t tmp;
 			if(pthread_create(&tmp, NULL, worker_thread, NULL) == 0)
 				pthread_detach(tmp);
