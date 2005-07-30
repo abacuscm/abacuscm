@@ -11,6 +11,8 @@
 #define USER_TYPE_PARTICIPANT	3
 #define USER_TYPE_MARKER		4
 
+#define CLIENT_BFR_SIZE			512
+
 class ClientConnection : public Socket {
 private:
 	static SSL_METHOD *_method;
@@ -19,6 +21,7 @@ private:
 	SSL *_ssl;
 
 	bool initiate_ssl();
+	bool process_data();
 public:
 	ClientConnection(int sockfd);
 	virtual ~ClientConnection();

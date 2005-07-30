@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
 
 #include "clientlistener.h"
 #include "clientconnection.h"
@@ -40,6 +41,11 @@ bool ClientListener::init(SocketPool *pool) {
 
 	sockfd() = sock;
 
+	if(fcntl(sock, F_SETFL, O_NONBLOCK) < 0) {
+		lerror("fcntl");
+		log(LOG_INFO, "Continueing anyway ...");
+	}
+
 	_pool = pool;
 	return true;
 
@@ -55,6 +61,11 @@ bool ClientListener::process() {
 	if(res < 0) {
 		lerror("accept");
 		return true;
+	}
+
+	if(fcntl(res, F_SETFL, O_NONBLOCK) < 0) {
+		lerror("fcntl");
+		log(LOG_INFO, "Continueing anyway ...");
 	}
 
 	ClientConnection *client = new ClientConnection(res);

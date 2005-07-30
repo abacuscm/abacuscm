@@ -21,20 +21,28 @@ ClientConnection::~ClientConnection() {
 }
 
 bool ClientConnection::initiate_ssl() {
-	_ssl = SSL_new(_context);
 	if(!_ssl) {
-		log_ssl_errors("SSL_new");
-		goto err;
-	}
+		_ssl = SSL_new(_context);
+		if(!_ssl) {
+			log_ssl_errors("SSL_new");
+			goto err;
+		}
 
-	if(!SSL_set_fd(_ssl, sockfd()) < 0) {
-		log_ssl_errors("SSL_set_fd");
-		goto err;
+		if(!SSL_set_fd(_ssl, sockfd()) < 0) {
+			log_ssl_errors("SSL_set_fd");
+			goto err;
+		}
 	}
 	
-	if(SSL_accept(_ssl) <= 0) {
-		log_ssl_errors("SSL_accept");
-		goto err;
+	int ssl_err = SSL_get_error(_ssl, SSL_accept(_ssl));
+	switch(ssl_err) {
+		case SSL_ERROR_NONE:
+		case SSL_ERROR_WANT_READ:
+		case SSL_ERROR_WANT_WRITE:
+			break;
+		default:
+			log_ssl_errors("SSL_accept");
+			goto err;
 	}
 
 	return true;
@@ -48,11 +56,33 @@ err:
 		
 }
 
+bool ClientConnection::process_data() {
+	char buffer[CLIENT_BFR_SIZE + 1];
+	int res;
+	while(0 < (res = SSL_read(_ssl, buffer, CLIENT_BFR_SIZE))) {
+		log(LOG_DEBUG, "Received %d bytes.", res);
+	}
+
+	switch(SSL_get_error(_ssl, res)) {
+		case SSL_ERROR_NONE:
+		case SSL_ERROR_WANT_READ:
+		case SSL_ERROR_WANT_WRITE:
+			return true;
+		case SSL_ERROR_ZERO_RETURN:
+			// clean shut down.
+			return false;
+		default:
+			log_ssl_errors("SSL_read");
+			return false;
+	}
+}
+
 bool ClientConnection::process() {
-	if(!_ssl)
+	if(!_ssl || !SSL_is_init_finished(_ssl))
 		return initiate_ssl();
+	else
+		return process_data();
 	
-	NOT_IMPLEMENTED();
 	return false;
 }
 
@@ -104,6 +134,8 @@ bool ClientConnection::init() {
 		goto err;
 	}
 
+	SSL_CTX_set_options(_context, SSL_OP_NO_SSLv2 | SSL_OP_SINGLE_DH_USE);
+	
 	return true;
 err:
 	if(_context) {
