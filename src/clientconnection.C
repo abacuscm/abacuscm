@@ -4,6 +4,7 @@
 #include "clientconnection.h"
 #include "logger.h"
 #include "config.h"
+#include "messageblock.h"
 
 SSL_METHOD *ClientConnection::_method = NULL;
 SSL_CTX *ClientConnection::_context = NULL;
@@ -11,10 +12,12 @@ SSL_CTX *ClientConnection::_context = NULL;
 ClientConnection::ClientConnection(int sock) {
 	sockfd() = sock;
 	_ssl = NULL;
+	_message = NULL;
 }
 
 ClientConnection::~ClientConnection() {
 	if(_ssl) {
+		log(LOG_DEBUG, "Shutting down connection");
 		SSL_shutdown(_ssl);
 		SSL_free(_ssl);
 	}
@@ -34,8 +37,7 @@ bool ClientConnection::initiate_ssl() {
 		}
 	}
 	
-	int ssl_err = SSL_get_error(_ssl, SSL_accept(_ssl));
-	switch(ssl_err) {
+	switch(SSL_get_error(_ssl, SSL_accept(_ssl))) {
 		case SSL_ERROR_NONE:
 		case SSL_ERROR_WANT_READ:
 		case SSL_ERROR_WANT_WRITE:
@@ -57,10 +59,27 @@ err:
 }
 
 bool ClientConnection::process_data() {
-	char buffer[CLIENT_BFR_SIZE + 1];
+	char buffer[CLIENT_BFR_SIZE];
 	int res;
 	while(0 < (res = SSL_read(_ssl, buffer, CLIENT_BFR_SIZE))) {
-		log(LOG_DEBUG, "Received %d bytes.", res);
+		char *pos = buffer;
+		while(res) {
+			if(!_message)
+				_message = new MessageBlock;
+
+			int res2 = _message->addBytes(pos, res);
+			log(LOG_DEBUG, "addBytes() returned %d", res2);
+			if(res2 < 0)
+				return false;
+			if(res2 > 0) {
+				_message->dump();
+				delete _message;
+				_message = NULL;
+				pos += res2;
+				res -= res2;
+			} else
+				res = 0;
+		}
 	}
 
 	switch(SSL_get_error(_ssl, res)) {

@@ -1,7 +1,7 @@
 cc=g++
-cflags=-g -ggdb -O2 -Iinclude -W -Wall -fpic
+cflags=-g -ggdb -O0 -Iinclude -W -Wall -fpic
 dflags=-Iinclude
-ldflags=-rdynamic -g -ggdb -O2 -Llib
+ldflags=-rdynamic -g -ggdb -O0 -Llib
 name=netsniff
 
 .PHONY: default
@@ -19,7 +19,8 @@ libabacus_objects = config \
 	server \
 	socket \
 	clientlistener \
-	clientconnection
+	clientconnection \
+	messageblock
 $(libabacus_name) : ldflags += -shared -ldl -lssl
 
 abacusd_name = bin/abacusd

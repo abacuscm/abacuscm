@@ -13,12 +13,16 @@
 
 #define CLIENT_BFR_SIZE			512
 
+class MessageBlock;
+
 class ClientConnection : public Socket {
 private:
 	static SSL_METHOD *_method;
 	static SSL_CTX *_context;
 
 	SSL *_ssl;
+
+	MessageBlock *_message;
 
 	bool initiate_ssl();
 	bool process_data();
