@@ -12,6 +12,8 @@
 #include "queue.h"
 #include "message.h"
 #include "message_createserver.h"
+#include "message_createuser.h"
+#include "server.h"
 #include "sigsegv.h"
 #include "dbcon.h"
 #include "socket.h"
@@ -142,10 +144,13 @@ static bool initialise() {
 		ConfigSection::const_iterator i;
 		for(i = config["init_attribs"].begin(); i != config["init_attribs"].end(); ++i)
 			init->addAttribute(i->first, i->second);
+
+		Message_CreateUser *admin = new Message_CreateUser("admin", "changeit!", 1, USER_ADMIN);
 		
-		if(init->makeMessage())
+		if(init->makeMessage() && admin->makeMessage()) {
 			message_queue.enqueue(init);
-		else {
+			message_queue.enqueue(admin);
+		} else {
 			delete init;
 			return false;
 		}

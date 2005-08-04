@@ -29,7 +29,10 @@ public:
 	virtual bool putRemoteMessage(const Message*);
 	virtual bool markProcessed(uint32_t server_id, uint32_t message_id);
 	virtual bool addServer(const string& name, uint32_t id);
-	
+	virtual bool addUser(const std::string& name, const std::string& pass, uint32_t id, uint32_t type);
+	virtual uint32_t maxServerId();
+	virtual uint32_t maxUserId();
+
 	bool init();
 };
 
@@ -212,7 +215,7 @@ bool MySQL::markProcessed(uint32_t server_id, uint32_t message_id) {
 bool MySQL::addServer(const string& name, uint32_t id) {
 	ostringstream query;
 
-	query << "INSERT INTO Server(server_id, server_name) VALUES (" << id << ", '" << escape_string(name) << "')";
+	query << "INSERT INTO Server (server_id, server_name) VALUES (" << id << ", '" << escape_string(name) << "')";
 
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();
@@ -220,6 +223,42 @@ bool MySQL::addServer(const string& name, uint32_t id) {
 	}
 
 	return true;
+}
+	
+bool MySQL::addUser(const std::string& name, const std::string& pass, uint32_t id, uint32_t type) {
+	ostringstream query;
+
+	query << "INSERT INTO User (user_id, username, password, type) VALUES (" << id << ", '" << escape_string(name) << "', MD5('" << escape_string(name) << escape_string(pass) << "'), " << type << ")";
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	}
+
+	return true;
+}
+
+uint32_t MySQL::maxServerId() {
+	uint32_t max_server_id = ~0U;
+	if(mysql_query(&_mysql, "SELECT MAX(server_id) FROM Server")) {
+		log_mysql_error();
+		return ~0U;
+	}
+
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if(res) {
+		MYSQL_ROW row = mysql_fetch_row(res);
+		if(row && row[0])
+			max_server_id = atol(row[0]);
+	}
+	mysql_free_result(res);	
+	
+	return max_server_id;
+}
+
+uint32_t MySQL::maxUserId() {
+	NOT_IMPLEMENTED();
+	return ~0U;
 }
 
 bool MySQL::init() {

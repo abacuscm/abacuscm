@@ -55,7 +55,24 @@ public:
 	 * Used to add a new server to the system.
 	 */
 	virtual bool addServer(const std::string& name, uint32_t id) = 0;
+
+	/**
+	 * Used to add a new user to the system.
+	 */
+	virtual bool addUser(const std::string& name, const std::string& pass, uint32_t id, uint32_t type) = 0;
 	
+	/**
+	 * Used to retrieve the current maximum server_id.
+	 */
+	virtual uint32_t maxServerId() = 0;
+
+	/**
+	 * Used to retrieve the max local user_id that is in use.
+	 * This id needs to be either 0 or fall into
+	 * Server::getId() + n * ID_GRANULARITY, with n a positive integer.
+	 */
+	virtual uint32_t maxUserId() = 0;
+
 	/**
 	 * Functions to register a DbCon functor (function to create DbCons),
 	 * get a DbCon and to release one.  This allows for connection pooling

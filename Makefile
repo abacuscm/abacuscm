@@ -16,6 +16,7 @@ libabacus_objects = config \
 	message \
 	dbcon \
 	message_createserver \
+	message_createuser \
 	server \
 	socket \
 	clientlistener \
