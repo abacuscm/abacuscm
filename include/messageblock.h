@@ -29,6 +29,8 @@ public:
 	std::string& operator[] (const std::string& name)
 		{ return _headers[name]; };
 
+	std::string& action() { return _message; }
+
 	int content_size() const { return _content_length; };
 	const char* content() const { return _content; };
 	char operator[] (int c) const { return _content[c]; };
