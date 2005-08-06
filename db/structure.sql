@@ -55,3 +55,14 @@ CREATE TABLE ServerAttributes (
   PRIMARY KEY  (server_id,attribute)
 ) TYPE=MyISAM;
 
+--
+-- Table structure for table `User`
+--
+
+CREATE TABLE User (
+  user_id int(11) NOT NULL default '0',
+  username varchar(16) default NULL,
+  password varchar(32) default NULL,
+  type int(11) NOT NULL default '0'
+) TYPE=MyISAM;
+
