@@ -5,6 +5,7 @@
 #include "logger.h"
 #include "config.h"
 #include "messageblock.h"
+#include "clientaction.h"
 
 SSL_METHOD *ClientConnection::_method = NULL;
 SSL_CTX *ClientConnection::_context = NULL;
@@ -16,6 +17,9 @@ ClientConnection::ClientConnection(int sock) {
 }
 
 ClientConnection::~ClientConnection() {
+	if(_message)
+		delete _message;
+	
 	if(_ssl) {
 		log(LOG_DEBUG, "Shutting down connection");
 		SSL_shutdown(_ssl);
@@ -72,7 +76,10 @@ bool ClientConnection::process_data() {
 			if(res2 < 0)
 				return false;
 			if(res2 > 0) {
-				_message->dump();
+				if(!ClientAction::process(this, _message)) {
+					_message->dump();
+					return false;
+				}
 				delete _message;
 				_message = NULL;
 				pos += res2;
