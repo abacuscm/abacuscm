@@ -12,7 +12,6 @@ private:
 	static std::map<int, std::map<std::string, ClientAction*> > actionmap;
 protected:
 	virtual bool int_process(ClientConnection *cc, MessageBlock *mb) = 0;
-	virtual std::string getActionString() const = 0;
 public:
 	ClientAction();
 	virtual ~ClientAction();
