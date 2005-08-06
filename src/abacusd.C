@@ -112,7 +112,10 @@ static bool load_modules() {
 	
 	if(!ModuleLoader::loadModule(config["modules"]["dbconnector"]))
 		return false;
-	
+
+	if(!ModuleLoader::loadModuleSet("act", config["modules"]["actions"]))
+		return false;
+
 	return true;
 }
 
