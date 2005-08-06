@@ -26,7 +26,7 @@ bool ClientAction::process(ClientConnection *cc, MessageBlock *mb) {
 
 	ClientAction* ca = actionmap[user_type][action];
 	if(ca)
-		return ca->process(cc, mb);
+		return ca->int_process(cc, mb);
 	else {
 		log(LOG_NOTICE, "Unknown action '%s' encountered on ClientConnection for user %d of type %d.", action.c_str(), -1, user_type);
 		return false;
