@@ -31,7 +31,9 @@ abacusd_objects = abacusd \
 $(abacusd_name) : ldflags += -labacus -lpthread
 $(abacusd_name) : $(libabacus_name)
 
-modules = udpmessenger dbmysql
+modules = udpmessenger \
+	dbmysql \
+	act_auth
 modules_d = $(foreach mod,$(modules),modules/mod_$(mod).so)
 $(modules_d) : ldflags += -shared -labacus
 
