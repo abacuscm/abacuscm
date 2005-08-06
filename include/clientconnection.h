@@ -5,7 +5,7 @@
 
 #include "socket.h"
 
-#define USER_TYPE_NONE			(-1)
+#define USER_TYPE_NONE			0
 #define USER_TYPE_ADMIN			1
 #define USER_TYPE_JUDGE			2
 #define USER_TYPE_PARTICIPANT	3
