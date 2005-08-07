@@ -2,6 +2,7 @@
 #define __CLIENTCONNECTION_H__
 
 #include <openssl/ssl.h>
+#include <string>
 
 #include "socket.h"
 
@@ -33,6 +34,9 @@ public:
 	virtual bool process();
 
 	int getUserType();
+	void sendError(const std::string& message);
+	void reportSuccess();
+	void sendMessageBlock(MessageBlock *mb);
 
 	static bool init();
 };

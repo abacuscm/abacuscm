@@ -74,6 +74,17 @@ public:
 	virtual uint32_t maxUserId() = 0;
 
 	/**
+	 * Used to authenticate a user.  Return values should be as follows:
+	 * <0	Error
+	 * 0	Authentication failed
+	 * >0	Authentication succeeded.
+	 * On success the user_id and user_type should be stored in the
+	 * appropriate variables, iff the pointers are non-null.
+	 */
+	virtual int authenticate(const std::string& uname, const std::string& pass,
+			uint32_t *user_id, uint32_t *user_type) = 0;
+	
+	/**
 	 * Functions to register a DbCon functor (function to create DbCons),
 	 * get a DbCon and to release one.  This allows for connection pooling
 	 * and re-use.  I don't think I'm going to kill them, there should only

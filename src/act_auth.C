@@ -2,6 +2,7 @@
 #include "clientconnection.h"
 #include "messageblock.h"
 #include "logger.h"
+#include "dbcon.h"
 
 class ActAuth : public ClientAction {
 protected:
@@ -9,9 +10,26 @@ protected:
 };
 
 bool ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
-	log(LOG_DEBUG, "Attempt from user '%s' to log in with password '%s'.",
-			(*mb)["user"].c_str(), (*mb)["pass"].c_str());
-	return true;
+	DbCon *db = DbCon::getInstance();
+	if(!db) {
+		cc->sendError("Unable to connect to database.");
+		return false;
+	}
+
+	uint32_t user_id;
+	uint32_t user_type;
+	int result = db->authenticate((*mb)["user"], (*mb)["pass"], &user_id, &user_type);
+	db->release();
+	
+	if(result < 0)
+		cc->sendError("Database error.");
+	else if(result == 0)
+		cc->sendError("Authentication failed.  Invalid username and/or password.");
+	else {
+		log(LOG_INFO, "User '%s' successfully logged in.", (*mb)["user"].c_str());
+		cc->reportSuccess();
+	}
+	return result > 0;
 }
 
 static ActAuth _act_auth;

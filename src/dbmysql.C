@@ -30,6 +30,7 @@ public:
 	virtual bool markProcessed(uint32_t server_id, uint32_t message_id);
 	virtual bool addServer(const string& name, uint32_t id);
 	virtual bool addUser(const std::string& name, const std::string& pass, uint32_t id, uint32_t type);
+	virtual int authenticate(const std::string& uname, const std::string& pass, uint32_t *user_id, uint32_t *user_type);
 	virtual uint32_t maxServerId();
 	virtual uint32_t maxUserId();
 
@@ -236,6 +237,41 @@ bool MySQL::addUser(const std::string& name, const std::string& pass, uint32_t i
 	}
 
 	return true;
+}
+	
+int MySQL::authenticate(const std::string& uname, const std::string& pass, uint32_t *user_id, uint32_t *user_type) {
+	ostringstream query;
+
+	query << "SELECT user_id, type FROM User WHERE username='" << escape_string(uname) << "' AND password=MD5('" << escape_string(uname) << escape_string(pass) << "')";
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return -1;
+	}
+	
+	int ret = -1;
+	MYSQL_RES *res = mysql_store_result(&_mysql);
+	if(res) {
+		ret = 0;
+		MYSQL_ROW row = mysql_fetch_row(res);
+		if(row) {
+			ret = 1;
+
+			if(row[0]) {
+				if(user_id)
+					*user_id = atol(row[0]);
+			} else
+				ret = -1;
+			
+			if(row[1]) {
+				if(user_type)
+					*user_type = atol(row[1]);
+			} else
+				ret = -1;
+		}	
+		mysql_free_result(res);
+	}
+	return ret;
 }
 
 uint32_t MySQL::maxServerId() {

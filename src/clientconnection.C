@@ -116,6 +116,16 @@ int ClientConnection::getUserType() {
 	return USER_TYPE_NONE;
 }
 
+void ClientConnection::sendError(const std::string& message) {
+	SSL_write(_ssl, "err\nmsg:", 8);
+	SSL_write(_ssl, message.c_str(), message.length());
+	SSL_write(_ssl, "\n\n", 2);
+}
+
+void ClientConnection::reportSuccess() {
+	SSL_write(_ssl, "ok\n\n", 4);
+}
+
 bool ClientConnection::init() {
 	Config& config = Config::getConfig();
 
