@@ -175,8 +175,6 @@ bool MySQL::putLocalMessage(Message* message) {
 	message_id++;
 	message->setMessageId(message_id);
 
-	log(LOG_DEBUG, "Using message_id %d", message_id);
-
 	query.str("");
 
 	query << "INSERT INTO PeerMessage(server_id, message_id, message_type_id,"
