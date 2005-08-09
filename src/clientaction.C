@@ -23,12 +23,14 @@ bool ClientAction::registerAction(int user_type, std::string action, ClientActio
 
 bool ClientAction::triggerMessage(ClientConnection *cc, Message *mb) {
 	if(mb->makeMessage()) {
-		if(mb->process())
+		if(mb->process()) {
 			cc->reportSuccess();
-		else
+			return true;
+		} else
 			cc->sendError("Error processing resulting server message. This is indicative of a bug.");
 	} else
 		cc->sendError("Internal error creating message.  This is indicative of a bug.");
+	return false;
 }
 
 bool ClientAction::process(ClientConnection *cc, MessageBlock *mb) {
