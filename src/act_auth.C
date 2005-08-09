@@ -27,6 +27,8 @@ bool ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
 		cc->sendError("Authentication failed.  Invalid username and/or password.");
 	else {
 		log(LOG_INFO, "User '%s' successfully logged in.", (*mb)["user"].c_str());
+		cc->setProperty("user_id", user_id);
+		cc->setProperty("user_type", user_type);
 		cc->reportSuccess();
 	}
 	return result > 0;
