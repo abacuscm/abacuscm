@@ -83,6 +83,13 @@ public:
 	 */
 	virtual int authenticate(const std::string& uname, const std::string& pass,
 			uint32_t *user_id, uint32_t *user_type) = 0;
+
+	/**
+	 * Used to update a users password.  There may be sequence problems with
+	 * this - but considering that a user will only ever connect to oen server
+	 * this should not ever be a problem.
+	 */
+	virtual bool setPassword(uint32_t user_id, const std::string& newpass) = 0;
 	
 	/**
 	 * Functions to register a DbCon functor (function to create DbCons),

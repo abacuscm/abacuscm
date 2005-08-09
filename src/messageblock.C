@@ -56,7 +56,6 @@ void MessageBlock::dump() const {
 }
 
 int MessageBlock::addBytes(const char* bytes, int count) {
-	log(LOG_DEBUG, "Adding %d bytes of data", count);
 	if(_content_pos) { // We are busy collecting content.
 		int bytesleft = _content_length - (_content_pos - _content);
 		int to_copy = count < bytesleft ? count : bytesleft;
@@ -98,7 +97,6 @@ int MessageBlock::addBytes(const char* bytes, int count) {
 				bytes += nl_pos + 1;
 				count -= nl_pos + 1;
 
-				log(LOG_DEBUG, "Found line: \"%s\"", line.c_str());
 				if(_message == "")
 					_message = line;
 				else if(line == "") {

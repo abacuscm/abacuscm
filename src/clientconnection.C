@@ -72,7 +72,6 @@ bool ClientConnection::process_data() {
 				_message = new MessageBlock;
 
 			int res2 = _message->addBytes(pos, res);
-			log(LOG_DEBUG, "addBytes() returned %d", res2);
 			if(res2 < 0)
 				return false;
 			if(res2 > 0) {

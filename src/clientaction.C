@@ -1,6 +1,7 @@
 #include "clientaction.h"
 #include "clientconnection.h"
 #include "messageblock.h"
+#include "message.h"
 #include "logger.h"
 
 std::map<int, std::map<std::string, ClientAction*> > ClientAction::actionmap;
@@ -18,6 +19,16 @@ bool ClientAction::registerAction(int user_type, std::string action, ClientActio
 
 	actionmap[user_type][action] = ca;
 	return true;
+}
+
+bool ClientAction::triggerMessage(ClientConnection *cc, Message *mb) {
+	if(mb->makeMessage()) {
+		if(mb->process())
+			cc->reportSuccess();
+		else
+			cc->sendError("Error processing resulting server message. This is indicative of a bug.");
+	} else
+		cc->sendError("Internal error creating message.  This is indicative of a bug.");
 }
 
 bool ClientAction::process(ClientConnection *cc, MessageBlock *mb) {

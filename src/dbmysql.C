@@ -31,6 +31,7 @@ public:
 	virtual bool addServer(const string& name, uint32_t id);
 	virtual bool addUser(const std::string& name, const std::string& pass, uint32_t id, uint32_t type);
 	virtual int authenticate(const std::string& uname, const std::string& pass, uint32_t *user_id, uint32_t *user_type);
+	virtual bool setPassword(uint32_t user_id, const std::string& newpass);
 	virtual uint32_t maxServerId();
 	virtual uint32_t maxUserId();
 
@@ -270,6 +271,17 @@ int MySQL::authenticate(const std::string& uname, const std::string& pass, uint3
 		mysql_free_result(res);
 	}
 	return ret;
+}
+
+bool MySQL::setPassword(uint32_t user_id, const std::string& newpass) {
+	ostringstream query;
+	query << "UPDATE User SET password=MD5(CONCAT(username, '" <<
+		escape_string(newpass) << "')) WHERE user_id=" << user_id;
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	}
+	return true;
 }
 
 uint32_t MySQL::maxServerId() {
