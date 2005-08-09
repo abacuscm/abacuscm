@@ -1,6 +1,7 @@
 #ifndef __CLIENTCONNECTION_H__
 #define __CLIENTCONNECTION_H__
 
+#include <stdint.h>
 #include <openssl/ssl.h>
 #include <string>
 #include <map>
