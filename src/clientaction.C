@@ -21,7 +21,7 @@ bool ClientAction::registerAction(int user_type, std::string action, ClientActio
 }
 
 bool ClientAction::process(ClientConnection *cc, MessageBlock *mb) {
-	int user_type = cc->getUserType();
+	int user_type = cc->getProperty("user_type");
 	std::string action = mb->action();
 
 	ClientAction* ca = actionmap[user_type][action];

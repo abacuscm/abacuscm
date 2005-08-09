@@ -3,6 +3,7 @@
 
 #include <openssl/ssl.h>
 #include <string>
+#include <map>
 
 #include "socket.h"
 
@@ -24,6 +25,7 @@ private:
 	SSL *_ssl;
 
 	MessageBlock *_message;
+	std::map<std::string, uint32_t> _props;
 
 	bool initiate_ssl();
 	bool process_data();
@@ -33,11 +35,14 @@ public:
 
 	virtual bool process();
 
-	int getUserType();
 	void sendError(const std::string& message);
 	void reportSuccess();
 	void sendMessageBlock(MessageBlock *mb);
 
+	uint32_t setProperty(const std::string& prop, uint32_t value);
+	uint32_t getProperty(const std::string& prop); // const ... (fails)
+	uint32_t delProperty(const std::string& prop);
+	
 	static bool init();
 };
 

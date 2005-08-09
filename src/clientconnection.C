@@ -112,10 +112,6 @@ bool ClientConnection::process() {
 	return false;
 }
 
-int ClientConnection::getUserType() {
-	return USER_TYPE_NONE;
-}
-
 void ClientConnection::sendError(const std::string& message) {
 	SSL_write(_ssl, "err\nmsg:", 8);
 	SSL_write(_ssl, message.c_str(), message.length());
@@ -181,4 +177,21 @@ err:
 	if(_method)
 		_method = NULL;
 	return false;
+}
+	
+uint32_t ClientConnection::setProperty(const std::string& prop, uint32_t val) {
+	uint32_t oldval = _props[prop];
+	_props[prop] = val;
+	return oldval;
+}
+
+uint32_t ClientConnection::getProperty(const std::string& prop) {
+	return _props[prop];
+}
+
+uint32_t ClientConnection::delProperty(const std::string& prop) {
+	NOT_IMPLEMENTED();
+	uint32_t oldval = _props[prop];
+	_props[prop] = 0;
+	return oldval;
 }
