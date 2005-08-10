@@ -39,13 +39,13 @@ private:
 	static EventRegister _instance;
 public:
 	void registerClient(ClientConnection *cc);
-	void registerClient(std::string eventname, ClientConnection *cc);
+	bool registerClient(std::string eventname, ClientConnection *cc);
 	void deregisterClient(ClientConnection *cc);
 	void deregisterClient(std::string eventname, ClientConnection *cc);
 	
 	void registerEvent(std::string eventname);
-	void triggerEvent(std::string eventname, MessageBlock *mb);
-	void sendMessage(uint32_t user_id, MessageBlock *mb);
+	void triggerEvent(std::string eventname, const MessageBlock *mb);
+	void sendMessage(uint32_t user_id, const MessageBlock *mb);
 	
 	static EventRegister& getInstance();
 };
