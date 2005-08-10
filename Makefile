@@ -22,6 +22,7 @@ libabacus_objects = config \
 	clientlistener \
 	clientconnection \
 	clientaction \
+	eventregister \
 	messageblock
 $(libabacus_name) : ldflags += -shared -ldl -lssl
 
