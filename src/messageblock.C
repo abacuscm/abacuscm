@@ -1,9 +1,12 @@
 #include "messageblock.h"
 #include "logger.h"
 
+#include <sys/poll.h>
+#include <sstream>
+
 using namespace std;
 
-MessageBlock::MessageBlock(string& message) {
+MessageBlock::MessageBlock(const string& message) {
 	_message = message;
 	_content_length = 0;
 	_content = NULL;
@@ -127,4 +130,63 @@ int MessageBlock::addBytes(const char* bytes, int count) {
 	}
 
 	return -1;
+}
+
+bool MessageBlock::writeBlockToSSL(const char *buffer, int length, SSL *ssl) const {
+	while(length) {
+		int res = SSL_write(ssl, buffer, length);
+		if(res > 0) {
+			
+		} else {
+			struct pollfd sslfd;
+			sslfd.fd = SSL_get_fd(ssl);
+			sslfd.events = 0;
+			sslfd.revents = 0;
+			switch(SSL_get_error(ssl, res)) {
+			case SSL_ERROR_NONE:
+				log(LOG_DEBUG, "Not supposed to get here! (%s:%d)", __FILE__,
+						__LINE__);
+				break;
+			case SSL_ERROR_WANT_READ:
+				log(LOG_DEBUG, "Eek, we are blocking on a read in %s "
+						"(%s:%d) where we are trying to send data out!",
+						__PRETTY_FUNCTION__, __FILE__, __LINE__);
+				sslfd.events |= POLLOUT;
+				break;
+			case SSL_ERROR_WANT_WRITE:
+				sslfd.events |= POLLIN;
+				break;
+			default:
+				log_ssl_errors("SSL_write");
+				return false;
+			}
+			if(!sslfd.events)
+				break;
+			if(poll(&sslfd, 1, 0) < 0) {
+				lerror("poll");
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+bool MessageBlock::writeToSSL(SSL* ssl) const {
+	ostringstream init_block;
+	init_block << "\n\n" << _message << '\n';
+	for(MessageHeaders::const_iterator i = _headers.begin(); i != _headers.end(); ++i)
+		init_block << i->first << ':' << i->second << '\n';
+	init_block << '\n';
+
+	string headerblock = init_block.str();
+	int length = headerblock.length();
+	const char *buffer = headerblock.c_str();
+
+	if(!writeBlockToSSL(buffer, length, ssl))
+		return false;
+
+	if(_content)
+		return writeBlockToSSL(_content, _content_length, ssl);
+
+	return true;
 }

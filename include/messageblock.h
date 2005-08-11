@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include <openssl/ssl.h>
 
 typedef std::map<std::string, std::string> MessageHeaders;
 
@@ -13,8 +14,10 @@ private:
 	int _content_length;
 	char *_content;
 	char *_content_pos;
+
+	bool writeBlockToSSL(const char *buffer, int length, SSL *ssl) const;
 public:
-	MessageBlock(std::string& message);
+	MessageBlock(const std::string& message);
 	MessageBlock();
 	~MessageBlock();
 
@@ -49,6 +52,17 @@ public:
 	 */
 	int addBytes(const char* bytes, int count);
 	
+	/**
+	 * Writes the MessageBlock to an SSL connection.  The caller
+	 * is responsible for ensuring that we have a lock on the ssl
+	 * connection - ie: no other thread may also be writing to
+	 * this ssl connection.
+	 */
+	bool writeToSSL(SSL* ssl) const;
+
+	/**
+	 * Dumps the MB to log() with LOG_DEBUG
+	 */
 	void dump() const;
 };
 

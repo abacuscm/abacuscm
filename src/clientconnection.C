@@ -14,6 +14,7 @@ ClientConnection::ClientConnection(int sock) {
 	sockfd() = sock;
 	_ssl = NULL;
 	_message = NULL;
+	pthread_mutex_init(&_write_lock, NULL);
 }
 
 ClientConnection::~ClientConnection() {
@@ -25,6 +26,8 @@ ClientConnection::~ClientConnection() {
 		SSL_shutdown(_ssl);
 		SSL_free(_ssl);
 	}
+
+	pthread_mutex_destroy(&_write_lock);
 }
 
 bool ClientConnection::initiate_ssl() {
@@ -112,13 +115,22 @@ bool ClientConnection::process() {
 }
 
 void ClientConnection::sendError(const std::string& message) {
-	SSL_write(_ssl, "err\nmsg:", 8);
-	SSL_write(_ssl, message.c_str(), message.length());
-	SSL_write(_ssl, "\n\n", 2);
+	MessageBlock mb("err");
+	mb["msg"] = message;
+	sendMessageBlock(&mb);
 }
 
 void ClientConnection::reportSuccess() {
-	SSL_write(_ssl, "ok\n\n", 4);
+	MessageBlock mb("ok");
+	sendMessageBlock(&mb);
+}
+
+void ClientConnection::sendMessageBlock(const MessageBlock *mb) {
+	pthread_mutex_lock(&_write_lock);
+	bool res = mb->writeToSSL(_ssl);
+	pthread_mutex_unlock(&_write_lock);
+	if(!res)
+		log(LOG_NOTICE, "Failed to write MessageBlock to client - not sure what this means though");
 }
 
 bool ClientConnection::init() {

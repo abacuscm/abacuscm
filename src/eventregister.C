@@ -80,9 +80,8 @@ void EventRegister::triggerEvent(string eventname, const MessageBlock *mb) {
 void EventRegister::sendMessage(uint32_t user_id, const MessageBlock *mb) {
 	pthread_mutex_lock(&_lock);
 	ClientConnection *cc = _clients[user_id];
-	if(cc) {
-		NOT_IMPLEMENTED();
-	}
+	if(cc)
+		cc->sendMessageBlock(mb);
 	pthread_mutex_unlock(&_lock);
 }
 
@@ -99,7 +98,11 @@ EventRegister::Event::~Event() {
 }
 
 void EventRegister::Event::triggerEvent(const MessageBlock *mb) {
-	NOT_IMPLEMENTED();
+	pthread_mutex_lock(&_lock);
+	ClientConnectionPool::iterator i;
+	for(i = _clients.begin(); i != _clients.end(); ++i)
+		(*i)->sendMessageBlock(mb);
+	pthread_mutex_unlock(&_lock);
 }
 
 void EventRegister::Event::registerClient(ClientConnection *cc) {

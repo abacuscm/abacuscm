@@ -5,6 +5,7 @@
 #include <openssl/ssl.h>
 #include <string>
 #include <map>
+#include <pthread.h>
 
 #include "socket.h"
 
@@ -28,6 +29,8 @@ private:
 	MessageBlock *_message;
 	std::map<std::string, uint32_t> _props;
 
+	pthread_mutex_t _write_lock;
+
 	bool initiate_ssl();
 	bool process_data();
 public:
@@ -38,7 +41,7 @@ public:
 
 	void sendError(const std::string& message);
 	void reportSuccess();
-	void sendMessageBlock(MessageBlock *mb);
+	void sendMessageBlock(const MessageBlock *mb);
 
 	uint32_t setProperty(const std::string& prop, uint32_t value);
 	uint32_t getProperty(const std::string& prop); // const ... (fails)
