@@ -34,14 +34,15 @@ bool ClientAction::triggerMessage(ClientConnection *cc, Message *mb) {
 }
 
 bool ClientAction::process(ClientConnection *cc, MessageBlock *mb) {
-	int user_type = cc->getProperty("user_type");
+	uint32_t user_type = cc->getProperty("user_type");
 	std::string action = mb->action();
 
 	ClientAction* ca = actionmap[user_type][action];
 	if(ca)
 		return ca->int_process(cc, mb);
 	else {
-		log(LOG_NOTICE, "Unknown action '%s' encountered on ClientConnection for user %d of type %d.", action.c_str(), -1, user_type);
+		uint32_t user_id = cc->getProperty("user_id");
+		log(LOG_NOTICE, "Unknown action '%s' encountered on ClientConnection for user %u of type %u.", action.c_str(), user_id, user_type);
 		cc->sendError("No such action");
 		return true;
 	}
