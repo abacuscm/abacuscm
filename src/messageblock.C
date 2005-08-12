@@ -136,7 +136,8 @@ bool MessageBlock::writeBlockToSSL(const char *buffer, int length, SSL *ssl) con
 	while(length) {
 		int res = SSL_write(ssl, buffer, length);
 		if(res > 0) {
-			
+			buffer += res;
+			length -= res;
 		} else {
 			struct pollfd sslfd;
 			sslfd.fd = SSL_get_fd(ssl);
@@ -173,7 +174,7 @@ bool MessageBlock::writeBlockToSSL(const char *buffer, int length, SSL *ssl) con
 
 bool MessageBlock::writeToSSL(SSL* ssl) const {
 	ostringstream init_block;
-	init_block << "\n\n" << _message << '\n';
+	init_block << _message << '\n';
 	for(MessageHeaders::const_iterator i = _headers.begin(); i != _headers.end(); ++i)
 		init_block << i->first << ':' << i->second << '\n';
 	init_block << '\n';
