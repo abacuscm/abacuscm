@@ -61,8 +61,12 @@ CREATE TABLE ServerAttributes (
 
 CREATE TABLE User (
   user_id int(11) NOT NULL default '0',
-  username varchar(16) default NULL,
-  password varchar(32) default NULL,
-  type int(11) NOT NULL default '0'
+  username varchar(16) NOT NULL default '',
+  password varchar(32) NOT NULL default '',
+  type int(11) NOT NULL default '0',
+  PRIMARY KEY  (user_id),
+  UNIQUE KEY user_id (user_id),
+  UNIQUE KEY username (username),
+  KEY username_2 (username)
 ) TYPE=MyISAM;
 
