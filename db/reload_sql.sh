@@ -2,4 +2,4 @@
 
 echo "DROP DATABASE abacus;"
 echo "CREATE DATABASE abacus;"
-echo "$(<structure.sql)"
+echo "$(<$(dirname $0)/structure.sql)"
