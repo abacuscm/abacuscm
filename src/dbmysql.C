@@ -296,15 +296,34 @@ uint32_t MySQL::maxServerId() {
 		MYSQL_ROW row = mysql_fetch_row(res);
 		if(row && row[0])
 			max_server_id = atol(row[0]);
+		mysql_free_result(res);	
 	}
-	mysql_free_result(res);	
 	
 	return max_server_id;
 }
 
 uint32_t MySQL::maxUserId() {
-	NOT_IMPLEMENTED();
-	return ~0U;
+	uint32_t max_user_id = ~0U;
+	ostringstream query;
+	query << "SELECT MAX(user_id) FROM User WHERE user_id & " << (ID_GRANULARITY - 1) << " = " << Server::getId();
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return ~0U;
+	}
+
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if(res) {
+		MYSQL_ROW row = mysql_fetch_row(res);
+		if(row) {
+			if(row[0])
+				max_user_id = atol(row[0]);
+			else
+				max_user_id = 0;
+		}
+		mysql_free_result(res);	
+	}
+
+	return max_user_id;
 }
 
 bool MySQL::init() {

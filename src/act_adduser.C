@@ -40,8 +40,12 @@ bool ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
 	if(new_username == "")
 		return cc->sendError("Cannot have a blank username");
 
+	uint32_t new_id = Server::nextUserId();
+	if(new_id == ~0U)
+		return cc->sendError("Unable to determine next usable user_id");
+	
 	return triggerMessage(cc, new Message_CreateUser(new_username,
-				new_passwd, Server::nextUserId(), new_type, user_id));
+				new_passwd, new_id, new_type, user_id));
 }
 
 static ActAddUser _act_adduser;
