@@ -380,10 +380,6 @@ void* socket_selector(void*) {
 			
 	}
 
-	SocketPool::iterator i;
-	for(i = socket_pool.begin(); i != socket_pool.end(); ++i)
-		delete (*i);
-	
 	return NULL;
 }
 
@@ -440,6 +436,10 @@ int main(int argc, char ** argv) {
 	pthread_join(thread_worker_spawner, NULL);
 	pthread_join(thread_socket_selector, NULL);
 
+	SocketPool::iterator i;
+	for(i = socket_pool.begin(); i != socket_pool.end(); ++i)
+		delete (*i);
+	
 	DbCon::cleanup();
 
 	log(LOG_INFO, "abacusd is shut down.");
