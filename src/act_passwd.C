@@ -36,6 +36,9 @@ bool ActPasswd::int_process(ClientConnection *cc, MessageBlock *mb) {
 	uint32_t user_id = cc->getProperty("user_id");
 	string newpass = (*mb)["newpass"];
 
+	if(newpass == "")
+		return cc->sendError("Cannot have a blank password!");
+
 	return triggerMessage(cc, new PasswdMessage(user_id, newpass));
 };
 
