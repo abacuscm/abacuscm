@@ -4,12 +4,15 @@
 #include <map>
 #include <string>
 
+#include "queue.h"
+
 class ClientConnection;
 class MessageBlock;
 class Message;
 
 class ClientAction {
 private:
+	static Queue<Message*> *_message_queue;
 	static std::map<int, std::map<std::string, ClientAction*> > actionmap;
 protected:
 	bool triggerMessage(ClientConnection *cc, Message*);
@@ -18,7 +21,7 @@ public:
 	ClientAction();
 	virtual ~ClientAction();
 
-
+	static void setMessageQueue(Queue<Message*> *message_queue);
 	static bool registerAction(int user_type, std::string action, ClientAction *ca);
 	static bool process(ClientConnection *cc, MessageBlock *mb);
 };

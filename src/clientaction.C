@@ -5,6 +5,7 @@
 #include "logger.h"
 
 std::map<int, std::map<std::string, ClientAction*> > ClientAction::actionmap;
+Queue<Message*> *ClientAction::_message_queue;
 
 ClientAction::ClientAction() {
 }
@@ -23,14 +24,10 @@ bool ClientAction::registerAction(int user_type, std::string action, ClientActio
 
 bool ClientAction::triggerMessage(ClientConnection *cc, Message *mb) {
 	if(mb->makeMessage()) {
-		if(mb->process()) {
-			cc->reportSuccess();
-			return true;
-		} else
-			cc->sendError("Error processing resulting server message. This is indicative of a bug.");
+		_message_queue->enqueue(mb);
+		return cc->reportSuccess();
 	} else
-		cc->sendError("Internal error creating message.  This is indicative of a bug.");
-	return false;
+		return cc->sendError("Internal error creating message.  This is indicative of a bug.");
 }
 
 bool ClientAction::process(ClientConnection *cc, MessageBlock *mb) {
@@ -46,4 +43,8 @@ bool ClientAction::process(ClientConnection *cc, MessageBlock *mb) {
 		cc->sendError("No such action");
 		return true;
 	}
+}
+
+void ClientAction::setMessageQueue(Queue<Message*> *message_queue) {
+	_message_queue = message_queue;
 }
