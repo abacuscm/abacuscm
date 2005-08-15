@@ -218,6 +218,7 @@ static void* message_handler(void *) {
 					"This is A HUGE PROBLEM!!!  Fix it and restart abacusd!!!",
 					m->server_id(), m->message_id());
 		}
+		delete m;
 	}
 	log(LOG_INFO, "Shutting down message_handler().");
 	return NULL;

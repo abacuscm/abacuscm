@@ -15,6 +15,10 @@ Message::Message() {
 }
 
 Message::~Message() {
+	if(_blob)
+		delete []_blob;
+	if(_signature)
+		delete []_signature;
 }
 
 bool Message::makeMessage() {
