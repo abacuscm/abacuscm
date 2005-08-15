@@ -7,11 +7,9 @@
 using namespace std;
 
 ModuleLoader::ModuleLoader() {
-	NOT_IMPLEMENTED();
 }
 
 ModuleLoader::~ModuleLoader() {
-	NOT_IMPLEMENTED();
 }
 
 bool ModuleLoader::loadModule(string modname) {

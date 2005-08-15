@@ -147,7 +147,7 @@ bool MySQL::putLocalMessage(Message* message) {
 	uint32_t blobsize;
 	uint32_t message_id = 0;
 
-	if(!message->getBlob(&blob, &blobsize))
+	if(!message->getData(&blob, &blobsize))
 		return false;
 
 	ostringstream query;

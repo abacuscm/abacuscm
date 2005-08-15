@@ -2,17 +2,40 @@
 #define __MESSAGE_H__
 
 #include <stdint.h>
+#include <map>
 
 #define MESSAGE_SIGNATURE_SIZE		128
 
+class Message;
+
+typedef Message* (*MessageFunctor)();
+
 class Message {
 private:
+	static std::map<uint32_t, MessageFunctor> _functors;
+	
+	struct st_blob {
+		uint32_t server_id;
+		uint32_t message_id;
+		uint32_t time;
+		uint32_t message_type_id;
+		uint8_t signature[MESSAGE_SIGNATURE_SIZE];
+		uint8_t data[1];
+	} __attribute__((packed));
+
 	uint32_t _server_id;
 	uint32_t _message_id;
 	uint32_t _time;
-	uint32_t _blob_size;
-	uint8_t *_blob;
+	uint32_t _data_size;
+	uint8_t *_data;
 	uint8_t *_signature;
+	uint32_t _blob_size;
+	struct st_blob *_blob;
+	
+	bool buildMessage(uint32_t server_id, uint32_t message_id,
+			uint32_t time, uint8_t *signature, uint8_t *data,
+			uint32_t data_len, struct st_blob *blob, uint32_t blob_size);
+	void makeBlob();
 protected:
 	/**
 	 * This function needs to return the size requirements for
@@ -35,9 +58,7 @@ protected:
 	 * size is passed explicitly.  In case of failure the function
 	 * should return ~0U.
 	 *
-	 * Remember to call the superclasses!
-	 *
-	 * Protected since the makeBlob() function should be used to
+	 * Protected since the makeMessage() function should be used to
 	 * initiate the build process.
 	 */
 	virtual uint32_t store(uint8_t *buffer, uint32_t size) = 0;
@@ -47,9 +68,7 @@ protected:
 	 * from the blob it stored above.  Returns the number of bytes
 	 * absorbed from the stream or ~0U on error.
 	 *
-	 * Remember to call the superclasses!
-	 *
-	 * Protected since the loadBlob() function should be used to
+	 * Protected since the buildMessage() function(s) should be used to
 	 * initiate the load process.
 	 */
 	virtual uint32_t load(const uint8_t *buffer, uint32_t size) = 0;
@@ -78,8 +97,8 @@ public:
 	/**
 	 * This function can be used to retrieve a pointer to the internal
 	 * buffer used for storing the binary blob.  Returns true if values
-	 * correctly set.  This blob does not include server_id, message_id,
-	 * time or message_type_id!!!
+	 * correctly set.  This blob includes server_id, message_id,
+	 * time, message_type_id _and_ the signature.
 	 */
 	bool getBlob(const uint8_t ** buffer, uint32_t *size) const;
 
@@ -103,6 +122,35 @@ public:
 	 * message.
 	 */
 	const uint8_t* getSignature() const { return _signature; };
+
+	/**
+	 * Return a pointer to the internal data buffer, this buffer contains
+	 * the Message dependant parts of the message as created by store().
+	 * This buffer won't be encrypted.
+	 */
+	bool getData(const uint8_t ** buffer, uint32_t *size) const;
+
+	/**
+	 * All subclasses of Message should get registered via this call.
+	 * This acts as a factory when reloading/importing Messages.
+	 */
+	static void registerMessageFunctor(uint32_t, MessageFunctor);
+
+	/**
+	 * Can be used by Db code for example to load messages.  This function
+	 * transfers ownership of the memory pointed to by signature and data
+	 * to the Message instance (iff successful).
+	 */
+	static Message* buildMessage(uint32_t server_id, uint32_t message_id,
+			uint32_t message_type_id, uint32_t time, uint8_t *signature,
+			uint8_t *data, uint32_t data_len);
+
+	/**
+	 * Used to load a message directly from a buffer.  This is the exact
+	 * same data as returned by getBlob().  Again, ownership of the memory
+	 * is transferred (iff successful).
+	 */
+	static Message* buildMessage(uint8_t* blob, uint32_t blob_len);
 };
 
 #endif

@@ -18,6 +18,7 @@ protected:
 	virtual uint32_t store(uint8_t *buffer, uint32_t size);
 	virtual uint32_t load(const uint8_t *buffer, uint32_t size);
 public:
+	Message_CreateUser();
 	Message_CreateUser(const std::string& name, const std::string& pass, uint32_t id, uint32_t type, uint32_t requester_id = 0);
 	virtual ~Message_CreateUser();
 

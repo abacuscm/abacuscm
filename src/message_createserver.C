@@ -6,6 +6,9 @@
 
 using namespace std;
 
+Message_CreateServer::Message_CreateServer() {
+}
+
 Message_CreateServer::Message_CreateServer(const string& name, uint32_t id) {
 	_name = name;
 	_server_id = id;

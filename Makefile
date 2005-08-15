@@ -12,7 +12,6 @@ libabacus_objects = config \
 	logger \
 	moduleloader \
 	peermessenger \
-	messagebuilder \
 	message \
 	dbcon \
 	message_createserver \

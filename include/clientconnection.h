@@ -21,13 +21,15 @@ class MessageBlock;
 
 class ClientConnection : public Socket {
 private:
+	typedef std::map<std::string, uint32_t> ClientProps;
+	
 	static SSL_METHOD *_method;
 	static SSL_CTX *_context;
 
 	SSL *_ssl;
 
 	MessageBlock *_message;
-	std::map<std::string, uint32_t> _props;
+	ClientProps _props;
 
 	pthread_mutex_t _write_lock;
 

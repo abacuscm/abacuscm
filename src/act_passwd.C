@@ -24,13 +24,13 @@ protected:
 	virtual uint32_t store(uint8_t *buffer, uint32_t size);
 	virtual uint32_t load(const uint8_t *buffer, uint32_t size);
 public:
+	PasswdMessage();
 	PasswdMessage(uint32_t user_id, const string& newpass);
 
 	virtual bool process() const;
 
 	virtual uint16_t message_type_id() const { return TYPE_ID_UPDATEPASS; }
 };
-
 
 bool ActPasswd::int_process(ClientConnection *cc, MessageBlock *mb) {
 	uint32_t user_id = cc->getProperty("user_id");
@@ -41,6 +41,9 @@ bool ActPasswd::int_process(ClientConnection *cc, MessageBlock *mb) {
 
 	return triggerMessage(cc, new PasswdMessage(user_id, newpass));
 };
+
+PasswdMessage::PasswdMessage() {
+}
 
 PasswdMessage::PasswdMessage(uint32_t user_id, const string& newpass) {
 	_user_id = user_id;
@@ -87,10 +90,15 @@ bool PasswdMessage::process() const {
 
 static ActPasswd _act_passwd;
 
+static Message* create_passwd_msg() {
+	return new PasswdMessage();
+}
+
 static void init() __attribute__((constructor));
 static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "passwd", &_act_passwd);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "passwd", &_act_passwd);
 	ClientAction::registerAction(USER_TYPE_PARTICIPANT, "passwd", &_act_passwd);
 	ClientAction::registerAction(USER_TYPE_MARKER, "passwd", &_act_passwd);
+	Message::registerMessageFunctor(TYPE_ID_UPDATEPASS, create_passwd_msg);
 }

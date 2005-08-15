@@ -5,6 +5,9 @@
 #include "messageblock.h"
 #include "eventregister.h"
 
+Message_CreateUser::Message_CreateUser() {
+}
+
 Message_CreateUser::Message_CreateUser(const std::string& name, const std::string& pass, uint32_t id, uint32_t type, uint32_t requestor_id) {
 	_name = name;
 	_password = pass;

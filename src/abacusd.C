@@ -20,6 +20,7 @@
 #include "clientlistener.h"
 #include "clientconnection.h"
 #include "clientaction.h"
+#include "message_type_ids.h"
 
 #define DEFAULT_MIN_IDLE_WORKERS		5
 #define DEFAULT_MAX_IDLE_WORKERS		10
@@ -121,6 +122,21 @@ static bool load_modules() {
 }
 
 /**
+ * These are here to prevent segfaulting due to undefined initialization order.
+ * Whilst loading modules happens after initialization of global/static this
+ * cannot be quaranteed for ((constructor))s called as part of the basic loading
+ * process.
+ */
+static Message* create_msg_createserver() {
+	return new Message_CreateServer;
+}
+
+
+static Message* create_msg_createuser() {
+	return new Message_CreateUser;
+}
+
+/**
  * initialise the system.  This will check whether we are recovering
  * from an existing competition (ie, are we already connected or not).
  */
@@ -131,6 +147,11 @@ static bool initialise() {
 		log(LOG_ERR, "Unable to determine local node name.");
 		return false;
 	}
+
+	// it would be nicer to have these in their appropriate source files - but they
+	// insist on segfaulting there.
+	Message::registerMessageFunctor(TYPE_ID_CREATESERVER, create_msg_createserver);
+	Message::registerMessageFunctor(TYPE_ID_CREATEUSER, create_msg_createuser);
 	
 	log(LOG_INFO, "Local node name: %s", localname.c_str());
 

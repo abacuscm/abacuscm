@@ -201,8 +201,11 @@ uint32_t ClientConnection::getProperty(const std::string& prop) {
 }
 
 uint32_t ClientConnection::delProperty(const std::string& prop) {
-	NOT_IMPLEMENTED();
-	uint32_t oldval = _props[prop];
-	_props[prop] = 0;
+	uint32_t oldval = 0;
+	ClientProps::iterator i = _props.find(prop);
+	if(i != _props.end()) {
+		oldval = i->second;
+		_props.erase(i);
+	}
 	return oldval;
 }

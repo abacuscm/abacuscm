@@ -3,34 +3,50 @@
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "peermessenger.h"
 #include "logger.h"
 #include "config.h"
 #include "message.h"
 
-#define ST_MESSAGE_SIZE		141
+#include <map>
 
-#define BUFFER_SIZE			10000
+using namespace std;
 
-struct st_message {
-	uint8_t signature[MESSAGE_SIGNATURE_SIZE];
+#define ST_FRAME_SIZE		13
+
+#define MAX_FRAGMENT_SIZE	1000
+#define BUFFER_SIZE			1500
+
+struct st_frame {
 	uint32_t server_id;
-	uint32_t seq_num;
-	uint16_t message_type;
-	uint16_t length;
+	uint32_t message_id;
+	uint16_t fragment_num;
+	uint16_t fragment_len;
 	uint8_t data[1];
 } __attribute__ ((packed));
 
-struct st_signature {
-	uint8_t md5[16];
-	uint8_t padding[MESSAGE_SIGNATURE_SIZE - 16];
+struct st_fragment {
+	uint16_t fragment_length;
+	uint8_t data[1];
 } __attribute__ ((packed));
+
+struct st_fragment_collection {
+	uint16_t num_fragments;
+	uint16_t fragments_received;
+	map<uint16_t, st_fragment*> fragment;
+};
 
 class UDPPeerMessenger : public PeerMessenger {
 private:
 	int _sock;
-	
+	uint16_t _max_fragment_size;
+
+	map<uint32_t, struct sockaddr_in> addrmap;
+
+	const sockaddr_in* getSockAddr(uint32_t server_id);
+
 	bool startup();
 public:
 	UDPPeerMessenger();
@@ -89,6 +105,8 @@ bool UDPPeerMessenger::startup() {
 		goto err;
 	}
 	
+	_max_fragment_size = MAX_FRAGMENT_SIZE;
+
 	log(LOG_INFO, "UDPPeerMessenger started up");
 	return true;
 
@@ -101,8 +119,49 @@ err:
 }
 
 bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) {
-	NOT_IMPLEMENTED();
-	return false;
+	const uint8_t *message_data;
+	uint32_t message_len;
+	if(!message->getBlob(&message_data, &message_len))
+		return false;
+	
+	const struct sockaddr_in *dest = getSockAddr(server_id);
+	if(!dest)
+		return false;
+	
+	// determine the number of fragments, always rounding up.
+	uint16_t numfrags = (message_len + _max_fragment_size - 1) / _max_fragment_size;
+	uint16_t base_frag_size = message_len / numfrags;
+	uint16_t num_large_frags = message_len % numfrags;
+	
+	union {
+		uint8_t buffer[BUFFER_SIZE];
+		struct st_frame frame;
+	};
+
+	frame.server_id = message->server_id();
+	frame.message_id = message->message_id();
+	
+	for(uint16_t i = 1; i <= numfrags; i++) {
+		frame.fragment_num = i;
+		frame.fragment_len = base_frag_size;
+		if(i <= num_large_frags)
+			frame.fragment_len++;
+
+		memcpy(frame.data, message_data, frame.fragment_len);
+
+		int packetsize = frame.fragment_len + ST_FRAME_SIZE - 1;
+
+		int result = sendto(_sock, buffer, packetsize, 0, (const struct sockaddr*)dest, sizeof(*dest));
+		if(result < 0) {
+			lerror("sendto");
+			return false;
+		} else if(result < packetsize) {
+			log(LOG_ERR, "Only %d bytes of %d got transmitted!  This is a serious problem!",
+					result, packetsize);
+		}
+	}
+	
+	return true;
 }
 
 Message* UDPPeerMessenger::getMessage() {
@@ -111,15 +170,22 @@ Message* UDPPeerMessenger::getMessage() {
 	socklen_t fromlen = sizeof(from);
 	union {
 		uint8_t buffer[BUFFER_SIZE];
-		struct st_message message;
+		struct st_frame frame;
 	};
 
-	bytes_received = recvfrom(_sock, buffer, BUFFER_SIZE, MSG_TRUNC, (struct sockaddr*)&from, &fromlen);
-	log(LOG_DEBUG, "received a packet of size %d", (int)bytes_received);
+	Message *message = NULL;
 
-	NOT_IMPLEMENTED();
-	sleep(1);
-	return NULL;
+	while(!message) {
+		bytes_received = recvfrom(_sock, buffer, BUFFER_SIZE, MSG_TRUNC, (struct sockaddr*)&from, &fromlen);
+		if(bytes_received == -1) {
+			if(errno != EINTR)
+				lerror("recvfrom");
+			return NULL;
+		}
+		log(LOG_DEBUG, "received a frame of size %d", (int)bytes_received);
+		NOT_IMPLEMENTED();
+	}
+	return message;
 }
 
 static UDPPeerMessenger _udpPeerMessenger;
@@ -129,10 +195,8 @@ static void udp_peer_messenger_init()
 {
 	// double check that gcc actually did the right thing with the __attribute__ ((packed)).
 	// If we don't register the messenger abacusd will detect it and abort.
-	if(sizeof(st_message) != ST_MESSAGE_SIZE)
-		log(LOG_ERR, "Compilation error detected, sizeof(struct st_message) should be %d but is in fact %d", ST_MESSAGE_SIZE, (int)sizeof(st_message));
-	else if(sizeof(st_signature) != MESSAGE_SIGNATURE_SIZE)
-		log(LOG_ERR, "Compilation error detected, sizeof(struct st_signature) should be %d but is in fact %d", MESSAGE_SIGNATURE_SIZE, (int)sizeof(st_signature));
+	if(sizeof(st_frame) != ST_FRAME_SIZE)
+		log(LOG_ERR, "Compilation error detected, sizeof(struct st_frame) should be %d but is in fact %d", ST_FRAME_SIZE, (int)sizeof(st_frame));
 	else
 		PeerMessenger::setMessenger(&_udpPeerMessenger);
 }
