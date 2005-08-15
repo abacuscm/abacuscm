@@ -63,7 +63,7 @@ string MySQL::escape_buffer(const uint8_t* bfr, uint32_t size) {
 	char *tmp_bfr = new char[size * 2 + 1];
 	mysql_real_escape_string(&_mysql, tmp_bfr, (char*)bfr, size);
 	string tmp_str(tmp_bfr);
-	delete tmp_bfr;
+	delete []tmp_bfr;
 	return tmp_str;
 }
 
