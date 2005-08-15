@@ -40,7 +40,7 @@ static void log_file(int prio, const char* format, va_list ap) {
 	asprintf(&buffer, "%s [%s]: %s\n", time_buf, priostring, format);
 
 	vfprintf(flog, buffer, ap);
-	delete []buffer;
+	free(buffer);
 }
 
 void log(int priority, const char* format, ...) {
