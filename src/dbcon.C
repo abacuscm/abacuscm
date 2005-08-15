@@ -48,3 +48,12 @@ bool DbCon::registerFunctor(DbCon* (*functor)()) {
 	_functor = functor;
 	return true;
 }
+
+void DbCon::cleanup() {
+	pthread_mutex_lock(&_lock);
+	while(!_con_stack.empty()) {
+		delete _con_stack.front();
+		_con_stack.pop();
+	}
+	pthread_mutex_unlock(&_lock);	
+}

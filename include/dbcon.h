@@ -100,6 +100,7 @@ public:
 	static DbCon *getInstance();
 	void release();
 	static bool registerFunctor(DbCon* (*functor)());
+	static void cleanup();
 };
 
 #endif
