@@ -3,6 +3,7 @@
 #include "messageblock.h"
 #include "logger.h"
 #include "dbcon.h"
+#include "eventregister.h"
 
 class ActAuth : public ClientAction {
 protected:
@@ -30,6 +31,7 @@ bool ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
 		cc->setProperty("user_id", user_id);
 		cc->setProperty("user_type", user_type);
 		cc->reportSuccess();
+		EventRegister::getInstance().registerClient(cc);
 	}
 	return result > 0;
 }
