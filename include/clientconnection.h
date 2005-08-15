@@ -39,9 +39,9 @@ public:
 
 	virtual bool process();
 
-	void sendError(const std::string& message);
-	void reportSuccess();
-	void sendMessageBlock(const MessageBlock *mb);
+	bool sendError(const std::string& message);
+	bool reportSuccess();
+	bool sendMessageBlock(const MessageBlock *mb);
 
 	uint32_t setProperty(const std::string& prop, uint32_t value);
 	uint32_t getProperty(const std::string& prop); // const ... (fails)

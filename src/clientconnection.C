@@ -78,12 +78,11 @@ bool ClientConnection::process_data() {
 			if(res2 < 0)
 				return false;
 			if(res2 > 0) {
-				if(!ClientAction::process(this, _message)) {
-					_message->dump();
-					return false;
-				}
+				bool proc_res = ClientAction::process(this, _message);
 				delete _message;
 				_message = NULL;
+				if(!proc_res)
+					return false;
 				pos += res2;
 				res -= res2;
 			} else
@@ -114,23 +113,24 @@ bool ClientConnection::process() {
 	return false;
 }
 
-void ClientConnection::sendError(const std::string& message) {
+bool ClientConnection::sendError(const std::string& message) {
 	MessageBlock mb("err");
 	mb["msg"] = message;
-	sendMessageBlock(&mb);
+	return sendMessageBlock(&mb);
 }
 
-void ClientConnection::reportSuccess() {
+bool ClientConnection::reportSuccess() {
 	MessageBlock mb("ok");
-	sendMessageBlock(&mb);
+	return sendMessageBlock(&mb);
 }
 
-void ClientConnection::sendMessageBlock(const MessageBlock *mb) {
+bool ClientConnection::sendMessageBlock(const MessageBlock *mb) {
 	pthread_mutex_lock(&_write_lock);
 	bool res = mb->writeToSSL(_ssl);
 	pthread_mutex_unlock(&_write_lock);
 	if(!res)
 		log(LOG_NOTICE, "Failed to write MessageBlock to client - not sure what this means though");
+	return res;
 }
 
 bool ClientConnection::init() {
