@@ -28,6 +28,8 @@ uint32_t Server::nextUserId() {
 	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 	static uint32_t cur_max_id = 0;
 
+	uint32_t local_max_id;
+	
 	pthread_mutex_lock(&lock);
 
 	if(!cur_max_id) {
@@ -44,11 +46,15 @@ uint32_t Server::nextUserId() {
 	}
 
 	if(!cur_max_id)
-		cur_max_id = getId() - ID_GRANULARITY;
+		cur_max_id = getId();
+	else
+		cur_max_id += ID_GRANULARITY;
+	
+	local_max_id = cur_max_id;
 	
 	pthread_mutex_unlock(&lock);
 
-	return cur_max_id += ID_GRANULARITY;
+	return local_max_id;
 err:
 	pthread_mutex_unlock(&lock);
 	return ~0U;
