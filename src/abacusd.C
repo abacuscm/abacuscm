@@ -19,6 +19,7 @@
 #include "socket.h"
 #include "clientlistener.h"
 #include "clientconnection.h"
+#include "clientaction.h"
 
 #define DEFAULT_MIN_IDLE_WORKERS		5
 #define DEFAULT_MAX_IDLE_WORKERS		10
@@ -171,7 +172,9 @@ static bool initialise() {
 	}
 	
 	socket_pool.insert(cl);
-	
+
+	ClientAction::setMessageQueue(&message_queue);
+
 	return true;
 }
 
@@ -376,6 +379,11 @@ void* socket_selector(void*) {
 			}
 			
 	}
+
+	SocketPool::iterator i;
+	for(i = socket_pool.begin(); i != socket_pool.end(); ++i)
+		delete (*i);
+	
 	return NULL;
 }
 
@@ -431,6 +439,8 @@ int main(int argc, char ** argv) {
 	pthread_join(thread_message_handler, NULL);
 	pthread_join(thread_worker_spawner, NULL);
 	pthread_join(thread_socket_selector, NULL);
+
+	DbCon::cleanup();
 
 	log(LOG_INFO, "abacusd is shut down.");
 	return 0;
