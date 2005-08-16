@@ -26,8 +26,10 @@ bool ClientAction::triggerMessage(ClientConnection *cc, Message *mb) {
 	if(mb->makeMessage()) {
 		_message_queue->enqueue(mb);
 		return cc->reportSuccess();
-	} else
+	} else {
+		delete mb;
 		return cc->sendError("Internal error creating message.  This is indicative of a bug.");
+	}
 }
 
 bool ClientAction::process(ClientConnection *cc, MessageBlock *mb) {
