@@ -35,6 +35,7 @@ modules = udpmessenger \
 	dbmysql \
 	act_passwd \
 	act_adduser \
+	act_addserver \
 	act_auth
 modules_d = $(foreach mod,$(modules),modules/mod_$(mod).so)
 $(modules_d) : ldflags += -shared -labacus

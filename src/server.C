@@ -59,3 +59,40 @@ err:
 	pthread_mutex_unlock(&lock);
 	return ~0U;
 }
+
+uint32_t Server::nextServerId() {
+	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+	static uint32_t cur_max_id = 0;
+	
+	uint32_t local_max_id;
+	
+	pthread_mutex_lock(&lock);
+
+	if(!cur_max_id) {
+		DbCon *db = DbCon::getInstance();
+		if(!db)
+			goto err;
+		cur_max_id = db->maxServerId();
+		db->release();
+
+		if(cur_max_id == ~0U) {
+			cur_max_id = 0;
+			goto err;
+		}
+	}
+
+	if(!cur_max_id) {
+		log(LOG_ERR, "Right, we must _always_ have a cur_max_id in %s as we _must_ always have at least one server!", __PRETTY_FUNCTION__);
+		goto err;
+	} else
+		cur_max_id += 1;
+	
+	local_max_id = cur_max_id;
+	
+	pthread_mutex_unlock(&lock);
+
+	return local_max_id;
+err:
+	pthread_mutex_unlock(&lock);
+	return ~0U;	
+}
