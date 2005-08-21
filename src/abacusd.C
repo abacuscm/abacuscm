@@ -148,6 +148,9 @@ static bool initialise() {
 		return false;
 	}
 
+	SSL_load_error_strings();
+	SSL_library_init();
+
 	// it would be nicer to have these in their appropriate source files - but they
 	// insist on segfaulting there.
 	Message::registerMessageFunctor(TYPE_ID_CREATESERVER, create_msg_createserver);
@@ -161,7 +164,7 @@ static bool initialise() {
 
 	uint32_t local_id = db->name2server_id(localname);
 	db->release();
-	
+
 	if(local_id == ~0U) {
 		return false;
 	} else if(!local_id) {
@@ -177,6 +180,7 @@ static bool initialise() {
 			message_queue.enqueue(admin);
 		} else {
 			delete init;
+			delete admin;
 			return false;
 		}
 	} else {

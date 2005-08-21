@@ -7,7 +7,7 @@
 #include <mysql/mysql.h>
 #include <sstream>
 
-#define log_mysql_error()	log(LOG_ERR,"%s: %s", __PRETTY_FUNCTION__, mysql_error(&_mysql))
+#define log_mysql_error()	log(LOG_ERR,"%s line %d: %s", __PRETTY_FUNCTION__, __LINE__, mysql_error(&_mysql))
 
 using namespace std;
 
@@ -27,6 +27,7 @@ public:
 	virtual bool setServerAttribute(uint32_t server_id, const string& attribute, const string& value);
 	virtual bool putLocalMessage(Message*);
 	virtual bool putRemoteMessage(const Message*);
+	virtual std::vector<uint32_t> getRemoteServers();
 	virtual bool markProcessed(uint32_t server_id, uint32_t message_id);
 	virtual bool addServer(const string& name, uint32_t id);
 	virtual bool addUser(const std::string& name, const std::string& pass, uint32_t id, uint32_t type);
@@ -105,7 +106,7 @@ string MySQL::getServerAttribute(uint32_t server_id, const string& attribute) {
 	string value = "";
 	ostringstream query;
 	query << "SELECT value FROM ServerAttributes WHERE server_id=" <<
-		server_id << ", '" << escape_string(attribute) << "'";
+		server_id << " AND attribute='" << escape_string(attribute) << "'";
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();
 		return "";
@@ -193,12 +194,35 @@ bool MySQL::putLocalMessage(Message* message) {
 		
 	mysql_query(&_mysql, "UNLOCK TABLES");
 
-	return false;
+	return true;
 }
 
 bool MySQL::putRemoteMessage(const Message*) {
 	NOT_IMPLEMENTED();
 	return false;
+}
+	
+std::vector<uint32_t> MySQL::getRemoteServers() {
+	ostringstream query;
+	query << "SELECT server_id FROM Server WHERE server_id != "
+		<< Server::getId();
+
+	vector<uint32_t> remservers;
+	MYSQL_RES *res;
+	
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		// this is extremely bad!
+		log_mysql_error();
+	} else if(!(res = mysql_store_result(&_mysql))) {
+		log_mysql_error();
+	} else {
+		MYSQL_ROW row;
+		while((row = mysql_fetch_row(res)) != 0) {
+			remservers.push_back(atol(row[0]));
+		}
+	}
+
+	return remservers;
 }
 
 bool MySQL::markProcessed(uint32_t server_id, uint32_t message_id) {
@@ -222,6 +246,16 @@ bool MySQL::addServer(const string& name, uint32_t id) {
 		return false;
 	}
 
+	if(id != Server::getId()) {
+		query.str("");
+		query << "INSERT INTO PeerMessageNoAck(server_id, message_id, ack_server_id, lastsent) SELECT server_id, message_id, " << id << ", 0 FROM PeerMessage";
+
+		if(mysql_query(&_mysql, query.str().c_str())) {
+			log_mysql_error();
+			// return false;
+		}
+	}
+	
 	return true;
 }
 	

@@ -136,9 +136,6 @@ bool ClientConnection::sendMessageBlock(const MessageBlock *mb) {
 bool ClientConnection::init() {
 	Config& config = Config::getConfig();
 
-	SSL_library_init();
-	SSL_load_error_strings();
-
 	log(LOG_DEBUG, "Loaded %d bytes from /dev/urandom", RAND_load_file("/dev/urandom", 4096));
 
 	_method = TLSv1_server_method();

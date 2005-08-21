@@ -118,8 +118,3 @@ void log_buffer(int priority, const char* name, const unsigned char* buffer, int
 
 	log(priority, "%s", bfr);
 }
-
-static void init() __attribute__((constructor));
-static void init() {
-	SSL_load_error_strings();
-}

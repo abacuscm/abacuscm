@@ -8,11 +8,14 @@
 #include <openssl/crypto.h>
 #include <sys/mman.h>
 #include <fcntl.h>
+#include <netdb.h>
+#include <arpa/inet.h>
 
 #include "peermessenger.h"
 #include "logger.h"
 #include "config.h"
 #include "message.h"
+#include "dbcon.h"
 
 #include <map>
 
@@ -269,6 +272,56 @@ uint32_t UDPPeerMessenger::checksum(const uint8_t *data, uint16_t len) {
 	return checksum;
 }
 
+const sockaddr_in* UDPPeerMessenger::getSockAddr(uint32_t server_id) {
+	static map<uint32_t, struct sockaddr_in> cache;
+	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+	sockaddr_in *result = NULL;
+	
+	pthread_mutex_lock(&lock);
+
+	map<uint32_t, struct sockaddr_in>::iterator i;
+	i = cache.find(server_id);
+	if(i != cache.end()) {
+		result = &i->second;
+	} else {
+		string ip;
+		string port;
+		DbCon *db = DbCon::getInstance();
+		if(db) {
+			ip = db->getServerAttribute(server_id, "ip");
+			port = db->getServerAttribute(server_id, "udppeerport");
+			
+			db->release();
+		}
+
+		if(ip == "") {
+			log(LOG_ERR, "Unable to obtain attribute 'ip' for server %u",
+					server_id);
+		} else if(port == "" || !atol(port.c_str())) {
+			log(LOG_ERR, "Unable to obtain attribute 'udppeerport' for "
+					"server %u", server_id);
+		}else {
+			struct hostent * host = gethostbyname(ip.c_str());
+			if(!host) {
+				log(LOG_ERR, "Error resolving '%s'", ip.c_str());
+			} else if(host->h_addrtype != AF_INET) {
+				log(LOG_ERR, "Invalid network type for '%s'", ip.c_str());
+			} else {
+				cache[server_id].sin_family = AF_INET;
+				cache[server_id].sin_addr.s_addr = *(u_int32_t*)host->h_addr_list[0];
+				cache[server_id].sin_port = htons(atol(port.c_str()));
+				result = &cache[server_id];
+				log(LOG_INFO, "Resolved %s to %s", ip.c_str(),
+						inet_ntoa(result->sin_addr));
+			}
+		}
+	}
+	pthread_mutex_unlock(&lock);
+
+	return result;
+}
+
 bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) {
 	const uint8_t *message_data;
 	uint32_t message_len;
@@ -276,6 +329,11 @@ bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) 
 	if(!message->getBlob(&message_data, &message_len))
 		return false;
 	
+	if(!message_len) {
+		log(LOG_CRIT, "Message length cannot be 0 in %s", __PRETTY_FUNCTION__);
+		return false;
+	}
+
 	const struct sockaddr_in *dest = getSockAddr(server_id);
 	if(!dest)
 		return false;
@@ -361,7 +419,9 @@ Message* UDPPeerMessenger::getMessage() {
 				lerror("recvfrom");
 			return NULL;
 		} else if(bytes_received > BUFFER_SIZE + MAX_BLOCKSIZE) {
-			log(LOG_WARNING, "Discarding frame of size %u since it is bigger than the buffer (%d bytes)", (unsigned)bytes_received, BUFFER_SIZE + MAX_BLOCKSIZE);
+			log(LOG_WARNING, "Discarding frame of size %u since it is "
+					"bigger than the buffer (%d bytes)",
+					(unsigned)bytes_received, BUFFER_SIZE + MAX_BLOCKSIZE);
 		} else if(EVP_DecryptUpdate(&_dec_ctx, buffer, &packet_size,
 					inbuffer, bytes_received) != 1) {
 			log_ssl_errors("EVP_DecryptUpdate");

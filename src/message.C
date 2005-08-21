@@ -2,6 +2,7 @@
 #include "logger.h"
 #include "server.h"
 #include "dbcon.h"
+#include "peermessenger.h"
 
 #include <time.h>
 
@@ -57,9 +58,38 @@ bool Message::makeMessage() {
 		_data_size = size;
 
 		DbCon *db = DbCon::getInstance();
-		db->putLocalMessage(this);
-		db->release();
+		if(!db->putLocalMessage(this)) {
+			db->release();
+			return false;
+		}
+	
+		_blob_size = sizeof(struct st_blob) - 1 + _data_size;
+		_blob = (struct st_blob*)malloc(_blob_size);
+		if(!_blob) {
+			log(LOG_CRIT, "Memory allocation problem!");
+			_blob_size = 0;
+		} else {
+			_blob->server_id = _server_id;
+			_blob->message_id = _message_id;
+			_blob->time = _time;
+			_blob->message_type_id = message_type_id();
+			memset(_blob->signature, 0, MESSAGE_SIGNATURE_SIZE);
+			memcpy(_blob->data, _data, _data_size);
+		}
+		std::vector<uint32_t> remote_servers = db->getRemoteServers();
 
+		log(LOG_DEBUG, "Forwarding Message (%d,%d) to %d servers",
+				_server_id, _message_id, remote_servers.size());
+
+		std::vector<uint32_t>::iterator i;
+		PeerMessenger *messenger = PeerMessenger::getMessenger();
+		for(i = remote_servers.begin(); i != remote_servers.end(); ++i) {
+			if(messenger->sendMessage(*i, this))
+				log(LOG_INFO, "Message (%d,%d) sent to %d",
+						_server_id, _message_id, *i);
+//				db->setSent(_server_id, _message_id, *i);
+		}
+		db->release();
 		return true;
 	} catch(...) {
 		log(LOG_ERR, "Failed to pack message, exception caught");

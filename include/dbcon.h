@@ -2,6 +2,7 @@
 #define __DBCON_H__
 
 #include <string>
+#include <vector>
 #include <stdint.h>
 
 class Message;
@@ -55,6 +56,13 @@ public:
 	 * Used to add a new server to the system.
 	 */
 	virtual bool addServer(const std::string& name, uint32_t id) = 0;
+
+	/**
+	 * Retrieve a list of remote servers.  This must be a complete list
+	 * of remote servers, excluding the local machine as indicated by
+	 * Server::getId()
+	 */
+	virtual std::vector<uint32_t> getRemoteServers() = 0;
 
 	/**
 	 * Used to add a new user to the system.
