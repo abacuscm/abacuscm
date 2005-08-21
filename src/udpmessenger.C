@@ -361,17 +361,17 @@ Message* UDPPeerMessenger::getMessage() {
 				lerror("recvfrom");
 			return NULL;
 		} else if(bytes_received > BUFFER_SIZE + MAX_BLOCKSIZE) {
-			log(LOG_WARNING, "Discarding frame of size %lu since it is bigger than the buffer (%d bytes)", bytes_received, BUFFER_SIZE + MAX_BLOCKSIZE);
+			log(LOG_WARNING, "Discarding frame of size %u since it is bigger than the buffer (%d bytes)", (unsigned)bytes_received, BUFFER_SIZE + MAX_BLOCKSIZE);
 		} else if(EVP_DecryptUpdate(&_dec_ctx, buffer, &packet_size,
 					inbuffer, bytes_received) != 1) {
 			log_ssl_errors("EVP_DecryptUpdate");
 		} else if(EVP_DecryptFinal(&_dec_ctx, buffer + packet_size,
 					&tlen) != 1) {
 			log_ssl_errors("EVP_DecryptFinal");
-		} else if(packet_size + tlen < sizeof(st_frame)) {
+		} else if((size_t)(packet_size + tlen) < sizeof(st_frame)) {
 			log(LOG_WARNING, "Discarding frame due to short packet (%d bytes)",
 					packet_size + tlen);
-		} else if(packet_size + tlen !=
+		} else if((size_t)(packet_size + tlen) !=
 				frame.fragment_len + sizeof(st_frame) - 1) {
 			log(LOG_WARNING, "Discarding frame due to invalid fragment_length field");
 		} else if(frame.data_checksum != checksum(frame.data, frame.fragment_len)) {
