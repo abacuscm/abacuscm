@@ -167,7 +167,7 @@ static bool initialise() {
 
 	if(local_id == ~0U) {
 		return false;
-	} else if(!local_id) {
+	} else if(!local_id && config["initialisation"]["type"] == "master") {
 		Message_CreateServer *init = new Message_CreateServer(localname, 1);
 		ConfigSection::const_iterator i;
 		for(i = config["init_attribs"].begin(); i != config["init_attribs"].end(); ++i)

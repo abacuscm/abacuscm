@@ -7,6 +7,7 @@
 #include "clientlistener.h"
 #include "clientconnection.h"
 #include "logger.h"
+#include "config.h"
 
 ClientListener::ClientListener() {
 	_pool = NULL;
@@ -26,7 +27,7 @@ bool ClientListener::init(SocketPool *pool) {
 
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
-	addr.sin_port = htons(7386);
+	addr.sin_port = htons(atol(Config::getConfig()["clientlistener"]["port"].c_str()));
 	addr.sin_addr.s_addr = INADDR_ANY;
 
 	if(bind(sock, (sockaddr*)&addr, sizeof(addr)) < 0) {

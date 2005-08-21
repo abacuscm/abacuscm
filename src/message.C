@@ -78,9 +78,6 @@ bool Message::makeMessage() {
 		}
 		std::vector<uint32_t> remote_servers = db->getRemoteServers();
 
-		log(LOG_DEBUG, "Forwarding Message (%d,%d) to %d servers",
-				_server_id, _message_id, remote_servers.size());
-
 		std::vector<uint32_t>::iterator i;
 		PeerMessenger *messenger = PeerMessenger::getMessenger();
 		for(i = remote_servers.begin(); i != remote_servers.end(); ++i) {
