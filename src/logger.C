@@ -4,9 +4,12 @@
 #include <string.h>
 #include <errno.h>
 #include <openssl/err.h>
+#include <openssl/ssl.h>
 
 #include "config.h"
 #include "logger.h"
+
+#define MAX_BUFFER_SIZE		1024
 
 using namespace std;
 
@@ -92,4 +95,31 @@ void real_log_ssl_errors(const char* fname, int line_num, const char* prefix) {
 		log(LOG_ERR, "%s (%s:%d): %s (0x%x)", prefix, fname, line_num, ERR_reason_error_string(err), err);
 		err = ERR_get_error();
 	}
+}
+
+void log_buffer(int priority, const char* name, const unsigned char* buffer, int size) {
+	int bfr_pos = 0;
+	char bfr[MAX_BUFFER_SIZE];
+
+	if(size <= 0)
+		return;
+
+	// each element in buffer takes 3 bytes, we also print the "name" of the
+	// buffer and then there is the ': ' between the name and the buffer itself.
+	if(size * 3 + strlen(name) + 2 > MAX_BUFFER_SIZE) {
+		log(LOG_ERR, "Dumping buffer '%s' will result in a buffer overflow.",
+				name);
+		return;
+	}
+
+	bfr_pos += sprintf(&bfr[bfr_pos], "%s: %02x", name, *buffer++);
+	while(--size)
+		bfr_pos += sprintf(&bfr[bfr_pos], ":%02x", *buffer++);
+
+	log(priority, "%s", bfr);
+}
+
+static void init() __attribute__((constructor));
+static void init() {
+	SSL_load_error_strings();
 }
