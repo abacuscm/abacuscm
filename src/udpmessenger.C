@@ -60,7 +60,6 @@ private:
 	int _cipher_blocksize;
 	int _cipher_ivsize;
 	int _cipher_keysize;
-	EVP_CIPHER_CTX _dec_ctx;
 
 	map<uint32_t, struct sockaddr_in> addrmap;
 
@@ -220,9 +219,6 @@ bool UDPPeerMessenger::startup() {
 //	log_buffer(LOG_DEBUG, "cipher key", _cipher_key, _cipher_keysize);
 //	log_buffer(LOG_DEBUG, "cipher iv", _cipher_iv, _cipher_ivsize);
 	
-	EVP_CIPHER_CTX_init(&_dec_ctx);
-	EVP_DecryptInit(&_dec_ctx, _cipher, _cipher_key, _cipher_iv);
-
 	log(LOG_INFO, "UDPPeerMessenger started up");
 	return true;
 
@@ -416,22 +412,30 @@ Message* UDPPeerMessenger::getMessage() {
 			log(LOG_WARNING, "Discarding frame of size %u since it is "
 					"bigger than the buffer (%d bytes)",
 					(unsigned)bytes_received, BUFFER_SIZE + MAX_BLOCKSIZE);
-		} else if(EVP_DecryptUpdate(&_dec_ctx, buffer, &packet_size,
-					inbuffer, bytes_received) != 1) {
-			log_ssl_errors("EVP_DecryptUpdate");
-		} else if(EVP_DecryptFinal(&_dec_ctx, buffer + packet_size,
-					&tlen) != 1) {
-			log_ssl_errors("EVP_DecryptFinal");
-		} else if((size_t)(packet_size + tlen) < sizeof(st_frame)) {
-			log(LOG_WARNING, "Discarding frame due to short packet (%d bytes)",
-					packet_size + tlen);
-		} else if((size_t)(packet_size + tlen) !=
-				frame.fragment_len + sizeof(st_frame) - 1) {
-			log(LOG_WARNING, "Discarding frame due to invalid fragment_length field");
-		} else if(frame.data_checksum != checksum(frame.data, frame.fragment_len)) {
-			log(LOG_WARNING, "Discarding frame with invalid checksum");
 		} else {
-			NOT_IMPLEMENTED();	
+			EVP_CIPHER_CTX dec_ctx;
+			EVP_CIPHER_CTX_init(&dec_ctx);
+			EVP_DecryptInit(&dec_ctx, _cipher, _cipher_key, _cipher_iv);
+
+			if(EVP_DecryptUpdate(&dec_ctx, buffer, &packet_size,
+						inbuffer, bytes_received) != 1) {
+				log_ssl_errors("EVP_DecryptUpdate");
+			} else if(EVP_DecryptFinal(&dec_ctx, buffer + packet_size,
+						&tlen) != 1) {
+				log_ssl_errors("EVP_DecryptFinal");
+			} else if((size_t)(packet_size + tlen) < sizeof(st_frame)) {
+				log(LOG_WARNING, "Discarding frame due to short packet (%d bytes)",
+						packet_size + tlen);
+			} else if((size_t)(packet_size + tlen) !=
+					frame.fragment_len + sizeof(st_frame) - 1) {
+				log(LOG_WARNING, "Discarding frame due to invalid fragment_length field");
+			} else if(frame.data_checksum != checksum(frame.data, frame.fragment_len)) {
+				log(LOG_WARNING, "Discarding frame with invalid checksum");
+			} else {
+				NOT_IMPLEMENTED();	
+			}
+
+			EVP_CIPHER_CTX_cleanup(&dec_ctx);
 		}
 	}
 	return message;
