@@ -2,8 +2,9 @@
 #define __QUEUE_H__
 
 #include <queue>
+#include <list>
 
-template<class T>
+template<typename T>
 class Queue {
 private:
 	std::queue<T> _q; // queue.
@@ -34,6 +35,17 @@ public:
 		pthread_mutex_lock(&_m);
 		pthread_cond_signal(&_e);
 		_q.push(v);
+		pthread_mutex_unlock(&_m);
+	}
+
+	template<typename _InputIterator>
+	void enqueue(_InputIterator __first, _InputIterator __last) {
+		pthread_mutex_lock(&_m);
+		pthread_cond_signal(&_e);
+		while(__first != __last) {
+			_q.push(*__first);
+			++__first;
+		}
 		pthread_mutex_unlock(&_m);
 	}
 };

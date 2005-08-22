@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <list>
 #include <stdint.h>
 
 class Message;
@@ -99,6 +100,11 @@ public:
 	 */
 	virtual bool setPassword(uint32_t user_id, const std::string& newpass) = 0;
 	
+	/**
+	 * Used to retrieve all unprocessed messages.
+	 */
+	virtual std::list<Message*> getUnprocessedMessages() = 0;
+
 	/**
 	 * Functions to register a DbCon functor (function to create DbCons),
 	 * get a DbCon and to release one.  This allows for connection pooling

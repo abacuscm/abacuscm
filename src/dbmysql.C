@@ -33,6 +33,7 @@ public:
 	virtual bool addUser(const std::string& name, const std::string& pass, uint32_t id, uint32_t type);
 	virtual int authenticate(const std::string& uname, const std::string& pass, uint32_t *user_id, uint32_t *user_type);
 	virtual bool setPassword(uint32_t user_id, const std::string& newpass);
+	virtual list<Message*> getUnprocessedMessages();
 	virtual uint32_t maxServerId();
 	virtual uint32_t maxUserId();
 
@@ -316,6 +317,58 @@ bool MySQL::setPassword(uint32_t user_id, const std::string& newpass) {
 		return false;
 	}
 	return true;
+}
+
+list<Message*> MySQL::getUnprocessedMessages() {
+	list<Message*> msglist;
+
+	const char *query = "SELECT server_id, message_id, message_type_id, "
+		"time, signature, data, length(data) FROM PeerMessage WHERE "
+		"processed = 0 ORDER BY time";
+	MYSQL_RES *res;
+	
+	if(mysql_query(&_mysql, query)) {
+		log_mysql_error();
+	} else if(!(res = mysql_use_result(&_mysql))) {
+		log_mysql_error();
+	} else {
+		MYSQL_ROW row;
+		while((row = mysql_fetch_row(res)) != NULL) {
+			long datsize = atol(row[6]);
+			uint8_t* sig = (uint8_t*)malloc(MESSAGE_SIGNATURE_SIZE);
+			uint8_t* data = (uint8_t*)malloc(datsize);
+			if(!sig || !data) {
+				if(sig)
+					free(sig);
+				if(data)
+					free(data);
+				log(LOG_CRIT, "Error allocating required memory to construct Message");
+			} else {
+				memcpy(sig, row[4], MESSAGE_SIGNATURE_SIZE);
+				memcpy(data, row[5], datsize);
+				Message* tmp = Message::buildMessage(
+						atol(row[0]),
+						atol(row[1]),
+						atol(row[2]),
+						atol(row[3]),
+						sig,
+						data,
+						datsize
+					);
+
+				if(!tmp) {
+					free(sig);
+					free(data);
+					log(LOG_CRIT, "This should not be happening!  Unable to construct message from DB");
+				} else {
+					msglist.push_back(tmp);
+				}
+			}
+		}
+		mysql_free_result(res);
+	}
+	
+	return msglist;
 }
 
 uint32_t MySQL::maxServerId() {

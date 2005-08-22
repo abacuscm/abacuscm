@@ -163,6 +163,7 @@ static bool initialise() {
 		return false;
 
 	uint32_t local_id = db->name2server_id(localname);
+	list<Message*> msglist = db->getUnprocessedMessages();
 	db->release();
 
 	if(local_id == ~0U) {
@@ -199,6 +200,8 @@ static bool initialise() {
 	socket_pool.insert(cl);
 
 	ClientAction::setMessageQueue(&message_queue);
+
+	message_queue.enqueue(msglist.begin(), msglist.end());
 
 	return true;
 }
