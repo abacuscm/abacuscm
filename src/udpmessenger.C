@@ -60,9 +60,7 @@ private:
 	int _cipher_blocksize;
 	int _cipher_ivsize;
 	int _cipher_keysize;
-	EVP_CIPHER_CTX _enc_ctx;
 	EVP_CIPHER_CTX _dec_ctx;
-	pthread_mutex_t _enc_lock;
 
 	map<uint32_t, struct sockaddr_in> addrmap;
 
@@ -119,9 +117,6 @@ void UDPPeerMessenger::deinitialise() {
 		munmap(_cipher_iv, _cipher_ivsize);
 		_cipher_iv = NULL;
 	}
-	EVP_CIPHER_CTX_cleanup(&_enc_ctx);
-	EVP_CIPHER_CTX_cleanup(&_dec_ctx);
-	pthread_mutex_destroy(&_enc_lock);
 }
 
 bool UDPPeerMessenger::startup() {
@@ -225,13 +220,8 @@ bool UDPPeerMessenger::startup() {
 //	log_buffer(LOG_DEBUG, "cipher key", _cipher_key, _cipher_keysize);
 //	log_buffer(LOG_DEBUG, "cipher iv", _cipher_iv, _cipher_ivsize);
 	
-	EVP_CIPHER_CTX_init(&_enc_ctx);
-	EVP_EncryptInit(&_enc_ctx, _cipher, _cipher_key, _cipher_iv);
-	
 	EVP_CIPHER_CTX_init(&_dec_ctx);
 	EVP_DecryptInit(&_dec_ctx, _cipher, _cipher_key, _cipher_iv);
-
-	pthread_mutex_init(&_enc_lock, NULL);
 
 	log(LOG_INFO, "UDPPeerMessenger started up");
 	return true;
@@ -355,6 +345,11 @@ bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) 
 	frame.message_id = message->message_id();
 	
 	for(uint16_t i = 1; i <= numfrags; i++) {
+		EVP_CIPHER_CTX enc_ctx;
+		
+		EVP_CIPHER_CTX_init(&enc_ctx);
+		EVP_EncryptInit(&enc_ctx, _cipher, _cipher_key, _cipher_iv);
+	
 		frame.fragment_num = i;
 		frame.fragment_len = base_frag_size;
 		if(i <= num_large_frags)
@@ -368,20 +363,19 @@ bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) 
 		int sendlen;
 		int tlen;
 	
-		pthread_mutex_lock(&_enc_lock);
-		if(EVP_EncryptUpdate(&_enc_ctx, sendbuffer, &sendlen, buffer,
+		if(EVP_EncryptUpdate(&enc_ctx, sendbuffer, &sendlen, buffer,
 					packetsize) != 1) {
-			pthread_mutex_unlock(&_enc_lock);
 			log_ssl_errors("EVP_EncryptUpdate");
+			EVP_CIPHER_CTX_cleanup(&enc_ctx);
 			return false;
 		}
-		if(EVP_EncryptFinal(&_enc_ctx, sendbuffer + sendlen, &tlen) != 1) {
-			pthread_mutex_unlock(&_enc_lock);
+		if(EVP_EncryptFinal(&enc_ctx, sendbuffer + sendlen, &tlen) != 1) {
 			log_ssl_errors("EVP_EncryptFinal");
+			EVP_CIPHER_CTX_cleanup(&enc_ctx);
 			return false;
 		}
-		pthread_mutex_unlock(&_enc_lock);
 		sendlen += tlen;
+		EVP_CIPHER_CTX_cleanup(&enc_ctx);
 		
 		int result = sendto(_sock, sendbuffer, sendlen, 0,
 				(const struct sockaddr*)dest, sizeof(*dest));
