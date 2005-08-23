@@ -31,6 +31,12 @@ abacusd_objects = abacusd \
 $(abacusd_name) : ldflags += -labacus -lpthread
 $(abacusd_name) : $(libabacus_name)
 
+abacus_name = bin/abacus
+abacus_objects = abacus \
+	ui_mainwindow moc_mainwindow
+
+$(abacus_name) : ldflags += -L$(QTDIR)/lib -lqt
+
 modules = udpmessenger \
 	dbmysql \
 	act_passwd \
@@ -43,16 +49,24 @@ $(modules_d) : ldflags += -shared -labacus
 modules/mod_dbmysql.so : ldflags += -lmysqlclient
 
 ###############################################################
-depfiles=$(foreach m,$(libabacus_objects) $(abacusd_objects) $(modules),deps/$(m).d)
+depfiles=$(foreach m,$(libabacus_objects) $(abacusd_objects) $(abacus_objects) $(modules),deps/$(m).d)
 abacusd_objects_d = $(foreach m,$(abacusd_objects),obj/$(m).o)
+abacus_objects_d = $(foreach m,$(abacus_objects),obj/$(m).o)
 libabacus_objects_d = $(foreach m,$(libabacus_objects),obj/$(m).o)
 
+$(foreach m,$(abacus_objects),deps/$(m).d) : dflags += -I$(QTDIR)/include
+$(foreach m,$(abacus_objects),obj/$(m).o) : cflags += -I$(QTDIR)/include
+
 .PHONY: all
-all : $(libabacus_name) $(abacusd_name) $(modules_d)
+all : $(libabacus_name) $(abacusd_name) $(abacus_name) $(modules_d)
 
 $(abacusd_name) : $(abacusd_objects_d)
 	@[ -d bin ] || mkdir bin
 	$(cc) $(ldflags) -o $@ $(abacusd_objects_d)
+
+$(abacus_name) : $(abacus_objects_d)
+	@[ -d bin ] || mkdir bin
+	$(cc) $(ldflags) -o $@ $(abacus_objects_d)
 
 $(libabacus_name) : $(libabacus_objects_d)
 	@[ -d lib ] || mkdir lib
@@ -70,10 +84,22 @@ obj/%.o : src/%.c Makefile
 	@[ -d obj ] || mkdir obj
 	$(cc) -x c $(cflags) -o $@ -c $<
 
+include/ui_%.h : ui/%.ui
+	uic $< -o $@
+
+src/moc_%.C : include/ui_%.h
+	moc $< -o $@
+
+src/ui_%.C : ui/%.ui
+	uic -impl ui_$*.h $< -o $@
+
 .PHONY: clean
 clean :
 	rm -rf deps
 	rm -rf obj
+	rm -f include/ui_*.h
+	rm -f src/moc_*.C
+	rm -f src/ui_*.C
 
 .PHONY: distclean
 distclean : clean

@@ -1,0 +1,115 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>MainWindow</class>
+<widget class="QMainWindow">
+    <property name="name">
+        <cstring>MainWindow</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>584</width>
+            <height>452</height>
+        </rect>
+    </property>
+    <property name="sizePolicy">
+        <sizepolicy>
+            <hsizetype>5</hsizetype>
+            <vsizetype>5</vsizetype>
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+        </sizepolicy>
+    </property>
+    <property name="caption">
+        <string>Abacus</string>
+    </property>
+    <property name="opaqueMoving">
+        <bool>true</bool>
+    </property>
+    <vbox>
+        <property name="name">
+            <cstring>unnamed</cstring>
+        </property>
+        <widget class="QTabWidget">
+            <property name="name">
+                <cstring>maintabs</cstring>
+            </property>
+            <property name="enabled">
+                <bool>true</bool>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>2</hsizetype>
+                    <vsizetype>2</vsizetype>
+                    <horstretch>1</horstretch>
+                    <verstretch>1</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="minimumSize">
+                <size>
+                    <width>100</width>
+                    <height>80</height>
+                </size>
+            </property>
+            <property name="tabPosition">
+                <enum>Top</enum>
+            </property>
+            <property name="tabShape">
+                <enum>Rounded</enum>
+            </property>
+            <property name="toolTip" stdset="0">
+                <string></string>
+            </property>
+            <widget class="QWidget">
+                <property name="name">
+                    <cstring>standings</cstring>
+                </property>
+                <attribute name="title">
+                    <string>Standings</string>
+                </attribute>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <widget class="QTable">
+                        <property name="name">
+                            <cstring>table1</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>2</hsizetype>
+                                <vsizetype>2</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="resizePolicy">
+                            <enum>AutoOneFit</enum>
+                        </property>
+                        <property name="numRows">
+                            <number>15</number>
+                        </property>
+                        <property name="numCols">
+                            <number>10</number>
+                        </property>
+                        <property name="readOnly">
+                            <bool>true</bool>
+                        </property>
+                    </widget>
+                </vbox>
+            </widget>
+            <widget class="QWidget">
+                <property name="name">
+                    <cstring>tab</cstring>
+                </property>
+                <attribute name="title">
+                    <string>Tab 2</string>
+                </attribute>
+            </widget>
+        </widget>
+    </vbox>
+</widget>
+<toolbars>
+</toolbars>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>
