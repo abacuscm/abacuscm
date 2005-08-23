@@ -335,34 +335,26 @@ list<Message*> MySQL::getUnprocessedMessages() {
 		MYSQL_ROW row;
 		while((row = mysql_fetch_row(res)) != NULL) {
 			long datsize = atol(row[6]);
-			uint8_t* sig = (uint8_t*)malloc(MESSAGE_SIGNATURE_SIZE);
-			uint8_t* data = (uint8_t*)malloc(datsize);
-			if(!sig || !data) {
-				if(sig)
-					free(sig);
-				if(data)
-					free(data);
-				log(LOG_CRIT, "Error allocating required memory to construct Message");
-			} else {
-				memcpy(sig, row[4], MESSAGE_SIGNATURE_SIZE);
-				memcpy(data, row[5], datsize);
-				Message* tmp = Message::buildMessage(
-						atol(row[0]),
-						atol(row[1]),
-						atol(row[2]),
-						atol(row[3]),
-						sig,
-						data,
-						datsize
-					);
+			uint8_t* sig = new uint8_t[MESSAGE_SIGNATURE_SIZE];
+			uint8_t* data = new uint8_t[datsize];
+			memcpy(sig, row[4], MESSAGE_SIGNATURE_SIZE);
+			memcpy(data, row[5], datsize);
+			Message* tmp = Message::buildMessage(
+					atol(row[0]),
+					atol(row[1]),
+					atol(row[2]),
+					atol(row[3]),
+					sig,
+					data,
+					datsize
+				);
 
-				if(!tmp) {
-					free(sig);
-					free(data);
-					log(LOG_CRIT, "This should not be happening!  Unable to construct message from DB");
-				} else {
-					msglist.push_back(tmp);
-				}
+			if(!tmp) {
+				delete []sig;
+				delete []data;
+				log(LOG_CRIT, "This should not be happening!  Unable to construct message from DB");
+			} else {
+				msglist.push_back(tmp);
 			}
 		}
 		mysql_free_result(res);
