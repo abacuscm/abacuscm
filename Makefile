@@ -3,7 +3,6 @@ cc=g++
 cflags=-g -ggdb -O0 -Iinclude -W -Wall -fpic
 dflags=-Iinclude
 ldflags=-rdynamic -g -ggdb -O0 -Llib -Wl,-rpath,$(libdir)
-name=netsniff
 
 .PHONY: default
 default : all
