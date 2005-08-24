@@ -7,8 +7,8 @@ name=netsniff
 .PHONY: default
 default : all
 
-libabacus_name = lib/libabacus.so
-libabacus_objects = config \
+libabacus_s_name = lib/libabacus-server.so
+libabacus_s_objects = config \
 	logger \
 	moduleloader \
 	peermessenger \
@@ -23,13 +23,13 @@ libabacus_objects = config \
 	clientaction \
 	eventregister \
 	messageblock
-$(libabacus_name) : ldflags += -shared -ldl -lssl
+$(libabacus_s_name) : ldflags += -shared -ldl -lssl
 
 abacusd_name = bin/abacusd
 abacusd_objects = abacusd \
 	sigsegv
-$(abacusd_name) : ldflags += -labacus -lpthread
-$(abacusd_name) : $(libabacus_name)
+$(abacusd_name) : ldflags += -labacus-server -lpthread
+$(abacusd_name) : $(libabacus_s_name)
 
 abacus_name = bin/abacus
 abacus_objects = abacus \
@@ -44,15 +44,15 @@ modules = udpmessenger \
 	act_addserver \
 	act_auth
 modules_d = $(foreach mod,$(modules),modules/mod_$(mod).so)
-$(modules_d) : ldflags += -shared -labacus
+$(modules_d) : ldflags += -shared -labacus-server
 
 modules/mod_dbmysql.so : ldflags += -lmysqlclient
 
 ###############################################################
-depfiles=$(foreach m,$(libabacus_objects) $(abacusd_objects) $(abacus_objects) $(modules),deps/$(m).d)
+depfiles=$(foreach m,$(libabacus_s_objects) $(abacusd_objects) $(abacus_objects) $(modules),deps/$(m).d)
 abacusd_objects_d = $(foreach m,$(abacusd_objects),obj/$(m).o)
 abacus_objects_d = $(foreach m,$(abacus_objects),obj/$(m).o)
-libabacus_objects_d = $(foreach m,$(libabacus_objects),obj/$(m).o)
+libabacus_s_objects_d = $(foreach m,$(libabacus_s_objects),obj/$(m).o)
 
 $(foreach m,$(abacus_objects),deps/$(m).d) : dflags += -I$(QTDIR)/include
 $(foreach m,$(abacus_objects),obj/$(m).o) : cflags += -I$(QTDIR)/include
@@ -68,9 +68,9 @@ $(abacus_name) : $(abacus_objects_d)
 	@[ -d bin ] || mkdir bin
 	$(cc) $(ldflags) -o $@ $(abacus_objects_d)
 
-$(libabacus_name) : $(libabacus_objects_d)
+$(libabacus_s_name) : $(libabacus_s_objects_d)
 	@[ -d lib ] || mkdir lib
-	$(cc) $(ldflags) -o $@ $(libabacus_objects_d)
+	$(cc) $(ldflags) -o $@ $(libabacus_s_objects_d)
 
 modules/mod_%.so : obj/%.o
 	@[ -d modules ] || mkdir modules
