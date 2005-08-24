@@ -21,7 +21,7 @@ public:
 
 ActAddUser::ActAddUser() {
 	_typemap["admin"] = USER_TYPE_ADMIN;
-	_typemap["judge"] = USER_TYPE_PARTICIPANT;
+	_typemap["judge"] = USER_TYPE_JUDGE;
 	_typemap["participant"] = USER_TYPE_PARTICIPANT;
 }
 
