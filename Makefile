@@ -7,10 +7,14 @@ name=netsniff
 .PHONY: default
 default : all
 
-libabacus_s_name = lib/libabacus-server.so
-libabacus_s_objects = config \
+libabacus_name = lib/libabacus.so
+libabacus_objects = config \
 	logger \
-	moduleloader \
+	messageblock
+$(libabacus_name) : ldflags += -shared
+
+libabacus_s_name = lib/libabacus-server.so
+libabacus_s_objects = moduleloader \
 	peermessenger \
 	message \
 	dbcon \
@@ -21,21 +25,26 @@ libabacus_s_objects = config \
 	clientlistener \
 	clientconnection \
 	clientaction \
-	eventregister \
-	messageblock
+	eventregister
 $(libabacus_s_name) : ldflags += -shared -ldl -lssl
+
+libabacus_c_name = lib/libabacus-client.so
+libabacus_c_objects = 
+$(libabacus_c_name) : ldflags += -shared -lssl
 
 abacusd_name = bin/abacusd
 abacusd_objects = abacusd \
 	sigsegv
-$(abacusd_name) : ldflags += -labacus-server -lpthread
+$(abacusd_name) : ldflags += -labacus-server -labacus -lpthread
 $(abacusd_name) : $(libabacus_s_name)
+$(abacusd_name) : $(libabacus_name)
 
 abacus_name = bin/abacus
 abacus_objects = abacus \
 	ui_mainwindow moc_mainwindow
-
-$(abacus_name) : ldflags += -L$(QTDIR)/lib -lqt
+$(abacus_name) : ldflags += -L$(QTDIR)/lib -lqt -labacus-client -labacus
+$(abacus_name) : $(libabacus_c_name)
+$(abacus_name) : $(libabacus_name)
 
 modules = udpmessenger \
 	dbmysql \
@@ -49,9 +58,11 @@ $(modules_d) : ldflags += -shared -labacus-server
 modules/mod_dbmysql.so : ldflags += -lmysqlclient
 
 ###############################################################
-depfiles=$(foreach m,$(libabacus_s_objects) $(abacusd_objects) $(abacus_objects) $(modules),deps/$(m).d)
+depfiles=$(foreach m,$(libabacus_objects) $(libabacus_s_objects) $(abacusd_objects) $(abacus_objects) $(modules),deps/$(m).d)
 abacusd_objects_d = $(foreach m,$(abacusd_objects),obj/$(m).o)
 abacus_objects_d = $(foreach m,$(abacus_objects),obj/$(m).o)
+libabacus_objects_d = $(foreach m,$(libabacus_objects),obj/$(m).o)
+libabacus_c_objects_d = $(foreach m,$(libabacus_c_objects),obj/$(m).o)
 libabacus_s_objects_d = $(foreach m,$(libabacus_s_objects),obj/$(m).o)
 
 $(foreach m,$(abacus_objects),deps/$(m).d) : dflags += -I$(QTDIR)/include
@@ -60,13 +71,23 @@ $(foreach m,$(abacus_objects),obj/$(m).o) : cflags += -I$(QTDIR)/include
 .PHONY: all
 all : $(libabacus_name) $(abacusd_name) $(abacus_name) $(modules_d)
 
-$(abacusd_name) : $(abacusd_objects_d)
-	@[ -d bin ] || mkdir bin
+bin :
+	mkdir bin
+
+$(abacusd_name) : $(abacusd_objects_d) bin
 	$(cc) $(ldflags) -o $@ $(abacusd_objects_d)
 
 $(abacus_name) : $(abacus_objects_d)
 	@[ -d bin ] || mkdir bin
 	$(cc) $(ldflags) -o $@ $(abacus_objects_d)
+
+$(libabacus_name) : $(libabacus_objects_d)
+	@[ -d lib ] || mkdir lib
+	$(cc) $(ldflags) -o $@ $(libabacus_objects_d)
+
+$(libabacus_c_name) : $(libabacus_c_objects_d)
+	@[ -d lib ] || mkdir lib
+	$(cc) $(ldflags) -o $@ $(libabacus_c_objects_d)
 
 $(libabacus_s_name) : $(libabacus_s_objects_d)
 	@[ -d lib ] || mkdir lib
@@ -107,7 +128,7 @@ distclean : clean
 	rm -rf lib
 	rm -rf modules
 
-deps/%.d : src/%.C Makefile
+deps/%.d : src/%.C
 	@[ -d deps ] || mkdir deps
 	$(cc) $(dflags) -MM $< | sed -e 's:$*.o:obj/$*.o $@:' > $@ || rm $@
 
