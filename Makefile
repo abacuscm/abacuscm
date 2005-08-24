@@ -30,7 +30,7 @@ libabacus_s_objects = moduleloader \
 $(libabacus_s_name) : ldflags += -shared -ldl -lssl
 
 libabacus_c_name = lib/libabacus-client.so
-libabacus_c_objects = 
+libabacus_c_objects = serverconnection
 $(libabacus_c_name) : ldflags += -shared -lssl
 
 abacusd_name = bin/abacusd
