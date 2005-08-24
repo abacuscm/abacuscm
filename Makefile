@@ -59,7 +59,7 @@ $(modules_d) : ldflags += -shared -labacus-server
 modules/mod_dbmysql.so : ldflags += -lmysqlclient
 
 ###############################################################
-depfiles=$(foreach m,$(libabacus_objects) $(libabacus_s_objects) $(abacusd_objects) $(abacus_objects) $(modules),deps/$(m).d)
+depfiles=$(foreach m,$(libabacus_objects) $(libabacus_s_objects) $(libabacus_c_objects) $(abacusd_objects) $(abacus_objects) $(modules),deps/$(m).d)
 abacusd_objects_d = $(foreach m,$(abacusd_objects),obj/$(m).o)
 abacus_objects_d = $(foreach m,$(abacus_objects),obj/$(m).o)
 libabacus_objects_d = $(foreach m,$(libabacus_objects),obj/$(m).o)
@@ -70,7 +70,7 @@ $(foreach m,$(abacus_objects),deps/$(m).d) : dflags += -I$(QTDIR)/include
 $(foreach m,$(abacus_objects),obj/$(m).o) : cflags += -I$(QTDIR)/include
 
 .PHONY: all
-all : $(abacusd_name) $(abacus_name) $(modules_d)
+all : $(libabacus_name) $(libabacus_s_name) $(libabacus_c_name) $(abacusd_name) $(abacus_name) $(modules_d)
 
 $(abacusd_name) : $(abacusd_objects_d)
 	@[ -d $(@D) ] || mkdir $(@D)
