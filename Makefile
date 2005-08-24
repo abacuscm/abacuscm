@@ -70,12 +70,10 @@ $(foreach m,$(abacus_objects),deps/$(m).d) : dflags += -I$(QTDIR)/include
 $(foreach m,$(abacus_objects),obj/$(m).o) : cflags += -I$(QTDIR)/include
 
 .PHONY: all
-all : $(libabacus_name) $(abacusd_name) $(abacus_name) $(modules_d)
+all : $(abacusd_name) $(abacus_name) $(modules_d)
 
-bin :
-	mkdir bin
-
-$(abacusd_name) : $(abacusd_objects_d) bin
+$(abacusd_name) : $(abacusd_objects_d)
+	@[ -d $(@D) ] || mkdir $(@D)
 	$(cc) $(ldflags) -o $@ $(abacusd_objects_d)
 
 $(abacus_name) : $(abacus_objects_d)
