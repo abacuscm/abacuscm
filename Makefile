@@ -1,7 +1,8 @@
+libdir=$(cwd)/lib
 cc=g++
 cflags=-g -ggdb -O0 -Iinclude -W -Wall -fpic
 dflags=-Iinclude
-ldflags=-rdynamic -g -ggdb -O0 -Llib
+ldflags=-rdynamic -g -ggdb -O0 -Llib -Wl,-rpath,$(libdir)
 name=netsniff
 
 .PHONY: default
@@ -78,31 +79,31 @@ $(abacusd_name) : $(abacusd_objects_d) bin
 	$(cc) $(ldflags) -o $@ $(abacusd_objects_d)
 
 $(abacus_name) : $(abacus_objects_d)
-	@[ -d bin ] || mkdir bin
+	@[ -d $(@D) ] || mkdir $(@D)
 	$(cc) $(ldflags) -o $@ $(abacus_objects_d)
 
 $(libabacus_name) : $(libabacus_objects_d)
-	@[ -d lib ] || mkdir lib
+	@[ -d $(@D) ] || mkdir $(@D)
 	$(cc) $(ldflags) -o $@ $(libabacus_objects_d)
 
 $(libabacus_c_name) : $(libabacus_c_objects_d)
-	@[ -d lib ] || mkdir lib
+	@[ -d $(@D) ] || mkdir $(@D)
 	$(cc) $(ldflags) -o $@ $(libabacus_c_objects_d)
 
 $(libabacus_s_name) : $(libabacus_s_objects_d)
-	@[ -d lib ] || mkdir lib
+	@[ -d $(@D) ] || mkdir $(@D)
 	$(cc) $(ldflags) -o $@ $(libabacus_s_objects_d)
 
 modules/mod_%.so : obj/%.o
-	@[ -d modules ] || mkdir modules
+	@[ -d $(@D) ] || mkdir $(@D)
 	$(cc) $(ldflags) -o $@ $<
 
 obj/%.o : src/%.C Makefile
-	@[ -d obj ] || mkdir obj
+	@[ -d $(@D) ] || mkdir $(@D)
 	$(cc) $(cflags) -o $@ -c $<
 
 obj/%.o : src/%.c Makefile
-	@[ -d obj ] || mkdir obj
+	@[ -d $(@D) ] || mkdir $(@D)
 	$(cc) -x c $(cflags) -o $@ -c $<
 
 include/ui_%.h : ui/%.ui
