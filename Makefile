@@ -1,4 +1,4 @@
-libdir=$(cwd)/lib
+libdir=$(CURDIR)/lib
 cc=g++
 cflags=-g -ggdb -O0 -Iinclude -W -Wall -fpic
 dflags=-Iinclude
