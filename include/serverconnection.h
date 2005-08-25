@@ -1,7 +1,11 @@
 #ifndef __SERVERCONNECTION_H__
 #define __SERVERCONNECTION_H__
 
+#include "queue.h"
+
 #include <string>
+#include <list>
+#include <map>
 #include <openssl/ssl.h>
 
 class MessageBlock;
@@ -10,9 +14,17 @@ typedef void (*EventCallback)(const MessageBlock*, void *);
 
 class ServerConnection {
 private:
+	struct CallbackData {
+		EventCallback func;
+		void *p;
+	};
+	
 	int _sock;
 	SSL *_ssl;
 	SSL_CTX *_ctx;
+	pthread_mutex_t _send_lock;
+	Queue<MessageBlock *> _responses;
+	std::map<std::string, std::list<CallbackData> > _eventmap;
 public:
 	ServerConnection();
 	~ServerConnection();
