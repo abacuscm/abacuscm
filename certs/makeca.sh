@@ -4,7 +4,7 @@ cadir=AbacusCA
 cakey="${cadir}/private/cakey.pem"
 cacert="${cadir}/cacert.pem"
 cakeysize=4096
-cavalidity=30
+cavalidity=365
 
 cd "$(dirname "$0")"
 

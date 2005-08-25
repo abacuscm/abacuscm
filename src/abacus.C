@@ -2,14 +2,18 @@
 
 #include "serverconnection.h"
 #include "config.h"
+#include "sigsegv.h"
 
 #include <qapplication.h>
 #include <stdlib.h>
 #include <string>
+#include <openssl/ssl.h>
 
 using namespace std;
 
 int main(int argc, char** argv) {
+	setup_sigsegv();
+
 	Config &config = Config::getConfig();
 
 	config.load("/etc/abacus.conf");
@@ -18,7 +22,7 @@ int main(int argc, char** argv) {
 
 	ServerConnection servercon;
 
-	if(!servercon.connect("localhost", 7368))
+	if(!servercon.connect(config["server"]["address"], config["server"]["service"]))
 		return -1;
 
 	if(!servercon.auth("jaco", "jk857"))

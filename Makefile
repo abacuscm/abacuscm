@@ -41,6 +41,7 @@ $(abacusd_name) : $(libabacus_name)
 
 abacus_name = bin/abacus
 abacus_objects = abacus \
+	sigsegv \
 	ui_mainwindow moc_mainwindow
 $(abacus_name) : ldflags += -L$(QTDIR)/lib -lqt -labacus-client -labacus
 $(abacus_name) : $(libabacus_c_name)
@@ -127,8 +128,12 @@ distclean : clean
 	rm -rf modules
 
 deps/%.d : src/%.C
-	@[ -d deps ] || mkdir deps
+	@[ -d $(@D) ] || mkdir $(@D)
 	$(cc) $(dflags) -MM $< | sed -e 's:$*.o:obj/$*.o $@:' > $@ || rm $@
+
+deps/%.d : src/%.c
+	@[ -d $(@D) ] || mkdir $(@D)
+	$(cc) -x c $(dflags) -MM $< | sed -e 's:$*.o:obj/$*.o $@:' > $@ || rm $@
 
 # need some protection here, must include iff the not all of targets in (clean,distclean).
 -include $(depfiles)

@@ -52,6 +52,6 @@ else
 fi
 
 echo "Symlinking for ease of use"
-ln -s "${crtfile}" "${keyfile}" .
+ln -sf "${crtfile}" "${keyfile}" .
 
 echo "All done"

@@ -12,11 +12,12 @@ class ServerConnection {
 private:
 	int _sock;
 	SSL *_ssl;
+	SSL_CTX *_ctx;
 public:
 	ServerConnection();
 	~ServerConnection();
 
-	bool connect(std::string servername, int port);
+	bool connect(std::string servername, std::string service);
 	bool disconnect();
 
 	bool auth(std::string username, std::string password);
