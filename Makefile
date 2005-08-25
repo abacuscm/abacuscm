@@ -42,6 +42,7 @@ $(abacusd_name) : $(libabacus_name)
 abacus_name = bin/abacus
 abacus_objects = abacus \
 	sigsegv \
+	ui_logindialog moc_logindialog \
 	ui_mainwindow moc_mainwindow
 $(abacus_name) : ldflags += -L$(QTDIR)/lib -lqt -labacus-client -labacus
 $(abacus_name) : $(libabacus_c_name)
