@@ -4,6 +4,7 @@
 #include "serverconnection.h"
 #include "config.h"
 #include "sigsegv.h"
+#include "logger.h"
 
 #include <qapplication.h>
 #include <qlineedit.h>
@@ -38,8 +39,20 @@ int main(int argc, char** argv) {
 				logindialog.service->text()))
 		return -1;
 
-	mainwindow.show();
-	application.setMainWidget(&mainwindow);
+	log(LOG_DEBUG, "Connected");
 
-	return application.exec();
+	int res;
+	if(!servercon.auth(logindialog.username->text(),
+				logindialog.password->text())) {
+		log(LOG_ERR, "Authentication error");
+		res = -1;
+	} else {
+		mainwindow.show();
+		application.setMainWidget(&mainwindow);
+		res = application.exec();
+	}
+	
+	servercon.disconnect();
+
+	return res;
 }
