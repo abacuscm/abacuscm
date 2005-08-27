@@ -36,6 +36,8 @@ ServerConnection::ServerConnection() {
 ServerConnection::~ServerConnection() {
 	if(_sock >= 0)
 		disconnect();
+	if(_ctx)
+		SSL_CTX_free(_ctx);
 }
 
 void ServerConnection::sockdata_readlock() {
