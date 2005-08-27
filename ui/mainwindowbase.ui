@@ -322,9 +322,16 @@
         <receiver>MainWindowBase</receiver>
         <slot>close()</slot>
     </connection>
+    <connection>
+        <sender>fileConnectAction</sender>
+        <signal>activated()</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>doFileConnect()</slot>
+    </connection>
 </connections>
 <slots>
-    <slot access="protected">doHelpAbout()</slot>
+    <slot access="protected" specifier="pure virtual">doHelpAbout()</slot>
+    <slot access="protected" specifier="pure virtual">doFileConnect()</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

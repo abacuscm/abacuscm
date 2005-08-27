@@ -124,6 +124,7 @@ clean :
 	rm -f include/ui_*.h
 	rm -f src/moc_*.C
 	rm -f src/ui_*.C
+	rm -f ui/*~
 
 .PHONY: distclean
 distclean : clean
