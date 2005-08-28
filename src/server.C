@@ -96,3 +96,8 @@ err:
 	pthread_mutex_unlock(&lock);
 	return ~0U;	
 }
+
+bool Server::hasMessage(uint32_t, uint32_t) {
+	NOT_IMPLEMENTED();
+	return false;
+}

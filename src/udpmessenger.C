@@ -16,12 +16,13 @@
 #include "config.h"
 #include "message.h"
 #include "dbcon.h"
+#include "server.h"
 
 #include <map>
 
 using namespace std;
 
-#define ST_FRAME_SIZE		17
+#define ST_FRAME_SIZE		19
 
 #define MIN_FRAGMENT_SIZE			200
 #define DEFAULT_MAX_FRAGMENT_SIZE	1000
@@ -33,7 +34,13 @@ struct st_frame {
 	uint32_t server_id;
 	uint32_t message_id;
 	uint16_t fragment_num;
-	uint16_t fragment_len;
+	union { // when fragment_num == 0 it indicates an ACK, in which case acking_server
+			// should be used, when > 0 fragment_len is valid.
+			// If server_id and message_id is also 0 it's considered a general poll
+			// (I'm an 'alive' message).
+		uint32_t fragment_len;
+		uint32_t acking_server;
+	};
 	uint32_t data_checksum;
 	uint8_t data[1];
 } __attribute__ ((packed));
@@ -43,11 +50,16 @@ struct st_fragment {
 	uint8_t data[1];
 } __attribute__ ((packed));
 
+typedef map<uint16_t, st_fragment*> FragmentList;
+
 struct st_fragment_collection {
 	uint16_t num_fragments;
 	uint16_t fragments_received;
-	map<uint16_t, st_fragment*> fragment;
+	FragmentList fragments;
 };
+
+typedef map<uint32_t, st_fragment_collection> ServerFragmentMap;
+typedef map<uint32_t, ServerFragmentMap> FragmentMap;
 
 class UDPPeerMessenger : public PeerMessenger {
 private:
@@ -61,13 +73,17 @@ private:
 	int _cipher_ivsize;
 	int _cipher_keysize;
 
-	map<uint32_t, struct sockaddr_in> addrmap;
+	FragmentMap _fragments;
+
+	map<uint32_t, struct sockaddr_in> _addrmap;
+	pthread_mutex_t _lock_addrmap;
 
 	const sockaddr_in* getSockAddr(uint32_t server_id);
 
 	uint32_t checksum(const uint8_t *data, uint16_t len);
 
 	bool startup();
+	void sendAck(uint32_t server_id, uint32_t message_id, uint32_t to_server = 0);
 public:
 	UDPPeerMessenger();
 	virtual ~UDPPeerMessenger();
@@ -90,6 +106,7 @@ UDPPeerMessenger::UDPPeerMessenger() {
 	_cipher_blocksize = -1;
 	_cipher_ivsize = -1;
 	_cipher_keysize = -1;
+	pthread_mutex_init(&_lock_addrmap, NULL);
 }
 
 UDPPeerMessenger::~UDPPeerMessenger() {
@@ -259,16 +276,13 @@ uint32_t UDPPeerMessenger::checksum(const uint8_t *data, uint16_t len) {
 }
 
 const sockaddr_in* UDPPeerMessenger::getSockAddr(uint32_t server_id) {
-	static map<uint32_t, struct sockaddr_in> cache;
-	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-
 	sockaddr_in *result = NULL;
 	
-	pthread_mutex_lock(&lock);
+	pthread_mutex_lock(&_lock_addrmap);
 
 	map<uint32_t, struct sockaddr_in>::iterator i;
-	i = cache.find(server_id);
-	if(i != cache.end()) {
+	i = _addrmap.find(server_id);
+	if(i != _addrmap.end()) {
 		result = &i->second;
 	} else {
 		string ip;
@@ -294,18 +308,22 @@ const sockaddr_in* UDPPeerMessenger::getSockAddr(uint32_t server_id) {
 			} else if(host->h_addrtype != AF_INET) {
 				log(LOG_ERR, "Invalid network type for '%s'", ip.c_str());
 			} else {
-				cache[server_id].sin_family = AF_INET;
-				cache[server_id].sin_addr.s_addr = *(u_int32_t*)host->h_addr_list[0];
-				cache[server_id].sin_port = htons(atol(port.c_str()));
-				result = &cache[server_id];
+				_addrmap[server_id].sin_family = AF_INET;
+				_addrmap[server_id].sin_addr.s_addr = *(u_int32_t*)host->h_addr_list[0];
+				_addrmap[server_id].sin_port = htons(atol(port.c_str()));
+				result = &_addrmap[server_id];
 				log(LOG_INFO, "Resolved %s to %s", ip.c_str(),
 						inet_ntoa(result->sin_addr));
 			}
 		}
 	}
-	pthread_mutex_unlock(&lock);
+	pthread_mutex_unlock(&_lock_addrmap);
 
 	return result;
+}
+
+void UDPPeerMessenger::sendAck(uint32_t /*server_id*/, uint32_t /*message_id*/, uint32_t /*to_server*/) {
+	NOT_IMPLEMENTED();
 }
 
 bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) {
@@ -326,7 +344,7 @@ bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) 
 	
 	// determine the number of fragments, always rounding up.
 	uint16_t numfrags = (message_len + _max_fragment_size - 1) / _max_fragment_size;
-	uint16_t base_frag_size = message_len / numfrags;
+	uint32_t base_frag_size = message_len / numfrags;
 	uint16_t num_large_frags = message_len % numfrags;
 
 	// See ENV_EncryptUpdate(3) for an explanation of why this needs
@@ -340,6 +358,11 @@ bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) 
 	frame.server_id = message->server_id();
 	frame.message_id = message->message_id();
 	
+	if((numfrags & (1 << (sizeof(frame.fragment_len) * 8 - 1))) != 0) {
+		log(LOG_CRIT, "Too many fragments!  Message(%u,%u)", frame.server_id, frame.message_id);
+		return false;
+	}
+	
 	for(uint16_t i = 1; i <= numfrags; i++) {
 		EVP_CIPHER_CTX enc_ctx;
 		
@@ -347,6 +370,9 @@ bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) 
 		EVP_EncryptInit(&enc_ctx, _cipher, _cipher_key, _cipher_iv);
 	
 		frame.fragment_num = i;
+		if(i == numfrags)
+			frame.fragment_num |= 1 << (sizeof(frame.fragment_len) * 8 - 1);
+
 		frame.fragment_len = base_frag_size;
 		if(i <= num_large_frags)
 			frame.fragment_len++;
@@ -431,8 +457,49 @@ Message* UDPPeerMessenger::getMessage() {
 				log(LOG_WARNING, "Discarding frame due to invalid fragment_length field");
 			} else if(frame.data_checksum != checksum(frame.data, frame.fragment_len)) {
 				log(LOG_WARNING, "Discarding frame with invalid checksum");
+			} else if(frame.fragment_num == 0) {
+				log(LOG_INFO, "Received ACK for (%u,%u) from %u", frame.server_id, frame.message_id, frame.acking_server);
+				NOT_IMPLEMENTED();
+			} else if(Server::hasMessage(frame.server_id, frame.message_id)) {
+				log(LOG_INFO, "Received fragment for (%u,%u) which we already have.", frame.server_id, frame.message_id);
+				sendAck(frame.server_id, frame.message_id);
 			} else {
-				NOT_IMPLEMENTED();	
+				bool lastfragment = frame.fragment_num & (1 << (sizeof(frame.fragment_num) * 8 - 1)) != 0;
+				frame.fragment_num &= (1 << (sizeof(frame.fragment_num) * 8 - 1)) - 1;
+
+				log(LOG_DEBUG, "Received fragment %u for (%u,%u).", frame.fragment_num, frame.server_id, frame.message_id);
+
+				ServerFragmentMap::iterator i = _fragments[frame.server_id].find(frame.message_id);
+
+				if(i == _fragments[frame.server_id].end()) {
+					_fragments[frame.server_id][frame.message_id].num_fragments = 0;
+					_fragments[frame.server_id][frame.message_id].fragments_received = 0;
+				}
+				
+				st_fragment_collection *frags = &_fragments[frame.server_id][frame.message_id];
+
+				if(frags->num_fragments <= frame.fragment_num)
+					frags->num_fragments = frame.fragment_num + (lastfragment ? 0 : 1);
+
+				log(LOG_DEBUG, "We have previously received %u fragments of %u known fragments", frags->fragments_received, frags->num_fragments);
+
+				FragmentList::iterator fragpos = frags->fragments.find(frame.fragment_num);
+				if(fragpos != frags->fragments.end()) {
+					log(LOG_WARNING, "Duplicate fragment (%u,%u,%u)", frame.server_id, frame.message_id, frame.fragment_num);
+				} else {
+					st_fragment *fragment = (st_fragment*)malloc(frame.fragment_len + sizeof(st_fragment) - 1);
+
+					fragment->fragment_length = frame.fragment_len;
+					memcpy(fragment->data, frame.data, frame.fragment_len);
+					
+					frags->fragments_received++;
+					frags->fragments[frame.fragment_num] = fragment;
+
+					if(frags->fragments_received == frags->num_fragments) {
+						log(LOG_DEBUG, "Received message (%u,%u)", frame.server_id, frame.message_id);
+						NOT_IMPLEMENTED();
+					}
+				}
 			}
 
 			EVP_CIPHER_CTX_cleanup(&dec_ctx);

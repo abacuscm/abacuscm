@@ -19,6 +19,7 @@ public:
 	static uint32_t getId();
 	static uint32_t nextUserId();
 	static uint32_t nextServerId();
+	static bool hasMessage(uint32_t server_id, uint32_t message_id);
 };
 
 #endif
