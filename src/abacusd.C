@@ -213,12 +213,19 @@ static bool initialise() {
 static void* peer_listener(void *) {
 	PeerMessenger* messenger = PeerMessenger::getMessenger();
 	log(LOG_INFO, "Starting PeerListener thread.");
-
 	while(abacusd_running) {
 		Message * message = messenger->getMessage();
-		if(message)
-			message_queue.enqueue(message);
-		else
+		if(message) {
+			DbCon *db = DbCon::getInstance();
+			if(db) {
+				if(db->putRemoteMessage(message)) {
+					message_queue.enqueue(message);
+					//messenger->sendAck(message->server_id(), message->message_id());
+				} else
+					delete message;
+			} else
+				delete message;
+		} else
 			log(LOG_WARNING, "Failed to get message!");
 	}
 	return NULL;

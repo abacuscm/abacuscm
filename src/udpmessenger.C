@@ -497,7 +497,31 @@ Message* UDPPeerMessenger::getMessage() {
 
 					if(frags->fragments_received == frags->num_fragments) {
 						log(LOG_DEBUG, "Received message (%u,%u)", frame.server_id, frame.message_id);
-						NOT_IMPLEMENTED();
+
+						uint32_t total_len = 0;
+						FragmentList::iterator i = frags->fragments.begin();
+						while(i != frags->fragments.end()) {
+							total_len += i->second->fragment_length;
+							++i;
+						}
+						
+						uint8_t *blob = (uint8_t*)malloc(total_len);
+						uint8_t *pos = blob;
+						for(i = frags->fragments.begin(); i != frags->fragments.end(); ++i) {
+							memcpy(pos, i->second->data, i->second->fragment_length);
+							pos += i->second->fragment_length;
+						}
+
+						message = Message::buildMessage(blob, total_len);
+						if(!message) {
+							log(LOG_CRIT, "Error reconstructing message (%u,%u)", frame.server_id, frame.message_id);
+							free(blob);
+						} else {
+							for(i = frags->fragments.begin(); i != frags->fragments.end(); ++i) {
+								free(i->second);
+							}
+							_fragments[frame.server_id].erase(frame.message_id);
+						}
 					}
 				}
 			}

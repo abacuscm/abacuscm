@@ -156,7 +156,7 @@ bool MySQL::putLocalMessage(Message* message) {
 	query << "SELECT MAX(message_id) FROM PeerMessage WHERE server_id="
 		<< Server::getId();
 
-	if(mysql_query(&_mysql, "LOCK TABLES PeerMessage WRITE")) {
+	if(mysql_query(&_mysql, "LOCK TABLES PeerMessage WRITE, PeerMessageNoAck WRITE, Server READ")) {
 		log_mysql_error();
 		return false;
 	}
@@ -192,15 +192,52 @@ bool MySQL::putLocalMessage(Message* message) {
 		mysql_query(&_mysql, "UNLOCK TABLES");
 		return false;
 	}
-		
+
+	query.str(""); 
+	query << "INSERT INTO PeerMessageNoAck(server_id, message_id, "
+		"ack_server_id, lastsent) SELECT " << message->server_id() <<
+		", " << message->message_id() << ", server_id, 0 FROM Server WHERE "
+		"server_id != " << Server::getId();
+	
+	if(mysql_query(&_mysql, query.str().c_str()))
+		log_mysql_error();
+	
 	mysql_query(&_mysql, "UNLOCK TABLES");
 
 	return true;
 }
 
-bool MySQL::putRemoteMessage(const Message*) {
-	NOT_IMPLEMENTED();
-	return false;
+bool MySQL::putRemoteMessage(const Message* message) {
+	const uint8_t *blob;
+	uint32_t blobsize;
+	ostringstream query;
+	
+	if(!message->getData(&blob, &blobsize))
+		return false;
+
+	query << "INSERT INTO PeerMessage(server_id, message_id, message_type_id,"
+		" time, signature, data, processed) VALUES(" << message->server_id()
+		<< ", " << message->message_id() << ", " << message->message_type_id()
+		<< ", " << message->time() << ", '"
+		<< escape_buffer(message->getSignature(), MESSAGE_SIGNATURE_SIZE)
+		<< "', '" << escape_buffer(blob, blobsize) << "', 0)";
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	}
+
+	query.str("");
+	query << "INSERT INTO PeerMessageNoAck(server_id, message_id, "
+		"ack_server_id, lastsent) SELECT " << message->server_id() <<
+		", " << message->message_id() << ", server_id, 0 FROM Server WHERE "
+		"server_id != " << Server::getId() << " AND server_id != " <<
+		message->server_id();
+
+	if(mysql_query(&_mysql, query.str().c_str()))
+		log_mysql_error();
+
+	return true;
 }
 	
 std::vector<uint32_t> MySQL::getRemoteServers() {
