@@ -263,6 +263,9 @@
         <property name="menuText">
             <string>&amp;Connect</string>
         </property>
+        <property name="toolTip">
+            <string>Connect to an abacus server</string>
+        </property>
     </action>
     <action>
         <property name="name">
@@ -277,6 +280,9 @@
         <property name="menuText">
             <string>&amp;Disconnect</string>
         </property>
+        <property name="toolTip">
+            <string>Disconnect from abacus server</string>
+        </property>
     </action>
     <action>
         <property name="name">
@@ -288,6 +294,9 @@
         <property name="menuText">
             <string>E&amp;xit</string>
         </property>
+        <property name="toolTip">
+            <string>Quit abacus</string>
+        </property>
     </action>
     <action>
         <property name="name">
@@ -298,6 +307,9 @@
         </property>
         <property name="menuText">
             <string>&amp;About</string>
+        </property>
+        <property name="toolTip">
+            <string>About abacus</string>
         </property>
     </action>
 </actions>
