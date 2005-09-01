@@ -8,6 +8,8 @@
 
 class Message;
 
+typedef std::list<Message*> MessageList;
+
 class DbCon {
 public:
 	DbCon();
@@ -103,7 +105,13 @@ public:
 	/**
 	 * Used to retrieve all unprocessed messages.
 	 */
-	virtual std::list<Message*> getUnprocessedMessages() = 0;
+	virtual MessageList getUnprocessedMessages() = 0;
+
+	/**
+	 * Function to retrieve a list of all unacked messages (for a particular
+	 * server).
+	 */
+	virtual MessageList getUnacked(uint32_t server_id, uint32_t limit = 0) = 0;
 
 	/**
 	 * Functions to register a DbCon functor (function to create DbCons),
