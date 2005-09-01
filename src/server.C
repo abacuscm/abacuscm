@@ -2,8 +2,6 @@
 #include "dbcon.h"
 #include "config.h"
 #include "logger.h"
-#include "peermessenger.h"
-#include "message.h"
 
 #include <pthread.h>
 
@@ -102,22 +100,4 @@ err:
 bool Server::hasMessage(uint32_t, uint32_t) {
 	NOT_IMPLEMENTED();
 	return false;
-}
-
-void Server::flushMessages(uint32_t server_id) {
-	DbCon *db = DbCon::getInstance();
-	if(!db) {
-		log(LOG_WARNING, "Failed to flush queued messages for %u", server_id);
-		return;
-	}
-	
-	MessageList msglist = db->getUnacked(server_id);
-	db->release();
-
-	PeerMessenger *messenger = PeerMessenger::getMessenger();
-	MessageList::iterator i;
-	for(i = msglist.begin(); i != msglist.end(); ++i) {
-		messenger->sendMessage(server_id, *i);
-		delete *i;
-	}
 }
