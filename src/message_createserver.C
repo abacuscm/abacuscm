@@ -1,6 +1,7 @@
 #include "message_createserver.h"
 #include "logger.h"
 #include "dbcon.h"
+#include "server.h"
 
 #include "message_type_ids.h"
 
@@ -91,6 +92,10 @@ bool Message_CreateServer::process() const {
 				log(LOG_WARNING, "Unable to set attribute '%s' = '%s' for '%s'.", i->first.c_str(), i->second.c_str(), _name.c_str());
 
 		db->release();
+
+		// If we are the master node...
+		if(Server::getId() == 1)
+			Server::flushMessages(_server_id);
 		return true;
 	} else {
 		db->release();

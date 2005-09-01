@@ -62,20 +62,9 @@ bool Message::makeMessage() {
 			db->release();
 			return false;
 		}
-	
-		_blob_size = sizeof(struct st_blob) - 1 + _data_size;
-		_blob = (struct st_blob*)malloc(_blob_size);
-		if(!_blob) {
-			log(LOG_CRIT, "Memory allocation problem!");
-			_blob_size = 0;
-		} else {
-			_blob->server_id = _server_id;
-			_blob->message_id = _message_id;
-			_blob->time = _time;
-			_blob->message_type_id = message_type_id();
-			memset(_blob->signature, 0, MESSAGE_SIGNATURE_SIZE);
-			memcpy(_blob->data, _data, _data_size);
-		}
+
+		makeBlob();
+		
 		std::vector<uint32_t> remote_servers = db->getRemoteServers();
 
 		std::vector<uint32_t>::iterator i;
@@ -140,9 +129,13 @@ bool Message::buildMessage(uint32_t server_id, uint32_t message_id,
 }
 
 void Message::makeBlob() {
-	_blob = (struct st_blob*)malloc(sizeof(st_blob) + _data_size - 1);
-	if(!_blob)
-		log(LOG_CRIT, "Out of memory! (going to segfault just now)");
+	_blob_size = sizeof(st_blob) + _data_size - 1;
+	_blob = (struct st_blob*)malloc(_blob_size);
+	if(!_blob) {
+		log(LOG_CRIT, "Out of memory! (probably going to segfault just now)");
+		_blob_size = 0;
+		return;
+	}
 	_blob->server_id = _server_id;
 	_blob->message_id = _message_id;
 	_blob->time = _time;

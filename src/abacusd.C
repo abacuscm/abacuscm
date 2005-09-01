@@ -163,7 +163,7 @@ static bool initialise() {
 		return false;
 
 	uint32_t local_id = db->name2server_id(localname);
-	list<Message*> msglist = db->getUnprocessedMessages();
+	MessageList msglist = db->getUnprocessedMessages();
 	db->release();
 
 	if(local_id == ~0U) {

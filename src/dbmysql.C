@@ -17,6 +17,8 @@ private:
 
 	string escape_string(const string& str);
 	string escape_buffer(const uint8_t* bfr, uint32_t size);
+	
+	list<Message*> getMessages(std::string query);
 public:
 	MySQL();
 	virtual ~MySQL();
@@ -33,7 +35,8 @@ public:
 	virtual bool addUser(const std::string& name, const std::string& pass, uint32_t id, uint32_t type);
 	virtual int authenticate(const std::string& uname, const std::string& pass, uint32_t *user_id, uint32_t *user_type);
 	virtual bool setPassword(uint32_t user_id, const std::string& newpass);
-	virtual list<Message*> getUnprocessedMessages();
+	virtual MessageList getUnprocessedMessages();
+	virtual MessageList getUnacked(uint32_t server_id = 0);
 	virtual uint32_t maxServerId();
 	virtual uint32_t maxUserId();
 
@@ -262,7 +265,7 @@ std::vector<uint32_t> MySQL::getRemoteServers() {
 
 	return remservers;
 }
-
+	
 bool MySQL::markProcessed(uint32_t server_id, uint32_t message_id) {
 	ostringstream query;
 	query << "UPDATE PeerMessage SET processed=1 WHERE server_id=" <<
@@ -356,15 +359,10 @@ bool MySQL::setPassword(uint32_t user_id, const std::string& newpass) {
 	return true;
 }
 
-list<Message*> MySQL::getUnprocessedMessages() {
-	list<Message*> msglist;
-
-	const char *query = "SELECT server_id, message_id, message_type_id, "
-		"time, signature, data, length(data) FROM PeerMessage WHERE "
-		"processed = 0 ORDER BY time";
+MessageList MySQL::getMessages(std::string query) {
+	MessageList msglist;
 	MYSQL_RES *res;
-	
-	if(mysql_query(&_mysql, query)) {
+	if(mysql_query(&_mysql, query.c_str())) {
 		log_mysql_error();
 	} else if(!(res = mysql_use_result(&_mysql))) {
 		log_mysql_error();
@@ -398,6 +396,24 @@ list<Message*> MySQL::getUnprocessedMessages() {
 	}
 	
 	return msglist;
+}
+
+MessageList MySQL::getUnprocessedMessages() {
+	return getMessages("SELECT server_id, message_id, message_type_id, "
+		"time, signature, data, length(data) FROM PeerMessage WHERE "
+		"processed = 0 ORDER BY time");
+}
+
+MessageList MySQL::getUnacked(uint32_t server_id) {
+	ostringstream query;
+	query << "SELECT PeerMessage.server_id, PeerMessage.message_id, "
+		"message_type_id, time, signature, data, length(data) FROM "
+		"PeerMessage, PeerMessageNoAck WHERE "
+		"PeerMessage.server_id = PeerMessageNoAck.server_id AND "
+		"PeerMessage.message_id = PeerMessageNoAck.message_id AND "
+		"PeerMessageNoAck.ack_server_id = " << server_id;
+	
+	return getMessages(query.str());
 }
 
 uint32_t MySQL::maxServerId() {
