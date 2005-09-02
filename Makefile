@@ -26,16 +26,16 @@ libabacus_s_objects = moduleloader \
 	clientconnection \
 	clientaction \
 	eventregister
-$(libabacus_s_name) : ldflags += -shared -ldl -lssl
+$(libabacus_s_name) : ldflags += -shared -ldl -lssl -labacus
 
 libabacus_c_name = lib/libabacus-client.so
 libabacus_c_objects = serverconnection
-$(libabacus_c_name) : ldflags += -shared -lssl
+$(libabacus_c_name) : ldflags += -shared -lssl -labacus
 
 abacusd_name = bin/abacusd
 abacusd_objects = abacusd \
 	sigsegv
-$(abacusd_name) : ldflags += -labacus-server -labacus -lpthread
+$(abacusd_name) : ldflags += -labacus-server -lpthread
 $(abacusd_name) : $(libabacus_s_name)
 $(abacusd_name) : $(libabacus_name)
 
@@ -47,7 +47,7 @@ abacus_objects = abacus \
 	ui_aboutdialog moc_aboutdialog \
 	ui_adduser moc_adduser \
 	ui_mainwindowbase moc_mainwindowbase
-$(abacus_name) : ldflags += -L$(QTDIR)/lib -lqt -labacus-client -labacus
+$(abacus_name) : ldflags += -L$(QTDIR)/lib -lqt -labacus-client
 $(abacus_name) : $(libabacus_c_name)
 $(abacus_name) : $(libabacus_name)
 
@@ -74,7 +74,17 @@ $(foreach m,$(abacus_objects),deps/$(m).d) : dflags += -I$(QTDIR)/include
 $(foreach m,$(abacus_objects),obj/$(m).o) : cflags += -I$(QTDIR)/include
 
 .PHONY: all
-all : $(libabacus_name) $(libabacus_s_name) $(libabacus_c_name) $(abacusd_name) $(abacus_name) $(modules_d)
+all : client server modules
+#$(libabacus_name) $(libabacus_s_name) $(libabacus_c_name) $(abacusd_name) $(abacus_name) $(modules_d)
+
+.PHONY: client
+client: $(libabacus_name) $(libabacus_c_name) $(abacus_name)
+
+.PHONY: server
+server: $(libabacus_name) $(libabacus_s_name) $(abacusd_name)
+
+.PHONY: modules
+modules: $(modules_d)
 
 $(abacusd_name) : $(abacusd_objects_d)
 	@[ -d $(@D) ] || mkdir $(@D)
@@ -125,12 +135,14 @@ clean :
 	rm -f src/moc_*.C
 	rm -f src/ui_*.C
 	rm -f ui/*~
-
+	find doc -maxdepth 1 -type f ! -iname "*.tex" ! -iname "*.pdf" -exec rm {} \;
+	
 .PHONY: distclean
 distclean : clean
 	rm -rf bin
 	rm -rf lib
 	rm -rf modules
+	rm -f doc/*.pdf
 
 deps/%.d : src/%.C
 	@[ -d $(@D) ] || mkdir $(@D)

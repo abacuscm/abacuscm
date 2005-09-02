@@ -258,13 +258,33 @@ bool ServerConnection::auth(string username, string password) {
 }
 
 bool ServerConnection::registerEventCallback(string event, EventCallback func, void *custom) {
-	NOT_IMPLEMENTED();
-	return false;
+	pthread_mutex_lock(&_lock_eventmap);
+
+	CallbackList &list = _eventmap[event];
+	CallbackList::iterator i;
+	for(i = list.begin(); i != list.end(); ++i) {
+		if(i->func == func)
+			break;
+	}
+	i->func = func;
+	i->p = custom;
+	
+	pthread_mutex_unlock(&_lock_eventmap);
+	return true;
 }
 
 bool ServerConnection::deregisterEventCallback(string event, EventCallback func) {
-	NOT_IMPLEMENTED();
-	return false;
+	pthread_mutex_lock(&_lock_eventmap);
+
+	CallbackList &list = _eventmap[event];
+	CallbackList::iterator i;
+	for(i = list.begin(); i != list.end(); ++i) {
+		if(i->func == func)
+			list.erase(i);
+	}
+	
+	pthread_mutex_unlock(&_lock_eventmap);
+	return true;
 }
 
 void* ServerConnection::receive_thread() {

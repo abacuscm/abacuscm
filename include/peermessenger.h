@@ -16,6 +16,7 @@ public:
 	virtual void deinitialise() = 0;
 	virtual bool sendMessage(uint32_t server_id, const Message * message) = 0;
 	virtual Message* getMessage() = 0;
+	virtual void sendAck(uint32_t server_id, uint32_t message_id) = 0;
 
 	static void setMessenger(PeerMessenger *messenger);
 	static PeerMessenger * getMessenger();

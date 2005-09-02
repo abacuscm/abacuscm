@@ -1,0 +1,47 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{a4wide}
+\usepackage{times}
+
+\title{Abacus Q\&A}
+\author{Jaco Kroon\\Kroon Information Systems\\jaco@kroon.co.za}
+
+\date{}
+
+
+\begin{document}
+\pagestyle{empty}
+\maketitle
+
+\abstract{This document attempts to answer some questions that can be considered Q\&A type questions (ie: they are quessed) as well as some real questions that has been asked}
+
+\newpage
+\pagestyle{plain}
+\pagenumbering{roman}
+\tableofcontents
+
+
+\newpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\section{What is abacus?}
+% TODO
+
+\section{Error messages and their solutions}
+\subsection{ack\_id == 0 cannot possibly be correct}
+The complete error message would read:  ack\_id == 0 cannot possibly be correct.  This could potentially happen if/when a server didn't initialise properly upon first creation (the first PeerMessage a server receives must be it's own initialisation message.  Please see the Q\&A for more info.
+
+Abacus sends the message to create a particular server to that particular server directly after creating that server.  It does this from all existing servers to increase the chances of this message getting through as it is of critical importance that this is the first message to get there.
+
+Unfortunately if this should fail it will mean that there is no way to ensure that it is that particular message that gets re-sent (well, not that I'm aware off - other than to perhaps connect a priority to the NoAcks).  Consequently the servers that are up will tend to send some other message upon reconnect.  There are two possibly ways to "fix" this.
+
+\begin{enumerate}
+\item{Delete the records from PeerMessageNoAck that refers to PeerMessage records earlier than that of the \texttt{addserver} message.  You need to know exactly what the message id is for this to work.  This can be done on a live running server.  If you only had one server up and running, you need to put these records back when you are done.  This can be done with the SQL statement:
+
+\texttt{INSERT INTO PeerMessageNoAck SELECT server\_id, message\_id,\\??, 0 FROM PeerMessage;}
+
+Where ?? is the numeric id of the server to be added.  This will cause too many messages to be resent, but your server will be up.}
+\item{You can put a record into the Server table on the affected server.  IE:  The one that does not want to initialise.  This record needs to contain the correct name and id of the server.  This part can be done on a running server.  The processing of the \texttt{addserver} message will fail.  This is non-critical (in this case).  Shut down the server, delete the added record and restart the abacus daemon.  All should now be well.}
+\end{enumerate}
+
+\end{document}

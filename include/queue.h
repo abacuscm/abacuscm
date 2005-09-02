@@ -31,6 +31,29 @@ public:
 		return t;
 	}
 
+	template<T def>
+	T timed_dequeue(int sec) {
+		struct timeval now;
+		struct timespec timeout;
+		int retcode = 0;
+		T t = def;
+		
+		gettimeofday(&now, NULL);
+		timeout.tv_sec = now.tv_sec + sec;
+		timeout.tv_nsec = now.tv_usec * 1000;
+		
+		pthread_mutex_lock(&_m);
+		while(_q.empty() && retcode != ETIMEDOUT)
+			retcode = pthread_cond_timedwait(&_e, &_m, &timeout);
+
+		if(retcode != ETIMEDOUT) {
+			t = _q.front();
+			_q.pop();
+		}
+		pthread_mutex_unlock(&_m);
+		return t;
+	}
+	
 	void enqueue(T v) {
 		pthread_mutex_lock(&_m);
 		pthread_cond_signal(&_e);

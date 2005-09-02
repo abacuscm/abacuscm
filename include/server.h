@@ -14,13 +14,18 @@
 // This must be a power of 2 >= MAX_SERVERS
 #define ID_GRANULARITY	MAX_SERVERS
 
+template<class T> class Queue;
+
 class Server {
 public:
 	static uint32_t getId();
 	static uint32_t nextUserId();
 	static uint32_t nextServerId();
 	static bool hasMessage(uint32_t server_id, uint32_t message_id);
-	static void flushMessages(uint32_t server_id);
+	static void flushMessages(uint32_t server_id) __attribute__((deprecated));
+	static void putAck(uint32_t server_id, uint32_t message_id,
+			uint32_t ack_server);
+	static void setAckQueue(Queue<uint32_t> *ack_queue);
 };
 
 #endif

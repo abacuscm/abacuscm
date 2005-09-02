@@ -2,6 +2,7 @@
 #include "logger.h"
 #include "dbcon.h"
 #include "server.h"
+#include "peermessenger.h"
 
 #include "message_type_ids.h"
 
@@ -93,9 +94,10 @@ bool Message_CreateServer::process() const {
 
 		db->release();
 
-		// If we are the master node...
-		if(Server::getId() == 1)
-			Server::flushMessages(_server_id);
+		PeerMessenger *messenger = PeerMessenger::getMessenger();
+		if(messenger)
+			messenger->sendMessage(_server_id, this);
+
 		return true;
 	} else {
 		db->release();

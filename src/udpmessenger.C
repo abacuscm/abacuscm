@@ -83,7 +83,10 @@ private:
 	uint32_t checksum(const uint8_t *data, uint16_t len);
 
 	bool startup();
-	void sendAck(uint32_t server_id, uint32_t message_id, uint32_t to_server = 0);
+
+	bool sendFrame(uint8_t *buffer, int packetsize,
+			const struct sockaddr_in* dest);
+	void sendAck(uint32_t server_id, uint32_t message_id, uint32_t to_server);
 public:
 	UDPPeerMessenger();
 	virtual ~UDPPeerMessenger();
@@ -91,6 +94,7 @@ public:
 	virtual bool initialise();
 	virtual void deinitialise();
 	virtual bool sendMessage(uint32_t server_id, const Message * message);
+	void sendAck(uint32_t server_id, uint32_t message_id);
 	virtual Message* getMessage();
 };
 
@@ -322,8 +326,80 @@ const sockaddr_in* UDPPeerMessenger::getSockAddr(uint32_t server_id) {
 	return result;
 }
 
-void UDPPeerMessenger::sendAck(uint32_t /*server_id*/, uint32_t /*message_id*/, uint32_t /*to_server*/) {
-	NOT_IMPLEMENTED();
+bool UDPPeerMessenger::sendFrame(uint8_t *buffer, int packetsize,
+		const struct sockaddr_in* dest) {
+	int sendlen;
+	int tlen;
+	
+	// See ENV_EncryptUpdate(3) for an explanation of why this needs
+	// to be larger.
+	uint8_t sendbuffer[BUFFER_SIZE + MAX_BLOCKSIZE];
+
+	EVP_CIPHER_CTX enc_ctx;
+
+	EVP_CIPHER_CTX_init(&enc_ctx);
+	EVP_EncryptInit(&enc_ctx, _cipher, _cipher_key, _cipher_iv);
+
+	if(EVP_EncryptUpdate(&enc_ctx, sendbuffer, &sendlen, buffer,
+				packetsize) != 1) {
+		log_ssl_errors("EVP_EncryptUpdate");
+		EVP_CIPHER_CTX_cleanup(&enc_ctx);
+		return false;
+	}
+	if(EVP_EncryptFinal(&enc_ctx, sendbuffer + sendlen, &tlen) != 1) {
+		log_ssl_errors("EVP_EncryptFinal");
+		EVP_CIPHER_CTX_cleanup(&enc_ctx);
+		return false;
+	}
+	sendlen += tlen;
+	EVP_CIPHER_CTX_cleanup(&enc_ctx);
+
+	int result = sendto(_sock, sendbuffer, sendlen, 0,
+			(const struct sockaddr*)dest, sizeof(*dest));
+	if(result < 0) {
+		lerror("sendto");
+		return false;
+	} else if(result < packetsize) {
+		log(LOG_ERR, "Only %d bytes of %d got transmitted!  This is a serious problem!",
+				result, packetsize);
+		return false;
+	}
+	return true;
+}
+
+void UDPPeerMessenger::sendAck(uint32_t server_id, uint32_t message_id) {
+	DbCon *db = DbCon::getInstance();
+	if(!db) {
+		log(LOG_ERR, "Not global acking (%u,%u) - unable to obtain DbCon",
+				server_id, message_id);
+		return;
+	}
+	vector<uint32_t> servers = db->getRemoteServers();
+	db->release();
+
+	vector<uint32_t>::iterator i;
+	for(i = servers.begin(); i != servers.end(); ++i)
+		sendAck(server_id, message_id, *i);
+}
+
+void UDPPeerMessenger::sendAck(uint32_t server_id, uint32_t message_id,
+		uint32_t to_server) {
+	union {
+		st_frame frame;
+		uint8_t buffer[1];
+	};
+	const sockaddr_in * dest = getSockAddr(to_server);
+
+	frame.server_id = server_id;
+	frame.message_id = message_id;
+	frame.fragment_num = 0;
+	frame.acking_server = Server::getId();
+	frame.data_checksum = checksum(NULL, 0);
+	*frame.data = 0;
+
+	if(!sendFrame(buffer, sizeof(st_frame), dest))
+		log(LOG_WARNING, "Error sending ACK for (%u,%u) to %u.",
+				server_id, message_id, to_server);
 }
 
 bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) {
@@ -332,7 +408,7 @@ bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) 
 
 	if(!message->getBlob(&message_data, &message_len))
 		return false;
-	
+
 	if(!message_len) {
 		log(LOG_CRIT, "Message length cannot be 0 in %s", __PRETTY_FUNCTION__);
 		return false;
@@ -341,15 +417,12 @@ bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) 
 	const struct sockaddr_in *dest = getSockAddr(server_id);
 	if(!dest)
 		return false;
-	
+
 	// determine the number of fragments, always rounding up.
 	uint16_t numfrags = (message_len + _max_fragment_size - 1) / _max_fragment_size;
 	uint32_t base_frag_size = message_len / numfrags;
 	uint16_t num_large_frags = message_len % numfrags;
 
-	// See ENV_EncryptUpdate(3) for an explanation of why this needs
-	// to be larger.
-	uint8_t sendbuffer[BUFFER_SIZE + MAX_BLOCKSIZE];
 	union {
 		uint8_t buffer[BUFFER_SIZE];
 		struct st_frame frame;
@@ -357,18 +430,13 @@ bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) 
 
 	frame.server_id = message->server_id();
 	frame.message_id = message->message_id();
-	
+
 	if((numfrags & (1 << (sizeof(frame.fragment_len) * 8 - 1))) != 0) {
 		log(LOG_CRIT, "Too many fragments!  Message(%u,%u)", frame.server_id, frame.message_id);
 		return false;
 	}
-	
+
 	for(uint16_t i = 1; i <= numfrags; i++) {
-		EVP_CIPHER_CTX enc_ctx;
-		
-		EVP_CIPHER_CTX_init(&enc_ctx);
-		EVP_EncryptInit(&enc_ctx, _cipher, _cipher_key, _cipher_iv);
-	
 		frame.fragment_num = i;
 		if(i == numfrags)
 			frame.fragment_num |= 1 << (sizeof(frame.fragment_len) * 8 - 1);
@@ -382,34 +450,13 @@ bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) 
 		message_data += frame.fragment_len;
 
 		int packetsize = frame.fragment_len + ST_FRAME_SIZE - 1;
-		int sendlen;
-		int tlen;
-	
-		if(EVP_EncryptUpdate(&enc_ctx, sendbuffer, &sendlen, buffer,
-					packetsize) != 1) {
-			log_ssl_errors("EVP_EncryptUpdate");
-			EVP_CIPHER_CTX_cleanup(&enc_ctx);
-			return false;
-		}
-		if(EVP_EncryptFinal(&enc_ctx, sendbuffer + sendlen, &tlen) != 1) {
-			log_ssl_errors("EVP_EncryptFinal");
-			EVP_CIPHER_CTX_cleanup(&enc_ctx);
-			return false;
-		}
-		sendlen += tlen;
-		EVP_CIPHER_CTX_cleanup(&enc_ctx);
-		
-		int result = sendto(_sock, sendbuffer, sendlen, 0,
-				(const struct sockaddr*)dest, sizeof(*dest));
-		if(result < 0) {
-			lerror("sendto");
-			return false;
-		} else if(result < packetsize) {
-			log(LOG_ERR, "Only %d bytes of %d got transmitted!  This is a serious problem!",
-					result, packetsize);
-		}
+
+		if(!sendFrame(buffer, packetsize, dest))
+			log(LOG_WARNING, "Frame %u for (%u,%u) destined for %u failed "
+					"to transmit", frame.fragment_num, frame.server_id,
+					frame.message_id, server_id);
 	}
-		
+
 	return true;
 }
 
@@ -452,14 +499,16 @@ Message* UDPPeerMessenger::getMessage() {
 			} else if((size_t)(packet_size + tlen) < sizeof(st_frame)) {
 				log(LOG_WARNING, "Discarding frame due to short packet (%d bytes)",
 						packet_size + tlen);
+			} else if(frame.fragment_num == 0) {
+				log(LOG_INFO, "Received ACK for (%u,%u) from %u",
+						frame.server_id, frame.message_id, frame.acking_server);
+				Server::putAck(frame.server_id, frame.message_id,
+						frame.acking_server);
 			} else if((size_t)(packet_size + tlen) !=
 					frame.fragment_len + sizeof(st_frame) - 1) {
 				log(LOG_WARNING, "Discarding frame due to invalid fragment_length field");
 			} else if(frame.data_checksum != checksum(frame.data, frame.fragment_len)) {
 				log(LOG_WARNING, "Discarding frame with invalid checksum");
-			} else if(frame.fragment_num == 0) {
-				log(LOG_INFO, "Received ACK for (%u,%u) from %u", frame.server_id, frame.message_id, frame.acking_server);
-				NOT_IMPLEMENTED();
 			} else if(Server::hasMessage(frame.server_id, frame.message_id)) {
 				log(LOG_INFO, "Received fragment for (%u,%u) which we already have.", frame.server_id, frame.message_id);
 				sendAck(frame.server_id, frame.message_id);
@@ -475,13 +524,11 @@ Message* UDPPeerMessenger::getMessage() {
 					_fragments[frame.server_id][frame.message_id].num_fragments = 0;
 					_fragments[frame.server_id][frame.message_id].fragments_received = 0;
 				}
-				
+
 				st_fragment_collection *frags = &_fragments[frame.server_id][frame.message_id];
 
 				if(frags->num_fragments <= frame.fragment_num)
 					frags->num_fragments = frame.fragment_num + (lastfragment ? 0 : 1);
-
-				log(LOG_DEBUG, "We have previously received %u fragments of %u known fragments", frags->fragments_received, frags->num_fragments);
 
 				FragmentList::iterator fragpos = frags->fragments.find(frame.fragment_num);
 				if(fragpos != frags->fragments.end()) {
@@ -491,7 +538,7 @@ Message* UDPPeerMessenger::getMessage() {
 
 					fragment->fragment_length = frame.fragment_len;
 					memcpy(fragment->data, frame.data, frame.fragment_len);
-					
+
 					frags->fragments_received++;
 					frags->fragments[frame.fragment_num] = fragment;
 
@@ -504,7 +551,7 @@ Message* UDPPeerMessenger::getMessage() {
 							total_len += i->second->fragment_length;
 							++i;
 						}
-						
+
 						uint8_t *blob = (uint8_t*)malloc(total_len);
 						uint8_t *pos = blob;
 						for(i = frags->fragments.begin(); i != frags->fragments.end(); ++i) {

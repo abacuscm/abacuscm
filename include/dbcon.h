@@ -108,11 +108,25 @@ public:
 	virtual MessageList getUnprocessedMessages() = 0;
 
 	/**
-	 * Function to retrieve a list of all unacked messages (for a particular
-	 * server).
+	 * Function to retrieve a list of (all) unacked messages (for a particular
+	 * server).  You can also specify a limit on the number of messages to
+	 * receive.
 	 */
 	virtual MessageList getUnacked(uint32_t server_id, uint32_t limit = 0) = 0;
 
+	/**
+	 * Call this function to ACK a message in the database.  This effectively
+	 * dequeues it from being re-sent.
+	 */
+	virtual void ackMessage(uint32_t server_id, uint32_t message_id,
+			uint32_t ack_server) = 0;
+
+	/**
+	 * This function queries whether we actually have a certain message
+	 * committed to DB.
+	 */
+	virtual bool hasMessage(uint32_t server_id, uint32_t message_id) = 0;
+	
 	/**
 	 * Functions to register a DbCon functor (function to create DbCons),
 	 * get a DbCon and to release one.  This allows for connection pooling

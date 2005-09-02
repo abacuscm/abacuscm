@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
+#include <sys/time.h>
 
 #include "config.h"
 #include "logger.h"
@@ -34,6 +35,7 @@ static pthread_t thread_peer_listener;
 static pthread_t thread_message_handler;
 static pthread_t thread_socket_selector;
 static pthread_t thread_worker_spawner;
+static pthread_t thread_message_resender;
 
 // This variable indicates that we are still running.
 static volatile bool abacusd_running = true;
@@ -41,6 +43,7 @@ static volatile bool abacusd_running = true;
 // All the various Queue<>s
 static Queue<Message*> message_queue;
 static Queue<Socket*> wait_queue;
+static Queue<uint32_t> ack_queue;
 
 static SocketPool socket_pool;
 
@@ -220,7 +223,7 @@ static void* peer_listener(void *) {
 			if(db) {
 				if(db->putRemoteMessage(message)) {
 					message_queue.enqueue(message);
-					//messenger->sendAck(message->server_id(), message->message_id());
+					messenger->sendAck(message->server_id(), message->message_id());
 				} else
 					delete message;
 			} else
@@ -419,6 +422,58 @@ void* socket_selector(void*) {
 	return NULL;
 }
 
+// TODO:  Make the "limit" variable configurable
+// instead of simply 1.
+void resend_message(uint32_t server_id) {
+	PeerMessenger *messenger = PeerMessenger::getMessenger();
+	if(!messenger)
+		return;
+
+	DbCon *db = DbCon::getInstance();
+	if(!db)
+		return;
+	
+	MessageList msg = db->getUnacked(server_id, 1);
+	db->release();
+
+	MessageList::iterator i;
+	for(i = msg.begin(); i != msg.end(); ++i) {
+		log(LOG_DEBUG, "Resending (%u,%u) to %u",
+				(*i)->server_id(), (*i)->message_id(), server_id);
+		messenger->sendMessage(server_id, *i);
+		delete *i;
+	}
+}
+
+// TODO: Make the waiting period configurable
+// instead of a fixed 5.  Posibly also make this
+// a "hard" time, ie, every 5 seconds instead of
+// a complete 5 seconds every time.
+void* message_resender(void*) {
+	Server::setAckQueue(&ack_queue);
+	while(true) {
+		uint32_t s_ack = ack_queue.timed_dequeue<0>(5);
+		if(!abacusd_running)
+			break;
+		if(s_ack) {
+			resend_message(s_ack);
+		} else {
+			DbCon *db = DbCon::getInstance();
+			if(db) {
+				vector<uint32_t> servers = db->getRemoteServers();
+				db->release();
+
+				vector<uint32_t>::iterator i;
+				for(i = servers.begin(); i != servers.end(); ++i) {
+					resend_message(*i);
+				}
+			}
+		}
+	}
+
+	return NULL;
+}
+
 /**
  * Set everything up to do what it's supposed to do and then wait for
  * it all to tear down again...
@@ -451,6 +506,7 @@ int main(int argc, char ** argv) {
 	pthread_create(&thread_message_handler, NULL, message_handler, NULL);
 	pthread_create(&thread_worker_spawner, NULL, worker_spawner, NULL);
 	pthread_create(&thread_socket_selector, NULL, socket_selector, NULL);
+	pthread_create(&thread_message_resender, NULL, message_resender, NULL);
 
 	log(LOG_DEBUG, "abacusd is up and running.");
 
@@ -463,6 +519,7 @@ int main(int argc, char ** argv) {
 	 */
 	pthread_kill(thread_socket_selector, SIGTERM);
 	message_queue.enqueue(NULL);
+	ack_queue.enqueue(0);
 	pthread_mutex_lock(&lock_numworkers);
 	pthread_cond_signal(&cond_numworkers);
 	pthread_mutex_unlock(&lock_numworkers);
@@ -471,6 +528,7 @@ int main(int argc, char ** argv) {
 	pthread_join(thread_message_handler, NULL);
 	pthread_join(thread_worker_spawner, NULL);
 	pthread_join(thread_socket_selector, NULL);
+	pthread_join(thread_message_resender, NULL);
 
 	SocketPool::iterator i;
 	for(i = socket_pool.begin(); i != socket_pool.end(); ++i)

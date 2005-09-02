@@ -37,6 +37,9 @@ public:
 	virtual bool setPassword(uint32_t user_id, const std::string& newpass);
 	virtual MessageList getUnprocessedMessages();
 	virtual MessageList getUnacked(uint32_t server_id, uint32_t limit = 0);
+	virtual void ackMessage(uint32_t server_id, uint32_t message_id,
+			uint32_t ack_server);
+	virtual bool hasMessage(uint32_t server_id, uint32_t message_id);
 	virtual uint32_t maxServerId();
 	virtual uint32_t maxUserId();
 
@@ -418,6 +421,39 @@ MessageList MySQL::getUnacked(uint32_t server_id, uint32_t limit) {
 		query << " LIMIT " << limit;
 	
 	return getMessages(query.str());
+}
+
+void MySQL::ackMessage(uint32_t server_id, uint32_t message_id,
+		uint32_t ack_server) {
+	ostringstream query;
+	query << "DELETE FROM PeerMessageNoAck WHERE server_id=" << server_id <<
+		" AND message_id=" << message_id << " AND ack_server_id=" <<
+		ack_server;
+	
+	if(mysql_query(&_mysql, query.str().c_str()))
+		log_mysql_error();
+}
+	
+bool MySQL::hasMessage(uint32_t server_id, uint32_t message_id) {
+	ostringstream query;
+	query << "SELECT processed FROM PeerMessage WHERE server_id=" <<
+		server_id << " AND message_id=" << message_id;
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	}
+
+	MYSQL_RES *res = mysql_store_result(&_mysql);
+	if(res) {
+		MYSQL_ROW row = mysql_fetch_row(res);
+		bool result = row != NULL;
+		mysql_free_result(res);
+		return result;
+	} else {
+		log_mysql_error();
+		return false;
+	}
 }
 
 uint32_t MySQL::maxServerId() {

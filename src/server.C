@@ -4,10 +4,13 @@
 #include "logger.h"
 #include "peermessenger.h"
 #include "message.h"
+#include "queue.h"
 
 #include <pthread.h>
 
 #define ID_GRANULARITY		MAX_SERVERS
+
+static Queue<uint32_t> *ack_queue;
 
 uint32_t Server::getId() {
 	Config &config = Config::getConfig();
@@ -99,12 +102,20 @@ err:
 	return ~0U;	
 }
 
-bool Server::hasMessage(uint32_t, uint32_t) {
-	NOT_IMPLEMENTED();
-	return false;
+bool Server::hasMessage(uint32_t server_id, uint32_t message_id) {
+	DbCon *db = DbCon::getInstance();
+	if(!db) {
+		log(LOG_ERR, "Unable to check for existence of message (%u,%u)",
+				server_id, message_id);
+		return false;
+	}
+	bool res = db->hasMessage(server_id, message_id);
+	db->release();
+	return res;
 }
 
 void Server::flushMessages(uint32_t server_id) {
+	log(LOG_ERR, "Call to deprecated function Server::flushMessages()");
 	DbCon *db = DbCon::getInstance();
 	if(!db) {
 		log(LOG_WARNING, "Failed to flush queued messages for %u", server_id);
@@ -120,4 +131,26 @@ void Server::flushMessages(uint32_t server_id) {
 		messenger->sendMessage(server_id, *i);
 		delete *i;
 	}
+}
+
+void Server::putAck(uint32_t server_id, uint32_t message_id, uint32_t ack_id) {
+	if(!ack_id) {
+		log(LOG_ERR, "ack_id == 0 cannot possibly be correct.  This could potentially happen if/when a server didn't initialise properly upon first creation (the first PeerMessage a server receives must be it's own initialisation message.  Please see the Q&A for more info.");
+		return;
+	}
+	DbCon *db = DbCon::getInstance();
+	if(!db) {
+		log(LOG_WARNING, "Not committing ACK for (%u,%u) from %u to DB",
+				server_id, message_id, ack_id);
+		return;
+	}
+	db->ackMessage(server_id, message_id, ack_id);
+	db->release();
+
+	if(ack_queue)
+		ack_queue->enqueue(ack_id);
+}
+
+void Server::setAckQueue(Queue<uint32_t>* _ack_queue) {
+	ack_queue = _ack_queue;
 }
