@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
-#include <sys/time.h>
 
 #include "config.h"
 #include "logger.h"

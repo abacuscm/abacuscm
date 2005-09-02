@@ -3,6 +3,8 @@
 
 #include <queue>
 #include <list>
+#include <sys/time.h>
+#include <errno.h>
 
 template<typename T>
 class Queue {
