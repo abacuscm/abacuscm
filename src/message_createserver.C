@@ -94,9 +94,7 @@ bool Message_CreateServer::process() const {
 
 		db->release();
 
-		PeerMessenger *messenger = PeerMessenger::getMessenger();
-		if(messenger)
-			messenger->sendMessage(_server_id, this);
+		Server::putAck(_server_id, 0, 0);
 
 		return true;
 	} else {

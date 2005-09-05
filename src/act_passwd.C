@@ -98,7 +98,7 @@ static void init() __attribute__((constructor));
 static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "passwd", &_act_passwd);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "passwd", &_act_passwd);
-	ClientAction::registerAction(USER_TYPE_PARTICIPANT, "passwd", &_act_passwd);
+	ClientAction::registerAction(USER_TYPE_CONTESTANT, "passwd", &_act_passwd);
 	ClientAction::registerAction(USER_TYPE_MARKER, "passwd", &_act_passwd);
 	Message::registerMessageFunctor(TYPE_ID_UPDATEPASS, create_passwd_msg);
 }

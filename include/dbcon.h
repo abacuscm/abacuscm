@@ -110,9 +110,10 @@ public:
 	/**
 	 * Function to retrieve a list of (all) unacked messages (for a particular
 	 * server).  You can also specify a limit on the number of messages to
-	 * receive.
+	 * receive.  The message_type_id parameter can be 0 to indicate any type
+	 * of message.
 	 */
-	virtual MessageList getUnacked(uint32_t server_id, uint32_t limit = 0) = 0;
+	virtual MessageList getUnacked(uint32_t server_id, uint32_t message_type_id, uint32_t limit = 0) = 0;
 
 	/**
 	 * Call this function to ACK a message in the database.  This effectively

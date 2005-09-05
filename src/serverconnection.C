@@ -150,10 +150,8 @@ bool ServerConnection::connect(string server, string service) {
 	log(LOG_DEBUG, "TODO:  Check servername against cn of certificate");
 
 	ensureThread();
-	log(LOG_DEBUG, "asdf");
 
 	sockdata_unlock();
-	log(LOG_DEBUG, "asdf");
 	return true;
 err:
 	if(_ssl) {
@@ -238,12 +236,7 @@ MessageBlock* ServerConnection::sendMB(MessageBlock *mb) {
 	return res;
 }
 
-bool ServerConnection::auth(string username, string password) {
-	MessageBlock mb("auth");
-
-	mb["user"] = username;
-	mb["pass"] = password;
-
+bool ServerConnection::simpleAction(MessageBlock &mb) {
 	MessageBlock *ret = sendMB(&mb);
 	if(!ret)
 		return false;
@@ -255,6 +248,44 @@ bool ServerConnection::auth(string username, string password) {
 	delete ret;
 	
 	return response;
+}
+
+bool ServerConnection::auth(string username, string password) {
+	MessageBlock mb("auth");
+
+	mb["user"] = username;
+	mb["pass"] = password;
+
+	return simpleAction(mb);
+}
+
+string ServerConnection::whatAmI() {
+	MessageBlock mb("whatami");
+	
+	MessageBlock *ret = sendMB(&mb);
+	if(!ret)
+		return "";
+
+	bool response = ret->action() == "ok";
+	string type;
+	if(!response)
+		log(LOG_ERR, "%s", (*ret)["msg"].c_str());
+	else
+		type = (*ret)["type"];
+
+	delete ret;
+
+	return type;
+}
+
+bool ServerConnection::createuser(string username, string password, string type) {
+	MessageBlock mb("adduser");
+
+	mb["username"] = username;
+	mb["passwd"] = password;
+	mb["type"] = type;
+
+	return simpleAction(mb);
 }
 
 bool ServerConnection::registerEventCallback(string event, EventCallback func, void *custom) {

@@ -240,11 +240,18 @@
     <property name="name">
         <cstring>MenuBarEditor</cstring>
     </property>
+    <property name="enabled">
+        <bool>true</bool>
+    </property>
     <item text="&amp;File" name="File">
         <action name="fileConnectAction"/>
         <action name="fileDisconnectAction"/>
         <separator/>
         <action name="fileExitAction"/>
+    </item>
+    <item text="&amp;Admin" name="Admin">
+        <action name="adminCreate_UserAction"/>
+        <action name="adminAdd_ServerAction"/>
     </item>
     <item text="&amp;Help" name="Help">
         <action name="helpAboutAction"/>
@@ -312,6 +319,34 @@
             <string>About abacus</string>
         </property>
     </action>
+    <action>
+        <property name="name">
+            <cstring>adminCreate_UserAction</cstring>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>Create &amp;User</string>
+        </property>
+        <property name="menuText">
+            <string>Create &amp;User</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>adminAdd_ServerAction</cstring>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>Add &amp;Server</string>
+        </property>
+        <property name="menuText">
+            <string>Add &amp;Server</string>
+        </property>
+    </action>
 </actions>
 <images>
     <image name="image0">
@@ -340,10 +375,17 @@
         <receiver>MainWindowBase</receiver>
         <slot>doFileConnect()</slot>
     </connection>
+    <connection>
+        <sender>adminCreate_UserAction</sender>
+        <signal>activated()</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>doAdminCreateUser()</slot>
+    </connection>
 </connections>
 <slots>
     <slot access="protected" specifier="pure virtual">doHelpAbout()</slot>
     <slot access="protected" specifier="pure virtual">doFileConnect()</slot>
+    <slot access="protected" specifier="pure virtual">doAdminCreateUser()</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

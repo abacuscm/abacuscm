@@ -22,7 +22,7 @@ public:
 ActAddUser::ActAddUser() {
 	_typemap["admin"] = USER_TYPE_ADMIN;
 	_typemap["judge"] = USER_TYPE_JUDGE;
-	_typemap["participant"] = USER_TYPE_PARTICIPANT;
+	_typemap["contestant"] = USER_TYPE_CONTESTANT;
 }
 
 bool ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
@@ -39,6 +39,8 @@ bool ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
 
 	if(new_username == "")
 		return cc->sendError("Cannot have a blank username");
+
+	// TODO:  Add check for "in-use" usernames.
 
 	uint32_t new_id = Server::nextUserId();
 	if(new_id == ~0U)

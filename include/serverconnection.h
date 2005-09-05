@@ -52,6 +52,8 @@ private:
 	MessageBlock *sendMB(MessageBlock *mb);
 	void* receive_thread();
 
+	bool simpleAction(MessageBlock &mb);
+	
 	static void* thread_spawner(void*);
 public:
 	ServerConnection();
@@ -61,6 +63,8 @@ public:
 	bool disconnect();
 
 	bool auth(std::string username, std::string password);
+	std::string whatAmI();
+	bool createuser(std::string username, std::string password, std::string type);
 
 	bool registerEventCallback(std::string event, EventCallback func, void *custom);
 	bool deregisterEventCallback(std::string event, EventCallback func);

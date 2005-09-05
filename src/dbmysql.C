@@ -25,18 +25,23 @@ public:
 
 	virtual bool ok();
 	virtual uint32_t name2server_id(const string& name);
-	virtual string getServerAttribute(uint32_t server_id, const string& attribute);
-	virtual bool setServerAttribute(uint32_t server_id, const string& attribute, const string& value);
+	virtual string getServerAttribute(uint32_t server_id,
+			const string& attribute);
+	virtual bool setServerAttribute(uint32_t server_id, const string& attribute,
+			const string& value);
 	virtual bool putLocalMessage(Message*);
 	virtual bool putRemoteMessage(const Message*);
 	virtual std::vector<uint32_t> getRemoteServers();
 	virtual bool markProcessed(uint32_t server_id, uint32_t message_id);
 	virtual bool addServer(const string& name, uint32_t id);
-	virtual bool addUser(const std::string& name, const std::string& pass, uint32_t id, uint32_t type);
-	virtual int authenticate(const std::string& uname, const std::string& pass, uint32_t *user_id, uint32_t *user_type);
+	virtual bool addUser(const std::string& name, const std::string& pass,
+			uint32_t id, uint32_t type);
+	virtual int authenticate(const std::string& uname, const std::string& pass,
+			uint32_t *user_id, uint32_t *user_type);
 	virtual bool setPassword(uint32_t user_id, const std::string& newpass);
 	virtual MessageList getUnprocessedMessages();
-	virtual MessageList getUnacked(uint32_t server_id, uint32_t limit = 0);
+	virtual MessageList getUnacked(uint32_t server_id, uint32_t message_type_id,
+			uint32_t limit = 0);
 	virtual void ackMessage(uint32_t server_id, uint32_t message_id,
 			uint32_t ack_server);
 	virtual bool hasMessage(uint32_t server_id, uint32_t message_id);
@@ -407,15 +412,19 @@ MessageList MySQL::getUnprocessedMessages() {
 		"processed = 0 ORDER BY time");
 }
 
-MessageList MySQL::getUnacked(uint32_t server_id, uint32_t limit) {
+MessageList MySQL::getUnacked(uint32_t server_id, uint32_t message_type_id, uint32_t limit) {
 	ostringstream query;
 	query << "SELECT PeerMessage.server_id, PeerMessage.message_id, "
 		"message_type_id, time, signature, data, length(data) FROM "
 		"PeerMessage, PeerMessageNoAck WHERE "
 		"PeerMessage.server_id = PeerMessageNoAck.server_id AND "
 		"PeerMessage.message_id = PeerMessageNoAck.message_id AND "
-		"PeerMessageNoAck.ack_server_id = " << server_id <<
-		" ORDER BY time";
+		"PeerMessageNoAck.ack_server_id = " << server_id;
+
+	if(message_type_id)
+		query << " AND PeerMessage.message_type_id = " << message_type_id;
+	
+	query << " ORDER BY time";
 
 	if(limit)
 		query << " LIMIT " << limit;

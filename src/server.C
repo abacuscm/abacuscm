@@ -122,7 +122,7 @@ void Server::flushMessages(uint32_t server_id) {
 		return;
 	}
 	
-	MessageList msglist = db->getUnacked(server_id);
+	MessageList msglist = db->getUnacked(server_id, 0);
 	db->release();
 
 	PeerMessenger *messenger = PeerMessenger::getMessenger();
@@ -138,17 +138,20 @@ void Server::putAck(uint32_t server_id, uint32_t message_id, uint32_t ack_id) {
 		log(LOG_ERR, "ack_id == 0 cannot possibly be correct.  This could potentially happen if/when a server didn't initialise properly upon first creation (the first PeerMessage a server receives must be it's own initialisation message.  Please see the Q&A for more info.");
 		return;
 	}
-	DbCon *db = DbCon::getInstance();
-	if(!db) {
-		log(LOG_WARNING, "Not committing ACK for (%u,%u) from %u to DB",
-				server_id, message_id, ack_id);
-		return;
-	}
-	db->ackMessage(server_id, message_id, ack_id);
-	db->release();
-
+	
 	if(ack_queue)
 		ack_queue->enqueue(ack_id);
+
+	if(server_id && message_id) {
+		DbCon *db = DbCon::getInstance();
+		if(!db) {
+			log(LOG_WARNING, "Not committing ACK for (%u,%u) from %u to DB",
+					server_id, message_id, ack_id);
+			return;
+		}
+		db->ackMessage(server_id, message_id, ack_id);
+		db->release();
+	}
 }
 
 void Server::setAckQueue(Queue<uint32_t>* _ack_queue) {
