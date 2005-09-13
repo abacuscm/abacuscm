@@ -8,6 +8,7 @@
 #include <qlineedit.h>
 #include <qspinbox.h>
 #include <qcombobox.h>
+#include <qfiledialog.h>
 
 #include <sstream>
 
@@ -50,6 +51,10 @@ bool ProblemConfig::addAttribute(QGridLayout *g, std::string attr_name, std::str
 
 			QPushButton *pushbutton = new QPushButton("Browse", frame);
 			layout->addWidget(pushbutton);
+
+			QFileDialog *fdiag = new QFileDialog(frame);
+			connect(fdiag, SIGNAL( fileSelected ( const QString & ) ), lineedit, SLOT( setText ( const QString & ) ));
+			connect(pushbutton, SIGNAL( clicked() ), fdiag, SLOT( exec() ));
 
 			control = frame;
 		}; break;
