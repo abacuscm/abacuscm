@@ -9,19 +9,14 @@ using namespace std;
 ProblemType::TypeMap ProblemType::_problem_type_map;
 
 ProblemType::ProblemType() {
+	_attr_list.push_back("shortname");
+	_attr_list.push_back("longname");
 }
 
 ProblemType::~ProblemType() {
 }
 
 vector<string> ProblemType::getAttributeList() const {
-	static vector<string> _attr_list;
-
-	if(_attr_list.empty()) {
-		_attr_list.push_back("shortname");
-		_attr_list.push_back("longname");
-	}
-
 	return _attr_list;
 }
 

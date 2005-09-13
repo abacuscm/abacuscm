@@ -9,6 +9,8 @@ class ProblemType {
 private:
 	typedef std::map<std::string, const ProblemType*> TypeMap;
 	static TypeMap _problem_type_map;
+	
+	std::vector<std::string> _attr_list;
 protected:
 	ProblemType();
 	virtual ~ProblemType();
