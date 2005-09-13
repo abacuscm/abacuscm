@@ -1,54 +1,70 @@
 <!DOCTYPE UI><UI version="3.3" stdsetdef="1">
-<class>LoginDialog</class>
+<class>ProblemConfigBase</class>
 <widget class="QDialog">
     <property name="name">
-        <cstring>LoginDialog</cstring>
+        <cstring>ProblemConfigBase</cstring>
     </property>
     <property name="geometry">
         <rect>
             <x>0</x>
-            <y>10</y>
-            <width>301</width>
-            <height>162</height>
+            <y>0</y>
+            <width>371</width>
+            <height>222</height>
         </rect>
     </property>
-    <property name="sizePolicy">
-        <sizepolicy>
-            <hsizetype>0</hsizetype>
-            <vsizetype>0</vsizetype>
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-        </sizepolicy>
-    </property>
     <property name="caption">
-        <string>Connect to Server</string>
+        <string>Problem Configuration</string>
     </property>
     <property name="sizeGripEnabled">
         <bool>true</bool>
     </property>
-    <property name="modal">
-        <bool>true</bool>
-    </property>
-    <grid>
+    <vbox>
         <property name="name">
             <cstring>unnamed</cstring>
         </property>
-        <property name="resizeMode">
-            <enum>Fixed</enum>
-        </property>
-        <widget class="QLayoutWidget" row="4" column="0" rowspan="1" colspan="2">
+        <widget class="QFrame">
             <property name="name">
-                <cstring>Layout1</cstring>
+                <cstring>prop_data</cstring>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>5</hsizetype>
+                    <vsizetype>1</vsizetype>
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="frameShape">
+                <enum>NoFrame</enum>
+            </property>
+            <property name="frameShadow">
+                <enum>Raised</enum>
+            </property>
+        </widget>
+        <spacer>
+            <property name="name">
+                <cstring>spacer2</cstring>
+            </property>
+            <property name="orientation">
+                <enum>Vertical</enum>
+            </property>
+            <property name="sizeType">
+                <enum>Expanding</enum>
+            </property>
+            <property name="sizeHint">
+                <size>
+                    <width>20</width>
+                    <height>183</height>
+                </size>
+            </property>
+        </spacer>
+        <widget class="QLayoutWidget">
+            <property name="name">
+                <cstring>layout4</cstring>
             </property>
             <hbox>
                 <property name="name">
                     <cstring>unnamed</cstring>
-                </property>
-                <property name="margin">
-                    <number>0</number>
-                </property>
-                <property name="spacing">
-                    <number>6</number>
                 </property>
                 <widget class="QPushButton">
                     <property name="name">
@@ -76,7 +92,7 @@
                     </property>
                     <property name="sizeHint">
                         <size>
-                            <width>20</width>
+                            <width>158</width>
                             <height>20</height>
                         </size>
                     </property>
@@ -114,85 +130,21 @@
                 </widget>
             </hbox>
         </widget>
-        <widget class="QLabel" row="0" column="0">
-            <property name="name">
-                <cstring>textLabel1</cstring>
-            </property>
-            <property name="text">
-                <string>Server:</string>
-            </property>
-        </widget>
-        <widget class="QLabel" row="1" column="0">
-            <property name="name">
-                <cstring>textLabel2</cstring>
-            </property>
-            <property name="text">
-                <string>Service (Port):</string>
-            </property>
-        </widget>
-        <widget class="QLabel" row="2" column="0">
-            <property name="name">
-                <cstring>textLabel3</cstring>
-            </property>
-            <property name="text">
-                <string>Username:</string>
-            </property>
-        </widget>
-        <widget class="QLabel" row="3" column="0">
-            <property name="name">
-                <cstring>textLabel4</cstring>
-            </property>
-            <property name="text">
-                <string>Password:</string>
-            </property>
-        </widget>
-        <widget class="QLineEdit" row="0" column="1">
-            <property name="name">
-                <cstring>serverName</cstring>
-            </property>
-        </widget>
-        <widget class="QLineEdit" row="1" column="1">
-            <property name="name">
-                <cstring>service</cstring>
-            </property>
-        </widget>
-        <widget class="QLineEdit" row="2" column="1">
-            <property name="name">
-                <cstring>username</cstring>
-            </property>
-        </widget>
-        <widget class="QLineEdit" row="3" column="1">
-            <property name="name">
-                <cstring>password</cstring>
-            </property>
-            <property name="echoMode">
-                <enum>Password</enum>
-            </property>
-        </widget>
-    </grid>
+    </vbox>
 </widget>
 <connections>
     <connection>
         <sender>buttonOk</sender>
         <signal>clicked()</signal>
-        <receiver>LoginDialog</receiver>
+        <receiver>ProblemConfigBase</receiver>
         <slot>accept()</slot>
     </connection>
     <connection>
         <sender>buttonCancel</sender>
         <signal>clicked()</signal>
-        <receiver>LoginDialog</receiver>
+        <receiver>ProblemConfigBase</receiver>
         <slot>reject()</slot>
     </connection>
 </connections>
-<tabstops>
-    <tabstop>username</tabstop>
-    <tabstop>password</tabstop>
-    <tabstop>buttonOk</tabstop>
-    <tabstop>buttonCancel</tabstop>
-    <tabstop>serverName</tabstop>
-    <tabstop>service</tabstop>
-    <tabstop>buttonHelp</tabstop>
-</tabstops>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

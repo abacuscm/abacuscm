@@ -25,6 +25,7 @@ protected:
 	virtual void doHelpAbout();
 	virtual void doFileConnect();
 	virtual void doAdminCreateUser();
+	virtual void doAdminProblemConfig();
 
 public:
 	MainWindow();

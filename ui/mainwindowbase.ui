@@ -252,6 +252,7 @@
     <item text="&amp;Admin" name="Admin">
         <action name="adminCreate_UserAction"/>
         <action name="adminAdd_ServerAction"/>
+        <action name="adminProblem_ConfigAction"/>
     </item>
     <item text="&amp;Help" name="Help">
         <action name="helpAboutAction"/>
@@ -347,6 +348,20 @@
             <string>Add &amp;Server</string>
         </property>
     </action>
+    <action>
+        <property name="name">
+            <cstring>adminProblem_ConfigAction</cstring>
+        </property>
+        <property name="enabled">
+            <bool>true</bool>
+        </property>
+        <property name="text">
+            <string>&amp;Problem Config</string>
+        </property>
+        <property name="menuText">
+            <string>&amp;Problem Config</string>
+        </property>
+    </action>
 </actions>
 <images>
     <image name="image0">
@@ -381,11 +396,18 @@
         <receiver>MainWindowBase</receiver>
         <slot>doAdminCreateUser()</slot>
     </connection>
+    <connection>
+        <sender>adminProblem_ConfigAction</sender>
+        <signal>activated()</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>doAdminProblemConfig()</slot>
+    </connection>
 </connections>
 <slots>
     <slot access="protected" specifier="pure virtual">doHelpAbout()</slot>
     <slot access="protected" specifier="pure virtual">doFileConnect()</slot>
     <slot access="protected" specifier="pure virtual">doAdminCreateUser()</slot>
+    <slot access="protected" specifier="pure virtual">doAdminProblemConfig()</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

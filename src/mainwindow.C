@@ -4,6 +4,7 @@
 #include "config.h"
 #include "logger.h"
 #include "ui_adduser.h"
+#include "problemconfig.h"
 
 #include <qlineedit.h>
 #include <qmessagebox.h>
@@ -18,6 +19,7 @@ MainWindow::MainWindow() {
 
 	_type_action_map["admin"].push_back(adminCreate_UserAction);
 	_type_action_map["admin"].push_back(adminAdd_ServerAction);
+	_type_action_map["admin"].push_back(adminProblem_ConfigAction);
 }
 
 MainWindow::~MainWindow() {
@@ -62,6 +64,8 @@ void MainWindow::doFileConnect() {
 						QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
 				std::string type = _server_con.whatAmI();
 				ActivateType(type);
+				fileConnectAction->setEnabled(false);
+				fileDisconnectAction->setEnabled(true);
 			} else {
 				QMessageBox("Auth error", "Invalid username and/or password",
 						QMessageBox::Information, QMessageBox::Ok,
@@ -106,4 +110,16 @@ void MainWindow::doAdminCreateUser() {
 			break;
 		}
 	}
+}
+
+void MainWindow::doAdminProblemConfig() {
+	ProblemConfig prob_conf(this);
+	
+	if(!prob_conf.setProblemDescription("shortname S, longname S, testcase (input (i S, o S), output F), diff_ignore_whitespace {Yes,No}")) {
+		QMessageBox::critical(this, "Error", "Error initialising problem description", "O&k");
+		return;
+	}
+
+	if(prob_conf.exec())
+		NOT_IMPLEMENTED();
 }
