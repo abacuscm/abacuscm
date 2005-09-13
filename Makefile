@@ -44,11 +44,11 @@ abacus_objects = abacus \
 	sigsegv \
 	mainwindow \
 	problemconfig \
-	ui_logindialog moc_logindialog \
-	ui_aboutdialog moc_aboutdialog \
-	ui_adduser moc_adduser \
-	ui_problemconfigbase moc_problemconfigbase \
-	ui_mainwindowbase moc_mainwindowbase
+	ui_logindialog moc_ui_logindialog \
+	ui_aboutdialog moc_ui_aboutdialog \
+	ui_adduser moc_ui_adduser \
+	ui_problemconfigbase moc_ui_problemconfigbase \
+	ui_mainwindowbase moc_ui_mainwindowbase
 $(abacus_name) : ldflags += -L$(QTDIR)/lib -lqt -labacus-client
 $(abacus_name) : $(libabacus_c_name)
 $(abacus_name) : $(libabacus_name)
@@ -124,7 +124,7 @@ obj/%.o : src/%.c Makefile
 include/ui_%.h : ui/%.ui
 	uic $< -o $@
 
-src/moc_%.C : include/ui_%.h
+src/moc_%.C : include/%.h
 	moc $< -o $@
 
 src/ui_%.C : ui/%.ui
