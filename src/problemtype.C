@@ -9,8 +9,8 @@ using namespace std;
 ProblemType::TypeMap ProblemType::_problem_type_map;
 
 ProblemType::ProblemType() {
-	_attr_list.push_back("shortname");
-	_attr_list.push_back("longname");
+	_attr_list.push_back("shortname S");
+	_attr_list.push_back("longname S");
 }
 
 ProblemType::~ProblemType() {
@@ -44,7 +44,8 @@ string ProblemType::getProblemDescription(const string& problemtype) {
 	ostringstream descript;
 	
 	vector<string> attrlist = i->second->getAttributeList();
-	copy(attrlist.begin(), attrlist.end(), ostream_iterator<string>(descript));
+	copy(attrlist.begin(), attrlist.end(), ostream_iterator<string>(descript, ", "));
 
-	return descript.str();
+	string desc_str = descript.str();
+	return desc_str.substr(0, desc_str.length() - 2);
 }

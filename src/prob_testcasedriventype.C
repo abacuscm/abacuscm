@@ -31,6 +31,17 @@ const string& TCProblemType::problemType() const {
 
 vector<string> TCProblemType::getAttributeList() const {
 	vector<string> result = CompiledProblemType::getAttributeList();
-	copy(_attr_list.begin(), _attr_list.end(), result.end());
+	for(vector<string>::const_iterator i = _attr_list.begin();
+			i != _attr_list.end(); ++i) {
+		result.push_back(*i);
+	}
+//	copy(_attr_list.begin(), _attr_list.end(), result.end());
 	return result;
+}
+
+TCProblemType _tc_prob_type;
+
+static void init() __attribute__((constructor));
+static void init() {
+	ProblemType::registerProblemType(&_tc_prob_type);
 }

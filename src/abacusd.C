@@ -120,6 +120,9 @@ static bool load_modules() {
 	if(!ModuleLoader::loadModuleSet("act", config["modules"]["actions"]))
 		return false;
 
+	if(!ModuleLoader::loadModuleSet("prob", config["modules"]["problemtypes"]))
+		return false;
+
 	return true;
 }
 
