@@ -25,7 +25,8 @@ libabacus_s_objects = moduleloader \
 	clientlistener \
 	clientconnection \
 	clientaction \
-	eventregister
+	eventregister \
+	problemtype
 $(libabacus_s_name) : ldflags += -shared -ldl -lssl -labacus
 
 libabacus_c_name = lib/libabacus-client.so
