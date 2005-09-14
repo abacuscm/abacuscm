@@ -353,7 +353,7 @@
             <cstring>adminProblem_ConfigAction</cstring>
         </property>
         <property name="enabled">
-            <bool>true</bool>
+            <bool>false</bool>
         </property>
         <property name="text">
             <string>&amp;Problem Config</string>
@@ -402,12 +402,19 @@
         <receiver>MainWindowBase</receiver>
         <slot>doAdminProblemConfig()</slot>
     </connection>
+    <connection>
+        <sender>fileDisconnectAction</sender>
+        <signal>activated()</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>doFileDisconnect()</slot>
+    </connection>
 </connections>
 <slots>
     <slot access="protected" specifier="pure virtual">doHelpAbout()</slot>
     <slot access="protected" specifier="pure virtual">doFileConnect()</slot>
     <slot access="protected" specifier="pure virtual">doAdminCreateUser()</slot>
     <slot access="protected" specifier="pure virtual">doAdminProblemConfig()</slot>
+    <slot access="protected" specifier="pure virtual">doFileDisconnect()</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

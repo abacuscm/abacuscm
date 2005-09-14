@@ -10,6 +10,10 @@
 #include <qmessagebox.h>
 #include <qaction.h>
 #include <qcombobox.h>
+#include <qinputdialog.h>
+#include <qstring.h>
+
+using namespace std;
 
 MainWindow::MainWindow() {
 	Config &config = Config::getConfig();
@@ -25,7 +29,7 @@ MainWindow::MainWindow() {
 MainWindow::~MainWindow() {
 }
 
-void MainWindow::ActivateType(std::string type) {
+void MainWindow::activateType(std::string type) {
 	log(LOG_DEBUG, "Changing active type from '%s' to '%s'",
 			_active_type.c_str(), type.c_str());
 	if(_active_type != "") {
@@ -63,7 +67,7 @@ void MainWindow::doFileConnect() {
 						QMessageBox::Information, QMessageBox::Ok,
 						QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
 				std::string type = _server_con.whatAmI();
-				ActivateType(type);
+				activateType(type);
 				fileConnectAction->setEnabled(false);
 				fileDisconnectAction->setEnabled(true);
 			} else {
@@ -78,6 +82,15 @@ void MainWindow::doFileConnect() {
 					QMessageBox::Critical, QMessageBox::Ok, QMessageBox::NoButton,
 					QMessageBox::NoButton, this).exec();
 	}
+}
+
+void MainWindow::doFileDisconnect() {
+	if(!_server_con.disconnect())
+		return;
+
+	fileConnectAction->setEnabled(true);
+	fileDisconnectAction->setEnabled(false);
+	activateType("");
 }
 
 void MainWindow::doAdminCreateUser() {
@@ -114,8 +127,40 @@ void MainWindow::doAdminCreateUser() {
 
 void MainWindow::doAdminProblemConfig() {
 	ProblemConfig prob_conf(this);
+
+	string prob = "new";
+	string prob_type;
+
+	if(prob == "new") {
+		vector<string> prob_types = _server_con.getProblemTypes();
+		if(prob_types.empty())
+			return;
+
+		if(prob_types.size() == 1) {
+			prob_type = prob_types[0];
+		} else {
+			QStringList lst;
+			vector<string>::iterator i;
+			for(i = prob_types.begin(); i != prob_types.end(); ++i)
+				lst << *i;
+
+			bool ok;
+			QString res = QInputDialog::getItem("Problem type", "Please select the type of problem", lst, 0, false, &ok, this);
+			if(ok) {
+				prob_type = res.ascii(); // the cast operator doesn't compile :(
+			} else
+				return;
+		}
+	} else {
+		NOT_IMPLEMENTED();
+		return;
+	}
 	
-	if(!prob_conf.setProblemDescription("shortname S, longname S, testcase (input (i S, o S), output F), diff_ignore_whitespace {Yes,No}")) {
+	string prob_desc = _server_con.getProblemDescription(prob_type);
+	if(prob_desc == "")
+		return;
+
+	if(!prob_conf.setProblemDescription(prob_desc)) {
 		QMessageBox::critical(this, "Error", "Error initialising problem description", "O&k");
 		return;
 	}

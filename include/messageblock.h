@@ -31,6 +31,8 @@ public:
 		{ return _headers[name]; }; */
 	std::string& operator[] (const std::string& name)
 		{ return _headers[name]; };
+	bool hasAttribute(const std::string &name) const
+		{ return _headers.find(name) != _headers.end(); }
 
 	std::string& action() { return _message; }
 

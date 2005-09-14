@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <openssl/rand.h>
+#include <sstream>
 
 // 16K is the max size of an SSL block, thus
 // optimal in terms of speed, but memory intensive.
@@ -250,6 +251,46 @@ bool ServerConnection::simpleAction(MessageBlock &mb) {
 	return response;
 }
 
+vector<string> ServerConnection::vectorAction(MessageBlock &mb, string prefix) {
+	MessageBlock *ret = sendMB(&mb);
+	if(!ret)
+		return vector<string>();
+
+	vector<string> resp(vectorFromMB(*ret, prefix));
+	delete ret;
+	return resp;
+}
+
+string ServerConnection::stringAction(MessageBlock &mb, string fieldname) {
+	MessageBlock *ret = sendMB(&mb);
+	if(!ret)
+		return "";
+
+	bool response = ret->action() == "ok";
+	string result;
+	if(!response)
+		log(LOG_ERR, "%s", (*ret)["msg"].c_str());
+	else
+		result = (*ret)[fieldname];
+
+	delete ret;
+
+	return result;
+}
+
+vector<string> ServerConnection::vectorFromMB(MessageBlock &mb, string prefix) {
+	unsigned i = 0;
+	ostringstream nattr;
+	nattr << prefix << i;
+	vector<string> result;
+	while(mb.hasAttribute(nattr.str())) {
+		result.push_back(mb[nattr.str()]);
+		nattr.str("");
+		nattr << prefix << ++i;
+	}
+	return result;
+}
+
 bool ServerConnection::auth(string username, string password) {
 	MessageBlock mb("auth");
 
@@ -261,21 +302,8 @@ bool ServerConnection::auth(string username, string password) {
 
 string ServerConnection::whatAmI() {
 	MessageBlock mb("whatami");
-	
-	MessageBlock *ret = sendMB(&mb);
-	if(!ret)
-		return "";
 
-	bool response = ret->action() == "ok";
-	string type;
-	if(!response)
-		log(LOG_ERR, "%s", (*ret)["msg"].c_str());
-	else
-		type = (*ret)["type"];
-
-	delete ret;
-
-	return type;
+	return stringAction(mb, "type");
 }
 
 bool ServerConnection::createuser(string username, string password, string type) {
@@ -286,6 +314,19 @@ bool ServerConnection::createuser(string username, string password, string type)
 	mb["type"] = type;
 
 	return simpleAction(mb);
+}
+
+vector<string> ServerConnection::getProblemTypes() {
+	MessageBlock mb("getprobtypes");
+
+	return vectorAction(mb, "type");
+}
+
+string ServerConnection::getProblemDescription(string type) {
+	MessageBlock mb("getprobdescript");
+	mb["type"] = type;
+
+	return stringAction(mb, "descript");
 }
 
 bool ServerConnection::registerEventCallback(string event, EventCallback func, void *custom) {

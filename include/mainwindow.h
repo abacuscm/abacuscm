@@ -20,10 +20,11 @@ private:
 	TypeActionMap _type_action_map;
 	std::string _active_type;
 	
-	void ActivateType(std::string type);
+	void activateType(std::string type);
 protected:
 	virtual void doHelpAbout();
 	virtual void doFileConnect();
+	virtual void doFileDisconnect();
 	virtual void doAdminCreateUser();
 	virtual void doAdminProblemConfig();
 

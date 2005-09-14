@@ -34,6 +34,26 @@ CREATE TABLE PeerMessageNoAck (
 ) TYPE=MyISAM;
 
 --
+-- Table structure for table `Problem`
+--
+
+CREATE TABLE Problem (
+  problem_id int(11) default NULL
+) TYPE=MyISAM;
+
+--
+-- Table structure for table `ProblemAttributes`
+--
+
+CREATE TABLE ProblemAttributes (
+  problem_id int(11) NOT NULL default '0',
+  attribute varchar(128) NOT NULL default '',
+  updated int(11) default NULL,
+  value blob,
+  PRIMARY KEY  (problem_id,attribute)
+) TYPE=MyISAM;
+
+--
 -- Table structure for table `Server`
 --
 

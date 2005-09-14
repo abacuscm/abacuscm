@@ -53,6 +53,10 @@ private:
 	void* receive_thread();
 
 	bool simpleAction(MessageBlock &mb);
+	std::vector<std::string> vectorAction(MessageBlock &mb, std::string prefix);
+	std::string stringAction(MessageBlock &mb, std::string fieldname);
+
+	std::vector<std::string> vectorFromMB(MessageBlock &mb, std::string prefix);
 	
 	static void* thread_spawner(void*);
 public:
@@ -65,6 +69,9 @@ public:
 	bool auth(std::string username, std::string password);
 	std::string whatAmI();
 	bool createuser(std::string username, std::string password, std::string type);
+
+	std::vector<std::string> getProblemTypes();
+	std::string getProblemDescription(std::string problemtype);
 
 	bool registerEventCallback(std::string event, EventCallback func, void *custom);
 	bool deregisterEventCallback(std::string event, EventCallback func);

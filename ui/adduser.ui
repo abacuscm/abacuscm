@@ -195,5 +195,14 @@
         <slot>reject()</slot>
     </connection>
 </connections>
+<tabstops>
+    <tabstop>username</tabstop>
+    <tabstop>pass1</tabstop>
+    <tabstop>pass2</tabstop>
+    <tabstop>type</tabstop>
+    <tabstop>buttonOk</tabstop>
+    <tabstop>buttonCancel</tabstop>
+    <tabstop>buttonHelp</tabstop>
+</tabstops>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>
