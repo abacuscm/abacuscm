@@ -44,7 +44,7 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 		// find attribute name
 		size_t epos = attr_desc.find(' ', pos);
 		if(epos == string::npos) {
-			log(LOG_NOTICE, "Invalid attr_desc string '%s'", attr_desc.c_str());
+			log(LOG_NOTICE, "Invalid attr_desc string '%s' (Invalid attr_name)", attr_desc.c_str());
 			return cc->sendError("Internal Server Error");
 		}
 
@@ -52,7 +52,7 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 		pos = epos + 1;
 
 		if(pos >= attr_desc.length()) {
-			log(LOG_NOTICE, "Invalid attr_desc string '%s'", attr_desc.c_str());
+			log(LOG_NOTICE, "Invalid attr_desc string '%s' (missing type)", attr_desc.c_str());
 			return cc->sendError("Internal Server Error");
 		} else if(attr_desc[pos] == '(') {
 			stack.push_back(attr_name);
@@ -61,16 +61,29 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 			ostringstream attrname;
 			copy(stack.begin(), stack.end(), ostream_iterator<string>(attrname, "."));
 			string attr = attrname.str();
-			log(LOG_DEBUG, "attr: '%s'", attr.c_str());
 			attr += attr_name;
+			log(LOG_DEBUG, "attr: '%s'", attr.c_str());
 			
 			if(!mb->hasAttribute(attr)) {
 				return cc->sendError("Missing attribute " + attr);
 			} else if(attr_desc[pos] == 'S') {
 			} else if(attr_desc[pos] == 'I') {
 			} else if(attr_desc[pos] == 'F') {
+			} else if(attr_desc[pos] == '{') {
+				epos = attr_desc.find('}', pos);
+				bool correct = false;
+				while(++pos < epos && !correct) {
+					size_t ncomma = attr_desc.find(',', pos);
+					if(ncomma > epos || ncomma == string::npos)
+						ncomma = epos;
+					correct = attr_desc.substr(pos, ncomma - pos) == (*mb)[attr];
+					pos = ncomma;
+				}
+				pos = epos + 1;
+				if(!correct)
+					return cc->sendError("Invalid value for attribute " + attr);
 			} else {
-				log(LOG_NOTICE, "Invalid attr_desc string '%s'", attr_desc.c_str());
+				log(LOG_NOTICE, "Invalid attr_desc string '%s' (Invalid type '%c' for '%s')", attr_desc.c_str(), attr_desc[pos], attr.c_str());
 				return cc->sendError("Internal Server Error");
 			}
 
