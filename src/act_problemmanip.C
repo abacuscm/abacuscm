@@ -67,8 +67,15 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 			if(!mb->hasAttribute(attr)) {
 				return cc->sendError("Missing attribute " + attr);
 			} else if(attr_desc[pos] == 'S') {
+				// nothing to test.
 			} else if(attr_desc[pos] == 'I') {
+				const char* i = (*mb)[attr].c_str();
+				char *eptr;
+				long val = strtol(i, &eptr, 0);
+				if(!*eptr)
+					return cc->sendError("Value for " + attr + " is not a valid integer");
 			} else if(attr_desc[pos] == 'F') {
+				// complex bastard.
 			} else if(attr_desc[pos] == '{') {
 				epos = attr_desc.find('}', pos);
 				bool correct = false;
