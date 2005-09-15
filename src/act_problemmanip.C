@@ -70,9 +70,10 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 				// nothing to test.
 			} else if(attr_desc[pos] == 'I') {
 				const char* i = (*mb)[attr].c_str();
+				log(LOG_DEBUG, "Testing '%s' for being an int!", i);
 				char *eptr;
-				long val = strtol(i, &eptr, 0);
-				if(!*eptr)
+				strtol(i, &eptr, 0);
+				if(*eptr)
 					return cc->sendError("Value for " + attr + " is not a valid integer");
 			} else if(attr_desc[pos] == 'F') {
 				// complex bastard.
@@ -83,10 +84,12 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 					size_t ncomma = attr_desc.find(',', pos);
 					if(ncomma > epos || ncomma == string::npos)
 						ncomma = epos;
+
+					log(LOG_DEBUG, "'%s' == '%s' ?", attr_desc.substr(pos, ncomma - pos).c_str(), (*mb)[attr].c_str());
 					correct = attr_desc.substr(pos, ncomma - pos) == (*mb)[attr];
 					pos = ncomma;
 				}
-				pos = epos + 1;
+				pos = epos;
 				if(!correct)
 					return cc->sendError("Invalid value for attribute " + attr);
 			} else {
@@ -95,7 +98,7 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 			}
 
 			pos++;
-//			attributes[attr] = 
+//			attributes[attr] = (*mb)[attr];
 		}
 
 		while(pos < attr_desc.length() && attr_desc[pos] == ')') {
