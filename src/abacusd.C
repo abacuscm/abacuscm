@@ -97,9 +97,7 @@ static bool setup_signals() {
 	if(sigaction(SIGUSR1, &action, NULL) < 0)
 		goto err;
 
-	setup_sigsegv();
-
-	return true;
+	return setup_sigsegv() != 0;
 err:
 	lerror("sigaction");
 	return false;
