@@ -94,7 +94,7 @@ bool Message_CreateServer::process() const {
 
 		db->release();
 
-		Server::putAck(_server_id, 0, 0);
+		Server::putAck(0, 0, _server_id);
 
 		return true;
 	} else {
