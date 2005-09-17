@@ -81,7 +81,7 @@ void log(int priority, const char* format, ...) {
 	va_end(ap);
 }
 
-void (*clog)(int priority, const char* format, ...) = log;
+void (*sigsegv_log)(int priority, const char* format, ...) = log;
 
 void real_lerror(const char*fname, int line_num, const char* prefix) {
 	log(LOG_ERR, "%s (%s:%d): %s", prefix, fname, line_num, strerror(errno));

@@ -24,14 +24,14 @@ static void signal_segv(int signum, siginfo_t* info, void*ptr) {
 	Dl_info dlinfo;
 	void **bp = 0;
 	void *ip = 0;
-
-	clog(LOG_CRIT, "Segmentation Fault!");
-	clog(LOG_CRIT, "info.si_signo = %d", signum);
-	clog(LOG_CRIT, "info.si_errno = %d", info->si_errno);
-	clog(LOG_CRIT, "info.si_code  = %d (%s)", info->si_code, si_codes[info->si_code]);
-	clog(LOG_CRIT, "info.si_addr  = %p", info->si_addr);
+	
+	sigsegv_log(LOG_CRIT, "Segmentation Fault!");
+	sigsegv_log(LOG_CRIT, "info.si_signo = %d", signum);
+	sigsegv_log(LOG_CRIT, "info.si_errno = %d", info->si_errno);
+	sigsegv_log(LOG_CRIT, "info.si_code  = %d (%s)", info->si_code, si_codes[info->si_code]);
+	sigsegv_log(LOG_CRIT, "info.si_addr  = %p", info->si_addr);
 	for(i = 0; i < NGREG; i++)
-		clog(LOG_CRIT, "reg[%02d]       = 0x" REGFORMAT, i, ucontext->uc_mcontext.gregs[i]);
+		sigsegv_log(LOG_CRIT, "reg[%02d]       = 0x" REGFORMAT, i, ucontext->uc_mcontext.gregs[i]);
 #if defined(REG_RIP)
 	ip = (void*)ucontext->uc_mcontext.gregs[REG_RIP];
 	bp = (void**)ucontext->uc_mcontext.gregs[REG_RBP];
@@ -39,13 +39,13 @@ static void signal_segv(int signum, siginfo_t* info, void*ptr) {
 	ip = (void*)ucontext->uc_mcontext.gregs[REG_EIP];
 	bp = (void**)ucontext->uc_mcontext.gregs[REG_EBP];
 #else
-	clog(LOG_CRIT, "Unable to retrieve Instruction Pointer (not printing stack trace).");
+	sigsegv_log(LOG_CRIT, "Unable to retrieve Instruction Pointer (not printing stack trace).");
 #endif
 	while(bp && ip) {
 		if(!dladdr(ip, &dlinfo))
 			break;
 
-		clog(LOG_CRIT, "% 2d: %p <%s+%u> (%s)",
+		sigsegv_log(LOG_CRIT, "% 2d: %p <%s+%u> (%s)",
 				++f,
 				ip,
 				dlinfo.dli_sname,
