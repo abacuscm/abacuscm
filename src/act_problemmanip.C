@@ -44,6 +44,8 @@ private:
 	FileMap _files;
 	StringMap _strings;
 	IntMap _ints;
+
+	bool checkStringTerms(const uint8_t* buf, uint32_t sz, uint32_t nzeros);
 protected:
 	virtual uint32_t storageRequired();
 	virtual uint32_t store(uint8_t *buffer, uint32_t size);
@@ -142,9 +144,80 @@ uint32_t ProbMessage::store(uint8_t *buffer, uint32_t size) {
 	return used;
 }
 
+bool ProbMessage::checkStringTerms(const uint8_t* buf, uint32_t sz, uint32_t nzeros) {
+	while(sz && nzeros) {
+		if(!*buf++)
+			--nzeros;
+		--sz;
+	}
+	return nzeros == 0;
+}
+
 uint32_t ProbMessage::load(const uint8_t *buffer, uint32_t size) {
-	NOT_IMPLEMENTED();
-	return ~0U;
+	const uint8_t* pos = buffer;
+	while(size) {
+		size -= 1;
+		switch(*pos++) {
+		case 'S':
+			{
+				if(!checkStringTerms(pos, size, 2)) {
+					log(LOG_ERR, "Invalid blob data in ProbMessage::load, need two 0-terminators in buffer for type S");
+					return ~0U;
+				}
+				string attr = (const char*)pos;
+				pos += attr.length() + 1;
+				string value = (const char*)pos;
+				pos += value.length() + 1;
+				size -= attr.length() + value.length() + 2;
+				addStringAttrib(attr, value);
+			}
+			break;
+		case 'I':
+			{
+				if(!checkStringTerms(pos, size - sizeof(int32_t), 1)) {
+					log(LOG_ERR, "Invalid blob data in ProbMessage::load, need one 0-terminator in buffer for type I, plus another %d bytes", (int)sizeof(int32_t));
+					return ~0U;
+				}
+				string attr = (const char*)pos;
+				pos += attr.length() + 1;
+				int32_t value = *(int32_t*)pos;
+				pos += sizeof(int32_t);
+				size -= attr.length() + 1 + sizeof(int32_t);
+				addIntAttrib(attr, value);
+			}
+			break;
+		case 'F':
+			{
+				if(!checkStringTerms(pos, size - sizeof(int32_t), 2)) {
+					log(LOG_ERR, "Invalid blob data in ProbMessage::load, need one 2-terminator in buffer for type F, plus another %d bytes", (int)sizeof(int32_t));
+					return ~0U;
+				}
+				string attr = (const char*)pos;
+				pos += attr.length() + 1;
+				string name = (const char*)pos;
+				pos += name.length() + 1;
+				uint32_t filesize = *(uint32_t*)pos;
+				pos += sizeof(int32_t);
+				size -= attr.length() + name.length() + 2 + sizeof(int32_t);
+				if(name == "")
+					keepFileAttrib(attr);
+				else {
+					if(size < filesize) {
+						log(LOG_ERR, "Insufficient data in buffer for filecontents of '%s', expected %d bytes, only %d available.", attr.c_str(), filesize, size);
+						return ~0U;
+					}
+					addFileAttrib(attr, name, (const char*)pos, filesize);
+					pos += filesize;
+					size -= filesize;
+				}
+			}
+			break;
+		default:
+			log(LOG_ERR, "Unknown type '%c' in ProbMessage::load()", *--pos);
+			return ~0U;
+		}
+	}
+	return pos - buffer;
 }
 
 bool ProbMessage::addIntAttrib(const string& name, int32_t value) {
