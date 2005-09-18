@@ -267,7 +267,7 @@ ActSetProbAttrs::~ActSetProbAttrs() {
 	regfree(&_file_reg);
 }
 
-#define act_error(x)	{ delete msg; cc->sendError(x); }
+#define act_error(x)	{ delete msg; return cc->sendError(x); }
 bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 	uint32_t prob_id = ~0U;
 	string prob_type = (*mb)["prob_type"];
