@@ -16,7 +16,7 @@ void log_buffer(int priority, const char* name, const unsigned char* buffer, int
 #define NOT_IMPLEMENTED() log(LOG_DEBUG, "%s (%s:%d) not implemented.", __PRETTY_FUNCTION__, __FILE__, __LINE__)
 #else
 // this is needed because of the builtin log() function wich is arithmetic in nature.
-extern void (*sigsegv_log)(int priority, const char* format, ...);
+extern void (*logc)(int priority, const char* format, ...);
 #endif
 
 #endif
