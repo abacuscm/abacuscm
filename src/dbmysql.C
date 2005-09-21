@@ -15,8 +15,8 @@ class MySQL : public DbCon {
 private:
 	MYSQL _mysql;
 
-	string escape_string(const string& str);
-	string escape_buffer(const uint8_t* bfr, uint32_t size);
+	string escape_string(const string& str) __attribute__((pure));
+	string escape_buffer(const uint8_t* bfr, uint32_t size) __attribute__((pure));
 	
 	list<Message*> getMessages(std::string query);
 public:
@@ -47,7 +47,22 @@ public:
 	virtual bool hasMessage(uint32_t server_id, uint32_t message_id);
 	virtual uint32_t maxServerId();
 	virtual uint32_t maxUserId();
-
+	virtual ProblemList getProblems();
+	virtual time_t getProblemUpdateTime(uint32_t problem_id);
+	virtual bool setProblemUpdateTime(uint32_t problem_id, time_t time);
+	virtual string getProblemType(uint32_t problem_id);
+	virtual bool setProblemType(uint32_t problem_id, string type);
+	virtual AttributeList getProblemAttributes(uint32_t problem_id);
+	virtual bool setProblemAttribute(uint32_t problem_id, std::string attr,
+			int32_t value);
+	virtual bool setProblemAttribute(uint32_t problem_id, std::string attr,
+			std::string value);
+	virtual bool setProblemAttribute(uint32_t problem_id, std::string attr,
+			std::string fname, const uint8_t *data, uint32_t datalen);
+	virtual bool delProblemAttribute(uint32_t problem_id, std::string attr);
+	virtual bool getProblemFileData(uint32_t problem_id, std::string attr,
+			uint8_t **dataptr, uint32_t *lenptr);
+	
 	bool init();
 };
 
@@ -505,6 +520,195 @@ uint32_t MySQL::maxUserId() {
 	}
 
 	return max_user_id;
+}
+
+ProblemList MySQL::getProblems() {
+	ProblemList result;
+	if(mysql_query(&_mysql, "SELECT * FROM Problem"))
+		log_mysql_error();
+	else {
+		MYSQL_RES *res = mysql_use_result(&_mysql);
+		if(res) {
+			MYSQL_ROW row;
+			while((row = mysql_fetch_row(res)) != 0) {
+				result.push_back(atol(row[0]));
+			}
+		}
+		mysql_free_result(res);
+	}
+	return result;
+}
+
+time_t MySQL::getProblemUpdateTime(uint32_t problem_id) {
+	ostringstream query;
+	query << "SELECT updated FROM Problem WHERE problem_id=" << problem_id;
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return ~0U;
+	} else {
+		time_t result = ~0U;
+		MYSQL_RES *res = mysql_use_result(&_mysql);
+		if(res) {
+			MYSQL_ROW row = mysql_fetch_row(res);
+			if(row)
+				result = atoll(row[0]);
+			mysql_free_result(res);
+		}
+		return result;
+	}
+}
+
+bool MySQL::setProblemUpdateTime(uint32_t problem_id, time_t time) {
+	ostringstream query;
+	query << "UPDATE Problem SET updated=" << time << " WHERE problem_id=" <<
+		problem_id;
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	} else
+		return true;
+}
+	
+string MySQL::getProblemType(uint32_t problem_id) {
+	ostringstream query;
+	query << "SELECT type FROM Problem WHERE problem_id=" << problem_id;
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return "";
+	}
+
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if(!res)
+		return "";
+
+	string result;
+	
+	MYSQL_ROW row = mysql_fetch_row(res);
+	if(row)
+		result = row[0];
+	mysql_free_result(res);
+
+	return result;
+}
+
+bool MySQL::setProblemType(uint32_t problem_id, string type) {
+	ostringstream query;
+	type = escape_string(type);
+	query << "INSERT INTO Problem (problem_id, type) VALUES(" <<
+		problem_id << ", '" << type << "') ON DUPLICATE KEY UPDATE "
+		"type='" << type << "'";
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	}
+
+	return true;
+}
+
+AttributeList MySQL::getProblemAttributes(uint32_t problem_id) {
+	ostringstream query;
+	query << "SELECT attribute, value FROM ProblemAttributes WHERE problem_id="
+		<< problem_id;
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return AttributeList();
+	}
+
+	AttributeList attrs;
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	MYSQL_ROW row;
+	while(0 != (row = mysql_fetch_row(res))) {
+		attrs[row[0]] = row[1];
+	}
+	mysql_free_result(res);
+
+	return attrs;
+}
+
+bool MySQL::setProblemAttribute(uint32_t problem_id, std::string attr, int32_t value) {
+	ostringstream tmp;
+	tmp << value;
+	return setProblemAttribute(problem_id, attr, tmp.str());
+}
+
+bool MySQL::setProblemAttribute(uint32_t problem_id, std::string attr, std::string value) {
+	if(!delProblemAttribute(problem_id, attr))
+		return false;
+	
+	ostringstream query;
+	query << "INSERT INTO ProblemAttributes (problem_id, attribute, value)"
+		" VALUES(" << problem_id << ", '" << escape_string(attr) << "', '"
+		<< escape_string(value) << "')";
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	}
+
+	return true;
+}
+
+bool MySQL::setProblemAttribute(uint32_t problem_id, std::string attr, std::string fname, const uint8_t *data, uint32_t datalen) {
+	if(!setProblemAttribute(problem_id, attr, fname))
+		return false;
+
+	ostringstream query;
+	query << "INSERT INTO ProblemFileData (problem_id, attribute, data)"
+		" VALUES(" << problem_id << ", '" << escape_string(attr) << "', '" <<
+		escape_buffer(data, datalen) << "')";
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	}
+
+	return true;
+}
+
+bool MySQL::delProblemAttribute(uint32_t problem_id, std::string attr) {
+	ostringstream query;
+	query << "DELETE FROM ProblemAttributes WHERE problem_id=" << problem_id <<
+		" AND attribute='" << escape_string(attr) << "'";
+	
+	int r1 = mysql_query(&_mysql, query.str().c_str());
+	if(r1)
+		log_mysql_error();
+	
+	query.str("");
+	
+	query << "DELETE FROM ProblemFileData WHERE problem_id=" << problem_id <<
+		" AND attribute='" << escape_string(attr) << "'";
+	int r2 = mysql_query(&_mysql, query.str().c_str());
+	if(r2)
+		log_mysql_error();
+
+	return r1 == 0 && r2 == 0;
+}
+
+bool MySQL::getProblemFileData(uint32_t problem_id, std::string attr, uint8_t **dataptr, uint32_t *lenptr) {
+	*dataptr = NULL;
+	*lenptr = 0;
+
+	ostringstream query;
+	query << "SELECT data, length(data) FROM ProblemFileData WHERE attribute='"
+		<< escape_string(attr) << "' AND problem_id=" << problem_id;
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	} else {
+		MYSQL_RES *res = mysql_use_result(&_mysql);
+		if(res) {
+			MYSQL_ROW row = mysql_fetch_row(res);
+			if(row) {
+				*lenptr = atol(row[1]);
+				*dataptr = new uint8_t[*lenptr];
+				memcpy(*dataptr, row[0], *lenptr);
+			}
+			mysql_free_result(res);
+		}
+	}
+	return *dataptr != NULL;
 }
 
 bool MySQL::init() {

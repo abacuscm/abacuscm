@@ -5,6 +5,8 @@
 #include "messageblock.h"
 #include "message.h"
 #include "message_type_ids.h"
+#include "server.h"
+#include "dbcon.h"
 
 #include <map>
 #include <string>
@@ -14,6 +16,7 @@
 
 #include <sys/types.h>
 #include <regex.h>
+#include <time.h>
 
 using namespace std;
 
@@ -40,6 +43,9 @@ private:
 	typedef map<string, int32_t> IntMap;
 
 	uint32_t _prob_id;
+	uint32_t _update_time;
+
+	string _type;
 	
 	FileMap _files;
 	StringMap _strings;
@@ -52,7 +58,7 @@ protected:
 	virtual uint32_t load(const uint8_t *buffer, uint32_t size);
 public:
 	ProbMessage();
-	ProbMessage(uint32_t prob_id);
+	ProbMessage(uint32_t prob_id, const string& type);
 
 	virtual ~ProbMessage();
 
@@ -69,8 +75,12 @@ ProbMessage::ProbMessage() {
 	_prob_id = ~0U;
 }
 
-ProbMessage::ProbMessage(uint32_t prob_id) {
+ProbMessage::ProbMessage(uint32_t prob_id, const string& type) {
 	_prob_id = prob_id;
+	if(!prob_id)
+		_prob_id = Server::nextProblemId();
+	_update_time = ::time(NULL);
+	_type = type;
 }
 
 ProbMessage::~ProbMessage() {
@@ -80,7 +90,12 @@ ProbMessage::~ProbMessage() {
 }
 
 uint32_t ProbMessage::storageRequired() {
-	uint32_t total = 0;
+	if(_prob_id == ~0U) {
+		log(LOG_ERR, "Attempt to pack improper ProbMessage");
+		return ~0U;
+	}
+	uint32_t total = sizeof(_prob_id) + sizeof(_update_time);
+	total += _type.length() + 1;
 
 	IntMap::iterator i;
 	for(i = _ints.begin(); i != _ints.end(); ++i)
@@ -100,6 +115,14 @@ uint32_t ProbMessage::storageRequired() {
 
 uint32_t ProbMessage::store(uint8_t *buffer, uint32_t size) {
 	uint32_t used = 0;
+
+	*(uint32_t*)buffer = _prob_id; buffer += sizeof(uint32_t);
+	*(uint32_t*)buffer = _update_time; buffer += sizeof(uint32_t);
+	used += sizeof(uint32_t) * 2;
+
+	strcpy((char*)buffer, _type.c_str());
+	used += _type.length() + 1;
+	buffer += _type.length() + 1;
 
 	IntMap::iterator i;
 	for(i = _ints.begin(); i != _ints.end(); ++i) {
@@ -155,6 +178,20 @@ bool ProbMessage::checkStringTerms(const uint8_t* buf, uint32_t sz, uint32_t nze
 
 uint32_t ProbMessage::load(const uint8_t *buffer, uint32_t size) {
 	const uint8_t* pos = buffer;
+	if(size < 2 * sizeof(uint32_t))
+		return ~0U;
+	_prob_id = *(uint32_t*)pos; pos += sizeof(uint32_t);
+	_update_time = *(uint32_t*)pos; pos += sizeof(uint32_t);
+	size -= sizeof(uint32_t) * 2;
+
+	if(!checkStringTerms(pos, size, 1)) {
+		log(LOG_ERR, "We need to pull a string indicating the type of the problem, yet the buffer does not contain any appropriate null terminators");
+		return ~0U;
+	}
+	_type = (char*)pos;
+	pos += _type.length() + 1;
+	size -= _type.length() + 1;
+
 	while(size) {
 		size -= 1;
 		switch(*pos++) {
@@ -255,8 +292,68 @@ bool ProbMessage::keepFileAttrib(const string& name) {
 }
 
 bool ProbMessage::process() const {
-	NOT_IMPLEMENTED();
-	return false;
+	DbCon *db = DbCon::getInstance();
+	if(!db)
+		return false;
+
+	if(_prob_id == ~0U) {
+		log(LOG_ERR, "Trying to process an improper ProbMessage!");
+		return false;
+	}
+
+	string ex_prob_type = db->getProblemType(_prob_id);
+	if(ex_prob_type != "") {
+		time_t lst_updated = db->getProblemUpdateTime(_prob_id);
+		if(lst_updated > _update_time) {
+			log(LOG_INFO, "Discarding udpate for problem_id=%u that is older than current version", _prob_id);
+			db->release();
+			return true;
+		}
+		AttributeList cur_attrs = db->getProblemAttributes(_prob_id);
+
+		AttributeList::iterator a;
+		for(a = cur_attrs.begin(); a != cur_attrs.end(); ++a) {
+			if(_ints.find(a->first) == _ints.end() &&
+					_strings.find(a->first) == _strings.end() &&
+					_files.find(a->first) == _files.end())
+				db->delProblemAttribute(_prob_id, a->first);
+		}
+	}
+
+	if(ex_prob_type != _type && !db->setProblemType(_prob_id, _type)) {
+		db->release();
+		return false;
+	}
+
+	bool result = true;
+
+	FileMap::const_iterator f;
+	for(f = _files.begin(); f != _files.end(); ++f) {
+		if(f->second.name != "")
+			result &= db->setProblemAttribute(_prob_id, f->first,
+					f->second.name, f->second.data, f->second.len);
+	}
+	
+	IntMap::const_iterator i;
+	for(i = _ints.begin(); i != _ints.end(); ++i) {
+		result &= db->setProblemAttribute(_prob_id, i->first, i->second);
+	}
+	
+	StringMap::const_iterator s;
+	for(s = _strings.begin(); s != _strings.end(); ++s) {
+		result &= db->setProblemAttribute(_prob_id, s->first, s->second);
+	}
+
+	result &= db->setProblemUpdateTime(_prob_id, _update_time);
+	
+	if(!result)
+		log(LOG_CRIT, "Setting of at least one attribute for problem_id=%u has failed, continuing anyway - please figure out what went wrong and fix it, then restart abacus to automatically recover", _prob_id);
+	else
+		db->setProblemUpdateTime(_prob_id, _update_time);
+
+	db->release();
+	
+	return result;
 }
 
 ActSetProbAttrs::ActSetProbAttrs() {
@@ -269,8 +366,17 @@ ActSetProbAttrs::~ActSetProbAttrs() {
 
 #define act_error(x)	{ delete msg; return cc->sendError(x); }
 bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
-	uint32_t prob_id = ~0U;
+	uint32_t prob_id = atol((*mb)["prob_id"].c_str());
+	
 	string prob_type = (*mb)["prob_type"];
+	if(prob_id && prob_type == "") {
+		DbCon *db = DbCon::getInstance();
+		if(!db)
+			return cc->sendError("Error obtaining connection to database");
+		prob_type = db->getProblemType(prob_id);
+		db->release();
+	}
+
 	if(prob_type == "")
 		return cc->sendError("You must specify prob_type for new problems");
 	
@@ -290,7 +396,7 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 
 	vector<string> stack;
 
-	ProbMessage *msg = new ProbMessage(prob_id);
+	ProbMessage *msg = new ProbMessage(prob_id, prob_type);
 	
 	size_t pos = 0;
 	while(pos < attr_desc.length()) {
@@ -332,7 +438,11 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 			} else if(attr_desc[pos] == 'F') {
 				string file_attr_desc = (*mb)[attr];
 				if(file_attr_desc == "-") {
-					msg->keepFileAttrib(attr);
+					// TODO: Find a better heuristic.
+					if(prob_id == 0)
+						act_error("You cannot 'keep' a file that was never available to begin with.  This applies to 'new' problems only")
+					else
+						msg->keepFileAttrib(attr);
 				} else {
 					regmatch_t m[4];
 					if(regexec(&_file_reg, file_attr_desc.c_str(), 4, m, 0))

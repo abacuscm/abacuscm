@@ -4,11 +4,16 @@
 #include <string>
 #include <vector>
 #include <list>
+#include <map>
 #include <stdint.h>
 
 class Message;
 
 typedef std::list<Message*> MessageList;
+typedef std::map<std::string, std::string> StringMap;
+typedef StringMap AttributeList;
+typedef std::list<uint32_t> IdList;
+typedef IdList ProblemList;
 
 class DbCon {
 public:
@@ -127,6 +132,53 @@ public:
 	 * committed to DB.
 	 */
 	virtual bool hasMessage(uint32_t server_id, uint32_t message_id) = 0;
+	
+	/**
+	 * Retrieve a list of problem Ids.
+	 */
+	virtual ProblemList getProblems() = 0;
+
+	/**
+	 * Determine when last a problem got "updated".
+	 */
+	virtual time_t getProblemUpdateTime(uint32_t problem_id) = 0;
+	
+	/**
+	 * Set the time of last problem update.  This can almost be considered
+	 * a type of "version" number.
+	 */
+	virtual bool setProblemUpdateTime(uint32_t problem_id, time_t newtime) = 0;
+
+	/**
+	 * Retrieve/Set problem type.  If problem type cannot be updated, a
+	 * new problem should be created.  In the case of newly created problems
+	 * the last update time should be set to 0.
+	 */
+	virtual std::string getProblemType(uint32_t problem_id) = 0;
+	virtual bool setProblemType(uint32_t problem_id, std::string type) = 0;
+
+	/**
+	 * Retrieve a list of attributes and their values (as strings) of all
+	 * attributes.  In the case of "files" only the filename should be retrieved.
+	 */
+	virtual AttributeList getProblemAttributes(uint32_t problem_id) = 0;
+
+	/**
+	 * Update/Delete functions for problem attributes.
+	 */
+	virtual bool setProblemAttribute(uint32_t problem_id, std::string attr,
+			int32_t value) = 0;
+	virtual bool setProblemAttribute(uint32_t problem_id, std::string attr,
+			std::string value) = 0;
+	virtual bool setProblemAttribute(uint32_t problem_id, std::string attr,
+			std::string fname, const uint8_t *data, uint32_t datalen) = 0;
+	virtual bool delProblemAttribute(uint32_t problem_id, std::string attr) = 0;
+
+	/**
+	 * A way to retrieve the file-data.
+	 */
+	virtual bool getProblemFileData(uint32_t problem_id, std::string attr,
+			uint8_t **dataptr, uint32_t *lenptr) = 0;
 	
 	/**
 	 * Functions to register a DbCon functor (function to create DbCons),

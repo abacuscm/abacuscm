@@ -2,7 +2,33 @@
 --
 -- Host: localhost    Database: abacus
 -- ------------------------------------------------------
--- Server version	4.0.24
+-- Server version	4.0.25
+
+--
+-- Table structure for table `Clarification`
+--
+
+CREATE TABLE Clarification (
+  user_id int(11) NOT NULL default '0',
+  time int(11) NOT NULL default '0',
+  public tinyint(1) default NULL,
+  made_by int(11) NOT NULL default '0',
+  time_made int(11) NOT NULL default '0',
+  text varchar(255) default NULL,
+  PRIMARY KEY  (user_id,time,made_by,time_made)
+) TYPE=MyISAM;
+
+--
+-- Table structure for table `ClarificationRequest`
+--
+
+CREATE TABLE ClarificationRequest (
+  user_id int(11) NOT NULL default '0',
+  time int(11) NOT NULL default '0',
+  problem_id int(11) default NULL,
+  text varchar(255) default NULL,
+  PRIMARY KEY  (user_id,time)
+) TYPE=MyISAM;
 
 --
 -- Table structure for table `PeerMessage`
@@ -38,7 +64,10 @@ CREATE TABLE PeerMessageNoAck (
 --
 
 CREATE TABLE Problem (
-  problem_id int(11) default NULL
+  problem_id int(11) NOT NULL default '0',
+  updated int(11) NOT NULL default '0',
+  type varchar(16) default NULL,
+  PRIMARY KEY  (problem_id)
 ) TYPE=MyISAM;
 
 --
@@ -48,8 +77,18 @@ CREATE TABLE Problem (
 CREATE TABLE ProblemAttributes (
   problem_id int(11) NOT NULL default '0',
   attribute varchar(128) NOT NULL default '',
-  updated int(11) default NULL,
-  value blob,
+  value varchar(255) default NULL,
+  PRIMARY KEY  (problem_id,attribute)
+) TYPE=MyISAM;
+
+--
+-- Table structure for table `ProblemFileData`
+--
+
+CREATE TABLE ProblemFileData (
+  problem_id int(11) NOT NULL default '0',
+  attribute varchar(128) NOT NULL default '',
+  data blob,
   PRIMARY KEY  (problem_id,attribute)
 ) TYPE=MyISAM;
 

@@ -102,6 +102,11 @@ err:
 	return ~0U;	
 }
 
+uint32_t Server::nextProblemId() {
+	log(LOG_DEBUG, "Server::nextProblemId() is not proberly implemented!!");
+	return time(NULL);
+}
+
 bool Server::hasMessage(uint32_t server_id, uint32_t message_id) {
 	DbCon *db = DbCon::getInstance();
 	if(!db) {
