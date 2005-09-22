@@ -12,6 +12,8 @@ class MessageBlock;
 
 typedef void (*EventCallback)(const MessageBlock*, void *);
 
+typedef std::map<std::string, std::string> AttributeMap;
+
 class ServerConnection {
 private:
 	struct CallbackData {
@@ -54,6 +56,7 @@ private:
 
 	bool simpleAction(MessageBlock &mb);
 	std::vector<std::string> vectorAction(MessageBlock &mb, std::string prefix);
+	std::vector<uint32_t> uintVectorAction(MessageBlock &mb, std::string prefix);
 	std::string stringAction(MessageBlock &mb, std::string fieldname);
 
 	std::vector<std::string> vectorFromMB(MessageBlock &mb, std::string prefix);
@@ -71,7 +74,11 @@ public:
 	bool createuser(std::string username, std::string password, std::string type);
 
 	std::vector<std::string> getProblemTypes();
+	std::vector<uint32_t> getProblems();
 	std::string getProblemDescription(std::string problemtype);
+
+	bool setProblemAttributes(uint32_t prob_id, std::string type,
+			const AttributeMap& normal, const AttributeMap& file);
 
 	bool registerEventCallback(std::string event, EventCallback func, void *custom);
 	bool deregisterEventCallback(std::string event, EventCallback func);

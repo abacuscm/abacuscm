@@ -15,8 +15,8 @@ class MySQL : public DbCon {
 private:
 	MYSQL _mysql;
 
-	string escape_string(const string& str) __attribute__((pure));
-	string escape_buffer(const uint8_t* bfr, uint32_t size) __attribute__((pure));
+	string escape_string(const string& str);
+	string escape_buffer(const uint8_t* bfr, uint32_t size);
 	
 	list<Message*> getMessages(std::string query);
 public:

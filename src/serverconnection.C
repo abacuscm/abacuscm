@@ -5,9 +5,12 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <netdb.h>
 #include <openssl/rand.h>
 #include <sstream>
+#include <string.h>
 
 // 16K is the max size of an SSL block, thus
 // optimal in terms of speed, but memory intensive.
@@ -327,6 +330,87 @@ string ServerConnection::getProblemDescription(string type) {
 	mb["type"] = type;
 
 	return stringAction(mb, "descript");
+}
+
+bool ServerConnection::setProblemAttributes(uint32_t prob_id, std::string type,
+			const AttributeMap& normal, const AttributeMap& file) {
+	ostringstream ostrstrm;
+	AttributeMap::const_iterator i;
+	MessageBlock mb("setprobattrs");
+	list<int> fds;
+	uint32_t file_offset = 0;
+
+	ostrstrm << prob_id;
+	
+	mb["prob_id"] = ostrstrm.str();
+	mb["prob_type"] = type;
+	
+	for(i = file.begin(); i != file.end(); ++i) {
+		int fd = open(i->second.c_str(), O_RDONLY | O_EXCL);
+		if(fd < 0) {
+			lerror(("open(" + i->second + ")").c_str());
+			for(list<int>::iterator j = fds.begin(); j != fds.end(); ++j)
+				close(*j);
+
+			return false;
+		}
+		struct stat st_stat;
+		if(fstat(fd, &st_stat) < 0) {
+			lerror(("fstat(" + i->second + ")").c_str());
+			for(list<int>::iterator j = fds.begin(); j != fds.end(); ++j)
+				close(*j);
+
+			return false;
+		}
+		
+		ostrstrm.str("");
+		char *tmp = strdup(i->second.c_str());
+		ostrstrm << file_offset << " " << st_stat.st_size << " " << basename(tmp);
+		free(tmp);
+
+		mb[i->first] = ostrstrm.str();
+		file_offset += st_stat.st_size;
+		fds.push_back(fd);
+	}
+
+	log(LOG_DEBUG, "Loading %u bytes ...", file_offset);
+	char *filedata = new char[file_offset];
+	char *pos = filedata;
+	for(list<int>::iterator fd_ptr = fds.begin(); fd_ptr != fds.end(); ++fd_ptr) {
+		struct stat st_stat;
+		if(fstat(*fd_ptr, &st_stat) < 0) {
+			lerror(("fstat(" + i->second + ")").c_str());
+			for( ; fd_ptr != fds.end(); ++fd_ptr)
+				close(*fd_ptr);
+			delete []filedata;
+			return false;
+		}
+		while(st_stat.st_size) {
+			int res = read(*fd_ptr, pos, st_stat.st_size);
+			log(LOG_DEBUG, "read returned %d", res);
+			if(res < 0) {
+				lerror("read");
+				for( ; fd_ptr != fds.end(); ++fd_ptr)
+					close(*fd_ptr);
+				delete []filedata;
+				return false;
+			}
+			st_stat.st_size -= res;
+			pos += res;
+		}
+	}
+	if(filedata + file_offset != pos)
+		log(LOG_ERR, "Potential problem, the amount of data read doesn't match up with the calculated amount of data required (Loaded %ld, expected %u)", pos - filedata, file_offset);
+	mb.setContent(filedata, file_offset);
+	delete []filedata;
+
+	for(i = normal.begin(); i != normal.end(); ++i) {
+		mb[i->first] = i->second;
+	}
+
+	mb.dump();
+
+	return simpleAction(mb);
 }
 
 bool ServerConnection::registerEventCallback(string event, EventCallback func, void *custom) {

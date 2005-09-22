@@ -12,6 +12,8 @@
 
 #include <sstream>
 
+#define KEEP_STRING "Keep current file"
+
 ProblemConfig::ProblemConfig(QWidget *parent)
 	:ProblemConfigBase(parent)
 {
@@ -24,10 +26,10 @@ bool ProblemConfig::addAttribute(QGridLayout *g, std::string attr_name, std::str
 	QWidget *control = 0;
 	switch(type[0]) {
 	case 'I':
-		control = new QSpinBox(prop_data);
+		control = _ints[attr_name] = new QSpinBox(prop_data);
 		break;
 	case 'S':
-		control = new QLineEdit(prop_data);
+		control = _strings[attr_name] = new QLineEdit(prop_data);
 		break;
 	case '(':
 		{
@@ -57,6 +59,7 @@ bool ProblemConfig::addAttribute(QGridLayout *g, std::string attr_name, std::str
 			connect(pushbutton, SIGNAL( clicked() ), fdiag, SLOT( exec() ));
 
 			control = frame;
+			_files[attr_name] = lineedit;
 		}; break;
 	case '{':
 		{
@@ -70,6 +73,7 @@ bool ProblemConfig::addAttribute(QGridLayout *g, std::string attr_name, std::str
 				i = epos + 1;
 			}
 			control = combo;
+			_enums[attr_name] = combo;
 		}; break;
 	case '*':
 		NOT_IMPLEMENTED();
@@ -131,4 +135,29 @@ QGridLayout *ProblemConfig::createCompoundGrid(std::string desc, QWidget *parent
 
 bool ProblemConfig::setProblemDescription(std::string descript) {
 	return createCompoundGrid(descript, prop_data) != NULL;
+}
+
+bool ProblemConfig::getProblemAttributes(AttributeMap &normal, AttributeMap &files) {
+	StringAttrsMap::const_iterator s;
+	ComboAttrsMap::const_iterator c;
+	IntAttrsMap::const_iterator i;
+	
+	for(s = _files.begin(); s != _files.end(); ++s) {
+		std::string val = s->second->text().ascii();
+		if(val == "" || val == KEEP_STRING)
+			files[s->first] = "-";
+		else
+			files[s->first] = val;
+	}
+
+	for(s = _strings.begin(); s != _strings.end(); ++s)
+		normal[s->first] = s->second->text().ascii();
+
+	for(c = _enums.begin(); c != _enums.end(); ++c)
+		normal[c->first] = c->second->currentText().ascii();
+	
+	for(i = _ints.begin(); i != _ints.end(); ++i)
+		normal[i->first] = i->second->cleanText().ascii();
+
+	return true;
 }

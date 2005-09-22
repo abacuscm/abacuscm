@@ -165,6 +165,21 @@ void MainWindow::doAdminProblemConfig() {
 		return;
 	}
 
-	if(prob_conf.exec())
-		NOT_IMPLEMENTED();
+	if(prob_conf.exec()) {
+		AttributeMap normal;
+		AttributeMap files;
+		if(!prob_conf.getProblemAttributes(normal, files)) {
+			QMessageBox::critical(this, "Error", "Error retrieving problem attributes that just got set", "O&k");
+			return;
+		}
+		AttributeMap::iterator i;
+		log(LOG_DEBUG, "Successful dialog, dumping attrs:");
+		for(i = normal.begin(); i != normal.end(); ++i)
+			log(LOG_DEBUG, "%s -> %s", i->first.c_str(), i->second.c_str());
+		for(i = files.begin(); i != files.end(); ++i)
+			log(LOG_DEBUG, "%s -> %s", i->first.c_str(), i->second.c_str());
+
+		if(!_server_con.setProblemAttributes(0, prob_type, normal, files))
+			QMessageBox::critical(this, "Error", "Server failed to accept the set values.", "O&k");
+	}
 }
