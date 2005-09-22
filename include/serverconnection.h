@@ -7,6 +7,7 @@
 #include <list>
 #include <map>
 #include <openssl/ssl.h>
+#include <stdint.h>
 
 class MessageBlock;
 

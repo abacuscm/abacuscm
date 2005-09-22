@@ -400,7 +400,7 @@ bool ServerConnection::setProblemAttributes(uint32_t prob_id, std::string type,
 		}
 	}
 	if(filedata + file_offset != pos)
-		log(LOG_ERR, "Potential problem, the amount of data read doesn't match up with the calculated amount of data required (Loaded %ld, expected %u)", pos - filedata, file_offset);
+		log(LOG_ERR, "Potential problem, the amount of data read doesn't match up with the calculated amount of data required (Loaded %ld, expected %u)", (long)(pos - filedata), file_offset);
 	mb.setContent(filedata, file_offset);
 	delete []filedata;
 

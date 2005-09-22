@@ -303,7 +303,7 @@ bool ProbMessage::process() const {
 
 	string ex_prob_type = db->getProblemType(_prob_id);
 	if(ex_prob_type != "") {
-		time_t lst_updated = db->getProblemUpdateTime(_prob_id);
+		uint32_t lst_updated = db->getProblemUpdateTime(_prob_id);
 		if(lst_updated > _update_time) {
 			log(LOG_INFO, "Discarding udpate for problem_id=%u that is older than current version", _prob_id);
 			db->release();
