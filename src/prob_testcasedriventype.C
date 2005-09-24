@@ -19,7 +19,7 @@ public:
 TCProblemType::TCProblemType() {
 	_attr_list.push_back("testcase (input F, output F)");
 	_attr_list.push_back("ignore_whitespace {Yes,No}");
-	_attr_list.push_back("some_int I");
+	_attr_list.push_back("time_limit I");
 }
 
 TCProblemType::~TCProblemType() {

@@ -33,7 +33,7 @@ bool ProblemConfig::addAttribute(QGridLayout *g, std::string attr_name, std::str
 		break;
 	case '(':
 		{
-			QGridLayout *subgrid = createCompoundGrid(type.substr(1, type.length() - 2));
+			QGridLayout *subgrid = createCompoundGrid(type.substr(1, type.length() - 2), NULL, attr_name + ".");
 			if(!subgrid)
 				return false;
 			QLabel * l = new QLabel(attr_name, prop_data);
@@ -96,7 +96,7 @@ bool ProblemConfig::addAttribute(QGridLayout *g, std::string attr_name, std::str
 	return true;
 }
 
-QGridLayout *ProblemConfig::createCompoundGrid(std::string desc, QWidget *parent) {
+QGridLayout *ProblemConfig::createCompoundGrid(std::string desc, QWidget *parent, std::string prefix) {
 	QGridLayout *grid = new QGridLayout(parent);
 	size_t spos = 0;
 	while(spos < desc.length()) {
@@ -123,7 +123,7 @@ QGridLayout *ProblemConfig::createCompoundGrid(std::string desc, QWidget *parent
 		log(LOG_DEBUG, "Adding attribute '%s' => '%s'", attr_name.c_str(), attr_type.c_str());
 
 		// no need to clean up - Qt will do that for us.
-		if(!addAttribute(grid, attr_name, attr_type))
+		if(!addAttribute(grid, prefix + attr_name, attr_type))
 			return NULL;
 
 		spos = epos + 1;

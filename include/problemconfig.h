@@ -25,7 +25,8 @@ private:
 	IntAttrsMap _ints;
 
 	bool addAttribute(QGridLayout *g, std::string attr_name, std::string type);
-	QGridLayout *createCompoundGrid(std::string comp, QWidget *parent = NULL);
+	QGridLayout *createCompoundGrid(std::string comp, QWidget *parent = NULL,
+			std::string prefix = "");
 public:
 	ProblemConfig(QWidget *parent);
 	~ProblemConfig();
