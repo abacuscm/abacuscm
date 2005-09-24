@@ -20,7 +20,7 @@ bool ModuleLoader::loadModule(string modname) {
 
 	log(LOG_INFO, "Loading module %s from %s.", modname.c_str(), fname.c_str());
 
-	void* mod = dlopen(fname.c_str(), RTLD_LAZY | RTLD_LOCAL);
+	void* mod = dlopen(fname.c_str(), RTLD_NOW | RTLD_LOCAL);
 	if(!mod)
 		log(LOG_ERR, "Failed to load module %s: %s", modname.c_str(), dlerror());
 
