@@ -23,17 +23,16 @@ bool ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
 	db->release();
 	
 	if(result < 0)
-		cc->sendError("Database error.");
+		return cc->sendError("Database error.");
 	else if(result == 0)
-		cc->sendError("Authentication failed.  Invalid username and/or password.");
+		return cc->sendError("Authentication failed.  Invalid username and/or password.");
 	else {
 		log(LOG_INFO, "User '%s' successfully logged in.", (*mb)["user"].c_str());
 		cc->setProperty("user_id", user_id);
 		cc->setProperty("user_type", user_type);
-		cc->reportSuccess();
 		EventRegister::getInstance().registerClient(cc);
+		return cc->reportSuccess();
 	}
-	return result > 0;
 }
 
 static ActAuth _act_auth;

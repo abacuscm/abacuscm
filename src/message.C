@@ -204,3 +204,12 @@ void Message::registerMessageFunctor(uint32_t message_type_id, MessageFunctor fu
 	_functors[message_type_id] = func;
 	log(LOG_INFO, "Registered functor for message_type_id=%u", message_type_id);
 }
+
+bool Message::checkStringTerms(const uint8_t* buf, uint32_t sz, uint32_t nzeros) {
+	while(sz && nzeros) {
+		if(!*buf++)
+			--nzeros;
+		--sz;
+	}
+	return nzeros == 0;
+}

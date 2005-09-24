@@ -51,7 +51,6 @@ private:
 	StringMap _strings;
 	IntMap _ints;
 
-	bool checkStringTerms(const uint8_t* buf, uint32_t sz, uint32_t nzeros);
 protected:
 	virtual uint32_t storageRequired();
 	virtual uint32_t store(uint8_t *buffer, uint32_t size);
@@ -165,15 +164,6 @@ uint32_t ProbMessage::store(uint8_t *buffer, uint32_t size) {
 	}
 
 	return used;
-}
-
-bool ProbMessage::checkStringTerms(const uint8_t* buf, uint32_t sz, uint32_t nzeros) {
-	while(sz && nzeros) {
-		if(!*buf++)
-			--nzeros;
-		--sz;
-	}
-	return nzeros == 0;
 }
 
 uint32_t ProbMessage::load(const uint8_t *buffer, uint32_t size) {

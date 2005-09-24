@@ -160,3 +160,8 @@ bool Server::isContestRunning() {
 	NOT_IMPLEMENTED();
 	return true;
 }
+
+uint32_t Server::contestTime() {
+	NOT_IMPLEMENTED();
+	return time(NULL);
+}

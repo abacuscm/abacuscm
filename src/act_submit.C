@@ -1,0 +1,166 @@
+#include "clientaction.h"
+#include "clientconnection.h"
+#include "logger.h"
+#include "message.h"
+#include "messageblock.h"
+#include "message_type_ids.h"
+#include "dbcon.h"
+#include "server.h"
+
+class ActSubmit : public ClientAction {
+protected:
+	bool int_process(ClientConnection *cc, MessageBlock *mb);
+};
+
+class SubmissionMessage : public Message {
+private:
+	uint32_t _prob_id;
+	uint32_t _user_id;
+	uint32_t _time;
+	uint32_t _server_id;
+	uint32_t _content_size;
+	char* _content;
+	
+	StringMap _extra;
+protected:
+	virtual uint32_t storageRequired();
+	virtual uint32_t store(uint8_t* buffer, uint32_t size);
+	virtual uint32_t load(const uint8_t* buffer, uint32_t size);
+public:
+	SubmissionMessage();
+	SubmissionMessage(uint32_t prob_id, uint32_t user_id, const char* content, uint32_t content_size);
+	virtual ~SubmissionMessage();
+	
+	virtual bool process() const;
+
+	virtual uint16_t message_type_id() const;
+};
+
+bool ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
+	uint32_t user_id = cc->getProperty("user_id");
+	char *errptr;
+	uint32_t prob_id = strtol((*mb)["prob_id"].c_str(), &errptr, 0);
+	if(*errptr || (*mb)["prob_id"] == "")
+		return cc->sendError("prob_id isn't a valid integer");
+
+	// TODO: extract all valid "extra" values and get them from
+	// the mb.
+
+	SubmissionMessage *msg = new SubmissionMessage(prob_id, user_id,
+			mb->content(), mb->content_size());
+
+	return triggerMessage(cc, msg);
+
+	NOT_IMPLEMENTED();
+	return cc->sendError("Not yet completely implemented");
+}
+
+SubmissionMessage::SubmissionMessage() {
+	_prob_id = 0;
+	_user_id = 0;
+	_time = 0;
+	_server_id = 0;
+	_content_size = 0;
+	_content = 0;
+}
+
+SubmissionMessage::SubmissionMessage(uint32_t prob_id, uint32_t user_id, const char* content, uint32_t content_size) {
+	_time = Server::contestTime();
+	_user_id = user_id;
+	_prob_id = prob_id;
+	_server_id = Server::getId();
+	_content_size = content_size;
+	_content = new char[content_size];
+	memcpy(_content, content, content_size);
+}
+
+SubmissionMessage::~SubmissionMessage() {
+	if(_content)
+		delete []_content;
+}
+
+bool SubmissionMessage::process() const {
+	NOT_IMPLEMENTED();
+	return false;
+}
+
+uint16_t SubmissionMessage::message_type_id() const {
+	return TYPE_ID_SUBMISSION;
+}
+
+uint32_t SubmissionMessage::storageRequired() {
+	uint32_t required = 5 * sizeof(uint32_t);
+	required += _content_size;
+	StringMap::const_iterator i;
+	for(i = _extra.begin(); i != _extra.end(); ++i)
+		required += i->first.length() + i->second.length() + 2;
+	return required;
+}
+
+uint32_t SubmissionMessage::store(uint8_t* buffer, uint32_t size) {
+	uint8_t *pos = buffer;
+	*(uint32_t*)pos = _user_id; pos += sizeof(uint32_t);
+	*(uint32_t*)pos = _prob_id; pos += sizeof(uint32_t);
+	*(uint32_t*)pos = _time; pos += sizeof(uint32_t);
+	*(uint32_t*)pos = _server_id; pos += sizeof(uint32_t);
+	*(uint32_t*)pos = _content_size; pos += sizeof(uint32_t);
+	memcpy(pos, _content, _content_size); pos += _content_size;
+	StringMap::const_iterator i;
+	for(i = _extra.begin(); i != _extra.end(); ++i) {
+		strcpy((char*)pos, i->first.c_str()); pos += i->first.length() + 1;
+		strcpy((char*)pos, i->second.c_str()); pos += i->second.length() + 1;
+	}
+	if(pos - buffer > size)
+		log(LOG_WARNING, "Buffer overflow detected - expect segfaults (Error is in class SubmissionMessage)");
+	return pos - buffer;
+}
+
+uint32_t SubmissionMessage::load(const uint8_t* buffer, uint32_t size) {
+	const uint8_t *pos = buffer;
+	if(size < 5 * sizeof(uint32_t)) {
+		log(LOG_ERR, "Too small buffer to contain the correct number of uint32_t values in SubmissionMessage::load()");
+		return ~0U;
+	}
+
+	_user_id = *(uint32_t*)pos; pos += sizeof(uint32_t);
+	_prob_id = *(uint32_t*)pos; pos += sizeof(uint32_t);
+	_time = *(uint32_t*)pos; pos += sizeof(uint32_t);
+	_server_id = *(uint32_t*)pos; pos += sizeof(uint32_t);
+	_content_size = *(uint32_t*)pos; pos += sizeof(uint32_t);
+	size -= 5 * sizeof(uint32_t);
+	
+	if(size < _content_size) {
+		log(LOG_ERR, "Insufficient buffer data to load in SubmissionMessage::load()");
+		return ~0U;
+	}
+
+	_content = new char[_content_size];
+	memcpy(_content, pos, _content_size);
+	pos += _content_size;
+	size -= _content_size;
+
+	while(checkStringTerms(pos, size, 2)) {
+		std::string name = (char*)pos;
+		pos += name.length() + 1;
+		std::string value = (char*)pos;
+		pos += value.length() + 1;
+		size -= name.length() + value.length() + 2;
+
+		_extra[name] = value;
+	}
+	
+	return pos - buffer;
+}
+
+////////////////////////////////////////////////////////////////////
+static Message* create_submission_msg() {
+	return new SubmissionMessage();
+}
+
+static ActSubmit _act_submit;
+
+static void init() __attribute__((constructor));
+static void init() {
+	ClientAction::registerAction(USER_TYPE_CONTESTANT, "submit", &_act_submit);
+	Message::registerMessageFunctor(TYPE_ID_SUBMISSION, create_submission_msg);
+}

@@ -72,6 +72,13 @@ protected:
 	 * initiate the load process.
 	 */
 	virtual uint32_t load(const uint8_t *buffer, uint32_t size) = 0;
+	
+	/**
+	 * This function can be used by subclasses to check for zero-terminators
+	 * in buffers in a particular buffer area.  It can specify how many
+	 * strings there need to be in a particular area of a buffer.
+	 */
+	bool checkStringTerms(const uint8_t* buf, uint32_t sz, uint32_t nzeros = 1);
 public:
 	Message();
 	virtual ~Message();

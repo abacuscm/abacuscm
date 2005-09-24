@@ -3,6 +3,7 @@
 #include "messageblock.h"
 #include "message.h"
 #include "logger.h"
+#include "server.h"
 
 std::map<int, std::map<std::string, ClientAction*> > ClientAction::actionmap;
 Queue<Message*> *ClientAction::_message_queue;
@@ -34,6 +35,9 @@ bool ClientAction::triggerMessage(ClientConnection *cc, Message *mb) {
 }
 
 bool ClientAction::process(ClientConnection *cc, MessageBlock *mb) {
+	if(!Server::getId())
+		return cc->sendError("Server has not yet been initialised - please try again later");
+
 	uint32_t user_type = cc->getProperty("user_type");
 	std::string action = mb->action();
 
