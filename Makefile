@@ -26,6 +26,7 @@ libabacus_s_objects = moduleloader \
 	clientconnection \
 	clientaction \
 	eventregister \
+	timedaction \
 	problemtype
 $(libabacus_s_name) : ldflags += -shared -ldl -lssl -labacus
 

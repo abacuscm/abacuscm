@@ -325,6 +325,12 @@ vector<string> ServerConnection::getProblemTypes() {
 	return vectorAction(mb, "type");
 }
 
+vector<string> ServerConnection::getServerList() {
+	MessageBlock mb("getserverlist");
+
+	return vectorAction(mb, "server");
+}
+
 string ServerConnection::getProblemDescription(string type) {
 	MessageBlock mb("getprobdescript");
 	mb["type"] = type;

@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
+#include <algorithm>
 
 #include "config.h"
 #include "logger.h"
@@ -21,6 +22,7 @@
 #include "clientconnection.h"
 #include "clientaction.h"
 #include "message_type_ids.h"
+#include "timedaction.h"
 
 #define DEFAULT_MIN_IDLE_WORKERS		5
 #define DEFAULT_MAX_IDLE_WORKERS		10
@@ -35,6 +37,7 @@ static pthread_t thread_message_handler;
 static pthread_t thread_socket_selector;
 static pthread_t thread_worker_spawner;
 static pthread_t thread_message_resender;
+static pthread_t thread_timed_actions;
 
 // This variable indicates that we are still running.
 static volatile bool abacusd_running = true;
@@ -43,6 +46,7 @@ static volatile bool abacusd_running = true;
 static Queue<Message*> message_queue;
 static Queue<Socket*> wait_queue;
 static Queue<uint32_t> ack_queue;
+static Queue<TimedAction*> timed_queue;
 
 static SocketPool socket_pool;
 
@@ -457,7 +461,7 @@ void resend_message(uint32_t server_id) {
 void* message_resender(void*) {
 	Server::setAckQueue(&ack_queue);
 	while(true) {
-		uint32_t s_ack = ack_queue.timed_dequeue<0>(5);
+		uint32_t s_ack = ack_queue.timed_dequeue(5, 0);
 		if(!abacusd_running)
 			break;
 		if(s_ack) {
@@ -474,6 +478,48 @@ void* message_resender(void*) {
 				}
 			}
 		}
+	}
+
+	return NULL;
+}
+
+bool TimedActionPtrLessThan(const TimedAction* v1, const TimedAction* v2) {
+	// We want smallest first, the *_heap functions implement a max-heap, thus
+	// reverse the direction of the comparison.
+	return v1->processingTime() > v2->processingTime();
+}
+
+void* timed_actions(void*) {
+	Server::setTimedQueue(&timed_queue);
+
+	vector<TimedAction*> heap;
+	TimedAction *next = NULL;
+	
+	while(abacusd_running) {
+		time_t now = time(NULL);
+		while(next && next->processingTime() <= now) {
+			next->perform();
+			delete next;
+			if(heap.empty())
+				next = NULL;
+			else {
+				next = *heap.begin();
+				pop_heap(heap.begin(), heap.end(), TimedActionPtrLessThan);
+				heap.pop_back();
+			}
+		}
+
+		if(next) {
+			time_t diff = next->processingTime() - now;
+			TimedAction *tmp = timed_queue.timed_dequeue(diff, 0);
+			if(tmp) {
+				if(tmp->processingTime() < next->processingTime())
+					swap(next, tmp);
+				heap.push_back(tmp);
+				push_heap(heap.begin(), heap.end(), TimedActionPtrLessThan);
+			}
+		} else
+			next = timed_queue.dequeue();
 	}
 
 	return NULL;
@@ -512,6 +558,7 @@ int main(int argc, char ** argv) {
 	pthread_create(&thread_worker_spawner, NULL, worker_spawner, NULL);
 	pthread_create(&thread_socket_selector, NULL, socket_selector, NULL);
 	pthread_create(&thread_message_resender, NULL, message_resender, NULL);
+	pthread_create(&thread_timed_actions, NULL, timed_actions, NULL);
 
 	log(LOG_DEBUG, "abacusd is up and running.");
 
@@ -534,6 +581,7 @@ int main(int argc, char ** argv) {
 	pthread_join(thread_worker_spawner, NULL);
 	pthread_join(thread_socket_selector, NULL);
 	pthread_join(thread_message_resender, NULL);
+	pthread_join(thread_timed_actions, NULL);
 
 	SocketPool::iterator i;
 	for(i = socket_pool.begin(); i != socket_pool.end(); ++i)

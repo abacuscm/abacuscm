@@ -11,6 +11,7 @@
 #define ID_GRANULARITY		MAX_SERVERS
 
 static Queue<uint32_t> *ack_queue;
+static Queue<TimedAction*> *timed_queue;
 
 uint32_t Server::getId() {
 	Config &config = Config::getConfig();
@@ -142,6 +143,10 @@ void Server::putAck(uint32_t server_id, uint32_t message_id, uint32_t ack_id) {
 
 void Server::setAckQueue(Queue<uint32_t>* _ack_queue) {
 	ack_queue = _ack_queue;
+}
+
+void Server::setTimedQueue(Queue<TimedAction*>* _timed_queue) {
+	timed_queue = _timed_queue;
 }
 
 bool Server::isContestRunning() {

@@ -59,7 +59,7 @@ private:
 	std::vector<std::string> vectorAction(MessageBlock &mb, std::string prefix);
 	std::vector<uint32_t> uintVectorAction(MessageBlock &mb, std::string prefix);
 	std::string stringAction(MessageBlock &mb, std::string fieldname);
-
+	
 	std::vector<std::string> vectorFromMB(MessageBlock &mb, std::string prefix);
 	
 	static void* thread_spawner(void*);
@@ -77,6 +77,8 @@ public:
 	std::vector<std::string> getProblemTypes();
 	std::vector<uint32_t> getProblems();
 	std::string getProblemDescription(std::string problemtype);
+
+	std::vector<std::string> getServerList();
 
 	bool setProblemAttributes(uint32_t prob_id, std::string type,
 			const AttributeMap& normal, const AttributeMap& file);

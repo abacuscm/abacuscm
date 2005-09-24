@@ -33,8 +33,7 @@ public:
 		return t;
 	}
 
-	template<T def>
-	T timed_dequeue(int sec) {
+	T timed_dequeue(int sec, T def) {
 		struct timeval now;
 		struct timespec timeout;
 		int retcode = 0;

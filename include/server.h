@@ -15,6 +15,7 @@
 #define ID_GRANULARITY	MAX_SERVERS
 
 template<class T> class Queue;
+class TimedAction;
 
 class Server {
 public:
@@ -27,6 +28,8 @@ public:
 			uint32_t ack_server);
 	static void setAckQueue(Queue<uint32_t> *ack_queue);
 	static bool isContestRunning();
+	static void putTimedAction(TimedAction *action);
+	static void setTimedQueue(Queue<TimedAction*> *queue);
 };
 
 #endif
