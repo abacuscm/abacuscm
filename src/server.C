@@ -119,25 +119,6 @@ bool Server::hasMessage(uint32_t server_id, uint32_t message_id) {
 	return res;
 }
 
-void Server::flushMessages(uint32_t server_id) {
-	log(LOG_ERR, "Call to deprecated function Server::flushMessages()");
-	DbCon *db = DbCon::getInstance();
-	if(!db) {
-		log(LOG_WARNING, "Failed to flush queued messages for %u", server_id);
-		return;
-	}
-	
-	MessageList msglist = db->getUnacked(server_id, 0);
-	db->release();
-
-	PeerMessenger *messenger = PeerMessenger::getMessenger();
-	MessageList::iterator i;
-	for(i = msglist.begin(); i != msglist.end(); ++i) {
-		messenger->sendMessage(server_id, *i);
-		delete *i;
-	}
-}
-
 void Server::putAck(uint32_t server_id, uint32_t message_id, uint32_t ack_id) {
 	if(!ack_id) {
 		log(LOG_ERR, "ack_id == 0 cannot possibly be correct.  This could potentially happen if/when a server didn't initialise properly upon first creation (the first PeerMessage a server receives must be it's own initialisation message.  Please see the Q&A for more info.");
