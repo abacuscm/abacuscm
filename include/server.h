@@ -26,6 +26,7 @@ public:
 	static void putAck(uint32_t server_id, uint32_t message_id,
 			uint32_t ack_server);
 	static void setAckQueue(Queue<uint32_t> *ack_queue);
+	static bool isContestRunning();
 };
 
 #endif

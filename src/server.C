@@ -143,3 +143,8 @@ void Server::putAck(uint32_t server_id, uint32_t message_id, uint32_t ack_id) {
 void Server::setAckQueue(Queue<uint32_t>* _ack_queue) {
 	ack_queue = _ack_queue;
 }
+
+bool Server::isContestRunning() {
+	NOT_IMPLEMENTED();
+	return true;
+}
