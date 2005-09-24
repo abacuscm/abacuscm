@@ -443,6 +443,20 @@ bool ServerConnection::deregisterEventCallback(string event, EventCallback func)
 	return true;
 }
 
+/**
+ * BUG: RACE CONDITION:
+ * We actually need to lock the decisions to terminate the thread
+ * with _lock_thread, not the actual shutdown.  If the thread
+ * decides to shut down then gets interrupted, a new thread starts
+ * decides to not start (cause another thread is running) and then
+ * the orriginal thread runs again then both threads will die.
+ *
+ * This _should_ not be a problem since we start threads when we
+ * establish connections, and it takes longer to re-establish a
+ * connection that what it should take for this thread to die.  But
+ * if that condition _always_ holds then testing for a thread is
+ * irrelavent.
+ */
 void* ServerConnection::receive_thread() {
 	char buffer[BFR_SIZE];
 	MessageBlock *mb = NULL;
