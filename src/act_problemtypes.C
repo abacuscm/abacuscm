@@ -51,8 +51,8 @@ bool ActGetProbDescript::int_process(ClientConnection *cc, MessageBlock *mb) {
 }
 
 ////////////////////////////////////////////////////////////
-ActGetProbTypes _act_get_prob_types;
-ActGetProbDescript _act_get_prob_desc;
+static ActGetProbTypes _act_get_prob_types;
+static ActGetProbDescript _act_get_prob_desc;
 
 static void init() __attribute__((constructor));
 static void init() {

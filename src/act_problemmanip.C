@@ -497,7 +497,7 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 }
 #undef act_error
 
-ActSetProbAttrs _act_setprobattrs;
+static ActSetProbAttrs _act_setprobattrs;
 
 static Message* create_prob_message() {
 	return new ProbMessage();

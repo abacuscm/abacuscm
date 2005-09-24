@@ -18,7 +18,7 @@ bool ActRunning::int_process(ClientConnection *cc, MessageBlock*) {
 	return cc->sendMessageBlock(&mb);
 }
 
-ActRunning _act_running;
+static ActRunning _act_running;
 
 static void init() __attribute__((constructor));
 static void init() {

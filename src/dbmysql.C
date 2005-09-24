@@ -25,6 +25,7 @@ public:
 
 	virtual bool ok();
 	virtual uint32_t name2server_id(const string& name);
+	virtual ServerList getServers();
 	virtual string getServerAttribute(uint32_t server_id,
 			const string& attribute);
 	virtual bool setServerAttribute(uint32_t server_id, const string& attribute,
@@ -127,6 +128,25 @@ uint32_t MySQL::name2server_id(const string& name) {
 	mysql_free_result(res);
 	
 	return server_id;
+}
+	
+ServerList MySQL::getServers() {
+	ServerList list;
+	
+	if(mysql_query(&_mysql, "SELECT server_id, server_name FROM Server")) {
+		log_mysql_error();
+	} else {
+		MYSQL_RES *res = mysql_use_result(&_mysql);
+		if(res) {
+			MYSQL_ROW row;
+			while(NULL != (row = mysql_fetch_row(res))) {
+				list[atol(row[0])] = row[1];
+			}
+			mysql_free_result(res);
+		}
+	}
+
+	return list;
 }
 	
 string MySQL::getServerAttribute(uint32_t server_id, const string& attribute) {

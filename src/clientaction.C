@@ -18,6 +18,7 @@ bool ClientAction::registerAction(int user_type, std::string action, ClientActio
 	if(actionmap[user_type][action] != NULL)
 		log(LOG_WARNING, "Overriding action handler for action '%s'!", action.c_str());
 
+	log(LOG_INFO, "Registering action '%s' (for type=%d)", action.c_str(), user_type);
 	actionmap[user_type][action] = ca;
 	return true;
 }

@@ -64,6 +64,7 @@ modules = udpmessenger \
 	act_problemtypes \
 	act_problemmanip \
 	act_status \
+	act_serverlist \
 	prob_testcasedriventype
 modules_d = $(foreach mod,$(modules),modules/mod_$(mod).so)
 $(modules_d) : ldflags += -shared -labacus-server

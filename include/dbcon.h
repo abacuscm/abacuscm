@@ -14,6 +14,7 @@ typedef std::map<std::string, std::string> StringMap;
 typedef StringMap AttributeList;
 typedef std::list<uint32_t> IdList;
 typedef IdList ProblemList;
+typedef std::map<uint32_t, std::string> ServerList;
 
 class DbCon {
 public:
@@ -29,6 +30,11 @@ public:
 	 * maps a servername to a server_id
 	 */
 	virtual uint32_t name2server_id(const std::string& name) = 0;
+
+	/**
+	 * Retrieves a list of all servers, mapped with id -> name
+	 */
+	virtual ServerList getServers() = 0;
 
 	/**
 	 * Retrieves an attribute value for a server.
