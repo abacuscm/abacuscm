@@ -149,6 +149,13 @@ void Server::setTimedQueue(Queue<TimedAction*>* _timed_queue) {
 	timed_queue = _timed_queue;
 }
 
+void Server::putTimedAction(TimedAction* ta) {
+	if(!timed_queue)
+		log(LOG_ERR, "timed_queue is not set!");
+	else
+		timed_queue->enqueue(ta);
+}
+
 bool Server::isContestRunning() {
 	NOT_IMPLEMENTED();
 	return true;

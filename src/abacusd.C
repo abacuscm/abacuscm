@@ -212,6 +212,9 @@ static bool initialise() {
 	ClientAction::setMessageQueue(&message_queue);
 
 	message_queue.enqueue(msglist.begin(), msglist.end());
+	
+	Server::setAckQueue(&ack_queue);
+	Server::setTimedQueue(&timed_queue);
 
 	return true;
 }
@@ -459,7 +462,6 @@ void resend_message(uint32_t server_id) {
 // a "hard" time, ie, every 5 seconds instead of
 // a complete 5 seconds every time.
 void* message_resender(void*) {
-	Server::setAckQueue(&ack_queue);
 	while(true) {
 		uint32_t s_ack = ack_queue.timed_dequeue(5, 0);
 		if(!abacusd_running)
@@ -490,8 +492,6 @@ bool TimedActionPtrLessThan(const TimedAction* v1, const TimedAction* v2) {
 }
 
 void* timed_actions(void*) {
-	Server::setTimedQueue(&timed_queue);
-
 	vector<TimedAction*> heap;
 	TimedAction *next = NULL;
 	
@@ -572,6 +572,8 @@ int main(int argc, char ** argv) {
 	pthread_kill(thread_socket_selector, SIGTERM);
 	message_queue.enqueue(NULL);
 	ack_queue.enqueue(0);
+	timed_queue.enqueue(NULL);
+	
 	pthread_mutex_lock(&lock_numworkers);
 	pthread_cond_signal(&cond_numworkers);
 	pthread_mutex_unlock(&lock_numworkers);
