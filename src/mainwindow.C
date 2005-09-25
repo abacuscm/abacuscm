@@ -4,6 +4,7 @@
 #include "config.h"
 #include "logger.h"
 #include "ui_adduser.h"
+#include "ui_submit.h"
 #include "problemconfig.h"
 
 #include <qlineedit.h>
@@ -182,4 +183,10 @@ void MainWindow::doAdminProblemConfig() {
 		if(!_server_con.setProblemAttributes(0, prob_type, normal, files))
 			QMessageBox::critical(this, "Error", "Server failed to accept the set values.", "O&k");
 	}
+}
+
+void MainWindow::doSubmit() {
+	Submit submit;
+	submit.exec();
+	NOT_IMPLEMENTED();
 }

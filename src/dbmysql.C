@@ -25,6 +25,7 @@ public:
 
 	virtual bool ok();
 	virtual uint32_t name2server_id(const string& name);
+	virtual uint32_t name2user_id(const string& name);
 	virtual ServerList getServers();
 	virtual string getServerAttribute(uint32_t server_id,
 			const string& attribute);
@@ -63,6 +64,9 @@ public:
 	virtual bool delProblemAttribute(uint32_t problem_id, std::string attr);
 	virtual bool getProblemFileData(uint32_t problem_id, std::string attr,
 			uint8_t **dataptr, uint32_t *lenptr);
+	virtual bool putSubmission(uint32_t user_id, uint32_t prob_id,
+			uint32_t time, uint32_t server_id, char* content,
+			uint32_t content_size, std::string language);
 	
 	bool init();
 };
@@ -129,7 +133,32 @@ uint32_t MySQL::name2server_id(const string& name) {
 	
 	return server_id;
 }
-	
+
+uint32_t MySQL::name2user_id(const string& name) {
+	uint32_t user_id = 0;
+	ostringstream query;
+	query << "SELECT user_id FROM User WHERE username='" << escape_string(name) << "'";
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return ~0U;
+	}
+
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if(!res) {
+		log_mysql_error();
+		return ~0U;
+	}
+
+	MYSQL_ROW row = mysql_fetch_row(res);
+	if(row)
+		user_id = atol(row[0]);
+
+	mysql_free_result(res);
+
+	return user_id;
+}
+
 ServerList MySQL::getServers() {
 	ServerList list;
 	
@@ -576,6 +605,18 @@ time_t MySQL::getProblemUpdateTime(uint32_t problem_id) {
 		}
 		return result;
 	}
+}
+
+bool MySQL::putSubmission(uint32_t user_id, uint32_t prob_id, uint32_t time, uint32_t server_id, char* content, uint32_t content_size, std::string language) {
+	ostringstream query;
+	query << "INSERT INTO Submission (user_id, prob_id, time, server_id, content, language) VALUES(" << user_id << ", " << prob_id << ", " << time << ", " << server_id << ", '" << escape_buffer((uint8_t*)content, content_size) << "', '" << escape_string(language) << "')";
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	}
+
+	return true;
 }
 
 bool MySQL::setProblemUpdateTime(uint32_t problem_id, time_t time) {

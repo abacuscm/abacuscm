@@ -37,6 +37,11 @@ public:
 	virtual ServerList getServers() = 0;
 
 	/**
+	 * maps a username to a user_id
+	 */
+	virtual uint32_t name2user_id(const std::string& name) = 0;
+
+	/**
 	 * Retrieves an attribute value for a server.
 	 */
 	virtual std::string getServerAttribute(uint32_t server_id, const std::string& attribute) = 0;
@@ -186,6 +191,14 @@ public:
 	virtual bool getProblemFileData(uint32_t problem_id, std::string attr,
 			uint8_t **dataptr, uint32_t *lenptr) = 0;
 	
+	/**
+	 * Commit a submitted solution to the database before initiating the
+	 * marking process.
+	 */
+	virtual bool putSubmission(uint32_t user_id, uint32_t prob_id,
+			uint32_t time, uint32_t server_id, char* content,
+			uint32_t content_size, std::string language) = 0;
+
 	/**
 	 * Functions to register a DbCon functor (function to create DbCons),
 	 * get a DbCon and to release one.  This allows for connection pooling

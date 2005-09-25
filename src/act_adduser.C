@@ -4,6 +4,7 @@
 #include "logger.h"
 #include "server.h"
 #include "message_createuser.h"
+#include "dbcon.h"
 
 #include <map>
 
@@ -40,7 +41,15 @@ bool ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
 	if(new_username == "")
 		return cc->sendError("Cannot have a blank username");
 
-	// TODO:  Add check for "in-use" usernames.
+	DbCon *db = DbCon::getInstance();
+	if(!db)
+		return cc->sendError("Error connecting to database");
+
+	uint32_t tmp_user_id = db->name2user_id(new_username);
+	db->release();
+
+	if(tmp_user_id)
+		return cc->sendError("Username is already in use");
 
 	uint32_t new_id = Server::nextUserId();
 	if(new_id == ~0U)

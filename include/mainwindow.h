@@ -27,6 +27,7 @@ protected:
 	virtual void doFileDisconnect();
 	virtual void doAdminCreateUser();
 	virtual void doAdminProblemConfig();
+	virtual void doSubmit();
 
 public:
 	MainWindow();

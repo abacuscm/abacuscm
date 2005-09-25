@@ -7,7 +7,14 @@
 #include "dbcon.h"
 #include "server.h"
 
+#include <sstream>
+
 class ActSubmit : public ClientAction {
+protected:
+	bool int_process(ClientConnection *cc, MessageBlock *mb);
+};
+
+class ActGetProblems : public ClientAction {
 protected:
 	bool int_process(ClientConnection *cc, MessageBlock *mb);
 };
@@ -20,15 +27,14 @@ private:
 	uint32_t _server_id;
 	uint32_t _content_size;
 	char* _content;
-	
-	StringMap _extra;
+	std::string _language;
 protected:
 	virtual uint32_t storageRequired();
 	virtual uint32_t store(uint8_t* buffer, uint32_t size);
 	virtual uint32_t load(const uint8_t* buffer, uint32_t size);
 public:
 	SubmissionMessage();
-	SubmissionMessage(uint32_t prob_id, uint32_t user_id, const char* content, uint32_t content_size);
+	SubmissionMessage(uint32_t prob_id, uint32_t user_id, const char* content, uint32_t content_size, std::string language);
 	virtual ~SubmissionMessage();
 	
 	virtual bool process() const;
@@ -43,16 +49,59 @@ bool ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
 	if(*errptr || (*mb)["prob_id"] == "")
 		return cc->sendError("prob_id isn't a valid integer");
 
-	// TODO: extract all valid "extra" values and get them from
-	// the mb.
+	DbCon *db = DbCon::getInstance();
+	if(!db)
+		return cc->sendError("Unable to connect to database");
+	ProblemList probs = db->getProblems();
+	db->release();
 
+	ProblemList::iterator p;
+	for(p = probs.begin(); p != probs.end(); ++p)
+		if(*p == prob_id)
+			break;
+	if(p == probs.end())
+		return cc->sendError("Invalid prob_id - no such id");
+
+	std::string lang = (*mb)["lang"];
+
+	// TODO:  Proper check - this will do for now:
+	if(lang != "C/C++" && lang != "Java")
+		return cc->sendError("You have not specified the language");
+	
 	SubmissionMessage *msg = new SubmissionMessage(prob_id, user_id,
-			mb->content(), mb->content_size());
+			mb->content(), mb->content_size(), lang);
+
+	log(LOG_INFO, "User %u submitted solution for problem %u", user_id, prob_id);
 
 	return triggerMessage(cc, msg);
+}
 
-	NOT_IMPLEMENTED();
-	return cc->sendError("Not yet completely implemented");
+bool ActGetProblems::int_process(ClientConnection *cc, MessageBlock *) {
+	DbCon *db = DbCon::getInstance();
+	if(!db)
+		return cc->sendError("Error connecting to database");
+
+	ProblemList probs = db->getProblems();
+
+	MessageBlock mb("ok");
+
+	ProblemList::iterator p;
+	int c = 0;
+	for(p = probs.begin(); p != probs.end(); ++p, ++c) {
+		std::ostringstream ostrstrm;
+		ostrstrm << c;
+		std::string cstr = ostrstrm.str();
+		ostrstrm.str("");
+		ostrstrm << *p;
+		
+		mb["id" + cstr] = ostrstrm.str();
+		
+		AttributeList lst = db->getProblemAttributes(*p);
+		mb["code" + cstr] = lst["shortname"];
+		mb["name" + cstr] = lst["longname"];
+	}
+	
+	return cc->sendMessageBlock(&mb);
 }
 
 SubmissionMessage::SubmissionMessage() {
@@ -62,9 +111,10 @@ SubmissionMessage::SubmissionMessage() {
 	_server_id = 0;
 	_content_size = 0;
 	_content = 0;
+	_language = "";
 }
 
-SubmissionMessage::SubmissionMessage(uint32_t prob_id, uint32_t user_id, const char* content, uint32_t content_size) {
+SubmissionMessage::SubmissionMessage(uint32_t prob_id, uint32_t user_id, const char* content, uint32_t content_size, std::string language) {
 	_time = Server::contestTime();
 	_user_id = user_id;
 	_prob_id = prob_id;
@@ -72,6 +122,7 @@ SubmissionMessage::SubmissionMessage(uint32_t prob_id, uint32_t user_id, const c
 	_content_size = content_size;
 	_content = new char[content_size];
 	memcpy(_content, content, content_size);
+	_language = language;
 }
 
 SubmissionMessage::~SubmissionMessage() {
@@ -91,9 +142,7 @@ uint16_t SubmissionMessage::message_type_id() const {
 uint32_t SubmissionMessage::storageRequired() {
 	uint32_t required = 5 * sizeof(uint32_t);
 	required += _content_size;
-	StringMap::const_iterator i;
-	for(i = _extra.begin(); i != _extra.end(); ++i)
-		required += i->first.length() + i->second.length() + 2;
+	required += _language.length() + 1;
 	return required;
 }
 
@@ -105,13 +154,11 @@ uint32_t SubmissionMessage::store(uint8_t* buffer, uint32_t size) {
 	*(uint32_t*)pos = _server_id; pos += sizeof(uint32_t);
 	*(uint32_t*)pos = _content_size; pos += sizeof(uint32_t);
 	memcpy(pos, _content, _content_size); pos += _content_size;
-	StringMap::const_iterator i;
-	for(i = _extra.begin(); i != _extra.end(); ++i) {
-		strcpy((char*)pos, i->first.c_str()); pos += i->first.length() + 1;
-		strcpy((char*)pos, i->second.c_str()); pos += i->second.length() + 1;
-	}
-	if(pos - buffer > size)
+	strcpy((char*)pos, _language.c_str()); pos += _language.length() + 1;
+
+	if((unsigned)(pos - buffer) > size)
 		log(LOG_WARNING, "Buffer overflow detected - expect segfaults (Error is in class SubmissionMessage)");
+
 	return pos - buffer;
 }
 
@@ -139,16 +186,14 @@ uint32_t SubmissionMessage::load(const uint8_t* buffer, uint32_t size) {
 	pos += _content_size;
 	size -= _content_size;
 
-	while(checkStringTerms(pos, size, 2)) {
-		std::string name = (char*)pos;
-		pos += name.length() + 1;
-		std::string value = (char*)pos;
-		pos += value.length() + 1;
-		size -= name.length() + value.length() + 2;
-
-		_extra[name] = value;
+	if(!checkStringTerms(pos, size)) {
+		log(LOG_ERR, "Incomplete string in buffer decoding");
+		return ~0U;
 	}
-	
+
+	_language = (char*)pos;
+	pos += _language.length() + 1;
+
 	return pos - buffer;
 }
 
@@ -158,9 +203,11 @@ static Message* create_submission_msg() {
 }
 
 static ActSubmit _act_submit;
+static ActGetProblems _act_getproblems;
 
 static void init() __attribute__((constructor));
 static void init() {
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "submit", &_act_submit);
+	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getproblems", &_act_getproblems);
 	Message::registerMessageFunctor(TYPE_ID_SUBMISSION, create_submission_msg);
 }

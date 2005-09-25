@@ -49,6 +49,7 @@ abacus_objects = abacus \
 	ui_logindialog moc_ui_logindialog \
 	ui_aboutdialog moc_ui_aboutdialog \
 	ui_adduser moc_ui_adduser \
+	ui_submit moc_ui_submit \
 	ui_problemconfigbase moc_ui_problemconfigbase \
 	ui_mainwindowbase moc_ui_mainwindowbase
 $(abacus_name) : ldflags += -L$(QTDIR)/lib -lqt -labacus-client

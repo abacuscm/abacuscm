@@ -198,29 +198,31 @@
                     <property name="name">
                         <cstring>unnamed</cstring>
                     </property>
-                    <widget class="QTable">
+                    <widget class="QListView">
+                        <column>
+                            <property name="text">
+                                <string>Position</string>
+                            </property>
+                            <property name="clickable">
+                                <bool>true</bool>
+                            </property>
+                            <property name="resizable">
+                                <bool>true</bool>
+                            </property>
+                        </column>
+                        <column>
+                            <property name="text">
+                                <string>Contestant</string>
+                            </property>
+                            <property name="clickable">
+                                <bool>true</bool>
+                            </property>
+                            <property name="resizable">
+                                <bool>true</bool>
+                            </property>
+                        </column>
                         <property name="name">
-                            <cstring>table1</cstring>
-                        </property>
-                        <property name="sizePolicy">
-                            <sizepolicy>
-                                <hsizetype>2</hsizetype>
-                                <vsizetype>2</vsizetype>
-                                <horstretch>0</horstretch>
-                                <verstretch>0</verstretch>
-                            </sizepolicy>
-                        </property>
-                        <property name="resizePolicy">
-                            <enum>AutoOneFit</enum>
-                        </property>
-                        <property name="numRows">
-                            <number>15</number>
-                        </property>
-                        <property name="numCols">
-                            <number>10</number>
-                        </property>
-                        <property name="readOnly">
-                            <bool>true</bool>
+                            <cstring>standings</cstring>
                         </property>
                     </widget>
                 </vbox>
@@ -232,6 +234,105 @@
                 <attribute name="title">
                     <string>Submissions</string>
                 </attribute>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <widget class="QListView">
+                        <column>
+                            <property name="text">
+                                <string>Time</string>
+                            </property>
+                            <property name="clickable">
+                                <bool>true</bool>
+                            </property>
+                            <property name="resizable">
+                                <bool>true</bool>
+                            </property>
+                        </column>
+                        <column>
+                            <property name="text">
+                                <string>Problem</string>
+                            </property>
+                            <property name="clickable">
+                                <bool>true</bool>
+                            </property>
+                            <property name="resizable">
+                                <bool>true</bool>
+                            </property>
+                        </column>
+                        <column>
+                            <property name="text">
+                                <string>Result</string>
+                            </property>
+                            <property name="clickable">
+                                <bool>true</bool>
+                            </property>
+                            <property name="resizable">
+                                <bool>true</bool>
+                            </property>
+                        </column>
+                        <property name="name">
+                            <cstring>submissions</cstring>
+                        </property>
+                        <property name="selectionMode">
+                            <enum>Single</enum>
+                        </property>
+                        <property name="allColumnsShowFocus">
+                            <bool>false</bool>
+                        </property>
+                        <property name="showSortIndicator">
+                            <bool>true</bool>
+                        </property>
+                        <property name="resizeMode">
+                            <enum>NoColumn</enum>
+                        </property>
+                        <property name="defaultRenameAction">
+                            <enum>Reject</enum>
+                        </property>
+                    </widget>
+                    <widget class="QLayoutWidget">
+                        <property name="name">
+                            <cstring>layout1</cstring>
+                        </property>
+                        <hbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <spacer>
+                                <property name="name">
+                                    <cstring>spacer1</cstring>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Horizontal</enum>
+                                </property>
+                                <property name="sizeType">
+                                    <enum>Expanding</enum>
+                                </property>
+                                <property name="sizeHint">
+                                    <size>
+                                        <width>40</width>
+                                        <height>20</height>
+                                    </size>
+                                </property>
+                            </spacer>
+                            <widget class="QPushButton">
+                                <property name="name">
+                                    <cstring>submissionButton</cstring>
+                                </property>
+                                <property name="enabled">
+                                    <bool>true</bool>
+                                </property>
+                                <property name="text">
+                                    <string>Make &amp;Submission</string>
+                                </property>
+                                <property name="accel">
+                                    <string>Alt+S</string>
+                                </property>
+                            </widget>
+                        </hbox>
+                    </widget>
+                </vbox>
             </widget>
         </widget>
     </vbox>
@@ -243,13 +344,13 @@
     <property name="enabled">
         <bool>true</bool>
     </property>
-    <item text="&amp;File" name="File">
+    <item text="&amp;Abacus" name="Abacus">
         <action name="fileConnectAction"/>
         <action name="fileDisconnectAction"/>
         <separator/>
         <action name="fileExitAction"/>
     </item>
-    <item text="&amp;Admin" name="Admin">
+    <item text="A&amp;dmin" name="Admin">
         <action name="adminCreate_UserAction"/>
         <action name="adminAdd_ServerAction"/>
         <action name="adminProblem_ConfigAction"/>
@@ -408,6 +509,12 @@
         <receiver>MainWindowBase</receiver>
         <slot>doFileDisconnect()</slot>
     </connection>
+    <connection>
+        <sender>submissionButton</sender>
+        <signal>clicked()</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>doSubmit()</slot>
+    </connection>
 </connections>
 <slots>
     <slot access="protected" specifier="pure virtual">doHelpAbout()</slot>
@@ -415,6 +522,7 @@
     <slot access="protected" specifier="pure virtual">doAdminCreateUser()</slot>
     <slot access="protected" specifier="pure virtual">doAdminProblemConfig()</slot>
     <slot access="protected" specifier="pure virtual">doFileDisconnect()</slot>
+    <slot access="protected" specifier="pure virtual">doSubmit()</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>
