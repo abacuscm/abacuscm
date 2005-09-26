@@ -82,6 +82,7 @@ bool ActGetProblems::int_process(ClientConnection *cc, MessageBlock *) {
 		return cc->sendError("Error connecting to database");
 
 	ProblemList probs = db->getProblems();
+	db->release();
 
 	MessageBlock mb("ok");
 
@@ -131,8 +132,18 @@ SubmissionMessage::~SubmissionMessage() {
 }
 
 bool SubmissionMessage::process() const {
-	NOT_IMPLEMENTED();
-	return false;
+	DbCon* db = DbCon::getInstance();
+	if(!db)
+		return false;
+	
+	bool result = db->putSubmission(_user_id, _prob_id, _time, _server_id,
+			_content, _content_size, _language);
+
+	db->release();
+
+	// TODO: enqueue for marking if we are a marking server.
+
+	return result;
 }
 
 uint16_t SubmissionMessage::message_type_id() const {
