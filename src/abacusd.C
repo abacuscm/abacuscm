@@ -426,7 +426,7 @@ void* socket_selector(void*) {
 				socket_pool.erase(i);
 				wait_queue.enqueue(s);
 			}
-			
+			// something in the above loop (suspicious of ++i) segfaults.
 	}
 
 	return NULL;
