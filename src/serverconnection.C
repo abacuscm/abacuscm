@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <openssl/rand.h>
@@ -415,6 +416,59 @@ bool ServerConnection::setProblemAttributes(uint32_t prob_id, std::string type,
 	}
 
 	mb.dump();
+
+	return simpleAction(mb);
+}
+
+vector<ProblemInfo> ServerConnection::getProblems() {
+	vector<ProblemInfo> response;
+	MessageBlock mb("getproblems");
+
+	MessageBlock *res = sendMB(&mb);
+	if(!res)
+		return response;
+
+	unsigned i = 0;
+	while(true) {
+		ostringstream strstrm;
+		strstrm << "id" << i;
+		if(!res->hasAttribute(strstrm.str()))
+			break;
+
+		ProblemInfo tmp;
+		tmp.id = strtoll((*res)[strstrm.str()].c_str(), NULL, 0);
+
+		strstrm.str(""); strstrm << "code" << i;
+		tmp.code = (*res)[strstrm.str()];
+		
+		strstrm.str(""); strstrm << "name" << i;
+		tmp.name = (*res)[strstrm.str()];
+
+		response.push_back(tmp);
+		i++;
+	}
+	
+	delete res;
+	return response;
+}
+
+bool ServerConnection::submit(uint32_t prob_id, int fd, const string& lang) {
+	ostringstream str_prob_id;
+	str_prob_id << prob_id;
+	
+	MessageBlock mb("submit");
+	mb["prob_id"] = str_prob_id.str();
+	mb["lang"] = lang;
+
+	struct stat statbuf;
+	if(fstat(fd, &statbuf) < 0)
+		return false;
+	
+	void *ptr = mmap(NULL, statbuf.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+	if(!ptr)
+		return false;
+	mb.setContent((char*)ptr, statbuf.st_size);
+	munmap(ptr, statbuf.st_size);
 
 	return simpleAction(mb);
 }

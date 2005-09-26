@@ -13,6 +13,10 @@
 #include <qcombobox.h>
 #include <qinputdialog.h>
 #include <qstring.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <qfiledialog.h>
+#include <qpushbutton.h>
 
 using namespace std;
 
@@ -186,7 +190,41 @@ void MainWindow::doAdminProblemConfig() {
 }
 
 void MainWindow::doSubmit() {
+	vector<ProblemInfo> probs = _server_con.getProblems();
+	if(probs.empty()) {
+		QMessageBox::critical(this, "Error", "There are no active problems to submit solutions for!", "O&k");
+		return;
+	}
+	
 	Submit submit;
-	submit.exec();
-	NOT_IMPLEMENTED();
+
+	// This code is here because Qt messes up.
+	QFileDialog* fileDiag = new QFileDialog(&submit);
+	
+	connect(submit.browse, SIGNAL( clicked() ),
+			fileDiag, SLOT( exec() ));
+	connect(fileDiag, SIGNAL( fileSelected(const QString&) ),
+			submit.filename, SLOT( setText(const QString&) ));
+	
+	vector<ProblemInfo>::iterator i;
+	for(i = probs.begin(); i != probs.end(); ++i) {
+		submit.problemSelection->insertItem(i->code + ": " + i->name);
+	}
+
+	if(submit.exec()) {
+		// Do _NOT_ drop the ::s here - Qt has at least a close() function
+		// that overloads this and causes extremely weird errors.
+		int fd = ::open(submit.filename->text().ascii(), O_RDONLY);
+		if(fd < 0) {
+			QMessageBox::critical(this, "Error", "Unable to open specified file for reading - not submitting!", "O&k");
+			return;
+		}
+
+		uint32_t prob_id = probs[submit.problemSelection->currentItem()].id;
+		std::string lang = submit.language->currentText();
+
+		if(!_server_con.submit(prob_id, fd, lang))
+			QMessageBox::critical(this, "Error", "An error has occured whilst submitting your solution!", "O&k");
+		::close(fd);
+	}
 }

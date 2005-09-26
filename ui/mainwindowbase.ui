@@ -354,6 +354,12 @@
         <action name="adminCreate_UserAction"/>
         <action name="adminAdd_ServerAction"/>
         <action name="adminProblem_ConfigAction"/>
+        <action name="adminContestAction"/>
+        <item text="&amp;Contest" name="popupMenu_9" accel="">
+            <action name="adminContestStartAction"/>
+            <action name="adminContestPauseAction"/>
+            <action name="adminContestResumeAction"/>
+        </item>
     </item>
     <item text="&amp;Help" name="Help">
         <action name="helpAboutAction"/>
@@ -461,6 +467,53 @@
         </property>
         <property name="menuText">
             <string>&amp;Problem Config</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>adminContestAction</cstring>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>&amp;Contest</string>
+        </property>
+        <property name="menuText">
+            <string>&amp;Contest</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>adminContestStartAction</cstring>
+        </property>
+        <property name="text">
+            <string>&amp;Start</string>
+        </property>
+        <property name="menuText">
+            <string>&amp;Start</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>adminContestPauseAction</cstring>
+        </property>
+        <property name="text">
+            <string>&amp;Pause</string>
+        </property>
+        <property name="menuText">
+            <string>&amp;Pause</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>adminContestResumeAction</cstring>
+        </property>
+        <property name="text">
+            <string>&amp;Resume</string>
+        </property>
+        <property name="menuText">
+            <string>&amp;Resume</string>
         </property>
     </action>
 </actions>

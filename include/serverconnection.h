@@ -15,6 +15,12 @@ typedef void (*EventCallback)(const MessageBlock*, void *);
 
 typedef std::map<std::string, std::string> AttributeMap;
 
+typedef struct {
+	uint32_t id;
+	std::string code;
+	std::string name;
+} ProblemInfo;
+
 class ServerConnection {
 private:
 	struct CallbackData {
@@ -75,13 +81,14 @@ public:
 	bool createuser(std::string username, std::string password, std::string type);
 
 	std::vector<std::string> getProblemTypes();
-	std::vector<uint32_t> getProblems();
+	std::vector<ProblemInfo> getProblems();
 	std::string getProblemDescription(std::string problemtype);
 
 	std::vector<std::string> getServerList();
 
 	bool setProblemAttributes(uint32_t prob_id, std::string type,
 			const AttributeMap& normal, const AttributeMap& file);
+	bool submit(uint32_t prob_id, int fd, const std::string& language);
 
 	bool registerEventCallback(std::string event, EventCallback func, void *custom);
 	bool deregisterEventCallback(std::string event, EventCallback func);
