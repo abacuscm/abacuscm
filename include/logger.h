@@ -10,6 +10,9 @@ void real_lerror(const char* fname, int line_num, const char* prefix);
 void real_log_ssl_errors(const char* fname, int line_num, const char* prefix);
 void log_buffer(int priority, const char* name, const unsigned char* buffer, int size);
 
+typedef void (*LogFunction)(int , const char*, va_list ap);
+void register_log_listener(LogFunction log_function);
+
 #define lerror(x) real_lerror(__FILE__, __LINE__, x)
 #define log_ssl_errors(x) real_log_ssl_errors(__FILE__, __LINE__, x)
 

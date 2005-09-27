@@ -321,7 +321,7 @@
                                     <cstring>submissionButton</cstring>
                                 </property>
                                 <property name="enabled">
-                                    <bool>true</bool>
+                                    <bool>false</bool>
                                 </property>
                                 <property name="text">
                                     <string>Make &amp;Submission</string>
@@ -355,7 +355,7 @@
         <action name="adminAdd_ServerAction"/>
         <action name="adminProblem_ConfigAction"/>
         <action name="adminContestAction"/>
-        <item text="&amp;Contest" name="popupMenu_9" accel="">
+        <item text="&amp;Contest" name="popupMenu_8" accel="">
             <action name="adminContestStartAction"/>
             <action name="adminContestPauseAction"/>
             <action name="adminContestResumeAction"/>
@@ -487,6 +487,9 @@
         <property name="name">
             <cstring>adminContestStartAction</cstring>
         </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
         <property name="text">
             <string>&amp;Start</string>
         </property>
@@ -498,6 +501,9 @@
         <property name="name">
             <cstring>adminContestPauseAction</cstring>
         </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
         <property name="text">
             <string>&amp;Pause</string>
         </property>
@@ -508,6 +514,9 @@
     <action>
         <property name="name">
             <cstring>adminContestResumeAction</cstring>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
         </property>
         <property name="text">
             <string>&amp;Resume</string>
@@ -568,7 +577,54 @@
         <receiver>MainWindowBase</receiver>
         <slot>doSubmit()</slot>
     </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalAdminControls(bool)</signal>
+        <receiver>adminAdd_ServerAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalAdminControls(bool)</signal>
+        <receiver>adminCreate_UserAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalAdminControls(bool)</signal>
+        <receiver>adminContestPauseAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalAdminControls(bool)</signal>
+        <receiver>adminContestResumeAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalAdminControls(bool)</signal>
+        <receiver>adminContestStartAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalAdminControls(bool)</signal>
+        <receiver>adminProblem_ConfigAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalContestantControls(bool)</signal>
+        <receiver>submissionButton</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
 </connections>
+<signals>
+    <signal>signalAdminControls(bool)</signal>
+    <signal>signalJudgeControls(bool)</signal>
+    <signal>signalContestantControls(bool)</signal>
+</signals>
 <slots>
     <slot access="protected" specifier="pure virtual">doHelpAbout()</slot>
     <slot access="protected" specifier="pure virtual">doFileConnect()</slot>

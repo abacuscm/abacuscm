@@ -6,6 +6,8 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
+#include <list>
+
 #include "config.h"
 #include "logger.h"
 
@@ -13,7 +15,9 @@
 
 using namespace std;
 
-static void (*actual_log)(int , const char*, va_list ap) = 0;
+typedef list<LogFunction> LogFunctionList;
+LogFunctionList log_listeners;
+
 static const char *priostrings[] = {
 	"EMERG",
 	"ALERT",
@@ -47,12 +51,10 @@ static void log_file(int prio, const char* format, va_list ap) {
 }
 
 void log(int priority, const char* format, ...) {
-	if(!actual_log) {
+	if(log_listeners.empty()) {
 		string log_method = Config::getConfig()["logger"]["method"];
 
-		if(log_method == "file") {
-			actual_log = log_file;
-			
+		if(log_method == "file") {	
 			string filename = Config::getConfig()["logger"]["filename"];
 
 			if(filename == "stderr") {
@@ -67,18 +69,29 @@ void log(int priority, const char* format, ...) {
 				}
 				flog = fp;
 			}
+			register_log_listener(log_file);
 		} else {
 			openlog("abacusd", LOG_PID, LOG_DAEMON);
-			actual_log = vsyslog;
+			register_log_listener(vsyslog);
 			if(log_method != "syslog")
 				log(LOG_WARNING, "Unknown logging method %s, defaulting to syslog", log_method.c_str());
 		}
 	}
 
-	va_list ap;
-	va_start(ap, format);
-	actual_log(priority, format, ap);
-	va_end(ap);
+	// From experimentation I could have placed the va_list stuff outside
+	// of the loop - the man-pages however give many warnings, thus I 
+	// rather do it inside the loop.
+	LogFunctionList::iterator i;
+	for(i = log_listeners.begin(); i != log_listeners.end(); ++i) {
+		va_list ap;
+		va_start(ap, format);
+		(*i)(priority, format, ap);
+		va_end(ap);
+	}
+}
+
+void register_log_listener(LogFunction log_func) {
+	log_listeners.push_back(log_func);
 }
 
 void (*logc)(int priority, const char* format, ...) = log;

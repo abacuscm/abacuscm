@@ -25,33 +25,32 @@ MainWindow::MainWindow() {
 
 	_login_dialog.serverName->setText(config["server"]["address"]);
 	_login_dialog.service->setText(config["server"]["service"]);
-
-	_type_action_map["admin"].push_back(adminCreate_UserAction);
-	_type_action_map["admin"].push_back(adminAdd_ServerAction);
-	_type_action_map["admin"].push_back(adminProblem_ConfigAction);
 }
 
 MainWindow::~MainWindow() {
 }
 
-void MainWindow::activateType(std::string type) {
+void MainWindow::triggerType(std::string type, bool status) {
+	if(type == "admin")
+		signalAdminControls(status);
+	else if(type == "judge")
+		signalJudgeControls(status);
+	else if(type == "contestant")
+		signalContestantControls(status);
+	else
+		log(LOG_ERR, "Unknown control-type '%s'.", type.c_str());
+}
+
+void MainWindow::switchType(std::string type) {
 	log(LOG_DEBUG, "Changing active type from '%s' to '%s'",
 			_active_type.c_str(), type.c_str());
-	if(_active_type != "") {
-		ActionList::iterator i;
-		for(i = _type_action_map[_active_type].begin();
-				i != _type_action_map[_active_type].end(); ++ i)
-			(*i)->setEnabled(false);
-		_active_type = "";
-	}
+	if(_active_type != "")
+		triggerType(_active_type, false);
 
-	TypeActionMap::iterator i = _type_action_map.find(type);
-	if(i != _type_action_map.end()) {
-		_active_type = type;
-		ActionList::iterator j;
-		for(j = i->second.begin(); j != i->second.end(); ++j)
-			(*j)->setEnabled(true);
-	}
+	_active_type = type;
+
+	if(_active_type != "")
+		triggerType(_active_type, true);
 }
 
 void MainWindow::doHelpAbout() {
@@ -72,7 +71,7 @@ void MainWindow::doFileConnect() {
 						QMessageBox::Information, QMessageBox::Ok,
 						QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
 				std::string type = _server_con.whatAmI();
-				activateType(type);
+				switchType(type);
 				fileConnectAction->setEnabled(false);
 				fileDisconnectAction->setEnabled(true);
 			} else {
@@ -95,7 +94,7 @@ void MainWindow::doFileDisconnect() {
 
 	fileConnectAction->setEnabled(true);
 	fileDisconnectAction->setEnabled(false);
-	activateType("");
+	switchType("");
 }
 
 void MainWindow::doAdminCreateUser() {
@@ -227,4 +226,24 @@ void MainWindow::doSubmit() {
 			QMessageBox::critical(this, "Error", "An error has occured whilst submitting your solution!", "O&k");
 		::close(fd);
 	}
+}
+	
+void MainWindow::customEvent(QCustomEvent *ev) {
+	LogMessage* msg = (LogMessage*)ev->data();
+	switch(msg->prio_level) {
+	case LOG_DEBUG:
+	case LOG_NOTICE:
+		break;
+	case LOG_INFO:
+		QMessageBox::information(this, "Info Message", msg->msg, "O&k");
+		break;
+	case LOG_WARNING:
+		QMessageBox::warning(this, "Warning", msg->msg, "O&k");
+		break;
+	case LOG_ERR:
+	case LOG_CRIT:
+		QMessageBox::critical(this, "Error", msg->msg, "O&k");
+		break;
+	};
+	delete msg;
 }

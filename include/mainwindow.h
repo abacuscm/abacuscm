@@ -6,21 +6,20 @@
 
 #include "serverconnection.h"
 
-#include <map>
-#include <list>
+typedef struct {
+	int prio_level;
+	QString msg;
+} LogMessage;
 
 class MainWindow : public MainWindowBase {
 private:
-	typedef std::list<QAction*> ActionList;
-	typedef std::map<std::string, ActionList> TypeActionMap;
-	
 	LoginDialog _login_dialog;
 	ServerConnection _server_con;
 
-	TypeActionMap _type_action_map;
 	std::string _active_type;
 	
-	void activateType(std::string type);
+	void triggerType(std::string type, bool status);
+	void switchType(std::string type);
 protected:
 	virtual void doHelpAbout();
 	virtual void doFileConnect();
@@ -29,6 +28,7 @@ protected:
 	virtual void doAdminProblemConfig();
 	virtual void doSubmit();
 
+	virtual void customEvent(QCustomEvent *ev);
 public:
 	MainWindow();
 	~MainWindow();
