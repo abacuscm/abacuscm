@@ -56,6 +56,10 @@ $(abacus_name) : ldflags += -L$(QTDIR)/lib -lqt -labacus-client
 $(abacus_name) : $(libabacus_c_name)
 $(abacus_name) : $(libabacus_name)
 
+runlimit_name = bin/runlimit
+runlimit_objects = runlimit
+$(runlimit_name) : cc=gcc
+
 modules = udpmessenger \
 	dbmysql \
 	act_passwd \
@@ -81,12 +85,13 @@ abacus_objects_d = $(foreach m,$(abacus_objects),obj/$(m).o)
 libabacus_objects_d = $(foreach m,$(libabacus_objects),obj/$(m).o)
 libabacus_c_objects_d = $(foreach m,$(libabacus_c_objects),obj/$(m).o)
 libabacus_s_objects_d = $(foreach m,$(libabacus_s_objects),obj/$(m).o)
+runlimit_objects_d = $(foreach m,$(runlimit_objects),obj/$(m).o)
 
 $(foreach m,$(abacus_objects),deps/$(m).d) : dflags += -I$(QTDIR)/include
 $(foreach m,$(abacus_objects),obj/$(m).o) : cflags += -I$(QTDIR)/include
 
 .PHONY: all
-all : client server modules
+all : client server modules marker
 #$(libabacus_name) $(libabacus_s_name) $(libabacus_c_name) $(abacusd_name) $(abacus_name) $(modules_d)
 
 .PHONY: client
@@ -94,6 +99,9 @@ client: $(libabacus_name) $(libabacus_c_name) $(abacus_name)
 
 .PHONY: server
 server: $(libabacus_name) $(libabacus_s_name) $(abacusd_name)
+
+.PHONY: marker
+marker: $(runlimit_name)
 
 .PHONY: modules
 modules: $(modules_d)
@@ -117,6 +125,10 @@ $(libabacus_c_name) : $(libabacus_c_objects_d)
 $(libabacus_s_name) : $(libabacus_s_objects_d)
 	@[ -d $(@D) ] || mkdir $(@D)
 	$(cc) $(ldflags) -o $@ $(libabacus_s_objects_d)
+
+$(runlimit_name) : $(runlimit_objects_d)
+	@[ -d $(@D) ] || mkdir $(@D)
+	$(cc) $(ldflags) -o $@ $(runlimit_objects_d)
 
 modules/mod_%.so : obj/%.o
 	@[ -d $(@D) ] || mkdir $(@D)
