@@ -3,9 +3,12 @@
 
 #include <string>
 #include <list>
+#include <map>
 
 class UserProg;
 typedef UserProg* (*UserProgFunctor)();
+
+class Buffer;
 
 class UserProg {
 private:
@@ -19,7 +22,7 @@ protected:
 	 * override setRootDir() this may be a path to an
 	 * interpreter.
 	 */
-	std::list<std::string> getProgramArgv() = 0;
+	virtual std::list<std::string> getProgramArgv() = 0;
 public:
 	UserProg();
 	virtual ~UserProg();
@@ -33,10 +36,10 @@ public:
 	 */
 	virtual bool compile(std::string infile, std::string outdir) = 0;
 
-	virtual setRootDir(std::string root); // will always be the same as outdir.
-	virtual setMemLimit(unsigned bytes);
-	virtual setCPUTime(unsigned msecs);
-	virtual setRealTime(unsigned msecs);
+	virtual void setRootDir(std::string root); // will always be the same as outdir.
+	virtual void setMemLimit(unsigned bytes);
+	virtual void setCPUTime(unsigned msecs);
+	virtual void setRealTime(unsigned msecs);
 
 	/**
 	 * in == input to be given.
@@ -50,7 +53,7 @@ public:
 	 */
 	static void registerLanguage(std::string lang, UserProgFunctor func);
 
-	static UserProgFunctor* createUserProg(std::string lang);
+	static UserProg* createUserProg(std::string lang);
 };
 
 #endif

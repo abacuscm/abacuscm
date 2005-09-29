@@ -24,6 +24,6 @@ int main() {
 		Buffer submission;	
 		submission.appendData(submission_str.c_str(), submission_str.length());
 		
-		marker->mark(submission);
+		marker->mark(submission, "lang");
 	}
 }

@@ -65,6 +65,7 @@ markerd_objects = markerd \
 	problemmarker \
 	compiledproblemmarker \
 	testcaseproblemmarker \
+	userprog \
 	buffer
 
 modules = udpmessenger \
