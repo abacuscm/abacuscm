@@ -79,7 +79,7 @@ $(modules_d) : ldflags += -shared -labacus-server
 modules/mod_dbmysql.so : ldflags += -lmysqlclient
 
 ###############################################################
-depfiles=$(foreach m,$(libabacus_objects) $(libabacus_s_objects) $(libabacus_c_objects) $(abacusd_objects) $(abacus_objects) $(modules),deps/$(m).d)
+depfiles=$(foreach m,$(libabacus_objects) $(libabacus_s_objects) $(libabacus_c_objects) $(abacusd_objects) $(abacus_objects) $(modules) $(runlimit_objects),deps/$(m).d)
 abacusd_objects_d = $(foreach m,$(abacusd_objects),obj/$(m).o)
 abacus_objects_d = $(foreach m,$(abacus_objects),obj/$(m).o)
 libabacus_objects_d = $(foreach m,$(libabacus_objects),obj/$(m).o)
