@@ -12,45 +12,11 @@
 #include <sys/resource.h>
 #include <sys/wait.h>
 #include <pwd.h>
+#include <fcntl.h>
 
 #ifndef VERSION
 #define VERSION "trunk"
 #endif
-
-const char *signames[] = {
-		"",
-        "SIGHUP",
-        "SIGINT",
-        "SIGQUIT",
-        "SIGILL",
-        "SIGTRAP",
-        "SIGABRT",
-        "SIGBUS",
-        "SIGFPE",
-        "SIGKILL",
-        "SIGUSR1",
-        "SIGSEGV",
-        "SIGUSR2",
-        "SIGPIPE",
-        "SIGALRM",
-        "SIGTERM",
-        "SIGSTKFLT",
-        "SIGCHLD",
-        "SIGCONT",
-        "SIGSTOP",
-        "SIGTSTP",
-        "SIGTTIN",
-        "SIGTTOU",
-        "SIGURG",
-        "SIGXCPU",
-        "SIGXFSZ",
-        "SIGVTALRM",
-        "SIGPROF",
-        "SIGWINCH",
-        "SIGIO",
-        "SIGPWR",
-        "SIGSYS",
-        "SIGRTMIN"};
 
 static struct option const long_options[] = {
 	{"help", no_argument, 0, 'h'}, //
@@ -78,7 +44,7 @@ static gid_t to_grp = 0;
 static const char* to_uname = NULL;
 static const char* to_gname = NULL;
 
-int realtime_fired = 0;
+static volatile int realtime_fired = 0;
 
 static void sig_alarm(int i __attribute__((unused))) {
 	realtime_fired = 1;
@@ -200,7 +166,18 @@ void do_child(char **argv) {
 		exit(-1);
 	}
 	
-	fclose(stderr);
+	setsid();
+
+	int fd = open("/dev/null", O_WRONLY);
+	if(fd < 0) {
+		errmsg("open(/dev/null): %s\n", strerror(errno));
+		close(2);
+	} else {
+		close(2);
+		dup2(fd, 2);
+		close(fd);
+	}
+
 	execve(argv[0], argv, NULL);
 
 	printf("execve failed (no stderr): %s\n", strerror(errno));
@@ -335,6 +312,7 @@ int main(int argc, char** argv) {
 		while((res = waitpid(pid, &status, 0)) < 0) {
 			if(errno == EINTR && realtime_fired) {
 				kill(pid, SIGKILL);
+				kill(pid, SIGCONT); // just in case the process SIGSTOPed itself.
 				term_reason = "realtime";
 			} else
 				errmsg("waitpid: %s\n", strerror(errno));
@@ -347,11 +325,10 @@ int main(int argc, char** argv) {
 		if(WIFEXITED(status)) {
 			asprintf(&term_reason, "normal excode=%d", WEXITSTATUS(status));
 		} else if(WIFSIGNALED(status)) {
-			const char *name = "unknown";
 			int signum = WTERMSIG(status);
-			if(signum >= 0 &&
-					signum < (int)(sizeof(signames) / sizeof(*signames)))
-				name = signames[signum];
+			const char* name = strsignal(signum);
+			if(!name)
+				name = "unknown";
 			asprintf(&term_reason, "signal signum=%d signame=%s", signum, name);
 		} else
 			term_reason = "unknown";
