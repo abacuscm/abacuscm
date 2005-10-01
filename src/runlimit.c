@@ -101,7 +101,7 @@ static void help() {
 	   );
 }
 
-void do_child(char **argv) {
+void __attribute__((noreturn)) do_child(char **argv) {
 	struct rlimit limit;
 	
 	if(chrootdir) {
@@ -311,14 +311,22 @@ int main(int argc, char** argv) {
 		}
 		while((res = waitpid(pid, &status, 0)) < 0) {
 			if(errno == EINTR && realtime_fired) {
-				kill(pid, SIGKILL);
-				kill(pid, SIGCONT); // just in case the process SIGSTOPed itself.
+				if(kill(-pid, SIGKILL) < 0)
+					errmsg("kill(SIGKILL): %s\n", strerror(errno));
+				if(kill(-pid, SIGCONT) < 0) // in case of STOPed child.
+					errmsg("kill(SIGKILL): %s\n", strerror(errno));
 				term_reason = "realtime";
 			} else
 				errmsg("waitpid: %s\n", strerror(errno));
 		}
 		if(realtime)
 			alarm(0);
+
+		// Nuke any other processes that may have been spawned.
+		if(kill(-pid, SIGKILL) < 0 && errno != ESRCH)
+			errmsg("kill(SIGKILL): %s\n", strerror(errno));
+		if(kill(-pid, SIGCONT) < 0 && errno != ESRCH)
+			errmsg("kill(SIGKILL): %s\n", strerror(errno));
 
 		// determine _what_ caused the process to die.
 		// yes, I know all these asprintf's causes a memory leak.
@@ -351,6 +359,7 @@ int main(int argc, char** argv) {
 			infmsg("TIME %u %s\n", totaltime, time_reason);
 		} else
 			infmsg("TIME noinfo\n");
+		return 0;
 	}
 	return -1;
 }
