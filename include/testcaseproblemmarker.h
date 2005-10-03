@@ -4,6 +4,8 @@
 #include "compiledproblemmarker.h"
 
 class TestCaseProblemMarker : public CompiledProblemMarker {
+protected:
+	virtual void mark_compiled();
 };
 
 #endif

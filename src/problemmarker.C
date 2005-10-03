@@ -1,4 +1,6 @@
 #include "problemmarker.h"
+#include "logger.h"
+#include "config.h"
 
 using namespace std;
 
@@ -35,4 +37,27 @@ ProblemMarker* ProblemMarker::createMarker(string problemtype, uint32_t prob_id)
 void ProblemMarker::registerMarker(std::string problemtype,
 		ProblemMarkerFunctor func) {
 	_functors[problemtype] = func;
+}
+
+string ProblemMarker::workdir() {
+	if(_workdir != "")
+		return _workdir;
+
+	 string templ = Config::getConfig()["marker"]["workdir"];
+	 if(templ == "") {
+		templ = "/tmp/abacus-marker-XXXXXX";
+	 }
+
+	 char *ch_templ = strdup(templ.c_str());
+
+	 char *workdir = mkdtemp(ch_templ);
+	 if(!workdir) {
+		 lerror("mkdtemp");
+	 } else {
+		 log(LOG_INFO, "Using working directory '%s'", ch_templ);
+		 _workdir = workdir;
+		 free(ch_templ);
+	 }
+
+	 return _workdir;
 }

@@ -1,6 +1,147 @@
 #include "compiledproblemmarker.h"
 #include "userprog.h"
+#include "logger.h"
+#include "buffer.h"
 
-void CompiledProblemMarker::mark(const Buffer&, const std::string& lang) {
-	UserProg* uprog = UserProg::createUserProg(lang);
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <fstream>
+#include <sstream>
+
+using namespace std;
+
+CompiledProblemMarker::CompiledProblemMarker() {
+	_cntr = 0;
+}
+
+void CompiledProblemMarker::mark(const Buffer& code, const std::string& lang) {
+	_uprog = UserProg::createUserProg(lang);
+	if(!_uprog) {
+		log(LOG_ERR, "Unable to find an appropriate compiler/test harness for language '%s'", lang.c_str());
+		return;
+	}
+
+	string wdir = workdir();
+	if(wdir == "")
+		return;
+
+	string fname = wdir + "/" + _uprog->sourceFilename(code);
+
+	log(LOG_INFO, "Using source file '%s'", fname.c_str());
+	ofstream source(fname.c_str());
+	source << code;
+	source.close();
+
+	string jaildir = wdir + "/jail";
+	
+	if(mkdir(jaildir.c_str(), 0711) < 0) {
+		lerror("mkdir");
+	} else {
+		log(LOG_INFO, "Compiling user program ...");
+		if(!_uprog->compile(fname, jaildir)) {
+			log(LOG_ERR, "User program failed to compile.");
+			return;
+		}
+
+		log(LOG_INFO, "User program compiled, preparing execution environment.");
+		_uprog->setMemLimit(64 * 1024 * 1024);
+		_uprog->setRootDir(jaildir);
+		_uprog->setCPUTime(120000); // needs to come from "attributes"
+		_uprog->setRealTime(120000 * 8); // needs to be calculated based on cpu-time + config options.
+		
+		mark_compiled();
+	}
+	
+	log(LOG_DEBUG, "All done with the marking process!");
+}
+
+int CompiledProblemMarker::run(const char* infile, const char* outfile, const char* runfile) {
+	int fd_in = open(infile, O_RDONLY);
+	if(fd_in < 0) {
+		lerror("open(infile)");
+		return -1;
+	}
+
+	int fd_out = open(outfile, O_WRONLY | O_CREAT, 0600);
+	if(fd_out < 0) {
+		lerror("open(outfile)");
+		return -1;
+	}
+
+	int fd_run = open(runfile, O_WRONLY | O_CREAT, 0600);
+	if(fd_run < 0) {
+		lerror("open(runfile)");
+		return -1;
+	}
+
+	pid_t pid = fork();
+	if(pid < 0) {
+		lerror("fork");
+		return -1;
+	} else if(pid == 0) {
+		_uprog->exec(fd_in, fd_out, fd_run);
+	} else {
+		close(fd_in);
+		close(fd_out);
+		close(fd_run);
+
+		int status;
+
+		while(waitpid(pid, &status, 0) < 0)
+			lerror("waitpid");
+		
+		return status;
+	}
+}
+
+int CompiledProblemMarker::run(const Buffer& in, Buffer& out, Buffer& err) {
+	ostringstream cntrstrm;
+	cntrstrm << ++_cntr;
+
+	ofstream file_stdin((workdir() + "/stdin." + cntrstrm.str()).c_str());
+	file_stdin << in;
+	file_stdin.close();
+
+	int res = run(
+			(workdir() + "/stdin." + cntrstrm.str()).c_str(),
+			(workdir() + "/stdout." + cntrstrm.str()).c_str(),
+			(workdir() + "/stderr." + cntrstrm.str()).c_str());
+
+	struct stat statdata;
+	int out_file = open((workdir() + "/stdout." + cntrstrm.str()).c_str(), O_RDONLY);
+	if(out_file > 0) {
+		if(fstat(out_file, &statdata) < 0) {
+			lerror("fstat");
+		} else {
+			void* ptr = mmap(NULL, statdata.st_size, PROT_READ, MAP_PRIVATE, out_file, 0);
+			if(!ptr) {
+				lerror("mmap");
+			} else {
+				out.appendData(ptr, statdata.st_size);
+				munmap(ptr, statdata.st_size);
+			}
+		}
+		close(out_file);
+	}
+
+	int err_file = open((workdir() + "/stderr." + cntrstrm.str()).c_str(), O_RDONLY);
+	if(err_file > 0) {
+		if(fstat(err_file, &statdata) < 0) {
+			lerror("fstat");
+		} else {
+			void* ptr = mmap(NULL, statdata.st_size, PROT_READ, MAP_PRIVATE, err_file, 0);
+			if(!ptr) {
+				lerror("mmap");
+			} else {
+				err.appendData(ptr, statdata.st_size);
+				munmap(ptr, statdata.st_size);
+			}
+		}
+		close(err_file);
+	}
+
+	return res;
 }

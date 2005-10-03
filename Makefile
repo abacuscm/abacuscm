@@ -11,7 +11,7 @@ libabacus_name = lib/libabacus.so
 libabacus_objects = config \
 	logger \
 	messageblock
-$(libabacus_name) : ldflags += -shared
+$(libabacus_name) : ldflags += -shared -lssl
 
 libabacus_s_name = lib/libabacus-server.so
 libabacus_s_objects = moduleloader \
@@ -28,11 +28,11 @@ libabacus_s_objects = moduleloader \
 	eventregister \
 	timedaction \
 	problemtype
-$(libabacus_s_name) : ldflags += -shared -ldl -lssl -labacus
+$(libabacus_s_name) : ldflags += -shared -ldl -labacus
 
 libabacus_c_name = lib/libabacus-client.so
 libabacus_c_objects = serverconnection
-$(libabacus_c_name) : ldflags += -shared -lssl -labacus
+$(libabacus_c_name) : ldflags += -shared -labacus
 
 abacusd_name = bin/abacusd
 abacusd_objects = abacusd \
@@ -66,7 +66,9 @@ markerd_objects = markerd \
 	compiledproblemmarker \
 	testcaseproblemmarker \
 	userprog \
+	c_cpp_userprog \
 	buffer
+$(markerd_name) : ldflags += -labacus
 
 modules = udpmessenger \
 	dbmysql \

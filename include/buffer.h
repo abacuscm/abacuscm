@@ -1,6 +1,8 @@
 #ifndef __BUFFER_H__
 #define __BUFFER_H__
 
+#include <iostream>
+
 class Buffer {
 private:
 	unsigned char* _data;
@@ -22,10 +24,19 @@ public:
 	const unsigned char* data() const { return _data; }
 	unsigned char* data() { return _data; }
 
+	unsigned size() const { return _size; }
+
 	void ensureCapacity(unsigned mincap);
 
 	void appendData(const void* data, unsigned size);
 	void appendData(const Buffer& data);
+
+	void writeToStream(std::ostream& os) const;
 };
 
+inline
+std::ostream& operator << (std::ostream& os, const Buffer& bfr) {
+	bfr.writeToStream(os);
+	return os;
+}
 #endif

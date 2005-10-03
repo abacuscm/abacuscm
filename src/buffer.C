@@ -42,3 +42,7 @@ void Buffer::appendData(const void* data, unsigned size) {
 	memcpy(&_data[_size], data, size);
 	_size += size;
 }
+
+void Buffer::writeToStream(std::ostream& os) const {
+	os.write((const char*)_data, _size);
+}

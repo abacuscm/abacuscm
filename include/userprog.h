@@ -23,6 +23,13 @@ protected:
 	 * interpreter.
 	 */
 	virtual std::list<std::string> getProgramArgv() = 0;
+
+	int execcompiler(std::list<std::string> compiler_argv);
+
+	/**
+	 * Will be called after the user program has been successfully compiled.
+	 */
+	void mark_compiled();
 public:
 	UserProg();
 	virtual ~UserProg();
@@ -35,6 +42,14 @@ public:
 	 * example.
 	 */
 	virtual bool compile(std::string infile, std::string outdir) = 0;
+	
+	/**
+	 * Since some compilers might require specific filenames this
+	 * function provides the ability to specify a custom filename,
+	 * the source is passed in-memory as well.  The default simply
+	 * returns 'source'.  The name should not contain any slashes.
+	 */
+	virtual std::string sourceFilename(const Buffer&);
 
 	virtual void setRootDir(std::string root); // will always be the same as outdir.
 	virtual void setMemLimit(unsigned bytes);
@@ -42,11 +57,11 @@ public:
 	virtual void setRealTime(unsigned msecs);
 
 	/**
-	 * in == input to be given.
-	 * out == empty Buffer in where to store the output of program.
-	 * run == capture stderr for runlimit feedback.
+	 * fd_{in,out,err} == The fds to use as stdin, stdout and stderr.
+	 *
+	 * The process should _not_ fork, the call MUST NOT return.
 	 */
-	void run(const Buffer&in, Buffer& out, Buffer& run);
+	int exec(int fd_in, int fd_out, int fd_err) __attribute__((noreturn));
 
 	/**
 	 * Register a language.

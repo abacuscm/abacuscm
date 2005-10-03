@@ -19,10 +19,12 @@ private:
 
 	std::map<std::string, std::string> _attribs;
 	uint32_t _prob_id;
+	std::string _workdir;
 	
 protected:
 	Buffer getProblemFile(std::string attrib);
 	std::string attrib(std::string);
+	std::string workdir();
 public:
 	ProblemMarker();
 	virtual ~ProblemMarker();
