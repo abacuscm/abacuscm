@@ -15,9 +15,17 @@ using namespace std;
 
 CompiledProblemMarker::CompiledProblemMarker() {
 	_cntr = 0;
+	_uprog = NULL;
+}
+
+CompiledProblemMarker::~CompiledProblemMarker() {
+	if(_uprog)
+		delete _uprog;
 }
 
 void CompiledProblemMarker::mark(const Buffer& code, const std::string& lang) {
+	if(_uprog)
+		delete _uprog;
 	_uprog = UserProg::createUserProg(lang);
 	if(!_uprog) {
 		log(LOG_ERR, "Unable to find an appropriate compiler/test harness for language '%s'", lang.c_str());
@@ -92,7 +100,8 @@ int CompiledProblemMarker::run(const char* infile, const char* outfile, const ch
 
 		while(waitpid(pid, &status, 0) < 0)
 			lerror("waitpid");
-		
+	
+		log(LOG_DEBUG, "User program terminated with excode=%d", status);
 		return status;
 	}
 }

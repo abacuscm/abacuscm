@@ -67,7 +67,9 @@ markerd_objects = markerd \
 	testcaseproblemmarker \
 	userprog \
 	c_cpp_userprog \
-	buffer
+	java_userprog \
+	buffer \
+	sigsegv
 $(markerd_name) : ldflags += -labacus
 
 modules = udpmessenger \

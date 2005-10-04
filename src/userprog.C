@@ -12,9 +12,6 @@ using namespace std;
 map<string, UserProgFunctor> UserProg::_functors
 		__attribute__((init_priority(101)));
 
-static void handler_sigpipe(int) {
-}
-
 UserProg::UserProg() {
 }
 
@@ -118,7 +115,10 @@ int UserProg::exec(int fd_in, int fd_out, int fd_err) {
 		*ptr++ = strdup(i->c_str());
 
 	*ptr = NULL;
-	
+
+	for(ptr = argv; *ptr; ptr++)
+		log(LOG_DEBUG, "'%s'", *ptr);
+
 	close(0);
 	close(1);
 	close(2);

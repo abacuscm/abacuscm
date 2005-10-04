@@ -42,6 +42,7 @@ protected:
 	virtual void mark_compiled() = 0;
 public:
 	CompiledProblemMarker();
+	virtual ~CompiledProblemMarker();
 
 	void mark(const Buffer&, const std::string& lang);
 };
