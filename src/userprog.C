@@ -81,6 +81,16 @@ void UserProg::setMemLimit(unsigned bytes) {
 	_runlimit_args.push_back("-m");
 	_runlimit_args.push_back(tmpstrm.str());
 }
+	
+void UserProg::setRuntimeUser(std::string uname) {
+	_runlimit_args.push_back("-u");
+	_runlimit_args.push_back(uname);
+}
+
+void UserProg::setRuntimeGroup(std::string gname) {
+	_runlimit_args.push_back("-g");
+	_runlimit_args.push_back(gname);
+}
 
 void UserProg::registerLanguage(string lang, UserProgFunctor func) {
 	_functors[lang] = func;

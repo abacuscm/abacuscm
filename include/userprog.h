@@ -55,6 +55,8 @@ public:
 	virtual void setMemLimit(unsigned bytes);
 	virtual void setCPUTime(unsigned msecs);
 	virtual void setRealTime(unsigned msecs);
+	virtual void setRuntimeUser(std::string uname);
+	virtual void setRuntimeGroup(std::string gname);
 
 	/**
 	 * fd_{in,out,err} == The fds to use as stdin, stdout and stderr.

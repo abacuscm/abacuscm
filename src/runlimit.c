@@ -134,7 +134,8 @@ void __attribute__((noreturn)) do_child(char **argv) {
 			setuid(to_uid);
 		else
 			setuid(getuid());	
-	}
+	} else if(to_grp || to_uid)
+		errmsg("Cannot change user/group since effective user id of runlimit is not root\n");
 	
 	if(cputime) {
 		/**

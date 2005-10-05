@@ -2,6 +2,7 @@
 #include "userprog.h"
 #include "logger.h"
 #include "buffer.h"
+#include "config.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -24,6 +25,8 @@ CompiledProblemMarker::~CompiledProblemMarker() {
 }
 
 void CompiledProblemMarker::mark(const Buffer& code, const std::string& lang) {
+	Config &config = Config::getConfig();
+
 	if(_uprog)
 		delete _uprog;
 	_uprog = UserProg::createUserProg(lang);
@@ -59,6 +62,11 @@ void CompiledProblemMarker::mark(const Buffer& code, const std::string& lang) {
 		_uprog->setRootDir(jaildir);
 		_uprog->setCPUTime(120000); // needs to come from "attributes"
 		_uprog->setRealTime(120000 * 8); // needs to be calculated based on cpu-time + config options.
+
+		if(config["marker"]["user"] != "")
+			_uprog->setRuntimeUser(config["marker"]["user"]);
+		if(config["marker"]["group"] != "")
+			_uprog->setRuntimeGroup(config["marker"]["group"]);
 		
 		mark_compiled();
 	}
