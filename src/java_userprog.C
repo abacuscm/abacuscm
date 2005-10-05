@@ -75,7 +75,7 @@ string Java_UserProg::sourceFilename(const Buffer& src) {
 	int i;
 	string sourcename = "";
 	regex_t reg_pkg;
-	if((i = regcomp(&reg_pkg, "^[[:space:]]*package[[:space:]]+([^[:space:];]+)[[:space:]]*;$", REG_EXTENDED)) != 0) {
+	if((i = regcomp(&reg_pkg, "^[[:space:]]*package[[:space:]]+([^[:space:];]+)[[:space:]]*;", REG_EXTENDED)) != 0) {
 		char err[1024];
 		regerror(i, &reg_pkg, err, 1024);
 		log(LOG_CRIT, "Error compiling java package name regex: %s", err);
@@ -95,7 +95,7 @@ string Java_UserProg::sourceFilename(const Buffer& src) {
 
 	char* source = strndup((char*)src.data(), src.size());
 	if(regexec(&reg_pkg, source, 2, pkg_match, 0) == 0) {
-		char *tmp = strndup(source + pkg_match[1].rm_so, pkg_match[1].rm_eo - cls_match[1].rm_so);
+		char *tmp = strndup(source + pkg_match[1].rm_so, pkg_match[1].rm_eo - pkg_match[1].rm_so);
 		_classname = tmp;
 		_classname += ".";
 		free(tmp);
