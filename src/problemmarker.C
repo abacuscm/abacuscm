@@ -59,5 +59,7 @@ string ProblemMarker::workdir() {
 	}
 	free(ch_templ);
 
+	log(LOG_INFO, "Using working directory: %s", _workdir.c_str());
+
 	return _workdir;
 }
