@@ -22,6 +22,7 @@ protected:
 public:
 	virtual void setRootDir(string root);
 	virtual void setMemLimit(unsigned memlimit);
+	virtual void setMaxProcs(unsigned nproc);
 	virtual string sourceFilename(const Buffer&);
 	virtual bool compile(string infile, string outdir);
 };
@@ -62,6 +63,10 @@ void Java_UserProg::setRootDir(string root) {
 
 void Java_UserProg::setMemLimit(unsigned limit) {
 	_memlimit = limit;
+}
+
+void Java_UserProg::setMaxProcs(unsigned) {
+	// TODO - ?!?
 }
 
 string Java_UserProg::sourceFilename(const Buffer& src) {

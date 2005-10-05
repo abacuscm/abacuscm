@@ -57,7 +57,8 @@ public:
 	virtual void setRealTime(unsigned msecs);
 	virtual void setRuntimeUser(std::string uname);
 	virtual void setRuntimeGroup(std::string gname);
-
+	virtual void setMaxProcs(unsigned nproc);
+	
 	/**
 	 * fd_{in,out,err} == The fds to use as stdin, stdout and stderr.
 	 *

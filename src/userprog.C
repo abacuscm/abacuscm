@@ -92,6 +92,14 @@ void UserProg::setRuntimeGroup(std::string gname) {
 	_runlimit_args.push_back(gname);
 }
 
+void UserProg::setMaxProcs(unsigned nproc) {
+	ostringstream tmpstrm;
+	tmpstrm << nproc;
+
+	_runlimit_args.push_back("-n");
+	_runlimit_args.push_back(tmpstrm.str());
+}
+
 void UserProg::registerLanguage(string lang, UserProgFunctor func) {
 	_functors[lang] = func;
 }

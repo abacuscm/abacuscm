@@ -19,24 +19,26 @@
 #endif
 
 static struct option const long_options[] = {
-	{"help", no_argument, 0, 'h'}, //
-	{"version", no_argument, 0, 'v'}, //
-	{"debug", no_argument, 0, 'd'}, //
+	{"help", no_argument, 0, 'h'},
+	{"version", no_argument, 0, 'v'},
+	{"debug", no_argument, 0, 'd'},
 	
-	{"chroot", required_argument, 0, 'r'}, //
-	{"cputime", required_argument, 0, 'c'}, //
+	{"chroot", required_argument, 0, 'r'},
+	{"cputime", required_argument, 0, 'c'},
 	{"realtime", required_argument, 0, 't'},
-	{"memory", required_argument, 0, 'm'}, //
+	{"memory", required_argument, 0, 'm'},
 	{"user", required_argument, 0, 'u'},
 	{"group", required_argument, 0, 'g'},
+	{"nproc", required_argument, 0, 'n'},
 	{NULL, 0, NULL, 0}
 };
 
-static const char *optstring = "hvdr:c:t:m:u:g:";
+static const char *optstring = "hvdr:c:t:m:u:g:n:";
 
 static unsigned cputime = 0;
 static unsigned realtime = 0;
 static unsigned memlimit = 0;
+static unsigned nproc = 0;
 static char* chrootdir = NULL;
 static int verbose = 0;
 static uid_t to_uid = 0;
@@ -98,6 +100,7 @@ static void help() {
 			"    --memory, -m    Virtual memory size limit in bytes\n"
 			"    --user, -u      User to run command as\n"
 			"    --group, -g     Group to run command as\n"
+			"    --nproc, -n     Max number of processes (BE WARNED: This is enforced on a per user basis)\n"
 	   );
 }
 
@@ -162,6 +165,16 @@ void __attribute__((noreturn)) do_child(char **argv) {
 		}
 	}
 
+	if(nproc) {
+		limit.rlim_cur = nproc;
+		limit.rlim_max = nproc;
+
+		if(setrlimit(RLIMIT_NPROC, &limit) < 0) {
+			errmsg("setrlimit(RLIMIT_NPROC): %s\n", strerror(errno));
+			exit(-1);
+		}
+	}
+
 	if(access(argv[0], X_OK) < 0) {
 		errmsg("access: %s\n", strerror(errno));
 		exit(-1);
@@ -221,6 +234,13 @@ int main(int argc, char** argv) {
 			break;
 		case 'm':
 			memlimit = strtol(optarg, &err, 0);
+			if(*err) {
+				errmsg("'%s' is not a valid integer!\n", optarg);
+				return -1;
+			}
+			break;
+		case 'n':
+			nproc = strtol(optarg, &err, 0);
 			if(*err) {
 				errmsg("'%s' is not a valid integer!\n", optarg);
 				return -1;

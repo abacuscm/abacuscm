@@ -62,6 +62,7 @@ void CompiledProblemMarker::mark(const Buffer& code, const std::string& lang) {
 		_uprog->setRootDir(jaildir);
 		_uprog->setCPUTime(120000); // needs to come from "attributes"
 		_uprog->setRealTime(120000 * 8); // needs to be calculated based on cpu-time + config options.
+		_uprog->setMaxProcs(1);
 
 		if(config["marker"]["user"] != "")
 			_uprog->setRuntimeUser(config["marker"]["user"]);
