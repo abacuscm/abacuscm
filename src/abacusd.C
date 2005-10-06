@@ -420,13 +420,20 @@ void* socket_selector(void*) {
 		if(select(n, &sockets, NULL, NULL, NULL) < 0) {
 			if(errno != EINTR)
 				lerror("select");
-		} else for(i = socket_pool.begin(); i != socket_pool.end(); ++i)
+		} else for(i = socket_pool.begin(); i != socket_pool.end();)
 			if((*i)->isInSet(&sockets)) {
 				Socket *s = *i;
-				socket_pool.erase(i);
+				socket_pool.erase(i++);
 				wait_queue.enqueue(s);
-			}
-			// something in the above loop (suspicious of ++i) segfaults.
+			} else
+				++i;
+			/*
+			 * Note that the above loop is very messy.  This is due to the
+			 * erase operation invalidating the iterator, so essentially we
+			 * now increment the iterator before nuking what it pointed to.
+			 * this gets extremely nasty and probably took the better part
+			 * of a day to figure out.
+			 */
 	}
 
 	return NULL;
