@@ -67,7 +67,8 @@ public:
 	virtual bool putSubmission(uint32_t user_id, uint32_t prob_id,
 			uint32_t time, uint32_t server_id, char* content,
 			uint32_t content_size, std::string language);
-	
+	virtual SubmissionList getSubmissions(uint32_t uid);
+
 	bool init();
 };
 
@@ -617,6 +618,37 @@ bool MySQL::putSubmission(uint32_t user_id, uint32_t prob_id, uint32_t time, uin
 	}
 
 	return true;
+}
+
+SubmissionList MySQL::getSubmissions(uint32_t uid) {
+	ostringstream query;
+	query << "SELECT username, time, value FROM User, ProblemAttributes, Submission WHERE User.user_id = Submission.user_id AND Submission.prob_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute = 'shortname'";
+	
+	if(uid)
+		query << " AND User.user_id = " << uid;
+
+	query << " ORDER BY time";
+	
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return SubmissionList();
+	}
+
+	SubmissionList lst;
+
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	MYSQL_ROW row;
+	while((row = mysql_fetch_row(res)) != 0) {
+		AttributeList attrs;
+		attrs["contestant"] = row[0];
+		attrs["time"] = row[1];
+		attrs["problem"] = row[2];
+		attrs["result"] = "pending";
+
+		lst.push_back(attrs);
+	}
+
+	return lst;
 }
 
 bool MySQL::setProblemUpdateTime(uint32_t problem_id, time_t time) {

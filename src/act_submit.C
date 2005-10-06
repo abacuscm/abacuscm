@@ -6,6 +6,7 @@
 #include "message_type_ids.h"
 #include "dbcon.h"
 #include "server.h"
+#include "eventregister.h"
 
 #include <sstream>
 
@@ -15,6 +16,11 @@ protected:
 };
 
 class ActGetProblems : public ClientAction {
+protected:
+	bool int_process(ClientConnection *cc, MessageBlock *mb);
+};
+
+class ActGetSubmissions : public ClientAction {
 protected:
 	bool int_process(ClientConnection *cc, MessageBlock *mb);
 };
@@ -65,7 +71,7 @@ bool ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
 	std::string lang = (*mb)["lang"];
 
 	// TODO:  Proper check - this will do for now:
-	if(lang != "C/C++" && lang != "Java")
+	if(lang != "C" && lang != "C++" && lang != "Java")
 		return cc->sendError("You have not specified the language");
 	
 	SubmissionMessage *msg = new SubmissionMessage(prob_id, user_id,
@@ -100,6 +106,38 @@ bool ActGetProblems::int_process(ClientConnection *cc, MessageBlock *) {
 		AttributeList lst = db->getProblemAttributes(*p);
 		mb["code" + cstr] = lst["shortname"];
 		mb["name" + cstr] = lst["longname"];
+	}
+	
+	return cc->sendMessageBlock(&mb);
+}
+
+bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
+	DbCon *db = DbCon::getInstance();
+	if(!db)
+		return cc->sendError("Error connecting to database");
+	
+	uint32_t uid = cc->getProperty("user_id");
+	uint32_t utype = cc->getProperty("user_type");
+
+	SubmissionList lst;
+	
+	if(utype == USER_TYPE_CONTESTANT)
+		lst = db->getSubmissions(uid);
+	else
+		lst = db->getSubmissions();
+
+	MessageBlock mb("ok");
+	
+	SubmissionList::iterator s;
+	int c = 0;
+	for(s = lst.begin(); s != lst.end(); ++s, ++c) {
+		std::ostringstream tmp;
+		tmp << c;
+		std::string cntr = tmp.str();
+
+		AttributeList::iterator a;
+		for(a = s->begin(); a != s->end(); ++a)
+			mb[a->first + cntr] = a->second;
 	}
 	
 	return cc->sendMessageBlock(&mb);
@@ -141,6 +179,17 @@ bool SubmissionMessage::process() const {
 
 	db->release();
 
+	AttributeList lst = db->getProblemAttributes(_prob_id);
+	std::string problem = lst["shortname"];
+	
+	MessageBlock mb("submission");
+	if(result)
+		mb["msg"] = "Your submission for '" + problem + "' has been accepted";
+	else
+		mb["msg"] = "Your sumission for '" + problem + "' has failed - please notify the contest administrator";
+
+	EventRegister::getInstance().sendMessage(_user_id, &mb);
+	
 	// TODO: enqueue for marking if we are a marking server.
 
 	return result;
@@ -215,10 +264,14 @@ static Message* create_submission_msg() {
 
 static ActSubmit _act_submit;
 static ActGetProblems _act_getproblems;
+static ActGetSubmissions _act_getsubs;
 
 static void init() __attribute__((constructor));
 static void init() {
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "submit", &_act_submit);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getproblems", &_act_getproblems);
+	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getsubmissions", &_act_getsubs);
+	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissions", &_act_getsubs);
+	ClientAction::registerAction(USER_TYPE_JUDGE, "getsubmissions", &_act_getsubs);
 	Message::registerMessageFunctor(TYPE_ID_SUBMISSION, create_submission_msg);
 }

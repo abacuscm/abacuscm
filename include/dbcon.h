@@ -15,6 +15,7 @@ typedef StringMap AttributeList;
 typedef std::list<uint32_t> IdList;
 typedef IdList ProblemList;
 typedef std::map<uint32_t, std::string> ServerList;
+typedef std::list<AttributeList> SubmissionList;
 
 class DbCon {
 public:
@@ -198,6 +199,11 @@ public:
 	virtual bool putSubmission(uint32_t user_id, uint32_t prob_id,
 			uint32_t time, uint32_t server_id, char* content,
 			uint32_t content_size, std::string language) = 0;
+
+	/**
+	 * Retrieve all submissions for a specific user.
+	 */
+	virtual SubmissionList getSubmissions(uint32_t user_id = 0) = 0;
 
 	/**
 	 * Functions to register a DbCon functor (function to create DbCons),
