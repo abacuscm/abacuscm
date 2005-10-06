@@ -62,7 +62,7 @@
             </property>
             <widget class="QWidget">
                 <property name="name">
-                    <cstring>TabPage</cstring>
+                    <cstring>tabAbacus</cstring>
                 </property>
                 <attribute name="title">
                     <string>Abacus</string>
@@ -189,7 +189,7 @@
             </widget>
             <widget class="QWidget">
                 <property name="name">
-                    <cstring>standings</cstring>
+                    <cstring>tabStandings</cstring>
                 </property>
                 <attribute name="title">
                     <string>Standings</string>
@@ -229,7 +229,7 @@
             </widget>
             <widget class="QWidget">
                 <property name="name">
-                    <cstring>tab</cstring>
+                    <cstring>tabSubmissions</cstring>
                 </property>
                 <attribute name="title">
                     <string>Submissions</string>
@@ -619,6 +619,12 @@
         <receiver>submissionButton</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
+    <connection>
+        <sender>maintabs</sender>
+        <signal>currentChanged(QWidget*)</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>tabChanged(QWidget*)</slot>
+    </connection>
 </connections>
 <signals>
     <signal>signalAdminControls(bool)</signal>
@@ -632,6 +638,7 @@
     <slot access="protected" specifier="pure virtual">doAdminProblemConfig()</slot>
     <slot access="protected" specifier="pure virtual">doFileDisconnect()</slot>
     <slot access="protected" specifier="pure virtual">doSubmit()</slot>
+    <slot access="protected" specifier="pure virtual">tabChanged(QWidget *newtab)</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

@@ -265,6 +265,16 @@ vector<string> ServerConnection::vectorAction(MessageBlock &mb, string prefix) {
 	return resp;
 }
 
+MultiValuedList ServerConnection::multiVectorAction(MessageBlock &mb, list<string> attrs) {
+	MessageBlock *ret = sendMB(&mb);
+	if(!ret)
+		return MultiValuedList();
+
+	MultiValuedList resp(multiListFromMB(*ret, attrs));
+	delete ret;
+	return resp;
+}
+
 string ServerConnection::stringAction(MessageBlock &mb, string fieldname) {
 	MessageBlock *ret = sendMB(&mb);
 	if(!ret)
@@ -291,6 +301,30 @@ vector<string> ServerConnection::vectorFromMB(MessageBlock &mb, string prefix) {
 		result.push_back(mb[nattr.str()]);
 		nattr.str("");
 		nattr << prefix << ++i;
+	}
+	return result;
+}
+
+MultiValuedList ServerConnection::multiListFromMB(MessageBlock &mb, list<string> attrlst) {
+	MultiValuedList result;
+	unsigned i = 0;
+	while(true) {
+		ostringstream tmp;
+		tmp << i++;
+		string ival = tmp.str();
+		bool foundone = false;
+		AttributeMap attrs;
+		list<string>::iterator j;
+		for(j = attrlst.begin(); j != attrlst.end(); ++j) {
+			if(mb.hasAttribute(*j + ival)) {
+				attrs[*j] = mb[*j + ival];
+				foundone = true;
+			}
+		}
+		if(foundone)
+			result.push_back(attrs);
+		else
+			break;
 	}
 	return result;
 }
@@ -471,6 +505,20 @@ bool ServerConnection::submit(uint32_t prob_id, int fd, const string& lang) {
 	munmap(ptr, statbuf.st_size);
 
 	return simpleAction(mb);
+}
+
+SubmissionList ServerConnection::getSubmissions() {
+	if(!_ssl)
+		return SubmissionList();
+
+	MessageBlock mb("getsubmissions");
+	list<string> attrs;
+	attrs.push_back("contestant");
+	attrs.push_back("time");
+	attrs.push_back("problem");
+	attrs.push_back("result");
+
+	return multiVectorAction(mb, attrs);
 }
 
 bool ServerConnection::registerEventCallback(string event, EventCallback func, void *custom) {

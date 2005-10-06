@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <qfiledialog.h>
 #include <qpushbutton.h>
+#include <qlistview.h>
 
 using namespace std;
 
@@ -228,6 +229,14 @@ void MainWindow::doSubmit() {
 	}
 }
 	
+void MainWindow::tabChanged(QWidget* newtab) {
+	if(newtab == tabSubmissions) {
+		updateSubmissions();
+	} else if(newtab == tabStandings) {
+		updateStandings();
+	}
+}
+	
 void MainWindow::customEvent(QCustomEvent *ev) {
 	LogMessage* msg = (LogMessage*)ev->data();
 	switch(msg->prio_level) {
@@ -246,4 +255,28 @@ void MainWindow::customEvent(QCustomEvent *ev) {
 		break;
 	};
 	delete msg;
+}
+
+void MainWindow::updateStandings() {
+	NOT_IMPLEMENTED();
+}
+
+void MainWindow::updateSubmissions() {
+	SubmissionList list = _server_con.getSubmissions();
+
+	submissions->clear();
+	
+	SubmissionList::iterator l;
+	for(l = list.begin(); l != list.end(); ++l) {
+		log(LOG_DEBUG, "submission:");
+		AttributeMap::iterator a;
+		QListViewItem *item = new QListViewItem(submissions);
+		
+		item->setText(0, (*l)["time"]);
+		item->setText(1, (*l)["problem"]);
+		item->setText(2, (*l)["result"]);
+
+		for(a = l->begin(); a != l->end(); ++a)
+			log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());
+	}
 }

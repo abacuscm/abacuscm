@@ -27,8 +27,12 @@ protected:
 	virtual void doAdminCreateUser();
 	virtual void doAdminProblemConfig();
 	virtual void doSubmit();
+	virtual void tabChanged(QWidget*);
 
 	virtual void customEvent(QCustomEvent *ev);
+
+	void updateStandings();
+	void updateSubmissions();
 public:
 	MainWindow();
 	~MainWindow();

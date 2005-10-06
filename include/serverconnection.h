@@ -14,6 +14,8 @@ class MessageBlock;
 typedef void (*EventCallback)(const MessageBlock*, void *);
 
 typedef std::map<std::string, std::string> AttributeMap;
+typedef std::list<AttributeMap> MultiValuedList;
+typedef MultiValuedList SubmissionList;
 
 typedef struct {
 	uint32_t id;
@@ -63,10 +65,12 @@ private:
 
 	bool simpleAction(MessageBlock &mb);
 	std::vector<std::string> vectorAction(MessageBlock &mb, std::string prefix);
+	MultiValuedList multiVectorAction(MessageBlock &mb, std::list<std::string> attrs);
 	std::vector<uint32_t> uintVectorAction(MessageBlock &mb, std::string prefix);
 	std::string stringAction(MessageBlock &mb, std::string fieldname);
 	
 	std::vector<std::string> vectorFromMB(MessageBlock &mb, std::string prefix);
+	MultiValuedList multiListFromMB(MessageBlock &mb, std::list<std::string> attrlst);
 	
 	static void* thread_spawner(void*);
 public:
@@ -89,6 +93,7 @@ public:
 	bool setProblemAttributes(uint32_t prob_id, std::string type,
 			const AttributeMap& normal, const AttributeMap& file);
 	bool submit(uint32_t prob_id, int fd, const std::string& language);
+	SubmissionList getSubmissions();
 
 	bool registerEventCallback(std::string event, EventCallback func, void *custom);
 	bool deregisterEventCallback(std::string event, EventCallback func);
