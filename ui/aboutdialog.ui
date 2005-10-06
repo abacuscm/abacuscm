@@ -8,8 +8,8 @@
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>406</width>
-            <height>202</height>
+            <width>379</width>
+            <height>207</height>
         </rect>
     </property>
     <property name="caption">
@@ -87,7 +87,10 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Ideas Contributor:</string>
+                        <string>Ideas Contributors:</string>
+                    </property>
+                    <property name="alignment">
+                        <set>AlignTop</set>
                     </property>
                 </widget>
                 <widget class="QLabel" row="0" column="1">
@@ -103,7 +106,9 @@
                         <cstring>textLabel9</cstring>
                     </property>
                     <property name="text">
-                        <string>Leon Lynch &lt;llynch@cs.up.ac.za&gt;</string>
+                        <string>Bruce Merry &lt;bmerry@cs.uct.ac.za&gt;
+Carl Hultquist &lt;chultqui@cs.uct.ac.za&gt;
+Leon Lynch &lt;llynch@cs.up.ac.za&gt;</string>
                     </property>
                 </widget>
             </grid>
