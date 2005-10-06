@@ -57,6 +57,7 @@ int main(int argc, char** argv) {
 	mainwindow.show();
 
 	mainWidget = &mainwindow;
+	log(LOG_INFO, "abacus is ready to fire up!");
 	register_log_listener(window_log);
 
 	return application.exec();
