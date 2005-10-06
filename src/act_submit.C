@@ -125,6 +125,7 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 		lst = db->getSubmissions(uid);
 	else
 		lst = db->getSubmissions();
+	db->release();
 
 	MessageBlock mb("ok");
 	
