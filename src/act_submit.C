@@ -50,6 +50,9 @@ public:
 };
 
 bool ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
+	if(!Server::isContestRunning())
+		return cc->sendError("You cannot submit solutions unless the contest is running");
+
 	uint32_t user_id = cc->getProperty("user_id");
 	char *errptr;
 	uint32_t prob_id = strtol((*mb)["prob_id"].c_str(), &errptr, 0);
@@ -116,7 +119,7 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return cc->sendError("Error connecting to database");
-	
+
 	uint32_t uid = cc->getProperty("user_id");
 	uint32_t utype = cc->getProperty("user_type");
 

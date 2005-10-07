@@ -223,8 +223,7 @@ void MainWindow::doSubmit() {
 		uint32_t prob_id = probs[submit.problemSelection->currentItem()].id;
 		std::string lang = submit.language->currentText();
 
-		if(!_server_con.submit(prob_id, fd, lang))
-			QMessageBox::critical(this, "Error", "An error has occured whilst submitting your solution!", "O&k");
+		_server_con.submit(prob_id, fd, lang);
 		::close(fd);
 	}
 }
