@@ -9,6 +9,7 @@
 #include "eventregister.h"
 
 #include <sstream>
+#include <time.h>
 
 class ActSubmit : public ClientAction {
 protected:
@@ -155,7 +156,7 @@ SubmissionMessage::SubmissionMessage() {
 }
 
 SubmissionMessage::SubmissionMessage(uint32_t prob_id, uint32_t user_id, const char* content, uint32_t content_size, std::string language) {
-	_time = Server::contestTime();
+	_time = ::time(NULL);
 	_user_id = user_id;
 	_prob_id = prob_id;
 	_server_id = Server::getId();

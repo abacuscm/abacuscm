@@ -157,11 +157,23 @@ void Server::putTimedAction(TimedAction* ta) {
 }
 
 bool Server::isContestRunning() {
-	NOT_IMPLEMENTED();
-	return true;
+	bool running = false;
+	DbCon *db = DbCon::getInstance();
+	if(!db)
+		return false;
+	
+	running = db->contestRunning(getId());
+	db->release();
+	return running;
 }
 
 uint32_t Server::contestTime() {
-	NOT_IMPLEMENTED();
-	return time(NULL);
+	uint32_t tm = 0;
+	DbCon *db = DbCon::getInstance();
+	if(!db)
+		return 0;
+	
+	tm = db->contestTime(getId());
+	db->release();
+	return tm;
 }

@@ -68,7 +68,9 @@ public:
 			uint32_t time, uint32_t server_id, char* content,
 			uint32_t content_size, std::string language);
 	virtual SubmissionList getSubmissions(uint32_t uid);
-
+	virtual bool contestRunning(uint32_t server_id, uint32_t unix_time);
+	virtual uint32_t contestTime(uint32_t server_id, uint32_t unix_time);
+	virtual bool startStopContest(uint32_t server_id, uint32_t unix_time, bool start);
 	bool init();
 };
 
@@ -802,6 +804,74 @@ bool MySQL::getProblemFileData(uint32_t problem_id, std::string attr, uint8_t **
 		}
 	}
 	return *dataptr != NULL;
+}
+	
+bool MySQL::contestRunning(uint32_t server_id, uint32_t unix_time) {
+	ostringstream query;
+	query << "SELECT action FROM ContestStartStop WHERE time < ";
+	if(unix_time)
+		query << unix_time;
+	else
+		query << "UNIX_TIMESTAMP()";
+	query << " AND server_id IN (0," << server_id << ") ORDER BY time DESC LIMIT 1";
+
+	bool running = false;
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+	} else {
+		MYSQL_RES *res = mysql_use_result(&_mysql);
+		MYSQL_ROW row = mysql_fetch_row(res);
+		if(row)
+			running = strcmp(row[0], "START");
+		mysql_free_result(res);
+	}
+
+	// 18000 translates to 5 hours.  This really should be property based.
+	return running && contestTime(server_id, unix_time) < 18000;
+}
+
+uint32_t MySQL::contestTime(uint32_t server_id, uint32_t unix_time) {
+	ostringstream query;
+	query << "SELECT SUM(IF(action = 'START', -time, time)), UNIX_TIMESTAMP() FROM ContestStartStop WHERE time < ";
+	if(unix_time)
+		query << unix_time;
+	else
+		query << "UNIX_TIMESTAMP()";	
+	query << " AND server_id IN (0," << server_id << ")";
+
+	uint32_t time = 0;
+	
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+	} else {
+		MYSQL_RES *res = mysql_use_result(&_mysql);
+		MYSQL_ROW row = mysql_fetch_row(res);
+		if(row) {
+			long long t = atoll(row[0]);
+
+			if(t < 0)
+				t += unix_time ? unix_time : atoll(row[1]);
+
+			time = t;
+		}
+		mysql_free_result(res);
+	}
+
+	return time;
+}
+	
+bool MySQL::startStopContest(uint32_t server_id, uint32_t unix_time, bool start) {
+	ostringstream query;
+	query << "INSERT INTO ContestStartStop(server_id, time, action) VALUES("
+		<< server_id << ", " << unix_time << ", '" << (start ? "START" : "STOP")
+		<< "')";
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	} else
+		return true;
 }
 
 bool MySQL::init() {

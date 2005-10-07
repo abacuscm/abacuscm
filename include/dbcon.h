@@ -206,6 +206,14 @@ public:
 	virtual SubmissionList getSubmissions(uint32_t user_id = 0) = 0;
 
 	/**
+	 * Functions for determining the contest state - they really don't
+	 * belong here but making SQL calculate this is so much easier ...
+	 */
+	virtual bool contestRunning(uint32_t server_id, uint32_t unix_time = 0) = 0;
+	virtual uint32_t contestTime(uint32_t server_id, uint32_t unix_time = 0) = 0;
+	virtual bool startStopContest(uint32_t server_id, uint32_t unix_time, bool start) = 0;
+
+	/**
 	 * Functions to register a DbCon functor (function to create DbCons),
 	 * get a DbCon and to release one.  This allows for connection pooling
 	 * and re-use.  I don't think I'm going to kill them, there should only
