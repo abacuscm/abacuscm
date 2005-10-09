@@ -46,6 +46,7 @@ abacus_objects = abacus \
 	sigsegv \
 	mainwindow \
 	problemconfig \
+	guievent \
 	ui_logindialog moc_ui_logindialog \
 	ui_aboutdialog moc_ui_aboutdialog \
 	ui_adduser moc_ui_adduser \

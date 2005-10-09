@@ -6,6 +6,7 @@
 #include "ui_adduser.h"
 #include "ui_submit.h"
 #include "problemconfig.h"
+#include "guievent.h"
 
 #include <qlineedit.h>
 #include <qmessagebox.h>
@@ -237,23 +238,11 @@ void MainWindow::tabChanged(QWidget* newtab) {
 }
 	
 void MainWindow::customEvent(QCustomEvent *ev) {
-	LogMessage* msg = (LogMessage*)ev->data();
-	switch(msg->prio_level) {
-	case LOG_DEBUG:
-	case LOG_NOTICE:
-		break;
-	case LOG_INFO:
-		QMessageBox::information(this, "Info Message", msg->msg, "O&k");
-		break;
-	case LOG_WARNING:
-		QMessageBox::warning(this, "Warning", msg->msg, "O&k");
-		break;
-	case LOG_ERR:
-	case LOG_CRIT:
-		QMessageBox::critical(this, "Error", msg->msg, "O&k");
-		break;
-	};
-	delete msg;
+	GUIEvent *guiev = dynamic_cast<GUIEvent*>(ev);
+	if(guiev)
+		guiev->process(this);
+	else
+		log(LOG_DEBUG, "Unknown QCustomEvent!!!");
 }
 
 void MainWindow::updateStandings() {

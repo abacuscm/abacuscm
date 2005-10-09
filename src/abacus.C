@@ -4,9 +4,10 @@
 #include "config.h"
 #include "sigsegv.h"
 #include "logger.h"
+#include "guievent.h"
 
 #include <qapplication.h>
-#include <qlineedit.h>
+#include <qmessagebox.h>
 #include <stdlib.h>
 #include <string>
 #include <openssl/ssl.h>
@@ -14,28 +15,50 @@
 
 using namespace std;
 
+class LogEvent : public GUIEvent {
+private:
+	int _level;
+	char *_msg;
+public:
+	LogEvent(int level, char* msg);
+	virtual ~LogEvent();
 
-static QWidget *mainWidget;
+	virtual void process(QWidget*);
+};
+
+LogEvent::LogEvent(int level, char* msg) {
+	_level = level;
+	_msg = msg;
+}
+
+LogEvent::~LogEvent() {
+	free(_msg);
+}
+
+void LogEvent::process(QWidget *p) {
+	switch(_level) {
+	case LOG_DEBUG:
+	case LOG_NOTICE:
+		break;
+	case LOG_INFO:
+		QMessageBox::information(p, "Info Message", _msg, "O&k");
+		break;
+	case LOG_WARNING:
+		QMessageBox::warning(p, "Warning", _msg, "O&k");
+		break;
+	case LOG_ERR:
+	case LOG_CRIT:
+		QMessageBox::critical(p, "Error", _msg, "O&k");
+		break;
+	}
+}
 
 static void window_log(int priority, const char* format, va_list ap) {
-	// Would have prefered to use QString::sprintf but it doesn't
-	// support va_list arguments.  Can probably be fooled by using
-	// assembler but then I lose compatibility with anything but x86.
 	char *msg;
 	vasprintf(&msg, format, ap);
-	
-	LogMessage *lmsg = new LogMessage;
-	lmsg->msg = msg;
-	
-	free(msg);
-	
-	lmsg->prio_level = priority;
-	
-	QCustomEvent *ev = new QCustomEvent(QEvent::User);
 
-	ev->setData(lmsg);
-
-	QApplication::postEvent(mainWidget, ev);
+	LogEvent *le = new LogEvent(priority, msg);
+	le->post();
 }
 
 int main(int argc, char** argv) {
@@ -56,7 +79,7 @@ int main(int argc, char** argv) {
 	application.setMainWidget(&mainwindow);
 	mainwindow.show();
 
-	mainWidget = &mainwindow;
+	GUIEvent::setReceiver(&mainwindow);
 	log(LOG_INFO, "abacus is ready to fire up!");
 	register_log_listener(window_log);
 
