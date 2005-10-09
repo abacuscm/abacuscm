@@ -210,6 +210,7 @@ void ServerConnection::processMB(MessageBlock *mb) {
 		pthread_cond_signal(&_cond_response);
 		pthread_mutex_unlock(&_lock_response);
 	} else {
+		log(LOG_DEBUG, "Received event '%s'", mb->action().c_str());
 		pthread_mutex_lock(&_lock_eventmap);
 		EventMap::iterator emi = _eventmap.find(mb->action());
 		if(emi != _eventmap.end()) {
@@ -534,11 +535,18 @@ bool ServerConnection::registerEventCallback(string event, EventCallback func, v
 	CallbackList &list = _eventmap[event];
 	CallbackList::iterator i;
 	for(i = list.begin(); i != list.end(); ++i) {
-		if(i->func == func)
+		if(i->func == func) {
+			i->func = func;
+			i->p = custom;
 			break;
+		}
 	}
-	i->func = func;
-	i->p = custom;
+	if(i == list.end()) {
+		CallbackData t;
+		t.func = func;
+		t.p = custom;
+		list.push_back(t);
+	}
 	
 	pthread_mutex_unlock(&_lock_eventmap);
 	return true;
