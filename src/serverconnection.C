@@ -210,7 +210,14 @@ void ServerConnection::processMB(MessageBlock *mb) {
 		pthread_cond_signal(&_cond_response);
 		pthread_mutex_unlock(&_lock_response);
 	} else {
-		NOT_IMPLEMENTED();
+		pthread_mutex_lock(&_lock_eventmap);
+		EventMap::iterator emi = _eventmap.find(mb->action());
+		if(emi != _eventmap.end()) {
+			CallbackList::iterator i;
+			for(i = emi->second.begin(); i != emi->second.end(); ++i)
+				i->func(mb, i->p);
+		}
+		pthread_mutex_unlock(&_lock_eventmap);
 		delete mb;
 	}
 }
