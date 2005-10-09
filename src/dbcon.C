@@ -23,7 +23,7 @@ DbCon* DbCon::getInstance() {
 		if(_functor)
 			tmp = _functor();
 		else
-			log(LOG_ERR, "No functor specified to create DB Connections!@");
+			log(LOG_ERR, "No functor specified to create DB Connections!");
 	} else {
 		tmp = _con_stack.front();
 		_con_stack.pop();

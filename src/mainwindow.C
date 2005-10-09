@@ -22,11 +22,95 @@
 
 using namespace std;
 
+/****************** Class to handle log messages. *******************/
+class LogEvent : public GUIEvent {
+private:
+	int _level;
+	char *_msg;
+public:
+	LogEvent(int level, char* msg);
+	virtual ~LogEvent();
+
+	virtual void process(QWidget*);
+};
+
+LogEvent::LogEvent(int level, char* msg) {
+	_level = level;
+	_msg = msg;
+}
+
+LogEvent::~LogEvent() {
+	free(_msg);
+}
+
+void LogEvent::process(QWidget *p) {
+	switch(_level) {
+	case LOG_DEBUG:
+	case LOG_NOTICE:
+		break;
+	case LOG_INFO:
+		QMessageBox::information(p, "Info Message", _msg, "O&k");
+		break;
+	case LOG_WARNING:
+		QMessageBox::warning(p, "Warning", _msg, "O&k");
+		break;
+	case LOG_ERR:
+	case LOG_CRIT:
+		QMessageBox::critical(p, "Error", _msg, "O&k");
+		break;
+	}
+}
+
+static void window_log(int priority, const char* format, va_list ap) {
+	char *msg;
+	vasprintf(&msg, format, ap);
+
+	LogEvent *le = new LogEvent(priority, msg);
+	le->post();
+}
+
+/********************* MainWindowCaller *****************************/
+typedef void (MainWindow::*MainWindowFuncPtr)();
+class MainWindowCaller : public GUIEvent {
+private:
+	MainWindowFuncPtr _func;
+public:
+	MainWindowCaller(MainWindowFuncPtr func);
+
+	virtual void process(QWidget*);
+};
+
+MainWindowCaller::MainWindowCaller(MainWindowFuncPtr func) {
+	_func = func;
+}
+
+void MainWindowCaller::process(QWidget* wid) {
+	MainWindow* mainwin = dynamic_cast<MainWindow*>(wid);
+	if(mainwin)
+		(mainwin->*_func)();
+	else
+		log(LOG_ERR, "MainWindowCaller::process must receive an instance of MainWindow as parent!");
+}
+
+// Would've prefered a single function here ...
+static void updateStandingsFunctor(const MessageBlock*, void*) {
+	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateStandings);
+	ev->post();
+}
+
+static void updateSubmissionsFunctor(const MessageBlock*, void*) {
+	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateSubmissions);
+	ev->post();
+}
+/************************** MainWindow ******************************/
 MainWindow::MainWindow() {
 	Config &config = Config::getConfig();
 
 	_login_dialog.serverName->setText(config["server"]["address"]);
 	_login_dialog.service->setText(config["server"]["service"]);
+	
+	GUIEvent::setReceiver(this);
+	register_log_listener(window_log);
 }
 
 MainWindow::~MainWindow() {
@@ -76,6 +160,9 @@ void MainWindow::doFileConnect() {
 				switchType(type);
 				fileConnectAction->setEnabled(false);
 				fileDisconnectAction->setEnabled(true);
+
+				_server_con.registerEventCallback("submission", updateSubmissionsFunctor, NULL);
+				_server_con.registerEventCallback("standings", updateStandingsFunctor, NULL);
 			} else {
 				QMessageBox("Auth error", "Invalid username and/or password",
 						QMessageBox::Information, QMessageBox::Ok,

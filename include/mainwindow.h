@@ -30,12 +30,16 @@ protected:
 	virtual void tabChanged(QWidget*);
 
 	virtual void customEvent(QCustomEvent *ev);
-
-	void updateStandings();
-	void updateSubmissions();
 public:
 	MainWindow();
 	~MainWindow();
+
+	// made public so that my functors can get to them since
+	// we can't cast member function pointers to void* - no idea 
+	// why though - can probably memcpy them but that would be
+	// even uglier.
+	void updateStandings();
+	void updateSubmissions();
 };
 
 #endif

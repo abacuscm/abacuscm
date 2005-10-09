@@ -823,7 +823,7 @@ bool MySQL::contestRunning(uint32_t server_id, uint32_t unix_time) {
 		MYSQL_RES *res = mysql_use_result(&_mysql);
 		MYSQL_ROW row = mysql_fetch_row(res);
 		if(row)
-			running = strcmp(row[0], "START");
+			running = strcmp(row[0], "START") == 0;
 		mysql_free_result(res);
 	}
 
