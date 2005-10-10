@@ -71,8 +71,9 @@ markerd_objects = markerd \
 	c_cpp_userprog \
 	java_userprog \
 	buffer \
+	serverconnection \
 	sigsegv
-$(markerd_name) : ldflags += -labacus
+$(markerd_name) : ldflags += -labacus -lpthread
 
 modules = udpmessenger \
 	dbmysql \

@@ -95,6 +95,8 @@ public:
 	bool submit(uint32_t prob_id, int fd, const std::string& language);
 	SubmissionList getSubmissions();
 
+	bool becomeMarker();
+
 	bool registerEventCallback(std::string event, EventCallback func, void *custom);
 	bool deregisterEventCallback(std::string event, EventCallback func);
 };

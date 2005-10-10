@@ -529,6 +529,12 @@ SubmissionList ServerConnection::getSubmissions() {
 	return multiVectorAction(mb, attrs);
 }
 
+bool ServerConnection::becomeMarker() {
+	MessageBlock mb("subscribemark");
+
+	return simpleAction(mb);
+}
+
 bool ServerConnection::registerEventCallback(string event, EventCallback func, void *custom) {
 	pthread_mutex_lock(&_lock_eventmap);
 
