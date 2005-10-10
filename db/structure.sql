@@ -42,6 +42,18 @@ CREATE TABLE `ClarificationRequest` (
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 --
+-- Table structure for table `ContestStartStop`
+--
+
+DROP TABLE IF EXISTS `ContestStartStop`;
+CREATE TABLE `ContestStartStop` (
+  `server_id` int(10) unsigned NOT NULL default '0',
+  `time` int(10) unsigned NOT NULL default '0',
+  `action` enum('START','STOP') default NULL,
+  PRIMARY KEY  (`server_id`,`time`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
 -- Table structure for table `PeerMessage`
 --
 
@@ -145,6 +157,23 @@ CREATE TABLE `Submission` (
   `content` blob,
   `language` varchar(16) default NULL,
   PRIMARY KEY  (`user_id`,`prob_id`,`time`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `SubmissionMark`
+--
+
+DROP TABLE IF EXISTS `SubmissionMark`;
+CREATE TABLE `SubmissionMark` (
+  `user_id` int(11) NOT NULL default '0',
+  `prob_id` int(11) NOT NULL default '0',
+  `time` int(11) NOT NULL default '0',
+  `marker_id` int(11) NOT NULL default '0',
+  `mark_time` int(11) NOT NULL default '0',
+  `correct` tinyint(1) default NULL,
+  `remark` varchar(255) default NULL,
+  `server_id` int(11) default NULL,
+  PRIMARY KEY  (`user_id`,`prob_id`,`time`,`marker_id`,`mark_time`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 --
