@@ -30,6 +30,11 @@ public:
 	~ActSetProbAttrs();
 };
 
+class ActGetProbAttrs : public ClientAction {
+protected:
+	virtual bool int_process(ClientConnection* cc, MessageBlock* mb);
+};
+
 class ProbMessage : public Message {
 private:
 	struct FileAttrib {
@@ -487,7 +492,34 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 }
 #undef act_error
 
+bool ActGetProbAttrs::int_process(ClientConnection* cc, MessageBlock*mb) {
+	char *errpnt;
+	uint32_t prob_id = strtoll((*mb)["prob_id"].c_str(), &errpnt, 0);
+	if(!prob_id || *errpnt)
+		return cc->sendError("Invalid problem Id");
+	
+	DbCon *db = DbCon::getInstance();
+	if(!db)
+		return cc->sendError("Error connecting to database");
+
+	AttributeList attrs = db->getProblemAttributes(prob_id);
+	db->release();
+	
+	if(attrs.empty())
+		return cc->sendError("No such problem");
+	
+	MessageBlock res("ok");
+	
+	AttributeList::iterator i;
+	for(i = attrs.begin(); i != attrs.end(); ++i) {
+		res[i->first] = i->second;
+	}
+
+	return cc->sendMessageBlock(&res);
+}
+
 static ActSetProbAttrs _act_setprobattrs;
+static ActGetProbAttrs _act_getprobattrs;
 
 static Message* create_prob_message() {
 	return new ProbMessage();
@@ -496,5 +528,7 @@ static Message* create_prob_message() {
 static void init() __attribute__((constructor));
 static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "setprobattrs", &_act_setprobattrs);
+	ClientAction::registerAction(USER_TYPE_ADMIN, "getprobattrs", &_act_getprobattrs);
+	ClientAction::registerAction(USER_TYPE_MARKER, "getprobattrs", &_act_getprobattrs);
 	Message::registerMessageFunctor(TYPE_ID_PROBLEMUPDATE, create_prob_message);
 }
