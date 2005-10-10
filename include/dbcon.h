@@ -16,6 +16,7 @@ typedef std::list<uint32_t> IdList;
 typedef IdList ProblemList;
 typedef std::map<uint32_t, std::string> ServerList;
 typedef std::list<AttributeList> SubmissionList;
+typedef struct { uint32_t user_id, prob_id, time; } SubId;
 
 class DbCon {
 public:
@@ -210,6 +211,8 @@ public:
 	 */
 	virtual bool retrieveSubmission(uint32_t user_id, uint32_t prob_id, uint32_t time, char** buffer, int *length, std::string& language) = 0;
 	
+	virtual std::list<SubId> getUnmarked(uint32_t server_id = 0) = 0;
+
 	/**
 	 * Functions for determining the contest state - they really don't
 	 * belong here but making SQL calculate this is so much easier ...

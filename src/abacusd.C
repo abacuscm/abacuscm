@@ -23,6 +23,7 @@
 #include "clientaction.h"
 #include "message_type_ids.h"
 #include "timedaction.h"
+#include "markers.h"
 
 #define DEFAULT_MIN_IDLE_WORKERS		5
 #define DEFAULT_MAX_IDLE_WORKERS		10
@@ -174,6 +175,9 @@ static bool initialise() {
 
 	uint32_t local_id = db->name2server_id(localname);
 	MessageList msglist = db->getUnprocessedMessages();
+	list<SubId> sublist;
+	if(local_id && db->getServerAttribute(local_id, "marker") == "yes")
+		sublist = db->getUnmarked(local_id);
 	db->release();
 
 	if(local_id == ~0U) {
@@ -212,7 +216,8 @@ static bool initialise() {
 	ClientAction::setMessageQueue(&message_queue);
 
 	message_queue.enqueue(msglist.begin(), msglist.end());
-	
+	for(list<SubId>::iterator i = sublist.begin(); i != sublist.end(); ++i)
+		Markers::getInstance().enqueueSubmission(i->user_id, i->prob_id, i->time);
 	Server::setAckQueue(&ack_queue);
 	Server::setTimedQueue(&timed_queue);
 

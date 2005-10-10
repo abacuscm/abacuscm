@@ -70,6 +70,7 @@ public:
 	virtual SubmissionList getSubmissions(uint32_t uid);
 	virtual bool retrieveSubmission(uint32_t user_id, uint32_t prob_id,
 			uint32_t time, char** buffer, int *length, string& language);
+	virtual list<SubId> getUnmarked(uint32_t server_id);
 	virtual bool contestRunning(uint32_t server_id, uint32_t unix_time);
 	virtual uint32_t contestTime(uint32_t server_id, uint32_t unix_time);
 	virtual bool startStopContest(uint32_t server_id, uint32_t unix_time, bool start);
@@ -684,6 +685,31 @@ bool MySQL::retrieveSubmission(uint32_t user_id, uint32_t prob_id, uint32_t time
 	return *buffer != NULL;
 }
 
+list<SubId> MySQL::getUnmarked(uint32_t server_id) {
+	ostringstream query;
+	query << "SELECT user_id, prob_id, time FROM Submission WHERE (SELECT COUNT(*) FROM SubmissionMark WHERE SubmissionMark.user_id=Submission.user_id AND SubmissionMark.prob_id=Submission.prob_id AND SubmissionMark.time=Submission.time AND server_id=" << server_id << ") = 0 ORDER BY time";
+
+	MYSQL_RES *res;
+	list<SubId> result;
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+	} else if(!(res = mysql_use_result(&_mysql))) {
+		log_mysql_error();
+	} else {
+		MYSQL_ROW row;
+		while((row = mysql_fetch_row(res)) != NULL) {
+			SubId t;
+			t.user_id = strtoll(row[0], NULL, 0);
+			t.prob_id = strtoll(row[1], NULL, 0);
+			t.time = strtoll(row[2], NULL, 0);
+			result.push_back(t);
+		}
+		mysql_free_result(res);
+	}
+	
+	return result;
+}
 // SELECT user_id, prob_id, time, (SELECT correct FROM SubmissionMark WHERE Submission.user_id = Submission.user_id AND Submission.prob_id = SubmissionMark.prob_id AND Submission.time = SubmissionMark.time AND server_id = 1) AS mark FROM Submission HAVING IsNull(mark);
 
 
