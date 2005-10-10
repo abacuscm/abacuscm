@@ -7,6 +7,7 @@
 #include "dbcon.h"
 #include "server.h"
 #include "eventregister.h"
+#include "markers.h"
 
 #include <sstream>
 #include <time.h>
@@ -182,7 +183,6 @@ bool SubmissionMessage::process() const {
 	bool result = db->putSubmission(_user_id, _prob_id, _time, _server_id,
 			_content, _content_size, _language);
 
-	db->release();
 
 	AttributeList lst = db->getProblemAttributes(_prob_id);
 	std::string problem = lst["shortname"];
@@ -194,9 +194,12 @@ bool SubmissionMessage::process() const {
 		mb["msg"] = "Your sumission for '" + problem + "' has failed - please notify the contest administrator";
 
 	EventRegister::getInstance().sendMessage(_user_id, &mb);
-	
-	// TODO: enqueue for marking if we are a marking server.
 
+	if(db->getServerAttribute(Server::getId(), "marker") == "yes")
+		Markers::getInstance().enqueueSubmission(_user_id, _prob_id, _time);
+
+	db->release();
+	
 	return result;
 }
 

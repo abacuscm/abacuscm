@@ -68,6 +68,8 @@ public:
 			uint32_t time, uint32_t server_id, char* content,
 			uint32_t content_size, std::string language);
 	virtual SubmissionList getSubmissions(uint32_t uid);
+	virtual bool retrieveSubmission(uint32_t user_id, uint32_t prob_id,
+			uint32_t time, char** buffer, int *length, string& language);
 	virtual bool contestRunning(uint32_t server_id, uint32_t unix_time);
 	virtual uint32_t contestTime(uint32_t server_id, uint32_t unix_time);
 	virtual bool startStopContest(uint32_t server_id, uint32_t unix_time, bool start);
@@ -652,6 +654,38 @@ SubmissionList MySQL::getSubmissions(uint32_t uid) {
 
 	return lst;
 }
+	
+bool MySQL::retrieveSubmission(uint32_t user_id, uint32_t prob_id, uint32_t time, char** buffer, int *length, string& language) {
+	ostringstream query;
+	query << "SELECT content, LENGTH(content), language FROM Submission WHERE "
+		<< " user_id=" << user_id << " AND prob_id=" << prob_id
+		<< " AND time=" << time;
+
+	*buffer = NULL;
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+	} else {
+		MYSQL_RES *res = mysql_use_result(&_mysql);
+		if(!res) {
+			log_mysql_error();
+		} else {
+			MYSQL_ROW row;
+			if((row = mysql_fetch_row(res)) != NULL) {
+				*length = strtoll(row[1], NULL, 10);
+				*buffer = new char[*length];
+				memcpy(*buffer, row[0], *length);
+				language = row[2];
+			}
+			mysql_free_result(res);
+		}
+	}
+
+	return *buffer != NULL;
+}
+
+// SELECT user_id, prob_id, time, (SELECT correct FROM SubmissionMark WHERE Submission.user_id = Submission.user_id AND Submission.prob_id = SubmissionMark.prob_id AND Submission.time = SubmissionMark.time AND server_id = 1) AS mark FROM Submission HAVING IsNull(mark);
+
 
 bool MySQL::setProblemUpdateTime(uint32_t problem_id, time_t time) {
 	ostringstream query;

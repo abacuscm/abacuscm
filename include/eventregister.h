@@ -16,12 +16,14 @@ private:
 		typedef std::set<ClientConnection*> ClientConnectionPool;
 		
 		ClientConnectionPool _clients;
+		ClientConnection* _next_single;
 		pthread_mutex_t _lock;
 	public:
 		Event();
 		~Event();
 
 		void triggerEvent(const MessageBlock* mb);
+		void triggerOne(const MessageBlock*mb, bool remove);
 		void registerClient(ClientConnection *);
 		void deregisterClient(ClientConnection *);
 	};
@@ -45,6 +47,7 @@ public:
 	
 	void registerEvent(std::string eventname);
 	void triggerEvent(std::string eventname, const MessageBlock *mb);
+	void triggerOne(std::string eventname, const MessageBlock*mb, bool remove);
 	void sendMessage(uint32_t user_id, const MessageBlock *mb);
 	
 	static EventRegister& getInstance();

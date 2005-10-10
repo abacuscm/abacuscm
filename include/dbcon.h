@@ -206,6 +206,11 @@ public:
 	virtual SubmissionList getSubmissions(uint32_t user_id = 0) = 0;
 
 	/**
+	 * Retrieve Submission content (and language).
+	 */
+	virtual bool retrieveSubmission(uint32_t user_id, uint32_t prob_id, uint32_t time, char** buffer, int *length, std::string& language) = 0;
+	
+	/**
 	 * Functions for determining the contest state - they really don't
 	 * belong here but making SQL calculate this is so much easier ...
 	 */

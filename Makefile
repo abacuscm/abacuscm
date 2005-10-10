@@ -27,6 +27,7 @@ libabacus_s_objects = moduleloader \
 	clientaction \
 	eventregister \
 	timedaction \
+	markers \
 	problemtype
 $(libabacus_s_name) : ldflags += -shared -ldl -labacus
 
@@ -86,6 +87,7 @@ modules = udpmessenger \
 	act_serverlist \
 	act_submit \
 	act_events \
+	act_mark \
 	act_startstop \
 	prob_testcasedriventype
 modules_d = $(foreach mod,$(modules),modules/mod_$(mod).so)

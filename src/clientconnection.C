@@ -6,6 +6,8 @@
 #include "config.h"
 #include "messageblock.h"
 #include "clientaction.h"
+#include "eventregister.h"
+#include "markers.h"
 
 SSL_METHOD *ClientConnection::_method = NULL;
 SSL_CTX *ClientConnection::_context = NULL;
@@ -18,9 +20,12 @@ ClientConnection::ClientConnection(int sock) {
 }
 
 ClientConnection::~ClientConnection() {
+	EventRegister::getInstance().deregisterClient(this);
+	Markers::getInstance().preemptMarker(this);
+
 	if(_message)
 		delete _message;
-	
+
 	if(_ssl) {
 		log(LOG_DEBUG, "Shutting down connection");
 		SSL_shutdown(_ssl);

@@ -24,6 +24,7 @@ ActAddUser::ActAddUser() {
 	_typemap["admin"] = USER_TYPE_ADMIN;
 	_typemap["judge"] = USER_TYPE_JUDGE;
 	_typemap["contestant"] = USER_TYPE_CONTESTANT;
+	_typemap["marker"] = USER_TYPE_MARKER;
 }
 
 bool ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
