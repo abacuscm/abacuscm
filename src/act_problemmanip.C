@@ -35,6 +35,11 @@ protected:
 	virtual bool int_process(ClientConnection* cc, MessageBlock* mb);
 };
 
+class ActGetProblemFile : public ClientAction {
+protected:
+	virtual bool int_process(ClientConnection* cc, MessageBlock* mb);
+};
+
 class ProbMessage : public Message {
 private:
 	struct FileAttrib {
@@ -518,8 +523,41 @@ bool ActGetProbAttrs::int_process(ClientConnection* cc, MessageBlock*mb) {
 	return cc->sendMessageBlock(&res);
 }
 
+bool ActGetProblemFile::int_process(ClientConnection* cc, MessageBlock* mb) {
+	char *errpnt;
+	uint32_t prob_id = strtoll((*mb)["prob_id"].c_str(), &errpnt, 0);
+	string file = (*mb)["file"];
+
+	if(!prob_id || *errpnt)
+		return cc->sendError("Invalid problem Id");
+
+	if(file == "")
+		return cc->sendError("You have not specified which 'file' you'd like");
+
+	DbCon *db = DbCon::getInstance();
+	if(!db)
+		return cc->sendError("Error connecting to database");
+
+	uint8_t *dataptr;
+	uint32_t datalen;
+	
+	bool dbres = db->getProblemFileData(prob_id, file, &dataptr, &datalen);
+	db->release();
+
+	if(!dbres)
+		return cc->sendError("You have specified an invalid problem id");
+
+	MessageBlock res("ok");
+	res.setContent((const char*)dataptr, (int)datalen);
+
+	delete []dataptr;
+
+	return cc->sendMessageBlock(&res);
+}
+
 static ActSetProbAttrs _act_setprobattrs;
 static ActGetProbAttrs _act_getprobattrs;
+static ActGetProblemFile _act_getprobfile;
 
 static Message* create_prob_message() {
 	return new ProbMessage();
@@ -530,5 +568,6 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "setprobattrs", &_act_setprobattrs);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getprobattrs", &_act_getprobattrs);
 	ClientAction::registerAction(USER_TYPE_MARKER, "getprobattrs", &_act_getprobattrs);
+	ClientAction::registerAction(USER_TYPE_MARKER, "getprobfile", &_act_getprobfile);
 	Message::registerMessageFunctor(TYPE_ID_PROBLEMUPDATE, create_prob_message);
 }
