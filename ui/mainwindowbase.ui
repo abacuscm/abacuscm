@@ -348,6 +348,8 @@
         <action name="fileConnectAction"/>
         <action name="fileDisconnectAction"/>
         <separator/>
+        <action name="changePasswordAction"/>
+        <separator/>
         <action name="fileExitAction"/>
     </item>
     <item text="A&amp;dmin" name="Admin">
@@ -397,6 +399,23 @@
         </property>
         <property name="toolTip">
             <string>Disconnect from abacus server</string>
+        </property>
+    </action>
+    <action>
+    	<property name="name">
+        	<cstring>changePasswordAction</cstring>
+        </property>
+        <property name="enabled">
+        	<bool>false</bool>
+        </property>
+        <property name="text">
+        	<string>Change &amp;password</string>
+        </property>
+        <property name="menuText">
+        	<string>Change &amp;password</string>
+        </property>
+        <property name="toolTip">
+        	<string>Change the password of the currently logged in user</string>
         </property>
     </action>
     <action>
@@ -554,6 +573,12 @@
         <slot>doFileConnect()</slot>
     </connection>
     <connection>
+    	<sender>changePasswordAction</sender>
+        <signal>activated()</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>doChangePassword()</slot>
+    </connection>
+    <connection>
         <sender>adminCreate_UserAction</sender>
         <signal>activated()</signal>
         <receiver>MainWindowBase</receiver>
@@ -634,6 +659,7 @@
 <slots>
     <slot access="protected" specifier="pure virtual">doHelpAbout()</slot>
     <slot access="protected" specifier="pure virtual">doFileConnect()</slot>
+    <slot access="protected" specifier="pure virtual">doChangePassword()</slot>
     <slot access="protected" specifier="pure virtual">doAdminCreateUser()</slot>
     <slot access="protected" specifier="pure virtual">doAdminProblemConfig()</slot>
     <slot access="protected" specifier="pure virtual">doFileDisconnect()</slot>

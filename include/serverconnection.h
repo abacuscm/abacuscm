@@ -83,6 +83,7 @@ public:
 	bool auth(std::string username, std::string password);
 	std::string whatAmI();
 	bool createuser(std::string username, std::string password, std::string type);
+    bool changePassword(std::string password);
 
 	std::vector<std::string> getProblemTypes();
 	std::vector<ProblemInfo> getProblems();

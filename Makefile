@@ -53,7 +53,8 @@ abacus_objects = abacus \
 	ui_adduser moc_ui_adduser \
 	ui_submit moc_ui_submit \
 	ui_problemconfigbase moc_ui_problemconfigbase \
-	ui_mainwindowbase moc_ui_mainwindowbase
+	ui_mainwindowbase moc_ui_mainwindowbase \
+	ui_changepassworddialog moc_ui_changepassworddialog
 $(abacus_name) : ldflags += -L$(QTDIR)/lib -lqt -labacus-client
 $(abacus_name) : $(libabacus_c_name)
 $(abacus_name) : $(libabacus_name)

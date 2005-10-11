@@ -160,6 +160,7 @@ void MainWindow::doFileConnect() {
 				switchType(type);
 				fileConnectAction->setEnabled(false);
 				fileDisconnectAction->setEnabled(true);
+                changePasswordAction->setEnabled(true);
 
 				_server_con.registerEventCallback("submission", updateSubmissionsFunctor, NULL);
 				_server_con.registerEventCallback("standings", updateStandingsFunctor, NULL);
@@ -182,8 +183,32 @@ void MainWindow::doFileDisconnect() {
 		return;
 
 	fileConnectAction->setEnabled(true);
-	fileDisconnectAction->setEnabled(false);
+    fileDisconnectAction->setEnabled(false);
+    changePasswordAction->setEnabled(false);
+
 	switchType("");
+}
+
+void MainWindow::doChangePassword() {
+    _change_password_dialog.password->setText("");
+    _change_password_dialog.confirm->setText("");
+    if (_change_password_dialog.exec()) {
+        std::string password = _change_password_dialog.password->text();
+        if (password != _change_password_dialog.confirm->text()) {
+            QMessageBox("Password mismatch", "The two passwords entered must be the same!",
+                        QMessageBox::Critical, QMessageBox::Ok,
+                        QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+            return;
+        }
+        if (_server_con.changePassword(password))
+            QMessageBox("Password changed!", "Password successfully changed",
+                        QMessageBox::Information, QMessageBox::Ok,
+                        QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+        else
+            QMessageBox("Failed to change password!", "Something went wront while changing password...",
+                        QMessageBox::Critical, QMessageBox::Ok,
+                        QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+    }
 }
 
 void MainWindow::doAdminCreateUser() {

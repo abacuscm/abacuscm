@@ -362,6 +362,14 @@ bool ServerConnection::createuser(string username, string password, string type)
 	return simpleAction(mb);
 }
 
+bool ServerConnection::changePassword(string password) {
+    MessageBlock mb("passwd");
+
+    mb["newpass"] = password;
+
+    return simpleAction(mb);
+}
+
 vector<string> ServerConnection::getProblemTypes() {
 	MessageBlock mb("getprobtypes");
 
