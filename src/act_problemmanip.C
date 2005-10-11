@@ -506,11 +506,11 @@ bool ActGetProbAttrs::int_process(ClientConnection* cc, MessageBlock*mb) {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return cc->sendError("Error connecting to database");
-
+	string prob_type = db->getProblemType(prob_id);
 	AttributeList attrs = db->getProblemAttributes(prob_id);
 	db->release();
 	
-	if(attrs.empty())
+	if(attrs.empty() || prob_type == "")
 		return cc->sendError("No such problem");
 	
 	MessageBlock res("ok");
@@ -519,6 +519,7 @@ bool ActGetProbAttrs::int_process(ClientConnection* cc, MessageBlock*mb) {
 	for(i = attrs.begin(); i != attrs.end(); ++i) {
 		res[i->first] = i->second;
 	}
+	res["prob_type"] = prob_type;
 
 	return cc->sendMessageBlock(&res);
 }

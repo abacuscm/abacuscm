@@ -92,6 +92,8 @@ public:
 
 	bool setProblemAttributes(uint32_t prob_id, std::string type,
 			const AttributeMap& normal, const AttributeMap& file);
+	bool getProblemAttributes(uint32_t prob_id, AttributeMap& attrs);
+	bool getProblemFile(uint32_t prob_id, char **bufferptr, uint32_t *bufferlen);
 	bool submit(uint32_t prob_id, int fd, const std::string& language);
 	SubmissionList getSubmissions();
 

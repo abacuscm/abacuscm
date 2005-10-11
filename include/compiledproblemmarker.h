@@ -44,7 +44,7 @@ public:
 	CompiledProblemMarker();
 	virtual ~CompiledProblemMarker();
 
-	void mark(const Buffer&, const std::string& lang);
+	void mark();
 };
 
 #endif

@@ -461,6 +461,41 @@ bool ServerConnection::setProblemAttributes(uint32_t prob_id, std::string type,
 
 	return simpleAction(mb);
 }
+	
+bool ServerConnection::getProblemAttributes(uint32_t prob_id, AttributeMap& attrs) {
+	ostringstream strm;
+	strm << prob_id;
+	
+	MessageBlock mb("getprobattrs");
+	mb["prob_id"] = strm.str();
+
+	MessageBlock *ret = sendMB(&mb);
+	if(!ret)
+		return false;
+
+	bool response = ret->action() == "ok";
+	if(!response) {
+		log(LOG_ERR, "%s", (*ret)["msg"].c_str());
+		delete ret;
+		return false;
+	}
+
+	MessageHeaders::const_iterator i;
+	for(i = ret->begin(); i != ret->end(); ++i) {
+		if(i->first != "content-length")
+			attrs[i->first] = i->second;
+	}
+	
+	delete ret;
+	return true;
+
+	
+}
+
+bool ServerConnection::getProblemFile(uint32_t prob_id, char **bufferptr, uint32_t *bufferlen) {
+	NOT_IMPLEMENTED();
+	return false;
+}
 
 vector<ProblemInfo> ServerConnection::getProblems() {
 	vector<ProblemInfo> response;

@@ -8,28 +8,40 @@ ProblemMarker::FunctorMap ProblemMarker::_functors
 		__attribute__((init_priority(101)));
 
 ProblemMarker::ProblemMarker() {
+	_mr = NULL;
+	_server_con = NULL;
 }
 
 ProblemMarker::~ProblemMarker() {
+	if(_mr)
+		delete _mr;
+	// leave _server_con alone.
 }
 
-		
-ProblemMarker* ProblemMarker::createMarker(string problemtype, uint32_t prob_id) {
+void ProblemMarker::setServerCon(ServerConnection *server_con) {
+	_server_con = server_con;
+}
+
+void ProblemMarker::setMarkRequest(MarkRequest *mr) {
+	_mr = mr;
+}
+
+void ProblemMarker::setProblemAttributes(AttributeMap& attrs) {
+	_attribs = attrs;
+}
+
+const Buffer& ProblemMarker::submission() {
+	return _mr->submission;
+}
+
+std::string ProblemMarker::language() {
+	return _mr->lang;
+}
+
+ProblemMarker* ProblemMarker::createMarker(string problemtype) {
 	if(!_functors[problemtype])
 		return NULL;
 	ProblemMarker *marker = _functors[problemtype]();
-
-	if(!marker)
-		return NULL;
-
-	marker->_attribs["testcase.input"] = "hello.in";
-	marker->_attribs["testcase.output"] = "hello.out";
-	marker->_attribs["time_limit"] = 120;
-	marker->_attribs["ignore_whitespace"] = "No";
-	marker->_attribs["longname"] = "Hello World!";
-	marker->_attribs["shortname"] = "hi";
-
-	marker->_prob_id = prob_id;
 
 	return marker;
 }

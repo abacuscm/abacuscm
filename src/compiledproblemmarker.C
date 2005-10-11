@@ -24,8 +24,10 @@ CompiledProblemMarker::~CompiledProblemMarker() {
 		delete _uprog;
 }
 
-void CompiledProblemMarker::mark(const Buffer& code, const std::string& lang) {
+void CompiledProblemMarker::mark() {
 	Config &config = Config::getConfig();
+	const Buffer& code = submission();
+	string lang = language();
 
 	if(_uprog)
 		delete _uprog;

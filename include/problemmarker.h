@@ -5,33 +5,49 @@
 #include <map>
 #include <stdint.h>
 
-class Buffer;
+#include "serverconnection.h"
+#include "buffer.h"
 
 class ProblemMarker;
 typedef ProblemMarker* (*ProblemMarkerFunctor)();
 
 typedef std::map<std::string, std::string> ResultMap;
 
+typedef struct {
+	uint32_t prob_id;
+	uint32_t hash;
+	std::string lang;
+	Buffer submission;
+} MarkRequest;
+
 class ProblemMarker {
 private:
 	typedef std::map<std::string, ProblemMarkerFunctor> FunctorMap;
 	static FunctorMap _functors;
 
-	std::map<std::string, std::string> _attribs;
-	uint32_t _prob_id;
+	AttributeMap _attribs;
+	MarkRequest* _mr;
+	ServerConnection* _server_con;
 	std::string _workdir;
 	
 protected:
 	Buffer getProblemFile(std::string attrib);
 	std::string attrib(std::string);
 	std::string workdir();
+
+	const Buffer& submission();
+	std::string language();
 public:
 	ProblemMarker();
 	virtual ~ProblemMarker();
 
-	virtual void mark(const Buffer& submission, const std::string& lang) = 0;
+	virtual void mark() = 0;
 
-	static ProblemMarker* createMarker(std::string problemtype, uint32_t prob_id);
+	void setServerCon(ServerConnection* server_con);
+	void setMarkRequest(MarkRequest* mr);
+	void setProblemAttributes(AttributeMap &attrs);
+
+	static ProblemMarker* createMarker(std::string problemtype);
 	static void registerMarker(std::string problemtype, ProblemMarkerFunctor);
 };
 

@@ -11,13 +11,6 @@
 
 using namespace std;
 
-typedef struct {
-	uint32_t prob_id;
-	uint32_t hash;
-	string lang;
-	Buffer submission;
-} MarkRequest;
-
 static ServerConnection _server_con;
 static Queue<MarkRequest*> _mark_requests;
 
@@ -53,7 +46,22 @@ int main(int argc, char **argv) {
 
 	MarkRequest *mr;
 	while((mr = _mark_requests.dequeue()) != NULL) {
-		delete mr;
+		AttributeMap attrs;
+		if(!_server_con.getProblemAttributes(mr->prob_id, attrs)) {
+			log(LOG_CRIT, "Cannot function if we cannot retrieve problem attributes!");
+			return -1;
+		}
+
+		string problem_type = attrs["prob_type"];
+		ProblemMarker* marker = ProblemMarker::createMarker(problem_type);
+
+		marker->setServerCon(&_server_con);
+		marker->setMarkRequest(mr);
+		marker->setProblemAttributes(attrs);
+
+		marker->mark();
+
+		delete marker;
 		log(LOG_DEBUG, "Yay!");
 	}
 
@@ -67,7 +75,7 @@ int main(int argc, char **argv) {
 		// mark request
 		// give feedback
 		//
-	
+/*	
 	ProblemMarker* marker = ProblemMarker::createMarker("tcprob", 1);
 	if(!marker) {
 		log(LOG_ERR, "Unable to locate the marker for 'tcprob'");
@@ -81,4 +89,5 @@ int main(int argc, char **argv) {
 		marker->mark(submission, "Java");
 		delete marker;
 	}
+*/
 }
