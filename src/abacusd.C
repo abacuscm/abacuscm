@@ -457,7 +457,7 @@ void resend_message(uint32_t server_id) {
 	
 	MessageList msg = db->getUnacked(server_id, TYPE_ID_CREATESERVER);
 	if(msg.empty())
-		db->getUnacked(server_id, 0, 1);
+		msg = db->getUnacked(server_id, 0, 1);
 	db->release();
 
 	MessageList::iterator i;
