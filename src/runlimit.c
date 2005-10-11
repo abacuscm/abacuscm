@@ -45,6 +45,7 @@ static uid_t to_uid = 0;
 static gid_t to_grp = 0;
 static const char* to_uname = NULL;
 static const char* to_gname = NULL;
+static FILE* runmsg = NULL;
 
 static volatile int realtime_fired = 0;
 
@@ -52,14 +53,16 @@ static void sig_alarm(int i __attribute__((unused))) {
 	realtime_fired = 1;
 }
 
+static void msgout(const char* prefix, const char* fmt, va_list ap) {
+	fprintf(runmsg, "%s ", prefix);
+	vfprintf(runmsg, fmt, ap);
+}
+
 static void errmsg(const char* fmt, ...) __attribute__((format (printf, 1, 2)));
 static void errmsg(const char* fmt, ...) {
 	va_list ap;
 	va_start(ap, fmt);
-	
-	fprintf(stderr, "RUNERR ");
-	vfprintf(stderr, fmt, ap);
-
+	msgout("RUNERR", fmt, ap);
 	va_end(ap);
 }
 
@@ -67,10 +70,7 @@ static void infmsg(const char* fmt, ...) __attribute__((format (printf, 1, 2)));
 static void infmsg(const char* fmt, ...) {
 	va_list ap;
 	va_start(ap, fmt);
-	
-	fprintf(stderr, "RUNINF ");
-	vfprintf(stderr, fmt, ap);
-
+	msgout("RUNINF", fmt, ap);
 	va_end(ap);
 }
 
@@ -82,15 +82,12 @@ static void msg(const char* fmt, ...) {
 	
 	va_list ap;
 	va_start(ap, fmt);
-	
-	fprintf(stderr, "RUNDBG ");
-	vfprintf(stderr, fmt, ap);
-
+	msgout("RUNDBG", fmt, ap);
 	va_end(ap);
 }
 
 static void help() {
-	fprintf(stderr, "USAGE: runlimit [options] command [params]\n"
+	fprintf(runmsg, "USAGE: runlimit [options] command [params]\n"
 			"  Where options is 0 or more of:\n"
 			"    --help, -h      Display this text and exit\n"
 			"    --version, -v   Display version info and exit\n"
@@ -106,7 +103,7 @@ static void help() {
 
 void __attribute__((noreturn)) do_child(char **argv) {
 	struct rlimit limit;
-	
+
 	if(chrootdir) {
 		if(geteuid() == 0) {
 			if(chroot(chrootdir) < 0) {
@@ -182,19 +179,11 @@ void __attribute__((noreturn)) do_child(char **argv) {
 	
 	setsid();
 
-	int fd = open("/dev/null", O_WRONLY);
-	if(fd < 0) {
-		errmsg("open(/dev/null): %s\n", strerror(errno));
-		close(2);
-	} else {
-		close(2);
-		dup2(fd, 2);
-		close(fd);
-	}
+	fflush(runmsg);
+	close(3);
 
 	execve(argv[0], argv, NULL);
-
-	printf("execve failed (no stderr): %s\n", strerror(errno));
+	perror("execve");
 	exit(-1);
 }
 
@@ -204,13 +193,20 @@ int main(int argc, char** argv) {
 	int i;
 	pid_t pid;
 
+	runmsg = fdopen(3, "w");
+	if(!runmsg) {
+		dup2(2,3);
+		runmsg = fdopen(3, "w");
+		errmsg("Using stderr for runinfo\n");
+	}
+
 	while((c = getopt_long(argc, argv, optstring, long_options, NULL)) != EOF) {
 		switch(c) {
 		case 'h':
 			help();
 			return 0;
 		case 'v':
-			fprintf(stderr, "runlimit %s\n", VERSION);
+			fprintf(runmsg, "runlimit %s\n", VERSION);
 			return 0;
 		case 'd':
 			verbose = 1;

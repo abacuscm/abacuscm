@@ -31,7 +31,7 @@ private:
 	std::string _workdir;
 	
 protected:
-	Buffer getProblemFile(std::string attrib);
+	Buffer* getProblemFile(std::string attrib);
 	std::string attrib(std::string);
 	std::string workdir();
 

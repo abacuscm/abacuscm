@@ -59,11 +59,21 @@ void CompiledProblemMarker::mark() {
 			return;
 		}
 
+		uint32_t timelimit = strtoll(attrib("timelimit").c_str(), NULL, 0);
+		log(LOG_INFO, "Attribute time limit = %u", (unsigned)timelimit);
+		
+		if(!timelimit) {
+			timelimit = 120;
+			log(LOG_WARNING, "timelimit==0 is invalid, defaulting to %us.", (unsigned)timelimit);
+		}
+
+		timelimit *= 1000; // convert to milli-seconds.
+		
 		log(LOG_INFO, "User program compiled, preparing execution environment.");
 		_uprog->setMemLimit(64 * 1024 * 1024);
 		_uprog->setRootDir(jaildir);
-		_uprog->setCPUTime(120000); // needs to come from "attributes"
-		_uprog->setRealTime(120000 * 8); // needs to be calculated based on cpu-time + config options.
+		_uprog->setCPUTime(timelimit);
+		_uprog->setRealTime(timelimit * 8);
 		_uprog->setMaxProcs(1);
 
 		if(config["marker"]["user"] != "")
@@ -77,7 +87,7 @@ void CompiledProblemMarker::mark() {
 	log(LOG_DEBUG, "All done with the marking process!");
 }
 
-int CompiledProblemMarker::run(const char* infile, const char* outfile, const char* runfile) {
+int CompiledProblemMarker::run(const char* infile, const char* outfile, const char* errfile,  const char* runfile) {
 	int fd_in = open(infile, O_RDONLY);
 	if(fd_in < 0) {
 		lerror("open(infile)");
@@ -87,6 +97,12 @@ int CompiledProblemMarker::run(const char* infile, const char* outfile, const ch
 	int fd_out = open(outfile, O_WRONLY | O_CREAT, 0600);
 	if(fd_out < 0) {
 		lerror("open(outfile)");
+		return -1;
+	}
+
+	int fd_err = open(errfile, O_WRONLY | O_CREAT, 0600);
+	if(fd_err < 0) {
+		lerror("open(errfile)");
 		return -1;
 	}
 
@@ -101,10 +117,11 @@ int CompiledProblemMarker::run(const char* infile, const char* outfile, const ch
 		lerror("fork");
 		return -1;
 	} else if(pid == 0) {
-		_uprog->exec(fd_in, fd_out, fd_run);
+		_uprog->exec(fd_in, fd_out, fd_err, fd_run);
 	} else {
 		close(fd_in);
 		close(fd_out);
+		close(fd_err);
 		close(fd_run);
 
 		int status;
@@ -128,7 +145,8 @@ int CompiledProblemMarker::run(const Buffer& in, Buffer& out, Buffer& err) {
 	int res = run(
 			(workdir() + "/stdin." + cntrstrm.str()).c_str(),
 			(workdir() + "/stdout." + cntrstrm.str()).c_str(),
-			(workdir() + "/stderr." + cntrstrm.str()).c_str());
+			(workdir() + "/stderr." + cntrstrm.str()).c_str(),
+			(workdir() + "/runinfo." + cntrstrm.str()).c_str());
 
 	struct stat statdata;
 	int out_file = open((workdir() + "/stdout." + cntrstrm.str()).c_str(), O_RDONLY);

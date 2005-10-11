@@ -51,6 +51,15 @@ void ProblemMarker::registerMarker(std::string problemtype,
 	_functors[problemtype] = func;
 }
 
+string ProblemMarker::attrib(string attrname) {
+	AttributeMap::iterator i = _attribs.find(attrname);
+	if(i == _attribs.end()) {
+		log(LOG_WARNING, "Marking system requested attribute '%s' which does not exists", attrname.c_str());
+		return "";
+	}
+	return i->second;
+}
+
 string ProblemMarker::workdir() {
 	if(_workdir != "")
 		return _workdir;

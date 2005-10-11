@@ -64,7 +64,7 @@ public:
 	 *
 	 * The process should _not_ fork, the call MUST NOT return.
 	 */
-	int exec(int fd_in, int fd_out, int fd_err) __attribute__((noreturn));
+	int exec(int fd_in, int fd_out, int fd_err, int fd_run) __attribute__((noreturn));
 
 	/**
 	 * Register a language.

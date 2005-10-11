@@ -17,7 +17,7 @@ protected:
 	 * In the simplest of cases you can call this to supply an input file,
 	 * spec where the output file and runlimit files goes.
 	 */
-	int run(const char* infile, const char* outfile, const char* runfile);
+	int run(const char* infile, const char* outfile, const char* errfile, const char* runfile);
 
 	/**
 	 * If you prefer, you can supply the Input Buffer and receive back an
@@ -34,7 +34,7 @@ protected:
 	 * UserProgram instance whilst using this version to execute the actual
 	 * user program.
 	 */
-	int run(int fd_in, int fd_out, int fd_run) __attribute__((noreturn));
+	int run(int fd_in, int fd_out, int fd_err, int fd_run) __attribute__((noreturn));
 
 	/**
 	 * You need to override this to receive control after the user program has been compiled.

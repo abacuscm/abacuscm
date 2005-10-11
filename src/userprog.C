@@ -115,7 +115,7 @@ string UserProg::sourceFilename(const Buffer&) {
 	return "source";
 }
 
-int UserProg::exec(int fd_in, int fd_out, int fd_err) {
+int UserProg::exec(int fd_in, int fd_out, int fd_err, int fd_run) {
 	list<string> prog_argv = getProgramArgv();
 	
 	char ** argv = new char*[_runlimit_args.size() + prog_argv.size() + 3];
@@ -146,6 +146,13 @@ int UserProg::exec(int fd_in, int fd_out, int fd_err) {
 	close(fd_in);
 	close(fd_out);
 	close(fd_err);
+
+	if(fd_run != 3) {
+		close(3); // will most probably fail ...
+		if(dup2(fd_run, 3) < 0)
+			lerror("dup2");
+		close(fd_run);
+	}
 
 	execve(*argv, argv, NULL);
 
