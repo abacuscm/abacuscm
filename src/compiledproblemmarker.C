@@ -59,7 +59,7 @@ void CompiledProblemMarker::mark() {
 			return;
 		}
 
-		uint32_t timelimit = strtoll(attrib("timelimit").c_str(), NULL, 0);
+		uint32_t timelimit = strtoll(attrib("time_limit").c_str(), NULL, 0);
 		log(LOG_INFO, "Attribute time limit = %u", (unsigned)timelimit);
 		
 		if(!timelimit) {

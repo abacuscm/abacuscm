@@ -60,6 +60,20 @@ string ProblemMarker::attrib(string attrname) {
 	return i->second;
 }
 
+Buffer* ProblemMarker::getProblemFile(string attrib) {
+	char* bufferptr;
+	uint32_t bufferlen;
+
+	if(!_server_con->getProblemFile(_mr->prob_id, attrib, &bufferptr, &bufferlen))
+		return NULL;
+
+	Buffer *bfr = new Buffer;
+	bfr->appendData(bufferptr, bufferlen);
+
+	delete []bufferptr;
+	return bfr;
+}
+
 string ProblemMarker::workdir() {
 	if(_workdir != "")
 		return _workdir;

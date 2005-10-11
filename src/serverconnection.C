@@ -500,9 +500,31 @@ bool ServerConnection::getProblemAttributes(uint32_t prob_id, AttributeMap& attr
 	
 }
 
-bool ServerConnection::getProblemFile(uint32_t prob_id, char **bufferptr, uint32_t *bufferlen) {
-	NOT_IMPLEMENTED();
-	return false;
+bool ServerConnection::getProblemFile(uint32_t prob_id, string attrib, char **bufferptr, uint32_t *bufferlen) {
+	ostringstream strm;
+	strm << prob_id;
+	
+	MessageBlock mb("getprobfile");
+	mb["prob_id"] = strm.str();
+	mb["file"] = attrib;
+	
+	MessageBlock *ret = sendMB(&mb);
+	if(!ret)
+		return false;
+
+	bool response = ret->action() == "ok";
+	if(!response) {
+		log(LOG_ERR, "%s", (*ret)["msg"].c_str());
+		delete ret;
+		return false;
+	}
+
+	*bufferlen = ret->content_size();
+	*bufferptr = new char[*bufferlen];
+	memcpy(*bufferptr, ret->content(), *bufferlen);
+
+	delete ret;
+	return true;
 }
 
 vector<ProblemInfo> ServerConnection::getProblems() {
