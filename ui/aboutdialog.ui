@@ -8,8 +8,8 @@
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>379</width>
-            <height>207</height>
+            <width>443</width>
+            <height>245</height>
         </rect>
     </property>
     <property name="caption">
@@ -77,20 +77,13 @@
                         <string>Lead Hacker:</string>
                     </property>
                 </widget>
-                <widget class="QLabel" row="1" column="0">
+                <widget class="QLabel" row="1" column="1">
                     <property name="name">
-                        <cstring>textLabel8</cstring>
-                    </property>
-                    <property name="font">
-                        <font>
-                            <bold>1</bold>
-                        </font>
+                        <cstring>textLabel9</cstring>
                     </property>
                     <property name="text">
-                        <string>Ideas Contributors:</string>
-                    </property>
-                    <property name="alignment">
-                        <set>AlignTop</set>
+                        <string>Bruce Merry &lt;bmerry@cs.uct.ac.za&gt;
+Carl Hultquist &lt;chultqui@cs.uct.ac.za&gt;</string>
                     </property>
                 </widget>
                 <widget class="QLabel" row="0" column="1">
@@ -101,14 +94,44 @@
                         <string>Jaco Kroon &lt;jaco@kroon.co.za&gt;</string>
                     </property>
                 </widget>
-                <widget class="QLabel" row="1" column="1">
+                <widget class="QLabel" row="1" column="0">
                     <property name="name">
-                        <cstring>textLabel9</cstring>
+                        <cstring>textLabel8</cstring>
+                    </property>
+                    <property name="font">
+                        <font>
+                            <bold>1</bold>
+                        </font>
                     </property>
                     <property name="text">
-                        <string>Bruce Merry &lt;bmerry@cs.uct.ac.za&gt;
-Carl Hultquist &lt;chultqui@cs.uct.ac.za&gt;
-Leon Lynch &lt;llynch@cs.up.ac.za&gt;</string>
+                        <string>Code Contributors:</string>
+                    </property>
+                    <property name="alignment">
+                        <set>AlignTop</set>
+                    </property>
+                </widget>
+                <widget class="QLabel" row="2" column="0">
+                    <property name="name">
+                        <cstring>textLabel8_2</cstring>
+                    </property>
+                    <property name="font">
+                        <font>
+                            <bold>1</bold>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string>Ideas Contributor:</string>
+                    </property>
+                    <property name="alignment">
+                        <set>AlignTop</set>
+                    </property>
+                </widget>
+                <widget class="QLabel" row="2" column="1">
+                    <property name="name">
+                        <cstring>textLabel1</cstring>
+                    </property>
+                    <property name="text">
+                        <string>Leon Lynch &lt;llynch@cs.up.ac.za&gt;</string>
                     </property>
                 </widget>
             </grid>
