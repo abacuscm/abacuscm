@@ -103,6 +103,21 @@ public:
 	virtual uint32_t maxUserId() = 0;
 
 	/**
+	 * Used to retrieve the max Submission Id.  See maxUserId.
+	 */
+	virtual uint32_t maxSubmissionId() = 0;
+
+	/**
+	 * Used to retrieve the max Clarification Request Id.  See maxUserId.
+	 */
+	virtual uint32_t maxClarificationReqId() = 0;
+
+	/**
+	 * Used to retrieve the max Clarification Id.  See maxUserId.
+	 */
+	virtual uint32_t maxClarificationId() = 0;
+
+	/**
 	 * Used to authenticate a user.  Return values should be as follows:
 	 * <0	Error
 	 * 0	Authentication failed
@@ -197,7 +212,7 @@ public:
 	 * Commit a submitted solution to the database before initiating the
 	 * marking process.
 	 */
-	virtual bool putSubmission(uint32_t user_id, uint32_t prob_id,
+	virtual bool putSubmission(uint32_t sub_id, uint32_t user_id, uint32_t prob_id,
 			uint32_t time, uint32_t server_id, char* content,
 			uint32_t content_size, std::string language) = 0;
 

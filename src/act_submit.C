@@ -29,6 +29,7 @@ protected:
 
 class SubmissionMessage : public Message {
 private:
+	uint32_t _submission_id;
 	uint32_t _prob_id;
 	uint32_t _user_id;
 	uint32_t _time;
@@ -150,6 +151,7 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 }
 
 SubmissionMessage::SubmissionMessage() {
+	_submission_id = 0;
 	_prob_id = 0;
 	_user_id = 0;
 	_time = 0;
@@ -160,6 +162,7 @@ SubmissionMessage::SubmissionMessage() {
 }
 
 SubmissionMessage::SubmissionMessage(uint32_t prob_id, uint32_t user_id, const char* content, uint32_t content_size, std::string language) {
+	_submission_id = Server::nextSubmissionId();
 	_time = ::time(NULL);
 	_user_id = user_id;
 	_prob_id = prob_id;
@@ -180,7 +183,7 @@ bool SubmissionMessage::process() const {
 	if(!db)
 		return false;
 	
-	bool result = db->putSubmission(_user_id, _prob_id, _time, _server_id,
+	bool result = db->putSubmission(_submission_id, _user_id, _prob_id, _time, _server_id,
 			_content, _content_size, _language);
 
 
@@ -208,7 +211,7 @@ uint16_t SubmissionMessage::message_type_id() const {
 }
 
 uint32_t SubmissionMessage::storageRequired() {
-	uint32_t required = 5 * sizeof(uint32_t);
+	uint32_t required = 6 * sizeof(uint32_t);
 	required += _content_size;
 	required += _language.length() + 1;
 	return required;
@@ -216,6 +219,7 @@ uint32_t SubmissionMessage::storageRequired() {
 
 uint32_t SubmissionMessage::store(uint8_t* buffer, uint32_t size) {
 	uint8_t *pos = buffer;
+	*(uint32_t*)pos = _submission_id; pos += sizeof(uint32_t);
 	*(uint32_t*)pos = _user_id; pos += sizeof(uint32_t);
 	*(uint32_t*)pos = _prob_id; pos += sizeof(uint32_t);
 	*(uint32_t*)pos = _time; pos += sizeof(uint32_t);
@@ -232,11 +236,12 @@ uint32_t SubmissionMessage::store(uint8_t* buffer, uint32_t size) {
 
 uint32_t SubmissionMessage::load(const uint8_t* buffer, uint32_t size) {
 	const uint8_t *pos = buffer;
-	if(size < 5 * sizeof(uint32_t)) {
+	if(size < 6 * sizeof(uint32_t)) {
 		log(LOG_ERR, "Too small buffer to contain the correct number of uint32_t values in SubmissionMessage::load()");
 		return ~0U;
 	}
 
+	_submission_id = *(uint32_t*)pos; pos += sizeof(uint32_t);
 	_user_id = *(uint32_t*)pos; pos += sizeof(uint32_t);
 	_prob_id = *(uint32_t*)pos; pos += sizeof(uint32_t);
 	_time = *(uint32_t*)pos; pos += sizeof(uint32_t);

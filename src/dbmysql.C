@@ -49,6 +49,9 @@ public:
 	virtual bool hasMessage(uint32_t server_id, uint32_t message_id);
 	virtual uint32_t maxServerId();
 	virtual uint32_t maxUserId();
+	virtual uint32_t maxSubmissionId();
+	virtual uint32_t maxClarificationReqId();
+	virtual uint32_t maxClarificationId();
 	virtual ProblemList getProblems();
 	virtual time_t getProblemUpdateTime(uint32_t problem_id);
 	virtual bool setProblemUpdateTime(uint32_t problem_id, time_t time);
@@ -64,7 +67,7 @@ public:
 	virtual bool delProblemAttribute(uint32_t problem_id, std::string attr);
 	virtual bool getProblemFileData(uint32_t problem_id, std::string attr,
 			uint8_t **dataptr, uint32_t *lenptr);
-	virtual bool putSubmission(uint32_t user_id, uint32_t prob_id,
+	virtual bool putSubmission(uint32_t submission_id, uint32_t user_id, uint32_t prob_id,
 			uint32_t time, uint32_t server_id, char* content,
 			uint32_t content_size, std::string language);
 	virtual SubmissionList getSubmissions(uint32_t uid);
@@ -577,6 +580,78 @@ uint32_t MySQL::maxUserId() {
 	return max_user_id;
 }
 
+uint32_t MySQL::maxSubmissionId() {
+	uint32_t max_user_id = ~0U;
+	ostringstream query;
+	query << "SELECT MAX(submission_id) FROM Submission WHERE submission_id & " << (ID_GRANULARITY - 1) << " = " << Server::getId();
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return ~0U;
+	}
+
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if(res) {
+		MYSQL_ROW row = mysql_fetch_row(res);
+		if(row) {
+			if(row[0])
+				max_user_id = atol(row[0]);
+			else
+				max_user_id = 0;
+		}
+		mysql_free_result(res);	
+	}
+
+	return max_user_id;
+}
+
+uint32_t MySQL::maxClarificationReqId() {
+	uint32_t max_user_id = ~0U;
+	ostringstream query;
+	query << "SELECT MAX(clarification_req_id) FROM ClarificationRequest WHERE clarification_req_id & " << (ID_GRANULARITY - 1) << " = " << Server::getId();
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return ~0U;
+	}
+
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if(res) {
+		MYSQL_ROW row = mysql_fetch_row(res);
+		if(row) {
+			if(row[0])
+				max_user_id = atol(row[0]);
+			else
+				max_user_id = 0;
+		}
+		mysql_free_result(res);	
+	}
+
+	return max_user_id;
+}
+
+uint32_t MySQL::maxClarificationId() {
+	uint32_t max_user_id = ~0U;
+	ostringstream query;
+	query << "SELECT MAX(clarification_id) FROM Clarification WHERE clarification_id & " << (ID_GRANULARITY - 1) << " = " << Server::getId();
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return ~0U;
+	}
+
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if(res) {
+		MYSQL_ROW row = mysql_fetch_row(res);
+		if(row) {
+			if(row[0])
+				max_user_id = atol(row[0]);
+			else
+				max_user_id = 0;
+		}
+		mysql_free_result(res);	
+	}
+
+	return max_user_id;
+}
+
 ProblemList MySQL::getProblems() {
 	ProblemList result;
 	if(mysql_query(&_mysql, "SELECT * FROM Problem"))
@@ -613,9 +688,9 @@ time_t MySQL::getProblemUpdateTime(uint32_t problem_id) {
 	}
 }
 
-bool MySQL::putSubmission(uint32_t user_id, uint32_t prob_id, uint32_t time, uint32_t server_id, char* content, uint32_t content_size, std::string language) {
+bool MySQL::putSubmission(uint32_t submission_id, uint32_t user_id, uint32_t prob_id, uint32_t time, uint32_t server_id, char* content, uint32_t content_size, std::string language) {
 	ostringstream query;
-	query << "INSERT INTO Submission (user_id, prob_id, time, server_id, content, language) VALUES(" << user_id << ", " << prob_id << ", " << time << ", " << server_id << ", '" << escape_buffer((uint8_t*)content, content_size) << "', '" << escape_string(language) << "')";
+	query << "INSERT INTO Submission (submission_id, user_id, prob_id, time, server_id, content, language) VALUES(" << submission_id << ", " << user_id << ", " << prob_id << ", " << time << ", " << server_id << ", '" << escape_buffer((uint8_t*)content, content_size) << "', '" << escape_string(language) << "')";
 
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();

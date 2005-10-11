@@ -19,13 +19,13 @@
 
 DROP TABLE IF EXISTS `Clarification`;
 CREATE TABLE `Clarification` (
+  `clarification_id` int(11) NOT NULL default '0',
+  `clarification_req_id` int(11) NOT NULL default '0',
   `user_id` int(11) NOT NULL default '0',
   `time` int(11) NOT NULL default '0',
   `public` tinyint(1) default NULL,
-  `made_by` int(11) NOT NULL default '0',
-  `time_made` int(11) NOT NULL default '0',
   `text` varchar(255) default NULL,
-  PRIMARY KEY  (`user_id`,`time`,`made_by`,`time_made`)
+  PRIMARY KEY  (`clarification_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 --
@@ -34,11 +34,12 @@ CREATE TABLE `Clarification` (
 
 DROP TABLE IF EXISTS `ClarificationRequest`;
 CREATE TABLE `ClarificationRequest` (
+  `clarification_req_id` int(11) NOT NULL default '0',
   `user_id` int(11) NOT NULL default '0',
   `time` int(11) NOT NULL default '0',
   `problem_id` int(11) default NULL,
   `text` varchar(255) default NULL,
-  PRIMARY KEY  (`user_id`,`time`)
+  PRIMARY KEY  (`clarification_req_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 --
@@ -150,13 +151,14 @@ CREATE TABLE `ServerAttributes` (
 
 DROP TABLE IF EXISTS `Submission`;
 CREATE TABLE `Submission` (
+  `submission_id` int(11) NOT NULL default '0',
   `user_id` int(11) NOT NULL default '0',
   `prob_id` int(11) NOT NULL default '0',
   `time` int(11) NOT NULL default '0',
   `server_id` int(11) NOT NULL default '0',
   `content` blob,
   `language` varchar(16) default NULL,
-  PRIMARY KEY  (`user_id`,`prob_id`,`time`)
+  PRIMARY KEY  (`submission_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 --
@@ -165,15 +167,13 @@ CREATE TABLE `Submission` (
 
 DROP TABLE IF EXISTS `SubmissionMark`;
 CREATE TABLE `SubmissionMark` (
-  `user_id` int(11) NOT NULL default '0',
-  `prob_id` int(11) NOT NULL default '0',
-  `time` int(11) NOT NULL default '0',
+  `submission_id` int(11) NOT NULL default '0',
   `marker_id` int(11) NOT NULL default '0',
   `mark_time` int(11) NOT NULL default '0',
   `correct` tinyint(1) default NULL,
   `remark` varchar(255) default NULL,
   `server_id` int(11) default NULL,
-  PRIMARY KEY  (`user_id`,`prob_id`,`time`,`marker_id`,`mark_time`)
+  PRIMARY KEY  (`submission_id`,`marker_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 --
