@@ -26,7 +26,11 @@ bool ProblemConfig::addAttribute(QGridLayout *g, std::string attr_name, std::str
 	QWidget *control = 0;
 	switch(type[0]) {
 	case 'I':
-		control = _ints[attr_name] = new QSpinBox(prop_data);
+		{
+			QSpinBox* sb = new QSpinBox(prop_data);
+			sb->setMaxValue(999);
+			control = _ints[attr_name] = sb;
+		}
 		break;
 	case 'S':
 		control = _strings[attr_name] = new QLineEdit(prop_data);
