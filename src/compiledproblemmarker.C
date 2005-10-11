@@ -41,8 +41,14 @@ void CompiledProblemMarker::mark() {
 	if(wdir == "")
 		return;
 
-	string fname = wdir + "/" + _uprog->sourceFilename(code);
+	string fname = _uprog->sourceFilename(code);
+	if(fname == "") {
+		setResult(COMPILE_FAILED);
+		return;
+	};
 
+	fname = wdir + "/" + fname;
+	
 	log(LOG_INFO, "Using source file '%s'", fname.c_str());
 	ofstream source(fname.c_str());
 	source << code;
@@ -55,6 +61,7 @@ void CompiledProblemMarker::mark() {
 	} else {
 		log(LOG_INFO, "Compiling user program ...");
 		if(!_uprog->compile(fname, jaildir)) {
+			setResult(COMPILE_FAILED);
 			log(LOG_ERR, "User program failed to compile.");
 			return;
 		}

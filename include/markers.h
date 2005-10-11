@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <map>
 #include <list>
+#include <string>
 
 class ClientConnection;
 class MessageBlock;

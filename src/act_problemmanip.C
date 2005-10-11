@@ -225,7 +225,7 @@ uint32_t ProbMessage::load(const uint8_t *buffer, uint32_t size) {
 			break;
 		case 'F':
 			{
-				if(!checkStringTerms(pos, size - sizeof(int32_t), 2)) {
+				if(size <= sizeof(int32_t) || !checkStringTerms(pos, size - sizeof(int32_t), 2)) {
 					log(LOG_ERR, "Invalid blob data in ProbMessage::load, need one 2-terminator in buffer for type F, plus another %d bytes", (int)sizeof(int32_t));
 					return ~0U;
 				}

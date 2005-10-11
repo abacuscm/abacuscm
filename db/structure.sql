@@ -1,8 +1,8 @@
 -- MySQL dump 10.9
 --
--- Host: localhost    Database: abacus
+-- Host: xacatecas.lan    Database: abacus
 -- ------------------------------------------------------
--- Server version	4.1.14
+-- Server version	4.1.14-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -170,10 +170,23 @@ CREATE TABLE `SubmissionMark` (
   `submission_id` int(11) NOT NULL default '0',
   `marker_id` int(11) NOT NULL default '0',
   `mark_time` int(11) NOT NULL default '0',
-  `correct` tinyint(1) default NULL,
+  `result` int(11) default NULL,
   `remark` varchar(255) default NULL,
   `server_id` int(11) default NULL,
   PRIMARY KEY  (`submission_id`,`marker_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `SubmissionMarkFile`
+--
+
+DROP TABLE IF EXISTS `SubmissionMarkFile`;
+CREATE TABLE `SubmissionMarkFile` (
+  `submission_id` int(11) NOT NULL default '0',
+  `marker_id` int(11) NOT NULL default '0',
+  `name` varchar(255) NOT NULL default '',
+  `content` blob,
+  PRIMARY KEY  (`submission_id`,`marker_id`,`name`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 --

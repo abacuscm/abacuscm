@@ -227,6 +227,11 @@ public:
 	
 	virtual IdList getUnmarked(uint32_t server_id = 0) = 0;
 
+	virtual bool putMark(uint32_t submission_id, uint32_t marker_id,
+			uint32_t time, uint32_t result, std::string comment, uint32_t server_id) = 0;
+
+	virtual bool putMarkFile(uint32_t submission_id, uint32_t marker_id,
+			std::string name, const void* data, uint32_t len) = 0;
 	/**
 	 * Functions for determining the contest state - they really don't
 	 * belong here but making SQL calculate this is so much easier ...

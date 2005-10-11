@@ -81,11 +81,9 @@ void TestCaseProblemMarker::mark_compiled() {
 
 		int excode = system(diff_cmd.c_str());
 		if(excode == 0) {
-            NOT_IMPLEMENTED();
             setResult(CORRECT);
 			log(LOG_DEBUG, "Correct!");
 		} else {
-            NOT_IMPLEMENTED();
             setResult(WRONG);
             addResultFile("Team's output", outfile);
             addResultFile("Diff of team's output versus expected output", difffile);

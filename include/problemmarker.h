@@ -17,7 +17,7 @@ typedef std::map<std::string, std::string> ResultMap;
 
 typedef struct {
 	uint32_t prob_id;
-	uint32_t hash;
+	uint32_t submission_id;
 	std::string lang;
 	Buffer submission;
 } MarkRequest;
@@ -45,6 +45,7 @@ protected:
     bool _have_result;
     RunResult _result;
     std::map<std::string, std::string> _result_files;
+
     void setResult(RunResult result);
     void addResultFile(std::string filetype, std::string filename);
 
@@ -53,6 +54,7 @@ public:
 	virtual ~ProblemMarker();
 
 	virtual void mark() = 0;
+	bool submitResult();
 
 	void setServerCon(ServerConnection* server_con);
 	void setMarkRequest(MarkRequest* mr);

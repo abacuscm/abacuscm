@@ -18,7 +18,17 @@ ProblemMarker::ProblemMarker() {
 ProblemMarker::~ProblemMarker() {
 	if(_mr)
 		delete _mr;
+	if(_run_info)
+		delete _run_info;
+
 	// leave _server_con alone.
+}
+
+bool ProblemMarker::submitResult() {
+	if(!_have_result)
+		return false;
+
+	return _server_con->mark(_mr->submission_id, _result, runMessages[_result], _result_files);
 }
 
 void ProblemMarker::setServerCon(ServerConnection *server_con) {

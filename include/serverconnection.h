@@ -1,8 +1,9 @@
 #ifndef __SERVERCONNECTION_H__
 #define __SERVERCONNECTION_H__
 
-#include "queue.h"
+#include "misc.h"
 
+#include <vector>
 #include <string>
 #include <list>
 #include <map>
@@ -99,6 +100,7 @@ public:
 	SubmissionList getSubmissions();
 
 	bool becomeMarker();
+	bool mark(uint32_t submission_id, RunResult result, std::string comment, const AttributeMap &files);
 
 	bool registerEventCallback(std::string event, EventCallback func, void *custom);
 	bool deregisterEventCallback(std::string event, EventCallback func);

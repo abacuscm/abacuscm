@@ -17,7 +17,7 @@ static Queue<MarkRequest*> _mark_requests;
 static void mark_request(const MessageBlock* mb, void*) {
 	MarkRequest *mr = new MarkRequest;
 	mr->prob_id = strtoll((*mb)["prob_id"].c_str(), NULL, 0);
-	mr->hash = strtoll((*mb)["submission_hash"].c_str(), NULL, 0);
+	mr->submission_id = strtoll((*mb)["submission_id"].c_str(), NULL, 0);
 	mr->lang = (*mb)["language"];
 	mr->submission.appendData(mb->content(), mb->content_size());
 	_mark_requests.enqueue(mr);
@@ -60,9 +60,12 @@ int main(int argc, char **argv) {
 		marker->setProblemAttributes(attrs);
 
 		marker->mark();
+		if(!marker->submitResult()) {
+			log(LOG_CRIT, "Great, failed to upload mark, bailing entirely ...");
+			return -1;
+		}
 
 		delete marker;
-		log(LOG_DEBUG, "Yay!");
 	}
 
 	log(LOG_INFO, "Terminating");

@@ -74,6 +74,10 @@ public:
 	virtual bool retrieveSubmission(uint32_t sub_id, char** buffer, int *length,
 			string& language, uint32_t* prob_id);
 	virtual IdList getUnmarked(uint32_t server_id);
+	virtual bool putMark(uint32_t submission_id, uint32_t marker_id,
+			uint32_t time, uint32_t result, std::string comment, uint32_t server_id);
+	virtual bool putMarkFile(uint32_t submission_id, uint32_t marker_id,
+			std::string name, const void* data, uint32_t len);
 	virtual bool contestRunning(uint32_t server_id, uint32_t unix_time);
 	virtual uint32_t contestTime(uint32_t server_id, uint32_t unix_time);
 	virtual bool startStopContest(uint32_t server_id, uint32_t unix_time, bool start);
@@ -784,6 +788,32 @@ IdList MySQL::getUnmarked(uint32_t server_id) {
 }
 // SELECT user_id, prob_id, time, (SELECT correct FROM SubmissionMark WHERE Submission.user_id = Submission.user_id AND Submission.prob_id = SubmissionMark.prob_id AND Submission.time = SubmissionMark.time AND server_id = 1) AS mark FROM Submission HAVING IsNull(mark);
 
+bool MySQL::putMark(uint32_t submission_id, uint32_t marker_id, uint32_t time, uint32_t result, std::string comment, uint32_t server_id) {
+	ostringstream query;
+	query << "INSERT INTO SubmissionMark (submission_id, marker_id, mark_time, result, remark, server_id) VALUES("
+		<< submission_id << ", " << marker_id << ", " << time << ", " << result << ", '" << escape_string(comment) << "', " << server_id << ")";
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	} else
+		return true;
+}
+	
+bool MySQL::putMarkFile(uint32_t submission_id, uint32_t marker_id,
+			std::string name, const void* data, uint32_t len) {
+	ostringstream query;
+	query << "INSERT INTO SubmissionMarkFile (submission_id, marker_id, "
+		"name, content) VALUES(" << submission_id << ", " << marker_id <<
+		", '" << escape_string(name) << "', '" <<
+		escape_buffer((const uint8_t*)data, len) << "')";
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	} else
+		return true;
+}
 
 bool MySQL::setProblemUpdateTime(uint32_t problem_id, time_t time) {
 	ostringstream query;

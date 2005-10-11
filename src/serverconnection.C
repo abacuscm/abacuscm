@@ -465,7 +465,7 @@ bool ServerConnection::setProblemAttributes(uint32_t prob_id, std::string type,
 		mb[i->first] = i->second;
 	}
 
-	mb.dump();
+//	mb.dump();
 
 	return simpleAction(mb);
 }
@@ -496,8 +496,6 @@ bool ServerConnection::getProblemAttributes(uint32_t prob_id, AttributeMap& attr
 	
 	delete ret;
 	return true;
-
-	
 }
 
 bool ServerConnection::getProblemFile(uint32_t prob_id, string attrib, char **bufferptr, uint32_t *bufferlen) {
@@ -598,6 +596,91 @@ bool ServerConnection::becomeMarker() {
 	MessageBlock mb("subscribemark");
 
 	return simpleAction(mb);
+}
+
+bool ServerConnection::mark(uint32_t submission_id, RunResult result, std::string comment, const AttributeMap& file) {
+	ostringstream ostrstrm;
+	AttributeMap::const_iterator i;
+	MessageBlock mb("mark");
+	list<int> fds;
+	uint32_t file_offset = 0;
+
+	ostrstrm << submission_id;
+	
+	mb["submission_id"] = ostrstrm.str();
+
+	ostrstrm.str("");
+	ostrstrm << result;
+	mb["result"] = ostrstrm.str();
+
+	mb["comment"] = comment;
+
+	int c = 0;
+	for(i = file.begin(); i != file.end(); ++i, ++c) {
+		int fd = open(i->second.c_str(), O_RDONLY | O_EXCL);
+		if(fd < 0) {
+			lerror(("open(" + i->second + ")").c_str());
+			for(list<int>::iterator j = fds.begin(); j != fds.end(); ++j)
+				close(*j);
+
+			return false;
+		}
+		struct stat st_stat;
+		if(fstat(fd, &st_stat) < 0) {
+			lerror(("fstat(" + i->second + ")").c_str());
+			for(list<int>::iterator j = fds.begin(); j != fds.end(); ++j)
+				close(*j);
+
+			return false;
+		}
+		
+		ostrstrm.str("");
+		ostrstrm << c;
+
+		string fileoption = "file" + ostrstrm.str();
+
+		ostrstrm.str("");
+		ostrstrm << file_offset << " " << st_stat.st_size << " " << i->first;
+
+		mb[fileoption] = ostrstrm.str();
+		file_offset += st_stat.st_size;
+		fds.push_back(fd);
+	}
+
+	log(LOG_DEBUG, "Loading %u bytes ...", file_offset);
+	char *filedata = new char[file_offset];
+	char *pos = filedata;
+	for(list<int>::iterator fd_ptr = fds.begin(); fd_ptr != fds.end(); ++fd_ptr) {
+		struct stat st_stat;
+		if(fstat(*fd_ptr, &st_stat) < 0) {
+			lerror(("fstat(" + i->second + ")").c_str());
+			for( ; fd_ptr != fds.end(); ++fd_ptr)
+				close(*fd_ptr);
+			delete []filedata;
+			return false;
+		}
+		while(st_stat.st_size) {
+			int res = read(*fd_ptr, pos, st_stat.st_size);
+			log(LOG_DEBUG, "read returned %d", res);
+			if(res < 0) {
+				lerror("read");
+				for( ; fd_ptr != fds.end(); ++fd_ptr)
+					close(*fd_ptr);
+				delete []filedata;
+				return false;
+			}
+			st_stat.st_size -= res;
+			pos += res;
+		}
+	}
+	if(filedata + file_offset != pos)
+		log(LOG_ERR, "Potential problem, the amount of data read doesn't match up with the calculated amount of data required (Loaded %ld, expected %u)", (long)(pos - filedata), file_offset);
+	mb.setContent(filedata, file_offset);
+	delete []filedata;
+
+	mb.dump();
+
+	return simpleAction(mb);	
 }
 
 bool ServerConnection::registerEventCallback(string event, EventCallback func, void *custom) {
