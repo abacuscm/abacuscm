@@ -44,7 +44,7 @@ RunInfo::RunInfo(const char *filename) {
                     // uh-oh
                     // flag this somehow: set time exceeded but neither of the realTime or cpu variants
                     timeExceeded = true;
-                    log(LOG_ERR, "Invalid run-info string: '%s'", line + 7);
+                    log(LOG_DEBUG, "Invalid run-info string: '%s'", line + 7);
                 }
             }
             else if (strncmp(sub, "TERM", 4) == 0) {
@@ -61,17 +61,17 @@ RunInfo::RunInfo(const char *filename) {
                 }
                 else {
                     // uh-oh
-                    log(LOG_ERR, "Invalid run-info string: '%s'", line + 7);
+                    log(LOG_DEBUG, "Invalid run-info string: '%s'", line + 7);
                 }
             }
             else {
                 // uh-oh
-                log(LOG_ERR, "Invalid run-info string: '%s'", line + 7);
+                log(LOG_DEBUG, "Invalid run-info string: '%s'", line + 7);
             }
         }
         else {
             // uh-oh
-            log(LOG_ERR, "Invalid run-info string: '%s'", line + 7);
+            log(LOG_DEBUG, "Invalid run-info string: '%s'", line + 7);
         }
     }
     file_runinfo.close();

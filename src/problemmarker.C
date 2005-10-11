@@ -11,6 +11,8 @@ ProblemMarker::ProblemMarker() {
 	_mr = NULL;
     _server_con = NULL;
     _run_info = NULL;
+
+    _have_result = false;
 }
 
 ProblemMarker::~ProblemMarker() {
@@ -29,6 +31,15 @@ void ProblemMarker::setMarkRequest(MarkRequest *mr) {
 
 void ProblemMarker::setProblemAttributes(AttributeMap& attrs) {
 	_attribs = attrs;
+}
+
+void ProblemMarker::setResult(RunResult result) {
+    _result = result;
+    _have_result = true;
+}
+
+void ProblemMarker::addResultFile(std::string fileType, std::string filename) {
+    _result_files[fileType] = filename;
 }
 
 const Buffer& ProblemMarker::submission() {

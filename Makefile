@@ -47,6 +47,7 @@ abacus_objects = abacus \
 	sigsegv \
 	mainwindow \
 	problemconfig \
+	misc \
 	guievent \
 	ui_logindialog moc_ui_logindialog \
 	ui_aboutdialog moc_ui_aboutdialog \
@@ -69,6 +70,7 @@ markerd_objects = markerd \
 	compiledproblemmarker \
 	testcaseproblemmarker \
 	runinfo \
+	misc \
 	userprog \
 	c_cpp_userprog \
 	java_userprog \

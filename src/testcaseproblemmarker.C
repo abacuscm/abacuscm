@@ -37,6 +37,30 @@ void TestCaseProblemMarker::mark_compiled() {
             delete _run_info;
         _run_info = new RunInfo(runfile.c_str());
 
+        if (_run_info->timeExceeded) {
+            // exceeded time limit
+            // set some appropriate stuff, and return
+            // includes adding files to send to judges
+            log(LOG_DEBUG, "Program exceeded time limit (time was %u; %s time limit was exceeded)", _run_info->time, _run_info->cpuExceeded ? "cpu" : _run_info->realTimeExceeded ? "real" : "unknown");
+            setResult(TIME_EXCEEDED);
+            return;
+        }
+        if (!_run_info->normalTerm || _run_info->exitCode != 0) {
+            // bad exit code
+            // set some appropriate stuff, and return
+            // includes adding files to send to judges
+            if (_run_info->signalTerm)
+                log(LOG_DEBUG, "Abnormal termination of program (caught signal %d -- %s)", _run_info->signal, _run_info->signalName);
+            else
+                log(LOG_DEBUG, "Abnormal termination of program (non-zero exit code of %d)", _run_info->exitCode);
+            setResult(ABNORMAL);
+            return;
+        }
+
+        // if we get here, then we have a solution that completed in time,
+        // exited normally and had an exit code of 0 == good :-)
+        log(LOG_DEBUG, "Normal termination of program (finished in time of %u)", _run_info->time);
+
 		Buffer *out = getProblemFile("testcase.output");
 
 		if(!out) {
@@ -57,10 +81,14 @@ void TestCaseProblemMarker::mark_compiled() {
 
 		int excode = system(diff_cmd.c_str());
 		if(excode == 0) {
-			NOT_IMPLEMENTED();
+            NOT_IMPLEMENTED();
+            setResult(CORRECT);
 			log(LOG_DEBUG, "Correct!");
 		} else {
-			NOT_IMPLEMENTED();
+            NOT_IMPLEMENTED();
+            setResult(WRONG);
+            addResultFile("Team's output", outfile);
+            addResultFile("Diff of team's output versus expected output", difffile);
 			log(LOG_DEBUG, "Incorrect!");
 		}
 	} else {

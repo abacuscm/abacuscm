@@ -8,6 +8,7 @@
 #include "serverconnection.h"
 #include "buffer.h"
 #include "runinfo.h"
+#include "misc.h"
 
 class ProblemMarker;
 typedef ProblemMarker* (*ProblemMarkerFunctor)();
@@ -40,6 +41,12 @@ protected:
 	std::string language();
 
     RunInfo *_run_info;
+
+    bool _have_result;
+    RunResult _result;
+    std::map<std::string, std::string> _result_files;
+    void setResult(RunResult result);
+    void addResultFile(std::string filetype, std::string filename);
 
 public:
 	ProblemMarker();

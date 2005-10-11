@@ -12,4 +12,15 @@ typename std::list<_Type>::iterator list_find(std::list<_Type>& l, const _Type& 
 	return l.end();
 }
 
+typedef enum {
+    CORRECT = 0,
+    WRONG = 1,
+    TIME_EXCEEDED = 2,
+    ABNORMAL = 3,
+    COMPILE_FAILED = 4,
+    OTHER = 5
+} RunResult;
+
+extern char *runMessages[];
+
 #endif
