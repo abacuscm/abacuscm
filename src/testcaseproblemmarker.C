@@ -30,7 +30,13 @@ void TestCaseProblemMarker::mark_compiled() {
 	if(run(infile.c_str(),
 			outfile.c_str(),
 			errfile.c_str(),
-			runfile.c_str()) == 0) {
+           runfile.c_str()) == 0) {
+
+        // parse the runinfo output
+        if (_run_info)
+            delete _run_info;
+        _run_info = new RunInfo(runfile.c_str());
+
 		Buffer *out = getProblemFile("testcase.output");
 
 		if(!out) {

@@ -9,7 +9,8 @@ ProblemMarker::FunctorMap ProblemMarker::_functors
 
 ProblemMarker::ProblemMarker() {
 	_mr = NULL;
-	_server_con = NULL;
+    _server_con = NULL;
+    _run_info = NULL;
 }
 
 ProblemMarker::~ProblemMarker() {

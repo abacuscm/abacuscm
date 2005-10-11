@@ -7,6 +7,7 @@
 
 #include "serverconnection.h"
 #include "buffer.h"
+#include "runinfo.h"
 
 class ProblemMarker;
 typedef ProblemMarker* (*ProblemMarkerFunctor)();
@@ -29,7 +30,7 @@ private:
 	MarkRequest* _mr;
 	ServerConnection* _server_con;
 	std::string _workdir;
-	
+
 protected:
 	Buffer* getProblemFile(std::string attrib);
 	std::string attrib(std::string);
@@ -37,6 +38,9 @@ protected:
 
 	const Buffer& submission();
 	std::string language();
+
+    RunInfo *_run_info;
+
 public:
 	ProblemMarker();
 	virtual ~ProblemMarker();

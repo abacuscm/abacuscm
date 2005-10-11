@@ -68,6 +68,7 @@ markerd_objects = markerd \
 	problemmarker \
 	compiledproblemmarker \
 	testcaseproblemmarker \
+	runinfo \
 	userprog \
 	c_cpp_userprog \
 	java_userprog \
