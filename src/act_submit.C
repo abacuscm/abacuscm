@@ -43,7 +43,7 @@ protected:
 	virtual uint32_t load(const uint8_t* buffer, uint32_t size);
 public:
 	SubmissionMessage();
-	SubmissionMessage(uint32_t prob_id, uint32_t user_id, const char* content, uint32_t content_size, std::string language);
+	SubmissionMessage(uint32_t sub_id, uint32_t prob_id, uint32_t user_id, const char* content, uint32_t content_size, std::string language);
 	virtual ~SubmissionMessage();
 	
 	virtual bool process() const;
@@ -80,7 +80,11 @@ bool ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
 	if(lang != "C" && lang != "C++" && lang != "Java")
 		return cc->sendError("You have not specified the language");
 	
-	SubmissionMessage *msg = new SubmissionMessage(prob_id, user_id,
+	uint32_t sub_id = Server::nextSubmissionId();
+	if(sub_id == ~0U)
+		return cc->sendError("Internal server error. Error obtaining new submission id");
+
+	SubmissionMessage *msg = new SubmissionMessage(sub_id, prob_id, user_id,
 			mb->content(), mb->content_size(), lang);
 
 	log(LOG_INFO, "User %u submitted solution for problem %u", user_id, prob_id);
@@ -161,8 +165,8 @@ SubmissionMessage::SubmissionMessage() {
 	_language = "";
 }
 
-SubmissionMessage::SubmissionMessage(uint32_t prob_id, uint32_t user_id, const char* content, uint32_t content_size, std::string language) {
-	_submission_id = Server::nextSubmissionId();
+SubmissionMessage::SubmissionMessage(uint32_t sub_id, uint32_t prob_id, uint32_t user_id, const char* content, uint32_t content_size, std::string language) {
+	_submission_id = sub_id;
 	_time = ::time(NULL);
 	_user_id = user_id;
 	_prob_id = prob_id;
@@ -199,7 +203,7 @@ bool SubmissionMessage::process() const {
 	EventRegister::getInstance().sendMessage(_user_id, &mb);
 
 	if(db->getServerAttribute(Server::getId(), "marker") == "yes")
-		Markers::getInstance().enqueueSubmission(_user_id, _prob_id, _time);
+		Markers::getInstance().enqueueSubmission(_submission_id);
 
 	db->release();
 	

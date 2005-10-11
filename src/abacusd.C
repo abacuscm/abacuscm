@@ -175,7 +175,7 @@ static bool initialise() {
 
 	uint32_t local_id = db->name2server_id(localname);
 	MessageList msglist = db->getUnprocessedMessages();
-	list<SubId> sublist;
+	IdList sublist;
 	if(local_id && db->getServerAttribute(local_id, "marker") == "yes")
 		sublist = db->getUnmarked(local_id);
 	db->release();
@@ -216,8 +216,8 @@ static bool initialise() {
 	ClientAction::setMessageQueue(&message_queue);
 
 	message_queue.enqueue(msglist.begin(), msglist.end());
-	for(list<SubId>::iterator i = sublist.begin(); i != sublist.end(); ++i)
-		Markers::getInstance().enqueueSubmission(i->user_id, i->prob_id, i->time);
+	for(IdList::iterator i = sublist.begin(); i != sublist.end(); ++i)
+		Markers::getInstance().enqueueSubmission(*i);
 	Server::setAckQueue(&ack_queue);
 	Server::setTimedQueue(&timed_queue);
 

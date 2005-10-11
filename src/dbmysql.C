@@ -71,9 +71,9 @@ public:
 			uint32_t time, uint32_t server_id, char* content,
 			uint32_t content_size, std::string language);
 	virtual SubmissionList getSubmissions(uint32_t uid);
-	virtual bool retrieveSubmission(uint32_t user_id, uint32_t prob_id,
-			uint32_t time, char** buffer, int *length, string& language);
-	virtual list<SubId> getUnmarked(uint32_t server_id);
+	virtual bool retrieveSubmission(uint32_t sub_id, char** buffer, int *length,
+			string& language, uint32_t* prob_id);
+	virtual IdList getUnmarked(uint32_t server_id);
 	virtual bool contestRunning(uint32_t server_id, uint32_t unix_time);
 	virtual uint32_t contestTime(uint32_t server_id, uint32_t unix_time);
 	virtual bool startStopContest(uint32_t server_id, uint32_t unix_time, bool start);
@@ -731,11 +731,10 @@ SubmissionList MySQL::getSubmissions(uint32_t uid) {
 	return lst;
 }
 	
-bool MySQL::retrieveSubmission(uint32_t user_id, uint32_t prob_id, uint32_t time, char** buffer, int *length, string& language) {
+bool MySQL::retrieveSubmission(uint32_t sub_id, char** buffer, int *length, string& language, uint32_t* prob_id) {
 	ostringstream query;
-	query << "SELECT content, LENGTH(content), language FROM Submission WHERE "
-		<< " user_id=" << user_id << " AND prob_id=" << prob_id
-		<< " AND time=" << time;
+	query << "SELECT content, LENGTH(content), language, prob_id FROM Submission WHERE "
+		"submission_id = " << sub_id;
 
 	*buffer = NULL;
 
@@ -752,6 +751,8 @@ bool MySQL::retrieveSubmission(uint32_t user_id, uint32_t prob_id, uint32_t time
 				*buffer = new char[*length];
 				memcpy(*buffer, row[0], *length);
 				language = row[2];
+				if(prob_id)
+					*prob_id = strtoll(row[3], NULL, 0);
 			}
 			mysql_free_result(res);
 		}
@@ -760,12 +761,12 @@ bool MySQL::retrieveSubmission(uint32_t user_id, uint32_t prob_id, uint32_t time
 	return *buffer != NULL;
 }
 
-list<SubId> MySQL::getUnmarked(uint32_t server_id) {
+IdList MySQL::getUnmarked(uint32_t server_id) {
 	ostringstream query;
-	query << "SELECT user_id, prob_id, time FROM Submission WHERE (SELECT COUNT(*) FROM SubmissionMark WHERE SubmissionMark.user_id=Submission.user_id AND SubmissionMark.prob_id=Submission.prob_id AND SubmissionMark.time=Submission.time AND server_id=" << server_id << ") = 0 ORDER BY time";
+	query << "SELECT submission_id FROM Submission WHERE (SELECT COUNT(*) FROM SubmissionMark WHERE SubmissionMark.submission_id=Submission.submission_id AND server_id=" << server_id << ") = 0 ORDER BY time";
 
 	MYSQL_RES *res;
-	list<SubId> result;
+	IdList result;
 
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();
@@ -774,11 +775,7 @@ list<SubId> MySQL::getUnmarked(uint32_t server_id) {
 	} else {
 		MYSQL_ROW row;
 		while((row = mysql_fetch_row(res)) != NULL) {
-			SubId t;
-			t.user_id = strtoll(row[0], NULL, 0);
-			t.prob_id = strtoll(row[1], NULL, 0);
-			t.time = strtoll(row[2], NULL, 0);
-			result.push_back(t);
+			result.push_back(strtoll(row[0], NULL, 0));
 		}
 		mysql_free_result(res);
 	}

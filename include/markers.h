@@ -13,21 +13,13 @@ class Markers {
 private:
 	static Markers _instance;
 
-	typedef struct SubData {
-		uint32_t user_id;
-		uint32_t prob_id;
-		uint32_t time;
-		uint32_t hash;
-		ClientConnection* issued;
-	};
-
 	pthread_mutex_t _lock;
-	std::map<ClientConnection*, SubData*> _issued;
+	std::map<ClientConnection*, uint32_t> _issued;
 	std::list<ClientConnection*> _markers;
-	std::list<SubData*> _problems;
+	std::list<uint32_t> _problems;
 
-	void issue(ClientConnection*, SubData *);
-	void enqueueSubmission(SubData *);
+	void issue(ClientConnection*, uint32_t);
+	void real_enqueueSubmission(uint32_t);
 
 	Markers();
 	~Markers();
@@ -36,7 +28,7 @@ public:
 	void preemptMarker(ClientConnection*);
 
 	bool putMark(ClientConnection*, MessageBlock*);
-	void enqueueSubmission(uint32_t user_id, uint32_t prob_id, uint32_t time);
+	void enqueueSubmission(uint32_t);
 
 	static Markers& getInstance();
 };

@@ -32,7 +32,7 @@ void Markers::enqueueMarker(ClientConnection* cc) {
 		if(_problems.empty()) {
 			_markers.push_back(cc);
 		} else {
-			SubData *sd = _problems.front();
+			uint32_t sd = _problems.front();
 			_problems.pop_front();
 
 			issue(cc, sd);
@@ -46,19 +46,20 @@ void Markers::preemptMarker(ClientConnection* cc) {
 	pthread_mutex_lock(&_lock);
 	
 	std::list<ClientConnection*>::iterator i1;
-	std::map<ClientConnection*, SubData*>::iterator i2;
+	std::map<ClientConnection*, uint32_t>::iterator i2;
 
 	if((i1 = list_find(_markers, cc)) != _markers.end())
 		_markers.erase(i1);
 	else if((i2 = _issued.find(cc)) != _issued.end()) {
-		SubData *tmp = i2->second;
+		uint32_t tmp = i2->second;
 		_issued.erase(i2);
-		enqueueSubmission(tmp);
+		real_enqueueSubmission(tmp);
 	}
 	pthread_mutex_unlock(&_lock);
 }
 
-void Markers::enqueueSubmission(SubData *sd) {
+void Markers::real_enqueueSubmission(uint32_t sd) {
+	log(LOG_DEBUG, "Enqueueing submission %u for marking.", sd);
 	// we already have the lock at this point in time.
 	if(_markers.empty()) {
 		_problems.push_back(sd);
@@ -70,30 +71,14 @@ void Markers::enqueueSubmission(SubData *sd) {
 	}
 }
 
-void Markers::enqueueSubmission(uint32_t user_id, uint32_t prob_id, uint32_t time) {
-	log(LOG_DEBUG, "Enqueueing submission (%d,%d,%d) into Marking system", user_id, prob_id, time);
-
-	SubData *sd = new SubData;
-	sd->user_id = user_id;
-	sd->prob_id = prob_id;
-	sd->time = time;
-	sd->issued = NULL;
-
-	// this is more a 'token' resistance than anything else and is only
-	// meant to prevent accidental errors.
-	sd->hash = rand();
-
+void Markers::enqueueSubmission(uint32_t submission_id) {
 	pthread_mutex_lock(&_lock);
-	enqueueSubmission(sd);
+	real_enqueueSubmission(submission_id);
 	pthread_mutex_unlock(&_lock);
 }
 
-void Markers::issue(ClientConnection* cc, SubData* sd) {
+void Markers::issue(ClientConnection* cc, uint32_t sd) {
 	// We already have the lock.
-	char* content;
-	int length;
-	std::string language;
-
 	DbCon *db = DbCon::getInstance();
 	if(!db) {
 		log(LOG_CRIT, "Markers::issue() was unable to obtain a conenction to the database - this is _VERY_ serious!");
@@ -102,30 +87,34 @@ void Markers::issue(ClientConnection* cc, SubData* sd) {
 		return;
 	}
 
-	bool has_data = db->retrieveSubmission(sd->user_id, sd->prob_id, sd->time, &content, &length, language);
+	char* content;
+	int length;
+	std::string language;
+	uint32_t prob_id;
+	
+	bool has_data = db->retrieveSubmission(sd, &content, &length, language, &prob_id);
 	db->release();
-
+	
 	if(!has_data) {
-		log(LOG_CRIT, "Markers::issue() was unable to obtain the actual submission data - this is _VERY_ serious!");
+		log(LOG_CRIT, "Markers::issue() was unable to obtain the actual submission data (submission_id=%u) - this is _VERY_ serious!", sd);
 		_problems.push_back(sd);
 		_markers.push_back(cc);
 		return;
 	}
 
-	log(LOG_DEBUG, "Issueing (%d,%d,%d) to %p", sd->user_id, sd->prob_id, sd->time, cc);
+	log(LOG_DEBUG, "Issueing submission %u to %p", sd, cc);
 
 	std::ostringstream tmp;
 	
 	MessageBlock mb("mark");
-	tmp << sd->hash;
-	mb["submission_hash"] = tmp.str();
-	tmp.str(""); tmp << sd->prob_id;
+	tmp << sd;
+	mb["submission_id"] = tmp.str();
+	tmp.str(""); tmp  << prob_id;
 	mb["prob_id"] = tmp.str();
 	mb["language"] = language;
 	mb.setContent(content, length);
 
 	if(cc->sendMessageBlock(&mb)) {
-		sd->issued = cc;
 		_issued[cc] = sd;
 	} else 
 		enqueueSubmission(sd);
