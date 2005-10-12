@@ -26,6 +26,7 @@ public:
 	virtual bool ok();
 	virtual uint32_t name2server_id(const string& name);
 	virtual uint32_t name2user_id(const string& name);
+	virtual std::string user_id2name(uint32_t user_id);
 	virtual ServerList getServers();
 	virtual string getServerAttribute(uint32_t server_id,
 			const string& attribute);
@@ -88,6 +89,7 @@ public:
 	virtual bool putMarkFile(uint32_t submission_id, uint32_t marker_id,
 			std::string name, const void* data, uint32_t len);
 	virtual bool getSubmissionState(uint32_t submission_id, RunResult& state, uint32_t& utype, string& comment);
+	virtual uint32_t submission2userid(uint32_t submission_id);
 	virtual bool contestRunning(uint32_t server_id, uint32_t unix_time);
 	virtual uint32_t contestTime(uint32_t server_id, uint32_t unix_time);
 	virtual bool startStopContest(uint32_t server_id, uint32_t unix_time, bool start);
@@ -180,6 +182,31 @@ uint32_t MySQL::name2user_id(const string& name) {
 	mysql_free_result(res);
 
 	return user_id;
+}
+	
+std::string MySQL::user_id2name(uint32_t user_id) {
+	string username;
+	ostringstream query;
+	query << "SELECT username FROM User WHERE user_id=" << user_id;
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return "";
+	}
+
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if(!res) {
+		log_mysql_error();
+		return "";
+	}
+
+	MYSQL_ROW row = mysql_fetch_row(res);
+	if(row)
+		username = row[0];
+
+	mysql_free_result(res);
+
+	return username;
 }
 
 ServerList MySQL::getServers() {
@@ -716,7 +743,7 @@ bool MySQL::putSubmission(uint32_t submission_id, uint32_t user_id, uint32_t pro
 
 SubmissionList MySQL::getSubmissions(uint32_t uid) {
 	ostringstream query;
-	query << "SELECT submission_id, time, value FROM User, ProblemAttributes, Submission WHERE User.user_id = Submission.user_id AND Submission.prob_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute = 'shortname'";
+	query << "SELECT submission_id, time, value, Submission.prob_id FROM User, ProblemAttributes, Submission WHERE User.user_id = Submission.user_id AND Submission.prob_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute = 'shortname'";
 	
 	if(uid)
 		query << " AND User.user_id = " << uid;
@@ -737,6 +764,7 @@ SubmissionList MySQL::getSubmissions(uint32_t uid) {
 		attrs["submission_id"] = row[0];
 		attrs["time"] = row[1];
 		attrs["problem"] = row[2];
+		attrs["prob_id"] = row[3];
 
 		lst.push_back(attrs);
 	}
@@ -944,6 +972,29 @@ bool MySQL::getSubmissionState(uint32_t submission_id, RunResult& state, uint32_
 
 		mysql_free_result(res);
 		return result;
+	}
+}
+
+uint32_t MySQL::submission2userid(uint32_t submission_id) {
+	ostringstream query;
+	query << "SELECT user_id FROM Submission WHERE submission_id = " << submission_id;
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return ~0U;
+	} else {
+		MYSQL_RES* res = mysql_use_result(&_mysql);
+		if(!res) {
+			log_mysql_error();
+			return ~0U;
+		}
+
+		uint32_t uid = ~0U;
+		MYSQL_ROW row = mysql_fetch_row(res);
+		if(row)
+			uid = strtoll(row[0], NULL, 0);
+		mysql_free_result(res);
+		return uid;
 	}
 }
 

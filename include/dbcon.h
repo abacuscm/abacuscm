@@ -45,6 +45,7 @@ public:
 	 * maps a username to a user_id
 	 */
 	virtual uint32_t name2user_id(const std::string& name) = 0;
+	virtual std::string user_id2name(uint32_t user_id) = 0;
 
 	/**
 	 * Retrieves an attribute value for a server.
@@ -263,6 +264,7 @@ public:
 			std::string name, const void* data, uint32_t len) = 0;
 	
 	virtual bool getSubmissionState(uint32_t submission_id, RunResult& state, uint32_t& utype, std::string& comment) = 0;
+	virtual uint32_t submission2userid(uint32_t submission_id) = 0;
 	
 	/**
 	 * Functions for determining the contest state - they really don't

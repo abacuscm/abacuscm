@@ -98,6 +98,7 @@ modules = udpmessenger \
 	act_status \
 	act_serverlist \
 	act_submit \
+	act_standings \
 	act_events \
 	act_mark \
 	act_startstop \
