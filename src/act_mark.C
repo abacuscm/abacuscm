@@ -141,7 +141,7 @@ uint32_t MarkMessage::store(uint8_t *buffer, uint32_t size) {
 		memcpy(pos, i->data, i->len); pos += i->len;
 	}
 	
-	if(pos - buffer > size)
+	if((uint32_t)(pos - buffer) > size)
 		log(LOG_ERR, "Buffer overflow detected - expect SEGFAULTS");
 	
 	return pos - buffer;
@@ -221,7 +221,7 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 	MarkMessage *markmsg = new MarkMessage(submission_id, cc->getProperty("user_id"), result, comment);
 	int c = 0;
 	regex_t file_reg;
-	regcomp(&file_reg, "^([0-9]{1,7}) ([0-9]{1,7}) ([-[:alnum:] _.]+)$", REG_EXTENDED);
+	regcomp(&file_reg, "^([0-9]{1,7}) ([0-9]{1,7}) ([[:print:]]+)$", REG_EXTENDED);
 	while(true) {
 		ostringstream ostrstrm;
 		ostrstrm << "file" << c++;
