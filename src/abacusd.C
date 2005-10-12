@@ -24,6 +24,7 @@
 #include "message_type_ids.h"
 #include "timedaction.h"
 #include "markers.h"
+#include "eventregister.h"
 
 #define DEFAULT_MIN_IDLE_WORKERS		5
 #define DEFAULT_MAX_IDLE_WORKERS		10
@@ -218,6 +219,18 @@ static bool initialise() {
 	message_queue.enqueue(msglist.begin(), msglist.end());
 	for(IdList::iterator i = sublist.begin(); i != sublist.end(); ++i)
 		Markers::getInstance().enqueueSubmission(*i);
+
+	db = DbCon::getInstance();
+	if(db) {
+		ProblemList problst = db->getProblems();
+		for(ProblemList::iterator j = problst.begin(); j != problst.end(); ++j) {
+			AttributeList prob = db->getProblemAttributes(*j);
+			EventRegister::getInstance().registerEvent("judge_" + prob["shortname"]);
+		}
+		db->release();
+	} else
+		log(LOG_ERR, "Error obtaining DbCon to load existing problems");
+
 	Server::setAckQueue(&ack_queue);
 	Server::setTimedQueue(&timed_queue);
 

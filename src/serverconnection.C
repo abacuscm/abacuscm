@@ -589,14 +589,14 @@ vector<bool> ServerConnection::getSubscriptions(vector<ProblemInfo> problems) {
 bool ServerConnection::subscribeToProblem(ProblemInfo info) {
     MessageBlock mb("problem_subscription");
     mb["action"] = "subscribe";
-    mb["event"] = string("judge_") + info.name;
+    mb["event"] = string("judge_") + info.code;
     return simpleAction(mb);
 }
 
 bool ServerConnection::unsubscribeToProblem(ProblemInfo info) {
     MessageBlock mb("problem_subscription");
     mb["action"] = "unsubscribe";
-    mb["event"] = string("judge_") + info.name;
+    mb["event"] = string("judge_") + info.code;
     return simpleAction(mb);
 }
 

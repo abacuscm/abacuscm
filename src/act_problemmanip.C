@@ -7,13 +7,13 @@
 #include "message_type_ids.h"
 #include "server.h"
 #include "dbcon.h"
+#include "eventregister.h"
 
 #include <map>
 #include <string>
 #include <algorithm>
 #include <iterator>
 #include <sstream>
-
 #include <sys/types.h>
 #include <regex.h>
 #include <time.h>
@@ -338,10 +338,14 @@ bool ProbMessage::process() const {
 	for(i = _ints.begin(); i != _ints.end(); ++i) {
 		result &= db->setProblemAttribute(_prob_id, i->first, i->second);
 	}
+
+	string code;
 	
 	StringMap::const_iterator s;
 	for(s = _strings.begin(); s != _strings.end(); ++s) {
 		result &= db->setProblemAttribute(_prob_id, s->first, s->second);
+		if(s->first == "shortname")
+			code = s->second;
 	}
 
 	result &= db->setProblemUpdateTime(_prob_id, _update_time);
@@ -353,6 +357,9 @@ bool ProbMessage::process() const {
 
 	db->release();
 	
+	if(ex_prob_type == "" && code != "")
+		EventRegister::getInstance().registerEvent("judge_" + code);
+
 	return result;
 }
 
