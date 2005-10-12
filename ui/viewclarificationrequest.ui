@@ -1,8 +1,8 @@
 <!DOCTYPE UI><UI version="3.3" stdsetdef="1">
-<class>ClarificationRequest</class>
+<class>ViewClarificationRequest</class>
 <widget class="QDialog">
     <property name="name">
-        <cstring>ClarificationRequest</cstring>
+        <cstring>ViewClarificationRequest</cstring>
     </property>
     <property name="geometry">
         <rect>
@@ -24,29 +24,21 @@
         </property>
         <widget class="QLayoutWidget">
             <property name="name">
-                <cstring>layout4</cstring>
+                <cstring>layout7</cstring>
             </property>
             <grid>
                 <property name="name">
                     <cstring>unnamed</cstring>
                 </property>
-                <widget class="QLabel" row="0" column="0">
+                <widget class="QLabel" row="0" column="1">
                     <property name="name">
-                        <cstring>textLabel1</cstring>
+                        <cstring>problem</cstring>
                     </property>
                     <property name="text">
-                        <string>Problem:</string>
-                    </property>
-                    <property name="buddy" stdset="0">
-                        <cstring>problemSelection</cstring>
+                        <string>problem</string>
                     </property>
                 </widget>
-                <widget class="QComboBox" row="0" column="1">
-                    <property name="name">
-                        <cstring>problemSelection</cstring>
-                    </property>
-                </widget>
-                <widget class="QTextEdit" row="1" column="1">
+                <widget class="QTextBrowser" row="1" column="1">
                     <property name="name">
                         <cstring>question</cstring>
                     </property>
@@ -65,21 +57,26 @@
                         <cstring>question</cstring>
                     </property>
                 </widget>
+                <widget class="QLabel" row="0" column="0">
+                    <property name="name">
+                        <cstring>textLabel1</cstring>
+                    </property>
+                    <property name="text">
+                        <string>Problem:</string>
+                    </property>
+                    <property name="buddy" stdset="0">
+                        <cstring>problemSelection</cstring>
+                    </property>
+                </widget>
             </grid>
         </widget>
         <widget class="QLayoutWidget">
             <property name="name">
-                <cstring>Layout1</cstring>
+                <cstring>layout3</cstring>
             </property>
             <hbox>
                 <property name="name">
                     <cstring>unnamed</cstring>
-                </property>
-                <property name="margin">
-                    <number>0</number>
-                </property>
-                <property name="spacing">
-                    <number>6</number>
                 </property>
                 <spacer>
                     <property name="name">
@@ -93,7 +90,7 @@
                     </property>
                     <property name="sizeHint">
                         <size>
-                            <width>20</width>
+                            <width>333</width>
                             <height>20</height>
                         </size>
                     </property>
@@ -117,16 +114,13 @@
                 </widget>
                 <widget class="QPushButton">
                     <property name="name">
-                        <cstring>buttonCancel</cstring>
+                        <cstring>reply</cstring>
                     </property>
                     <property name="text">
-                        <string>&amp;Cancel</string>
+                        <string>&amp;Reply</string>
                     </property>
                     <property name="accel">
-                        <string></string>
-                    </property>
-                    <property name="autoDefault">
-                        <bool>true</bool>
+                        <string>Alt+R</string>
                     </property>
                 </widget>
             </hbox>
@@ -137,21 +131,21 @@
     <connection>
         <sender>buttonOk</sender>
         <signal>clicked()</signal>
-        <receiver>ClarificationRequest</receiver>
+        <receiver>ViewClarificationRequest</receiver>
         <slot>accept()</slot>
     </connection>
     <connection>
-        <sender>buttonCancel</sender>
+        <sender>reply</sender>
         <signal>clicked()</signal>
-        <receiver>ClarificationRequest</receiver>
-        <slot>reject()</slot>
+        <receiver>ViewClarificationRequest</receiver>
+        <slot>doReply()</slot>
     </connection>
 </connections>
 <tabstops>
-    <tabstop>problemSelection</tabstop>
-    <tabstop>question</tabstop>
     <tabstop>buttonOk</tabstop>
-    <tabstop>buttonCancel</tabstop>
 </tabstops>
+<slots>
+    <slot access="protected" specifier="pure virtual">doReply()</slot>
+</slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

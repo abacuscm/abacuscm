@@ -57,6 +57,10 @@ abacus_objects = abacus \
 	ui_mainwindowbase moc_ui_mainwindowbase \
 	ui_changepassworddialog moc_ui_changepassworddialog \
 	ui_clarificationrequest moc_ui_clarificationrequest \
+	ui_viewclarificationrequest moc_ui_viewclarificationrequest \
+	viewclarificationrequestsub \
+	ui_clarificationreply moc_ui_clarificationreply \
+	ui_viewclarificationreply moc_ui_viewclarificationreply \
 	ui_problemsubscription moc_ui_problemsubscription
 $(abacus_name) : ldflags += -L$(QTDIR)/lib -lqt -labacus-client
 $(abacus_name) : $(libabacus_c_name)

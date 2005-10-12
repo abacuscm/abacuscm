@@ -638,6 +638,26 @@ bool ServerConnection::clarificationRequest(uint32_t prob_id, const string& ques
 	return simpleAction(mb);
 }
 
+bool ServerConnection::clarificationReply(uint32_t clarification_req_id,
+                                          bool pub,
+                                          const string& answer) {
+        if (!_ssl)
+                return false;
+
+        ostringstream str_cr_id;
+        str_cr_id << clarification_req_id;
+
+	string flatanswer = answer;
+	replace(flatanswer.begin(), flatanswer.end(), '\n', ' ');
+
+	MessageBlock mb("clarification");
+	mb["clarification_request_id"] = str_cr_id.str();
+        mb["answer"] = flatanswer;
+        mb["public"] = pub ? "1" : "0";
+
+        return simpleAction(mb);
+}
+
 SubmissionList ServerConnection::getSubmissions() {
 	if(!_ssl)
 		return SubmissionList();
@@ -659,7 +679,7 @@ ClarificationList ServerConnection::getClarifications() {
 
 	MessageBlock mb("getclarifications");
 	list<string> attrs;
-	attrs.push_back("contestant");
+	attrs.push_back("id");
 	attrs.push_back("time");
 	attrs.push_back("problem");
 	attrs.push_back("question");
@@ -673,8 +693,8 @@ ClarificationRequestList ServerConnection::getClarificationRequests() {
 		return ClarificationRequestList();
 
 	MessageBlock mb("getclarificationrequests");
-	list<string> attrs;
-	attrs.push_back("contestant");
+        list<string> attrs;
+        attrs.push_back("id");
 	attrs.push_back("time");
 	attrs.push_back("problem");
 	attrs.push_back("question");

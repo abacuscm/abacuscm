@@ -24,6 +24,7 @@ public:
 	static uint32_t nextServerId();
 	static uint32_t nextSubmissionId();
 	static uint32_t nextClarificationRequestId();
+	static uint32_t nextClarificationId();
 	static uint32_t nextProblemId();
 	static bool hasMessage(uint32_t server_id, uint32_t message_id);
 	static void putAck(uint32_t server_id, uint32_t message_id,

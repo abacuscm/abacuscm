@@ -76,6 +76,10 @@ public:
 	virtual bool putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t prob_id,
 					     uint32_t time, uint32_t server_id,
 					     const std::string& question);
+        virtual bool putClarification(uint32_t cr_id, uint32_t c_id,
+                                      uint32_t user_id, uint32_t time,
+                                      uint32_t server_id, uint32_t pub,
+                                      const std::string& answer);
 	virtual bool retrieveSubmission(uint32_t sub_id, char** buffer, int *length,
 			string& language, uint32_t* prob_id);
 	virtual IdList getUnmarked(uint32_t server_id);
@@ -743,7 +747,7 @@ SubmissionList MySQL::getSubmissions(uint32_t uid) {
 
 ClarificationList MySQL::getClarifications(uint32_t uid) {
 	ostringstream query;
-	query << "SELECT username, value, Clarification.time, ClarificationRequest.text, Clarification.text FROM Clarification LEFT JOIN ClarificationRequest USING(clarification_req_id) LEFT JOIN User ON Clarification.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ProblemAttributes.problem_id = ClarificationRequest.problem_id AND ProblemAttributes.attribute = 'shortname'";
+	query << "SELECT Clarification.clarification_id, username, value, Clarification.time, ClarificationRequest.text, Clarification.text FROM Clarification LEFT JOIN ClarificationRequest USING(clarification_req_id) LEFT JOIN User ON Clarification.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ProblemAttributes.problem_id = ClarificationRequest.problem_id AND ProblemAttributes.attribute = 'shortname'";
 	if (uid)
 		query << " WHERE Clarification.public != 0 OR ClarificationRequest.user_id = " << uid;
 	query << " ORDER BY TIME";
@@ -758,11 +762,12 @@ ClarificationList MySQL::getClarifications(uint32_t uid) {
 	MYSQL_ROW row;
 	while ((row = mysql_fetch_row(res)) != 0) {
 		AttributeList attrs;
-		/* Leave out Judge for now; can be added as row[0] later */
-		attrs["problem"] = row[1] ? row[1] : "General";
-		attrs["time"] = row[2];
-		attrs["question"] = row[3];
-		attrs["answer"] = row[4];
+                attrs["id"] = row[0];
+		/* Leave out Judge for now; can be added as row[1] later */
+		attrs["problem"] = row[2] ? row[2] : "General";
+		attrs["time"] = row[3];
+		attrs["question"] = row[4];
+		attrs["answer"] = row[5];
 
 		lst.push_back(attrs);
 	}
@@ -774,7 +779,7 @@ ClarificationList MySQL::getClarifications(uint32_t uid) {
 ClarificationRequestList MySQL::getClarificationRequests(uint32_t uid) {
 	ostringstream query;
 
-	query << "SELECT username, value, ClarificationRequest.time, ClarificationRequest.text AS question, COUNT(clarification_id) AS answers FROM ClarificationRequest LEFT OUTER JOIN Clarification USING(clarification_req_id) LEFT JOIN User ON ClarificationRequest.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ClarificationRequest.problem_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute='shortname'";
+	query << "SELECT ClarificationRequest.clarification_req_id, username, value, ClarificationRequest.time, ClarificationRequest.text AS question, COUNT(clarification_id) AS answers FROM ClarificationRequest LEFT OUTER JOIN Clarification USING(clarification_req_id) LEFT JOIN User ON ClarificationRequest.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ClarificationRequest.problem_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute='shortname'";
 	if (uid) query << " WHERE ClarificationRequest.user_id = " << uid;
 	query << " GROUP BY ClarificationRequest.clarification_req_id ORDER BY ClarificationRequest.time";
 
@@ -788,11 +793,12 @@ ClarificationRequestList MySQL::getClarificationRequests(uint32_t uid) {
 	MYSQL_ROW row;
 	while ((row = mysql_fetch_row(res)) != 0) {
 		AttributeList attrs;
+                attrs["id"] = row[0];
 		/* Leave out contestant for now; can be used later */
-		attrs["problem"] = row[1] ? row[1] : "General";
-		attrs["time"] = row[2];
-		attrs["question"] = row[3];
-		attrs["status"] = atoi(row[4]) ? "answered" : "pending";
+		attrs["problem"] = row[2] ? row[2] : "General";
+		attrs["time"] = row[3];
+		attrs["question"] = row[4];
+		attrs["status"] = atoi(row[5]) ? "answered" : "pending";
 
 		lst.push_back(attrs);
 	}
@@ -803,11 +809,26 @@ ClarificationRequestList MySQL::getClarificationRequests(uint32_t uid) {
 
 bool MySQL::putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t prob_id,
 				    uint32_t time, uint32_t server_id,
-				    const std::string& question)
-{
+                                    const std::string& question) {
 	ostringstream query;
 	query << "INSERT INTO ClarificationRequest (clarification_req_id, user_id, problem_id, time, text)";
 	query << " VALUES (" << cr_id << ", " << user_id << ", " << prob_id << ", " << time << ", '" << escape_string(question) << "')";
+
+	if (mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	}
+
+	return true;
+}
+
+bool MySQL::putClarification(uint32_t cr_id, uint32_t c_id,
+                             uint32_t user_id, uint32_t time,
+                             uint32_t server_id, uint32_t pub,
+                             const std::string& answer) {
+        ostringstream query;
+        query << "INSERT INTO Clarification (clarification_id, clarification_req_id, user_id, time, public, text)";
+        query << " VALUES (" << cr_id << ", " << c_id << ", " << user_id << ", " << time << ", " << (pub ? 1 : 0) << ", '" << escape_string(answer) << "')";
 
 	if (mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();

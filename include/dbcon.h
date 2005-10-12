@@ -241,6 +241,14 @@ public:
 					     uint32_t time, uint32_t server_id,
 					     const std::string& question) = 0;
 
+        /**
+         * Add a clarification to the database
+         */
+        virtual bool putClarification(uint32_t cr_id, uint32_t c_id,
+                                      uint32_t user_id, uint32_t time,
+                                      uint32_t server_id, uint32_t pub,
+                                      const std::string& answer) = 0;
+
 	/**
 	 * Retrieve Submission content (and language).
 	 */

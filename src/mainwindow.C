@@ -6,8 +6,11 @@
 #include "ui_adduser.h"
 #include "ui_submit.h"
 #include "ui_clarificationrequest.h"
+#include "ui_viewclarificationrequest.h"
+#include "ui_viewclarificationreply.h"
 #include "ui_changepassworddialog.h"
 #include "ui_problemsubscription.h"
+#include "viewclarificationrequestsub.h"
 #include "problemconfig.h"
 #include "guievent.h"
 #include "messageblock.h"
@@ -27,6 +30,8 @@
 #include <qbuttongroup.h>
 #include <qcheckbox.h>
 #include <qlayout.h>
+#include <qlabel.h>
+#include <qtextbrowser.h>
 
 #include <time.h>
 
@@ -411,9 +416,28 @@ void MainWindow::doClarificationRequest() {
         updateClarificationRequests();
 }
 
+void MainWindow::doShowClarificationRequest(QListViewItem *item) {
+	ViewClarificationRequestSub vcr(atol(item->text(0)), &_server_con);
+
+        if (_active_type == "contestant")
+            vcr.reply->setEnabled(false);
+	vcr.problem->setText(item->text(2));
+	vcr.question->setText(item->text(3));
+        vcr.exec();
+}
+
+void MainWindow::doShowClarificationReply(QListViewItem *item) {
+	ViewClarificationReply vcr;
+
+	vcr.problem->setText(item->text(2));
+	vcr.question->setText(item->text(3));
+	vcr.answer->setText(item->text(4));
+        vcr.exec();
+}
+
 void MainWindow::doJudgeSubscribeToProblems() {
-    ProblemSubscriptionDialog problem_subscription_dialog;
-    std::vector<QCheckBox *> problem_subscription_buttons;
+	ProblemSubscriptionDialog problem_subscription_dialog;
+	std::vector<QCheckBox *> problem_subscription_buttons;
 
 	// first, get a list of all problems
 	std::vector<ProblemInfo> problems = _server_con.getProblems();
@@ -534,10 +558,11 @@ void MainWindow::updateClarifications() {
 		localtime_r(&time, &time_tm);
 		strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
 		
-		item->setText(0, time_buffer);
-		item->setText(1, (*l)["problem"]);
-		item->setText(2, (*l)["question"]);
-		item->setText(3, (*l)["answer"]);
+		item->setText(0, (*l)["id"]);
+		item->setText(1, time_buffer);
+		item->setText(2, (*l)["problem"]);
+		item->setText(3, (*l)["question"]);
+		item->setText(4, (*l)["answer"]);
 
 		for(a = l->begin(); a != l->end(); ++a)
 			log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());
@@ -562,10 +587,11 @@ void MainWindow::updateClarificationRequests() {
 		localtime_r(&time, &time_tm);
 		strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
 		
-		item->setText(0, time_buffer);
-		item->setText(1, (*l)["problem"]);
-		item->setText(2, (*l)["question"]);
-		item->setText(3, (*l)["status"]);
+		item->setText(0, (*l)["id"]);
+		item->setText(1, time_buffer);
+		item->setText(2, (*l)["problem"]);
+		item->setText(3, (*l)["question"]);
+		item->setText(4, (*l)["status"]);
 
 		for(a = l->begin(); a != l->end(); ++a)
 			log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());

@@ -29,10 +29,12 @@ protected:
 	virtual void doAdminCreateUser();
 	virtual void doAdminProblemConfig();
         virtual void doSubmit();
-        virtual void doClarificationRequest();
+	virtual void doClarificationRequest();
+	virtual void doShowClarificationRequest(QListViewItem*);
+	virtual void doShowClarificationReply(QListViewItem*);
 	virtual void tabChanged(QWidget*);
 	virtual void doChangePassword();
-    virtual void doJudgeSubscribeToProblems();
+	virtual void doJudgeSubscribeToProblems();
 
 	virtual void customEvent(QCustomEvent *ev);
 public:

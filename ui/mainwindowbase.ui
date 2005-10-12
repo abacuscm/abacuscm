@@ -8,7 +8,7 @@
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>575</width>
+            <width>594</width>
             <height>425</height>
         </rect>
     </property>
@@ -241,6 +241,17 @@
                     <widget class="QListView">
                         <column>
                             <property name="text">
+                                <string>ID</string>
+                            </property>
+                            <property name="clickable">
+                                <bool>true</bool>
+                            </property>
+                            <property name="resizable">
+                                <bool>true</bool>
+                            </property>
+                        </column>
+                        <column>
+                            <property name="text">
                                 <string>Time</string>
                             </property>
                             <property name="clickable">
@@ -354,6 +365,17 @@
                         <cstring>unnamed</cstring>
                     </property>
                     <widget class="QListView">
+                        <column>
+                            <property name="text">
+                                <string>ID</string>
+                            </property>
+                            <property name="clickable">
+                                <bool>true</bool>
+                            </property>
+                            <property name="resizable">
+                                <bool>true</bool>
+                            </property>
+                        </column>
                         <column>
                             <property name="text">
                                 <string>Time</string>
@@ -877,6 +899,18 @@
         <receiver>judgesSubscribeToProblemsAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
+    <connection>
+        <sender>clarificationRequests</sender>
+        <signal>doubleClicked(QListViewItem*)</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>doShowClarificationRequest(QListViewItem*)</slot>
+    </connection>
+    <connection>
+        <sender>clarifications</sender>
+        <signal>doubleClicked(QListViewItem*)</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>doShowClarificationReply(QListViewItem*)</slot>
+    </connection>
 </connections>
 <signals>
     <signal>signalAdminControls(bool)</signal>
@@ -894,6 +928,8 @@
     <slot access="protected" specifier="pure virtual">tabChanged(QWidget *newtab)</slot>
     <slot access="protected" specifier="pure virtual">doClarificationRequest()</slot>
     <slot access="protected">doJudgeSubscribeToProblems()</slot>
+    <slot access="protected" specifier="pure virtual">doShowClarificationRequest(QListViewItem *item)</slot>
+    <slot access="protected" specifier="pure virtual">doShowClarificationReply(QListViewItem *item)</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

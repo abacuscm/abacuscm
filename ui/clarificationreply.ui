@@ -1,19 +1,19 @@
 <!DOCTYPE UI><UI version="3.3" stdsetdef="1">
-<class>ClarificationRequest</class>
+<class>ClarificationReply</class>
 <widget class="QDialog">
     <property name="name">
-        <cstring>ClarificationRequest</cstring>
+        <cstring>ClarificationReply</cstring>
     </property>
     <property name="geometry">
         <rect>
             <x>0</x>
             <y>0</y>
             <width>443</width>
-            <height>228</height>
+            <height>382</height>
         </rect>
     </property>
     <property name="caption">
-        <string>Clarification request</string>
+        <string>Clarification reply</string>
     </property>
     <property name="sizeGripEnabled">
         <bool>true</bool>
@@ -30,6 +30,34 @@
                 <property name="name">
                     <cstring>unnamed</cstring>
                 </property>
+                <widget class="QLabel" row="0" column="1">
+                    <property name="name">
+                        <cstring>problem</cstring>
+                    </property>
+                    <property name="text">
+                        <string>problem</string>
+                    </property>
+                </widget>
+                <widget class="QComboBox" row="3" column="1">
+                    <item>
+                        <property name="text">
+                            <string>Requesting team only</string>
+                        </property>
+                    </item>
+                    <item>
+                        <property name="text">
+                            <string>All teams</string>
+                        </property>
+                    </item>
+                    <property name="name">
+                        <cstring>visibility</cstring>
+                    </property>
+                </widget>
+                <widget class="QTextEdit" row="2" column="1">
+                    <property name="name">
+                        <cstring>answer</cstring>
+                    </property>
+                </widget>
                 <widget class="QLabel" row="0" column="0">
                     <property name="name">
                         <cstring>textLabel1</cstring>
@@ -41,17 +69,34 @@
                         <cstring>problemSelection</cstring>
                     </property>
                 </widget>
-                <widget class="QComboBox" row="0" column="1">
+                <widget class="QLabel" row="3" column="0">
                     <property name="name">
-                        <cstring>problemSelection</cstring>
+                        <cstring>textLabel1_2</cstring>
+                    </property>
+                    <property name="text">
+                        <string>Visibility</string>
+                    </property>
+                    <property name="buddy" stdset="0">
+                        <cstring>visibility</cstring>
                     </property>
                 </widget>
-                <widget class="QTextEdit" row="1" column="1">
+                <widget class="QTextBrowser" row="1" column="1">
                     <property name="name">
                         <cstring>question</cstring>
                     </property>
                     <property name="textFormat">
                         <enum>PlainText</enum>
+                    </property>
+                </widget>
+                <widget class="QLabel" row="2" column="0">
+                    <property name="name">
+                        <cstring>textLabel2_2</cstring>
+                    </property>
+                    <property name="text">
+                        <string>Reply</string>
+                    </property>
+                    <property name="buddy" stdset="0">
+                        <cstring>question</cstring>
                     </property>
                 </widget>
                 <widget class="QLabel" row="1" column="0">
@@ -69,17 +114,11 @@
         </widget>
         <widget class="QLayoutWidget">
             <property name="name">
-                <cstring>Layout1</cstring>
+                <cstring>layout3</cstring>
             </property>
             <hbox>
                 <property name="name">
                     <cstring>unnamed</cstring>
-                </property>
-                <property name="margin">
-                    <number>0</number>
-                </property>
-                <property name="spacing">
-                    <number>6</number>
                 </property>
                 <spacer>
                     <property name="name">
@@ -93,7 +132,7 @@
                     </property>
                     <property name="sizeHint">
                         <size>
-                            <width>20</width>
+                            <width>333</width>
                             <height>20</height>
                         </size>
                     </property>
@@ -120,13 +159,7 @@
                         <cstring>buttonCancel</cstring>
                     </property>
                     <property name="text">
-                        <string>&amp;Cancel</string>
-                    </property>
-                    <property name="accel">
-                        <string></string>
-                    </property>
-                    <property name="autoDefault">
-                        <bool>true</bool>
+                        <string>Cancel</string>
                     </property>
                 </widget>
             </hbox>
@@ -137,21 +170,18 @@
     <connection>
         <sender>buttonOk</sender>
         <signal>clicked()</signal>
-        <receiver>ClarificationRequest</receiver>
+        <receiver>ClarificationReply</receiver>
         <slot>accept()</slot>
     </connection>
     <connection>
         <sender>buttonCancel</sender>
         <signal>clicked()</signal>
-        <receiver>ClarificationRequest</receiver>
+        <receiver>ClarificationReply</receiver>
         <slot>reject()</slot>
     </connection>
 </connections>
 <tabstops>
-    <tabstop>problemSelection</tabstop>
-    <tabstop>question</tabstop>
     <tabstop>buttonOk</tabstop>
-    <tabstop>buttonCancel</tabstop>
 </tabstops>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

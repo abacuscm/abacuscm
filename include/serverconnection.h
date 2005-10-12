@@ -102,7 +102,8 @@ public:
 	bool getProblemAttributes(uint32_t prob_id, AttributeMap& attrs);
 	bool getProblemFile(uint32_t prob_id, std::string attrib, char **bufferptr, uint32_t *bufferlen);
 	bool submit(uint32_t prob_id, int fd, const std::string& language);
-	bool clarificationRequest(uint32_t prob_id, const std::string& question);
+        bool clarificationRequest(uint32_t prob_id, const std::string& question);
+        bool clarificationReply(uint32_t clarification_req_id, bool pub, const std::string& answer);
 	SubmissionList getSubmissions();
 	ClarificationList getClarifications();
 	ClarificationRequestList getClarificationRequests();
