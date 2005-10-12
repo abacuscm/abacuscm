@@ -25,6 +25,10 @@ bool ClientListener::init(SocketPool *pool) {
 		return false;
 	}
 
+	int opt = 1;
+	if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+		lerror("setsockopt");
+
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(atol(Config::getConfig()["clientlistener"]["port"].c_str()));
