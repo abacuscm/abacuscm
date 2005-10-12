@@ -19,6 +19,7 @@ typedef std::list<AttributeMap> MultiValuedList;
 typedef MultiValuedList SubmissionList;
 typedef MultiValuedList ClarificationList;
 typedef MultiValuedList ClarificationRequestList;
+typedef std::list<std::list<std::string> > Grid;
 
 typedef struct {
 	uint32_t id;
@@ -71,7 +72,8 @@ private:
 	MultiValuedList multiVectorAction(MessageBlock &mb, std::list<std::string> attrs);
 	std::vector<uint32_t> uintVectorAction(MessageBlock &mb, std::string prefix);
 	std::string stringAction(MessageBlock &mb, std::string fieldname);
-	
+	Grid gridAction(MessageBlock &mb);
+
 	std::vector<std::string> vectorFromMB(MessageBlock &mb, std::string prefix);
 	MultiValuedList multiListFromMB(MessageBlock &mb, std::list<std::string> attrlst);
 	
@@ -107,6 +109,7 @@ public:
 	SubmissionList getSubmissions();
 	ClarificationList getClarifications();
 	ClarificationRequestList getClarificationRequests();
+	Grid getStandings();
 
     uint32_t countMarkFiles(uint32_t submission_id);
     bool getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length);

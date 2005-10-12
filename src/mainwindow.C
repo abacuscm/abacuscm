@@ -514,7 +514,34 @@ void MainWindow::customEvent(QCustomEvent *ev) {
 }
 
 void MainWindow::updateStandings() {
-	NOT_IMPLEMENTED();
+	Grid data = _server_con.getStandings();
+
+	if(data.empty())
+		return;
+
+	standings->clear();
+	while(standings->columns())
+		standings->removeColumn(0);
+
+	Grid::iterator row = data.begin();
+	list<string>::iterator cell;
+
+	standings->addColumn("Pos");
+	for(cell = row->begin(); cell != row->end(); ++cell)
+		standings->addColumn(*cell);
+
+	int pos = 0;
+	while(++row != data.end()) {
+		QListViewItem *item = new QListViewItem(standings);
+
+		char bfr[20];
+		sprintf(bfr, "% 4d", ++pos);
+		item->setText(0, bfr);
+
+		int c = 1;
+		for(cell = row->begin(); cell != row->end(); ++cell, ++c)
+			item->setText(c, *cell);
+	}
 }
 
 void MainWindow::updateSubmissions() {
