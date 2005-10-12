@@ -6,12 +6,19 @@
 #include "clientconnection.h"
 #include "messageblock.h"
 #include "dbcon.h"
+#include "timedaction.h"
+#include "eventregister.h"
 
 #include <string>
 
 using namespace std;
 
 class ActStartStop : public ClientAction {
+protected:
+	virtual bool int_process(ClientConnection*, MessageBlock*);
+};
+
+class ActSubscribeTime : public ClientAction {
 protected:
 	virtual bool int_process(ClientConnection*, MessageBlock*);
 };
@@ -36,6 +43,27 @@ public:
 
 	virtual uint16_t message_type_id() const;
 };
+
+class StartStopAction : public TimedAction {
+private:
+	uint32_t _action;
+public:
+	StartStopAction(uint32_t time, uint32_t action);
+
+	virtual void perform();
+};
+
+StartStopAction::StartStopAction(uint32_t time, uint32_t action)
+	: TimedAction(time)
+{
+	_action = action;
+}
+
+void StartStopAction::perform() {
+	MessageBlock mb("startstop");
+	mb["action"] = _action == ACT_START ? "start" : "stop";
+	EventRegister::getInstance().triggerEvent("startstop", &mb);
+}
 
 bool ActStartStop::int_process(ClientConnection* cc, MessageBlock *mb) {
 	char *errpnt;
@@ -64,7 +92,14 @@ bool ActStartStop::int_process(ClientConnection* cc, MessageBlock *mb) {
 
 	return triggerMessage(cc, new MsgStartStop(server_id, time, action));
 }
-	
+
+bool ActSubscribeTime::int_process(ClientConnection* cc, MessageBlock*) {
+	if(EventRegister::getInstance().registerClient("startstop", cc))
+		return cc->reportSuccess();
+	else
+		return cc->sendError("Unable to subscribe to the 'startstop' event");
+}
+
 MsgStartStop::MsgStartStop() {
 }
 	
@@ -110,6 +145,9 @@ bool MsgStartStop::process() const {
 	bool dbres = db->startStopContest(_server_id, _time, _action == ACT_START);
 	db->release();
 
+	if(!_server_id || _server_id == Server::getId())
+		Server::putTimedAction(new StartStopAction(_time, _action));
+	
 	return dbres;
 }
 
@@ -118,6 +156,7 @@ uint16_t MsgStartStop::message_type_id() const {
 }
 
 static ActStartStop _act_startstop;
+static ActSubscribeTime _act_subscribetime;
 
 static Message* StartStopFunctor() {
 	return new MsgStartStop();
@@ -126,5 +165,9 @@ static Message* StartStopFunctor() {
 static void init() __attribute__((constructor));
 static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "startstop", &_act_startstop);
+	ClientAction::registerAction(USER_TYPE_ADMIN, "subscribetime", &_act_subscribetime);
+	ClientAction::registerAction(USER_TYPE_JUDGE, "subscribetime", &_act_subscribetime);
+	ClientAction::registerAction(USER_TYPE_CONTESTANT, "subscribetime", &_act_subscribetime);
 	Message::registerMessageFunctor(TYPE_ID_STARTSTOP, StartStopFunctor);
+	EventRegister::getInstance().registerEvent("startstop");
 }
