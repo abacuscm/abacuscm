@@ -140,6 +140,13 @@ static void updateClarificationsFunctor(const MessageBlock*, void*) {
 	ev->post();
 }
 
+static void contestStartStop(const MessageBlock* mb, void*) {
+	// TODO: Something with the clock ...
+	NotifyEvent *ne = new NotifyEvent("Contest Status", string("The contest has been ") + 
+			(((*mb)["action"] == "start") ? "started" : "stopped"), QMessageBox::NoIcon);
+	ne->post();
+}
+
 /************************** MainWindow ******************************/
 MainWindow::MainWindow() {
 	Config &config = Config::getConfig();
@@ -205,6 +212,9 @@ void MainWindow::doFileConnect() {
 				_server_con.registerEventCallback("clarifications", updateClarificationsFunctor, NULL);
 				_server_con.registerEventCallback("clarificationrequests", updateClarificationRequestsFunctor, NULL);
 				_server_con.registerEventCallback("msg", event_msg, NULL);
+				_server_con.registerEventCallback("startstop", contestStartStop, NULL);
+
+				_server_con.subscribeTime();
 			} else {
 				QMessageBox("Auth error", "Invalid username and/or password",
 						QMessageBox::Information, QMessageBox::Ok,

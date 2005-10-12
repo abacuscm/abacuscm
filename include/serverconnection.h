@@ -107,6 +107,10 @@ public:
 	ClarificationList getClarifications();
 	ClarificationRequestList getClarificationRequests();
 
+	uint32_t contestTime();
+	bool contestRunning();
+	bool subscribeTime();
+
 	bool becomeMarker();
 	bool mark(uint32_t submission_id, RunResult result, std::string comment, const AttributeMap &files);
 
