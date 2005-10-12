@@ -27,6 +27,11 @@ typedef struct {
 	std::string name;
 } ProblemInfo;
 
+typedef struct {
+	uint32_t id;
+	std::string username;
+} UserInfo;
+
 class ServerConnection {
 private:
 	struct CallbackData {
@@ -89,13 +94,16 @@ public:
 	std::string whatAmI();
 	bool createuser(std::string username, std::string password, std::string type);
 	bool changePassword(std::string password);
+	bool changePassword(uint32_t id, std::string password);
 
 	std::vector<std::string> getProblemTypes();
 	std::vector<ProblemInfo> getProblems();
 	std::string getProblemDescription(std::string problemtype);
-    std::vector<bool> getSubscriptions(std::vector<ProblemInfo> problems);
-    bool subscribeToProblem(ProblemInfo info);
-    bool unsubscribeToProblem(ProblemInfo info);
+	std::vector<bool> getSubscriptions(std::vector<ProblemInfo> problems);
+	bool subscribeToProblem(ProblemInfo info);
+	bool unsubscribeToProblem(ProblemInfo info);
+
+	std::vector<UserInfo> getUsers();
 
 	std::vector<std::string> getServerList();
 
@@ -111,8 +119,8 @@ public:
 	ClarificationRequestList getClarificationRequests();
 	Grid getStandings();
 
-    uint32_t countMarkFiles(uint32_t submission_id);
-    bool getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length);
+	uint32_t countMarkFiles(uint32_t submission_id);
+	bool getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length);
 
 	uint32_t contestTime();
 	bool contestRunning();

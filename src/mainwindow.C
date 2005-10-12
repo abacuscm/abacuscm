@@ -212,7 +212,8 @@ void MainWindow::doFileConnect() {
 				switchType(type);
 				fileConnectAction->setEnabled(false);
 				fileDisconnectAction->setEnabled(true);
-				changePasswordAction->setEnabled(true);
+                                changePasswordAction->setEnabled(true);
+				clarifyButton->setEnabled(true);
 
 				_server_con.registerEventCallback("submission", updateSubmissionsFunctor, NULL);
 				_server_con.registerEventCallback("standings", updateStandingsFunctor, NULL);
@@ -243,12 +244,23 @@ void MainWindow::doFileDisconnect() {
 	fileConnectAction->setEnabled(true);
 	fileDisconnectAction->setEnabled(false);
 	changePasswordAction->setEnabled(false);
+	clarifyButton->setEnabled(false);
 
 	switchType("");
 }
 
 void MainWindow::doChangePassword() {
 	ChangePasswordDialog change_password_dialog;
+	vector<UserInfo> users;
+
+	if (_active_type == "admin")
+	{
+		users = _server_con.getUsers();
+		for(vector<UserInfo>::iterator i = users.begin(); i != users.end(); i++)
+			change_password_dialog.user->insertItem(i->username);
+		change_password_dialog.user->setEnabled(true);
+	}
+
 	if (change_password_dialog.exec()) {
 		std::string password = change_password_dialog.password->text();
 		if (password != change_password_dialog.confirm->text()) {
@@ -257,7 +269,17 @@ void MainWindow::doChangePassword() {
 					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
 			return;
 		}
-		if (_server_con.changePassword(password))
+
+		bool result = false;
+		if (_active_type == "admin")
+		{
+			int index = change_password_dialog.user->currentItem();
+			result = _server_con.changePassword(users[index].id, password);
+		}
+		else
+			result = _server_con.changePassword(password);
+
+		if (result)
 			QMessageBox("Password changed!", "Password successfully changed",
 					QMessageBox::Information, QMessageBox::Ok,
 					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();

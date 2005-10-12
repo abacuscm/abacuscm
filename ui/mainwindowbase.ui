@@ -291,6 +291,47 @@
                             <enum>Reject</enum>
                         </property>
                     </widget>
+                    <widget class="QLayoutWidget">
+                        <property name="name">
+                            <cstring>layout3</cstring>
+                        </property>
+                        <hbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <spacer>
+                                <property name="name">
+                                    <cstring>spacer2</cstring>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Horizontal</enum>
+                                </property>
+                                <property name="sizeType">
+                                    <enum>Expanding</enum>
+                                </property>
+                                <property name="sizeHint">
+                                    <size>
+                                        <width>130</width>
+                                        <height>20</height>
+                                    </size>
+                                </property>
+                            </spacer>
+                            <widget class="QPushButton">
+                                <property name="name">
+                                    <cstring>clarifyButton</cstring>
+                                </property>
+                                <property name="enabled">
+                                    <bool>false</bool>
+                                </property>
+                                <property name="text">
+                                    <string>&amp;Request Clarification</string>
+                                </property>
+                                <property name="accel">
+                                    <string>Alt+R</string>
+                                </property>
+                            </widget>
+                        </hbox>
+                    </widget>
                 </vbox>
             </widget>
             <widget class="QWidget">
@@ -862,6 +903,12 @@
         <receiver>MainWindowBase</receiver>
         <slot>doShowClarificationReply(QListViewItem*)</slot>
     </connection>
+    <connection>
+        <sender>clarifyButton</sender>
+        <signal>clicked()</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>doClarificationRequest()</slot>
+    </connection>
 </connections>
 <signals>
     <signal>signalAdminControls(bool)</signal>
@@ -881,6 +928,7 @@
     <slot specifier="pure virtual">judgeSubmissionHandler(QListViewItem *)</slot>
     <slot access="protected" specifier="pure virtual">doShowClarificationRequest(QListViewItem *item)</slot>
     <slot access="protected" specifier="pure virtual">doShowClarificationReply(QListViewItem *item)</slot>
+    <slot access="protected" specifier="pure virtual">doClarificationRequest()</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

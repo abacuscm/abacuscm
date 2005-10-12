@@ -74,7 +74,8 @@ bool ActGetClarifications::int_process(ClientConnection *cc, MessageBlock *) {
 	if(utype == USER_TYPE_CONTESTANT)
 		lst = db->getClarifications(uid);
 	else
-		lst = db->getClarifications();
+                lst = db->getClarifications();
+        db->release();
 
 	MessageBlock mb("ok");
 
@@ -111,7 +112,8 @@ bool ActGetClarificationRequests::int_process(ClientConnection *cc, MessageBlock
 	if(utype == USER_TYPE_CONTESTANT)
 		lst = db->getClarificationRequests(uid);
 	else
-		lst = db->getClarificationRequests();
+                lst = db->getClarificationRequests();
+        db->release();
 
 	MessageBlock mb("ok");
 

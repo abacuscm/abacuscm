@@ -27,6 +27,7 @@ public:
 	virtual uint32_t name2server_id(const string& name);
 	virtual uint32_t name2user_id(const string& name);
 	virtual std::string user_id2name(uint32_t user_id);
+	virtual UserList getUsers();
 	virtual ServerList getServers();
 	virtual string getServerAttribute(uint32_t server_id,
 			const string& attribute);
@@ -88,8 +89,8 @@ public:
 			uint32_t time, uint32_t result, std::string comment, uint32_t server_id);
 	virtual bool putMarkFile(uint32_t submission_id, uint32_t marker_id,
 			std::string name, const void* data, uint32_t len);
-    virtual uint32_t countMarkFiles(uint32_t submission_id);
-    virtual bool getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length);
+	virtual uint32_t countMarkFiles(uint32_t submission_id);
+	virtual bool getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length);
 	virtual bool getSubmissionState(uint32_t submission_id, RunResult& state, uint32_t& utype, string& comment);
 	virtual uint32_t submission2userid(uint32_t submission_id);
 	virtual bool contestRunning(uint32_t server_id, uint32_t unix_time);
@@ -209,6 +210,30 @@ std::string MySQL::user_id2name(uint32_t user_id) {
 	mysql_free_result(res);
 
 	return username;
+}
+
+UserList MySQL::getUsers() {
+	ostringstream query;
+	query << "SELECT user_id, username FROM User";
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return ClarificationList();
+	}
+
+	UserList lst;
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	MYSQL_ROW row;
+	while ((row = mysql_fetch_row(res)) != 0) {
+		AttributeList attrs;
+		attrs["id"] = row[0];
+		attrs["username"] = row[1];
+
+		lst.push_back(attrs);
+	}
+	mysql_free_result(res);
+
+	return lst;
 }
 
 ServerList MySQL::getServers() {

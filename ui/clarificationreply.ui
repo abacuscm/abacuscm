@@ -181,7 +181,11 @@
     </connection>
 </connections>
 <tabstops>
+    <tabstop>question</tabstop>
+    <tabstop>answer</tabstop>
+    <tabstop>visibility</tabstop>
     <tabstop>buttonOk</tabstop>
+    <tabstop>buttonCancel</tabstop>
 </tabstops>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

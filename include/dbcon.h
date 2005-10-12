@@ -20,6 +20,7 @@ typedef std::map<uint32_t, std::string> ServerList;
 typedef std::list<AttributeList> SubmissionList;
 typedef std::list<AttributeList> ClarificationList;
 typedef std::list<AttributeList> ClarificationRequestList;
+typedef std::list<AttributeList> UserList;
 
 class DbCon {
 public:
@@ -45,7 +46,12 @@ public:
 	 * maps a username to a user_id
 	 */
 	virtual uint32_t name2user_id(const std::string& name) = 0;
-	virtual std::string user_id2name(uint32_t user_id) = 0;
+        virtual std::string user_id2name(uint32_t user_id) = 0;
+
+	/**
+	 * gets a list of all users
+	 */
+	virtual UserList getUsers() = 0;
 
 	/**
 	 * Retrieves an attribute value for a server.

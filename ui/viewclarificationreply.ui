@@ -144,6 +144,8 @@
     </connection>
 </connections>
 <tabstops>
+    <tabstop>question</tabstop>
+    <tabstop>answer</tabstop>
     <tabstop>buttonOk</tabstop>
 </tabstops>
 <layoutdefaults spacing="6" margin="11"/>

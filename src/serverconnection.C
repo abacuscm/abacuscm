@@ -392,11 +392,22 @@ bool ServerConnection::createuser(string username, string password, string type)
 }
 
 bool ServerConnection::changePassword(string password) {
-    MessageBlock mb("passwd");
+	MessageBlock mb("passwd");
 
-    mb["newpass"] = password;
+	mb["newpass"] = password;
 
-    return simpleAction(mb);
+	return simpleAction(mb);
+}
+
+bool ServerConnection::changePassword(uint32_t id, string password) {
+	MessageBlock mb("id_passwd");
+	ostringstream id_str;
+        id_str << id;
+
+	mb["user_id"] = id_str.str();
+	mb["newpass"] = password;
+
+	return simpleAction(mb);
 }
 
 vector<string> ServerConnection::getProblemTypes() {
@@ -559,8 +570,8 @@ vector<ProblemInfo> ServerConnection::getProblems() {
 	MessageBlock mb("getproblems");
 
 	MessageBlock *res = sendMB(&mb);
-    if(!res)
-	return response;
+	if(!res)
+		return response;
 
 	if(res->action() != "ok") {
 		log(LOG_ERR, "%s", (*res)["msg"].c_str());
@@ -591,6 +602,42 @@ vector<ProblemInfo> ServerConnection::getProblems() {
 
 	delete res;
 	return response;
+}
+
+vector<UserInfo> ServerConnection::getUsers() {
+	vector<UserInfo> response;
+	MessageBlock mb("getusers");
+
+	MessageBlock *res = sendMB(&mb);
+	if (!res)
+		return response;
+
+	if (res->action() != "ok") {
+		log(LOG_ERR, "%s", (*res)["msg"].c_str());
+		delete res;
+		return response;
+	}
+
+	unsigned i = 0;
+	while(true) {
+		ostringstream strstrm;
+		strstrm << "id" << i;
+		if(!res->hasAttribute(strstrm.str()))
+			break;
+
+		UserInfo tmp;
+		tmp.id = strtoll((*res)[strstrm.str()].c_str(), NULL, 0);
+
+		strstrm.str(""); strstrm << "username" << i;
+		tmp.username = (*res)[strstrm.str()];
+
+		log(LOG_DEBUG, "Added user '%u' (%s)", (unsigned int) tmp.id, tmp.username.c_str());
+		response.push_back(tmp);
+		i++;
+	}
+
+	delete res;
+        return response;
 }
 
 vector<bool> ServerConnection::getSubscriptions(vector<ProblemInfo> problems) {
@@ -691,8 +738,8 @@ SubmissionList ServerConnection::getSubmissions() {
 		return SubmissionList();
 
 	MessageBlock mb("getsubmissions");
-    list<string> attrs;
-    attrs.push_back("submission_id");
+	list<string> attrs;
+	attrs.push_back("submission_id");
 	attrs.push_back("contestant");
 	attrs.push_back("time");
 	attrs.push_back("problem");
