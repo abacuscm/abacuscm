@@ -71,6 +71,8 @@ public:
 			uint32_t time, uint32_t server_id, char* content,
 			uint32_t content_size, std::string language);
 	virtual SubmissionList getSubmissions(uint32_t uid);
+	virtual ClarificationList getClarifications(uint32_t uid);
+	virtual ClarificationRequestList getClarificationRequests(uint32_t uid);
 	virtual bool retrieveSubmission(uint32_t sub_id, char** buffer, int *length,
 			string& language, uint32_t* prob_id);
 	virtual IdList getUnmarked(uint32_t server_id);
@@ -731,10 +733,71 @@ SubmissionList MySQL::getSubmissions(uint32_t uid) {
 
 		lst.push_back(attrs);
 	}
+	mysql_free_result(res);
 
 	return lst;
 }
-	
+
+ClarificationList MySQL::getClarifications(uint32_t uid) {
+	ostringstream query;
+	query << "SELECT username, value, Clarification.time, ClarificationRequest.text, Clarification.text FROM Clarification LEFT JOIN ClarificationRequest USING(clarification_req_id) LEFT JOIN User ON Clarification.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ProblemAttributes.problem_id = ClarificationRequest.problem_id AND ProblemAttributes.attribute = 'shortname'";
+	if (uid)
+		query << " WHERE Clarification.public != 0 OR ClarificationRequest.user_id = " << uid;
+	query << " ORDER BY TIME";
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return ClarificationList();
+	}
+
+	ClarificationList lst;
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	MYSQL_ROW row;
+	while ((row = mysql_fetch_row(res)) != 0) {
+		AttributeList attrs;
+		/* Leave out Judge for now; can be added as row[0] later */
+		attrs["problem"] = row[1] ? row[1] : "General";
+		attrs["time"] = row[2];
+		attrs["question"] = row[3];
+		attrs["answer"] = row[4];
+
+		lst.push_back(attrs);
+	}
+	mysql_free_result(res);
+
+	return lst;
+}
+
+ClarificationRequestList MySQL::getClarificationRequests(uint32_t uid) {
+	ostringstream query;
+
+	query << "SELECT username, value, ClarificationRequest.time, ClarificationRequest.text AS question, COUNT(clarification_id) AS answers FROM ClarificationRequest LEFT OUTER JOIN Clarification USING(clarification_req_id) LEFT JOIN User ON ClarificationRequest.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ClarificationRequest.problem_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute='shortname'";
+	if (uid) query << " WHERE ClarificationRequest.user_id = " << uid;
+	query << " GROUP BY ClarificationRequest.clarification_req_id ORDER BY ClarificationRequest.time";
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return ClarificationRequestList();
+	}
+
+	ClarificationRequestList lst;
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	MYSQL_ROW row;
+	while ((row = mysql_fetch_row(res)) != 0) {
+		AttributeList attrs;
+		/* Leave out contestant for now; can be used later */
+		attrs["problem"] = row[1] ? row[1] : "General";
+		attrs["time"] = row[2];
+		attrs["question"] = row[3];
+		attrs["status"] = atoi(row[4]) ? "answered" : "pending";
+
+		lst.push_back(attrs);
+	}
+	mysql_free_result(res);
+
+	return lst;
+}
+
 bool MySQL::retrieveSubmission(uint32_t sub_id, char** buffer, int *length, string& language, uint32_t* prob_id) {
 	ostringstream query;
 	query << "SELECT content, LENGTH(content), language, prob_id FROM Submission WHERE "

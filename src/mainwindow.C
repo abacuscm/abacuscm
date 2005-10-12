@@ -21,6 +21,8 @@
 #include <qpushbutton.h>
 #include <qlistview.h>
 
+#include <time.h>
+
 using namespace std;
 
 /********************** Notification Dialogs ************************/
@@ -120,6 +122,17 @@ static void updateSubmissionsFunctor(const MessageBlock* mb, void*) {
 	NotifyEvent *ne = new NotifyEvent("Submission", (*mb)["msg"], QMessageBox::NoIcon);
 	ne->post();
 }
+
+static void updateClarificationRequestsFunctor(const MessageBlock*, void*) {
+	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateSubmissions);
+	ev->post();
+}
+
+static void updateClarificationsFunctor(const MessageBlock*, void*) {
+	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateSubmissions);
+	ev->post();
+}
+
 /************************** MainWindow ******************************/
 MainWindow::MainWindow() {
 	Config &config = Config::getConfig();
@@ -178,10 +191,12 @@ void MainWindow::doFileConnect() {
 				switchType(type);
 				fileConnectAction->setEnabled(false);
 				fileDisconnectAction->setEnabled(true);
-                changePasswordAction->setEnabled(true);
+				changePasswordAction->setEnabled(true);
 
 				_server_con.registerEventCallback("submission", updateSubmissionsFunctor, NULL);
 				_server_con.registerEventCallback("standings", updateStandingsFunctor, NULL);
+				_server_con.registerEventCallback("clarifications", updateClarificationsFunctor, NULL);
+				_server_con.registerEventCallback("clarificationrequests", updateClarificationRequestsFunctor, NULL);
 				_server_con.registerEventCallback("msg", event_msg, NULL);
 			} else {
 				QMessageBox("Auth error", "Invalid username and/or password",
@@ -212,21 +227,21 @@ void MainWindow::doChangePassword() {
     _change_password_dialog.password->setText("");
     _change_password_dialog.confirm->setText("");
     if (_change_password_dialog.exec()) {
-        std::string password = _change_password_dialog.password->text();
-        if (password != _change_password_dialog.confirm->text()) {
-            QMessageBox("Password mismatch", "The two passwords entered must be the same!",
-                        QMessageBox::Critical, QMessageBox::Ok,
-                        QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
-            return;
-        }
-        if (_server_con.changePassword(password))
-            QMessageBox("Password changed!", "Password successfully changed",
-                        QMessageBox::Information, QMessageBox::Ok,
-                        QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
-        else
-            QMessageBox("Failed to change password!", "Something went wront while changing password...",
-                        QMessageBox::Critical, QMessageBox::Ok,
-                        QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+	std::string password = _change_password_dialog.password->text();
+	if (password != _change_password_dialog.confirm->text()) {
+	    QMessageBox("Password mismatch", "The two passwords entered must be the same!",
+			QMessageBox::Critical, QMessageBox::Ok,
+			QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+	    return;
+	}
+	if (_server_con.changePassword(password))
+	    QMessageBox("Password changed!", "Password successfully changed",
+			QMessageBox::Information, QMessageBox::Ok,
+			QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+	else
+	    QMessageBox("Failed to change password!", "Something went wront while changing password...",
+			QMessageBox::Critical, QMessageBox::Ok,
+			QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
     }
 }
 
@@ -365,6 +380,10 @@ void MainWindow::tabChanged(QWidget* newtab) {
 		updateSubmissions();
 	} else if(newtab == tabStandings) {
 		updateStandings();
+	} else if(newtab == tabClarifications) {
+		updateClarifications();
+	} else if(newtab == tabClarificationRequests) {
+		updateClarificationRequests();
 	}
 }
 	
@@ -390,10 +409,73 @@ void MainWindow::updateSubmissions() {
 		log(LOG_DEBUG, "submission:");
 		AttributeMap::iterator a;
 		QListViewItem *item = new QListViewItem(submissions);
+		char time_buffer[64];
+		struct tm time_tm;
+		time_t time;
+
+		time = atol((*l)["time"].c_str());
+		localtime_r(&time, &time_tm);
+		strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
 		
-		item->setText(0, (*l)["time"]);
+		item->setText(0, time_buffer);
 		item->setText(1, (*l)["problem"]);
 		item->setText(2, (*l)["result"]);
+
+		for(a = l->begin(); a != l->end(); ++a)
+			log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());
+	}
+}
+
+void MainWindow::updateClarifications() {
+	ClarificationList list = _server_con.getClarifications();
+
+	clarifications->clear();
+
+	ClarificationList::iterator l;
+	for(l = list.begin(); l != list.end(); ++l) {
+		log(LOG_DEBUG, "clarification:");
+		AttributeMap::iterator a;
+		QListViewItem *item = new QListViewItem(clarifications);
+		char time_buffer[64];
+		struct tm time_tm;
+		time_t time;
+
+		time = atol((*l)["time"].c_str());
+		localtime_r(&time, &time_tm);
+		strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
+		
+		item->setText(0, time_buffer);
+		item->setText(1, (*l)["problem"]);
+		item->setText(2, (*l)["question"]);
+		item->setText(3, (*l)["answer"]);
+
+		for(a = l->begin(); a != l->end(); ++a)
+			log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());
+	}
+}
+
+void MainWindow::updateClarificationRequests() {
+	ClarificationRequestList list = _server_con.getClarificationRequests();
+
+	clarificationRequests->clear();
+
+	ClarificationRequestList::iterator l;
+	for(l = list.begin(); l != list.end(); ++l) {
+		log(LOG_DEBUG, "clarification request:");
+		AttributeMap::iterator a;
+		QListViewItem *item = new QListViewItem(clarificationRequests);
+		char time_buffer[64];
+		struct tm time_tm;
+		time_t time;
+
+		time = atol((*l)["time"].c_str());
+		localtime_r(&time, &time_tm);
+		strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
+		
+		item->setText(0, time_buffer);
+		item->setText(1, (*l)["problem"]);
+		item->setText(2, (*l)["question"]);
+		item->setText(3, (*l)["status"]);
 
 		for(a = l->begin(); a != l->end(); ++a)
 			log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());

@@ -81,6 +81,7 @@ $(markerd_name) : ldflags += -labacus -lpthread
 
 modules = udpmessenger \
 	dbmysql \
+	act_clarify \
 	act_passwd \
 	act_adduser \
 	act_addserver \

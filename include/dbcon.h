@@ -16,6 +16,8 @@ typedef std::list<uint32_t> IdList;
 typedef IdList ProblemList;
 typedef std::map<uint32_t, std::string> ServerList;
 typedef std::list<AttributeList> SubmissionList;
+typedef std::list<AttributeList> ClarificationList;
+typedef std::list<AttributeList> ClarificationRequestList;
 
 class DbCon {
 public:
@@ -219,6 +221,16 @@ public:
 	 * Retrieve all submissions for a specific user.
 	 */
 	virtual SubmissionList getSubmissions(uint32_t user_id = 0) = 0;
+
+	/**
+	 * Retrieves all clarifications relevant to a specific user.
+	 */
+	virtual ClarificationList getClarifications(uint32_t user_id = 0) = 0;
+
+	/**
+	 * Retrieves all clarification requests relevant to a specific user.
+	 */
+	virtual ClarificationRequestList getClarificationRequests(uint32_t user_id = 0) = 0;
 
 	/**
 	 * Retrieve Submission content (and language).

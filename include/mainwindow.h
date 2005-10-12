@@ -16,10 +16,10 @@ class MainWindow : public MainWindowBase {
 private:
 	LoginDialog _login_dialog;
 	ServerConnection _server_con;
-    ChangePasswordDialog _change_password_dialog;
+	ChangePasswordDialog _change_password_dialog;
 
 	std::string _active_type;
-	
+
 	void triggerType(std::string type, bool status);
 	void switchType(std::string type);
 protected:
@@ -30,7 +30,7 @@ protected:
 	virtual void doAdminProblemConfig();
 	virtual void doSubmit();
 	virtual void tabChanged(QWidget*);
-    virtual void doChangePassword();
+	virtual void doChangePassword();
 
 	virtual void customEvent(QCustomEvent *ev);
 public:
@@ -43,6 +43,8 @@ public:
 	// even uglier.
 	void updateStandings();
 	void updateSubmissions();
+	void updateClarificationRequests();
+	void updateClarifications();
 };
 
 #endif

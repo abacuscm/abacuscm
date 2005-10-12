@@ -17,6 +17,8 @@ typedef void (*EventCallback)(const MessageBlock*, void *);
 typedef std::map<std::string, std::string> AttributeMap;
 typedef std::list<AttributeMap> MultiValuedList;
 typedef MultiValuedList SubmissionList;
+typedef MultiValuedList ClarificationList;
+typedef MultiValuedList ClarificationRequestList;
 
 typedef struct {
 	uint32_t id;
@@ -84,7 +86,7 @@ public:
 	bool auth(std::string username, std::string password);
 	std::string whatAmI();
 	bool createuser(std::string username, std::string password, std::string type);
-    bool changePassword(std::string password);
+	bool changePassword(std::string password);
 
 	std::vector<std::string> getProblemTypes();
 	std::vector<ProblemInfo> getProblems();
@@ -98,6 +100,8 @@ public:
 	bool getProblemFile(uint32_t prob_id, std::string attrib, char **bufferptr, uint32_t *bufferlen);
 	bool submit(uint32_t prob_id, int fd, const std::string& language);
 	SubmissionList getSubmissions();
+	ClarificationList getClarifications();
+	ClarificationRequestList getClarificationRequests();
 
 	bool becomeMarker();
 	bool mark(uint32_t submission_id, RunResult result, std::string comment, const AttributeMap &files);

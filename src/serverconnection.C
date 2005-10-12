@@ -592,6 +592,36 @@ SubmissionList ServerConnection::getSubmissions() {
 	return multiVectorAction(mb, attrs);
 }
 
+ClarificationList ServerConnection::getClarifications() {
+	if (!_ssl)
+		return ClarificationList();
+
+	MessageBlock mb("getclarifications");
+	list<string> attrs;
+	attrs.push_back("contestant");
+	attrs.push_back("time");
+	attrs.push_back("problem");
+	attrs.push_back("question");
+	attrs.push_back("answer");
+
+	return multiVectorAction(mb, attrs);
+}
+
+ClarificationRequestList ServerConnection::getClarificationRequests() {
+	if (!_ssl)
+		return ClarificationRequestList();
+
+	MessageBlock mb("getclarificationrequests");
+	list<string> attrs;
+	attrs.push_back("contestant");
+	attrs.push_back("time");
+	attrs.push_back("problem");
+	attrs.push_back("question");
+	attrs.push_back("status");
+
+	return multiVectorAction(mb, attrs);
+}
+
 bool ServerConnection::becomeMarker() {
 	MessageBlock mb("subscribemark");
 
