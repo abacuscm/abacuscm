@@ -97,6 +97,7 @@ modules = udpmessenger \
 	act_events \
 	act_mark \
 	act_startstop \
+	act_contesttime \
 	act_problem_subscription \
 	prob_testcasedriventype
 modules_d = $(foreach mod,$(modules),modules/mod_$(mod).so)
