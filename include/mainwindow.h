@@ -29,7 +29,7 @@ protected:
 	virtual void doFileDisconnect();
 	virtual void doAdminCreateUser();
 	virtual void doAdminProblemConfig();
-        virtual void doSubmit();
+	virtual void doSubmit();
 	virtual void doClarificationRequest();
 	virtual void doShowClarificationRequest(QListViewItem*);
 	virtual void doShowClarificationReply(QListViewItem*);

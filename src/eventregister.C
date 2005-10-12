@@ -50,8 +50,8 @@ void EventRegister::deregisterClient(ClientConnection *cc) {
 }
 
 void EventRegister::deregisterClient(string eventname, ClientConnection *cc) {
-    Event* ev = _eventmap[eventname];
-    log(LOG_DEBUG, "Deregistering from event '%s'", eventname.c_str());
+	Event* ev = _eventmap[eventname];
+	log(LOG_DEBUG, "Deregistering from event '%s'", eventname.c_str());
 	if(!ev)
 		log(LOG_INFO, "Attempt by user %d to deregister from non-existant event '%s'", cc->getProperty("user_id"), eventname.c_str());
 	else
@@ -61,8 +61,8 @@ void EventRegister::deregisterClient(string eventname, ClientConnection *cc) {
 bool EventRegister::isClientRegistered(string eventname, ClientConnection *cc) {
 	EventMap::iterator i = _eventmap.find(eventname);
     if(i == _eventmap.end()) {
-        log(LOG_INFO, "Attempt by user %d to check registration for non-existant event '%s'", cc->getProperty("user_id"), eventname.c_str());
-        return false;
+	log(LOG_INFO, "Attempt by user %d to check registration for non-existant event '%s'", cc->getProperty("user_id"), eventname.c_str());
+	return false;
     }
 	else
 		return i->second->isClientRegistered(cc);
@@ -86,6 +86,13 @@ void EventRegister::triggerEvent(string eventname, const MessageBlock *mb) {
 				eventname.c_str());
 	else
 		i->second->triggerEvent(mb);
+}
+
+void EventRegister::broadcastEvent(const MessageBlock *mb) {
+	pthread_mutex_lock(&_lock);
+	for(ClientMap::iterator i = _clients.begin(); i != _clients.end(); ++i)
+		i->second->sendMessageBlock(mb);
+	pthread_mutex_unlock(&_lock);
 }
 
 void EventRegister::sendMessage(uint32_t user_id, const MessageBlock *mb) {
@@ -135,9 +142,9 @@ bool EventRegister::Event::isClientRegistered(ClientConnection *cc) {
     pthread_mutex_lock(&_lock);
     ClientConnectionPool::iterator i = _clients.find(cc);
     if (i != _clients.end())
-        result = true;
+	result = true;
     else
-        result = false;
+	result = false;
     pthread_mutex_unlock(&_lock);
     return result;
 }

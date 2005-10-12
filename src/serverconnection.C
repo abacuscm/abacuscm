@@ -532,7 +532,7 @@ vector<ProblemInfo> ServerConnection::getProblems() {
 
 	MessageBlock *res = sendMB(&mb);
     if(!res)
-        return response;
+	return response;
 
 	if(res->action() != "ok") {
 		log(LOG_ERR, "%s", (*res)["msg"].c_str());
@@ -568,9 +568,9 @@ vector<ProblemInfo> ServerConnection::getProblems() {
 vector<bool> ServerConnection::getSubscriptions(vector<ProblemInfo> problems) {
     vector<bool> response;
     for (unsigned int p = 0; p < problems.size(); p++) {
-        MessageBlock mb("problem_subscription");
-        mb["action"] = "is_subscribed";
-        mb["event"] = string("judge_") + problems[p].code;
+	MessageBlock mb("problem_subscription");
+	mb["action"] = "is_subscribed";
+	mb["event"] = string("judge_") + problems[p].code;
 
 		MessageBlock *res = sendMB(&mb);
 		if(res && res->action() == "ok")
@@ -622,8 +622,8 @@ bool ServerConnection::submit(uint32_t prob_id, int fd, const string& lang) {
 }
 
 bool ServerConnection::clarificationRequest(uint32_t prob_id, const string& question) {
-        if (!_ssl)
-                return false;
+	if (!_ssl)
+		return false;
 
 	ostringstream str_prob_id;
 	str_prob_id << prob_id;
@@ -639,23 +639,23 @@ bool ServerConnection::clarificationRequest(uint32_t prob_id, const string& ques
 }
 
 bool ServerConnection::clarificationReply(uint32_t clarification_req_id,
-                                          bool pub,
-                                          const string& answer) {
-        if (!_ssl)
-                return false;
+					  bool pub,
+					  const string& answer) {
+	if (!_ssl)
+		return false;
 
-        ostringstream str_cr_id;
-        str_cr_id << clarification_req_id;
+	ostringstream str_cr_id;
+	str_cr_id << clarification_req_id;
 
 	string flatanswer = answer;
 	replace(flatanswer.begin(), flatanswer.end(), '\n', ' ');
 
 	MessageBlock mb("clarification");
 	mb["clarification_request_id"] = str_cr_id.str();
-        mb["answer"] = flatanswer;
-        mb["public"] = pub ? "1" : "0";
+	mb["answer"] = flatanswer;
+	mb["public"] = pub ? "1" : "0";
 
-        return simpleAction(mb);
+	return simpleAction(mb);
 }
 
 SubmissionList ServerConnection::getSubmissions() {
@@ -694,8 +694,8 @@ ClarificationRequestList ServerConnection::getClarificationRequests() {
 		return ClarificationRequestList();
 
 	MessageBlock mb("getclarificationrequests");
-        list<string> attrs;
-        attrs.push_back("id");
+	list<string> attrs;
+	attrs.push_back("id");
 	attrs.push_back("time");
 	attrs.push_back("problem");
 	attrs.push_back("question");

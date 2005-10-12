@@ -21,9 +21,9 @@ protected:
 /* Holds both requests and replies */
 class ClarificationMessage : public Message {
 private:
-        uint32_t _request;
-        uint32_t _clarification_request_id;
-        uint32_t _clarification_id;
+	uint32_t _request;
+	uint32_t _clarification_request_id;
+	uint32_t _clarification_id;
 	uint32_t _prob_id;  /* Holds "public" for replies" */
 	uint32_t _user_id;
 	uint32_t _time;
@@ -35,14 +35,14 @@ protected:
 	virtual uint32_t load(const uint8_t* buffer, uint32_t size);
 public:
 	ClarificationMessage();
-        ClarificationMessage(uint32_t clarification_request_id,
+	ClarificationMessage(uint32_t clarification_request_id,
 			     uint32_t prob_id,
 			     uint32_t user_id,
 			     const std::string& question);
 	ClarificationMessage(uint32_t clarification_request_id,
 			     uint32_t clarification_id,
 			     uint32_t user_id,
-                             bool pub,
+			     bool pub,
 			     const std::string& answer);
 	virtual ~ClarificationMessage();
 
@@ -131,7 +131,7 @@ bool ActGetClarificationRequests::int_process(ClientConnection *cc, MessageBlock
 }
 
 ClarificationMessage::ClarificationMessage() {
-        _request = 0;
+	_request = 0;
 	_clarification_request_id = 0;
 	_clarification_id = 0;
 	_prob_id = 0;
@@ -145,9 +145,9 @@ ClarificationMessage::ClarificationMessage(uint32_t clarification_request_id,
 					   uint32_t prob_id,
 					   uint32_t user_id,
 					   const std::string& question) {
-        _request = 1;
+	_request = 1;
 	_clarification_request_id = clarification_request_id;
-        _clarification_id = 0;
+	_clarification_id = 0;
 	_prob_id = prob_id;
 	_user_id = user_id;
 	_time = ::time(NULL);
@@ -158,16 +158,16 @@ ClarificationMessage::ClarificationMessage(uint32_t clarification_request_id,
 ClarificationMessage::ClarificationMessage(uint32_t clarification_request_id,
 					   uint32_t clarification_id,
 					   uint32_t user_id,
-                                           bool pub,
+					   bool pub,
 					   const std::string& answer) {
-        _request = 0;
+	_request = 0;
 	_clarification_request_id = clarification_request_id;
 	_clarification_id = clarification_id;
 	_user_id = user_id;
 	_time = ::time(NULL);
 	_server_id = Server::getId();
 	_prob_id = pub ? 1 : 0;
-        _text = answer;
+	_text = answer;
 }
 
 ClarificationMessage::~ClarificationMessage() {
@@ -205,8 +205,8 @@ uint32_t ClarificationMessage::load(const uint8_t *buffer, uint32_t size) {
 		return ~0U;
 	}
 	_request = *(uint32_t*)pos; pos += sizeof(uint32_t);
-	_clarification_id = *(uint32_t*)pos; pos += sizeof(uint32_t);
 	_clarification_request_id = *(uint32_t*)pos; pos += sizeof(uint32_t);
+	_clarification_id = *(uint32_t*)pos; pos += sizeof(uint32_t);
 	_user_id = *(uint32_t*)pos; pos += sizeof(uint32_t);
 	_prob_id = *(uint32_t*)pos; pos += sizeof(uint32_t);
 	_time = *(uint32_t*)pos; pos += sizeof(uint32_t);
@@ -229,7 +229,7 @@ bool ClarificationMessage::process() const {
 	if (!db)
 		return false;
 
-        bool result;
+	bool result;
 	if (_request)
 	{
 		result = db->putClarificationRequest(_clarification_request_id,
@@ -246,7 +246,7 @@ bool ClarificationMessage::process() const {
 					      _user_id,
 					      _time,
 					      _server_id,
-                                              _prob_id, /* Actually pub */
+					      _prob_id, /* Actually pub */
 					      _text);
 	}
 	db->release();
@@ -255,7 +255,7 @@ bool ClarificationMessage::process() const {
 
 bool ActClarificationRequest::int_process(ClientConnection *cc, MessageBlock *mb) {
 	uint32_t user_id = cc->getProperty("user_id");
-        uint32_t prob_id = 0;
+	uint32_t prob_id = 0;
 	std::string prob_id_str = (*mb)["prob_id"];
 	std::string question = (*mb)["question"];
 
@@ -285,14 +285,17 @@ bool ActClarificationRequest::int_process(ClientConnection *cc, MessageBlock *mb
 		return cc->sendError("Internal server error. Error obtaining new clarification request id");
 
 	ClarificationMessage *msg = new ClarificationMessage(cr_id, prob_id, user_id, question);
-
 	log(LOG_INFO, "User %u submitted clarification request for problem %u", user_id, prob_id);
+	if (!triggerMessage(cc, msg)) return false;
 
-	return triggerMessage(cc, msg);
+	MessageBlock notify("updateclarificationrequests");
+	EventRegister::getInstance().broadcastEvent(&notify);
+	return true;
 }
 
 bool ActClarification::int_process(ClientConnection *cc, MessageBlock *mb) {
 	uint32_t user_id = cc->getProperty("user_id");
+	uint32_t req_user_id = 0;
 	std::string answer = (*mb)["answer"];
 
 	char *errptr;
@@ -307,20 +310,33 @@ bool ActClarification::int_process(ClientConnection *cc, MessageBlock *mb) {
 	ClarificationRequestList::iterator c;
 	for(c = crs.begin(); c != crs.end(); ++c)
 		if((*c)["id"] == (*mb)["clarification_request_id"])
+		{
+			req_user_id = atol((*c)["user_id"].c_str());
 			break;
+		}
 	if(c == crs.end())
 		return cc->sendError("Invalid clarification_request_id - no such id");
 
-        uint32_t pub = (*mb)["public"] == "1";
+	uint32_t pub = (*mb)["public"] == "1";
 	uint32_t c_id = Server::nextClarificationId();
 	if(c_id == ~0U)
 		return cc->sendError("Internal server error. Error obtaining new clarification id");
 
 	ClarificationMessage *msg = new ClarificationMessage(cr_id, c_id, user_id, pub, answer);
-
 	log(LOG_INFO, "User %u submitted clarification for request %u", user_id, cr_id);
+	if (!triggerMessage(cc, msg)) return false;
 
-	return triggerMessage(cc, msg);
+	MessageBlock notify("updateclarifications");
+	EventRegister::getInstance().broadcastEvent(&notify);
+
+	MessageBlock alert("msg");
+	alert["title"] = "New clarification";
+	alert["text"] = answer;
+	if (pub)
+		EventRegister::getInstance().broadcastEvent(&alert);
+	else
+		EventRegister::getInstance().sendMessage(req_user_id, &alert);
+	return true;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -351,4 +367,7 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "clarification", &_act_clarification);
 
 	Message::registerMessageFunctor(TYPE_ID_CLARIFICATION, create_clarification_msg);
+
+	EventRegister::getInstance().registerEvent("updateclarifications");
+	EventRegister::getInstance().registerEvent("updateclarificationrequests");
 }

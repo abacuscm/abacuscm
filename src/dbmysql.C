@@ -77,10 +77,10 @@ public:
 	virtual bool putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t prob_id,
 					     uint32_t time, uint32_t server_id,
 					     const std::string& question);
-        virtual bool putClarification(uint32_t cr_id, uint32_t c_id,
-                                      uint32_t user_id, uint32_t time,
-                                      uint32_t server_id, uint32_t pub,
-                                      const std::string& answer);
+	virtual bool putClarification(uint32_t cr_id, uint32_t c_id,
+				      uint32_t user_id, uint32_t time,
+				      uint32_t server_id, uint32_t pub,
+				      const std::string& answer);
 	virtual bool retrieveSubmission(uint32_t sub_id, char** buffer, int *length,
 			string& language, uint32_t* prob_id);
 	virtual IdList getUnmarked(uint32_t server_id);
@@ -792,7 +792,7 @@ ClarificationList MySQL::getClarifications(uint32_t uid) {
 	MYSQL_ROW row;
 	while ((row = mysql_fetch_row(res)) != 0) {
 		AttributeList attrs;
-                attrs["id"] = row[0];
+		attrs["id"] = row[0];
 		/* Leave out Judge for now; can be added as row[1] later */
 		attrs["problem"] = row[2] ? row[2] : "General";
 		attrs["time"] = row[3];
@@ -809,7 +809,7 @@ ClarificationList MySQL::getClarifications(uint32_t uid) {
 ClarificationRequestList MySQL::getClarificationRequests(uint32_t uid) {
 	ostringstream query;
 
-	query << "SELECT ClarificationRequest.clarification_req_id, username, value, ClarificationRequest.time, ClarificationRequest.text AS question, COUNT(clarification_id) AS answers FROM ClarificationRequest LEFT OUTER JOIN Clarification USING(clarification_req_id) LEFT JOIN User ON ClarificationRequest.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ClarificationRequest.problem_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute='shortname'";
+	query << "SELECT ClarificationRequest.clarification_req_id, ClarificationRequest.user_id, username, value, ClarificationRequest.time, ClarificationRequest.text AS question, COUNT(clarification_id) AS answers FROM ClarificationRequest LEFT OUTER JOIN Clarification USING(clarification_req_id) LEFT JOIN User ON ClarificationRequest.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ClarificationRequest.problem_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute='shortname'";
 	if (uid) query << " WHERE ClarificationRequest.user_id = " << uid;
 	query << " GROUP BY ClarificationRequest.clarification_req_id ORDER BY ClarificationRequest.time";
 
@@ -823,12 +823,13 @@ ClarificationRequestList MySQL::getClarificationRequests(uint32_t uid) {
 	MYSQL_ROW row;
 	while ((row = mysql_fetch_row(res)) != 0) {
 		AttributeList attrs;
-                attrs["id"] = row[0];
+		attrs["id"] = row[0];
+		attrs["user_id"] = row[1];
 		/* Leave out contestant for now; can be used later */
-		attrs["problem"] = row[2] ? row[2] : "General";
-		attrs["time"] = row[3];
-		attrs["question"] = row[4];
-		attrs["status"] = atoi(row[5]) ? "answered" : "pending";
+		attrs["problem"] = row[3] ? row[3] : "General";
+		attrs["time"] = row[4];
+		attrs["question"] = row[5];
+		attrs["status"] = atoi(row[6]) ? "answered" : "pending";
 
 		lst.push_back(attrs);
 	}
@@ -839,7 +840,7 @@ ClarificationRequestList MySQL::getClarificationRequests(uint32_t uid) {
 
 bool MySQL::putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t prob_id,
 				    uint32_t time, uint32_t server_id,
-                                    const std::string& question) {
+				    const std::string& question) {
 	ostringstream query;
 	query << "INSERT INTO ClarificationRequest (clarification_req_id, user_id, problem_id, time, text)";
 	query << " VALUES (" << cr_id << ", " << user_id << ", " << prob_id << ", " << time << ", '" << escape_string(question) << "')";
@@ -853,12 +854,12 @@ bool MySQL::putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t p
 }
 
 bool MySQL::putClarification(uint32_t cr_id, uint32_t c_id,
-                             uint32_t user_id, uint32_t time,
-                             uint32_t server_id, uint32_t pub,
-                             const std::string& answer) {
-        ostringstream query;
-        query << "INSERT INTO Clarification (clarification_id, clarification_req_id, user_id, time, public, text)";
-        query << " VALUES (" << cr_id << ", " << c_id << ", " << user_id << ", " << time << ", " << (pub ? 1 : 0) << ", '" << escape_string(answer) << "')";
+			     uint32_t user_id, uint32_t time,
+			     uint32_t server_id, uint32_t pub,
+			     const std::string& answer) {
+	ostringstream query;
+	query << "INSERT INTO Clarification (clarification_id, clarification_req_id, user_id, time, public, text)";
+	query << " VALUES (" << cr_id << ", " << c_id << ", " << user_id << ", " << time << ", " << (pub ? 1 : 0) << ", '" << escape_string(answer) << "')";
 
 	if (mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();

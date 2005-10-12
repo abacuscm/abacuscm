@@ -138,12 +138,12 @@ static void updateSubmissionsFunctor(const MessageBlock* mb, void*) {
 }
 
 static void updateClarificationRequestsFunctor(const MessageBlock*, void*) {
-	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateSubmissions);
+	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateClarificationRequests);
 	ev->post();
 }
 
 static void updateClarificationsFunctor(const MessageBlock*, void*) {
-	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateSubmissions);
+	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateClarifications);
 	ev->post();
 }
 
@@ -216,8 +216,8 @@ void MainWindow::doFileConnect() {
 
 				_server_con.registerEventCallback("submission", updateSubmissionsFunctor, NULL);
 				_server_con.registerEventCallback("standings", updateStandingsFunctor, NULL);
-				_server_con.registerEventCallback("clarifications", updateClarificationsFunctor, NULL);
-				_server_con.registerEventCallback("clarificationrequests", updateClarificationRequestsFunctor, NULL);
+				_server_con.registerEventCallback("updateclarifications", updateClarificationsFunctor, NULL);
+				_server_con.registerEventCallback("updateclarificationrequests", updateClarificationRequestsFunctor, NULL);
 				_server_con.registerEventCallback("msg", event_msg, NULL);
 				_server_con.registerEventCallback("startstop", contestStartStop, NULL);
 
@@ -403,29 +403,28 @@ void MainWindow::doClarificationRequest() {
 
 	ClarificationRequest cr;
 
-        vector<ProblemInfo>::iterator i;
-        cr.problemSelection->insertItem("General");
+	vector<ProblemInfo>::iterator i;
+	cr.problemSelection->insertItem("General");
 	for(i = probs.begin(); i != probs.end(); ++i) {
 		cr.problemSelection->insertItem(i->code + ": " + i->name);
 	}
 
-        if(cr.exec()) {
-                int item = cr.problemSelection->currentItem() - 1;
-                uint32_t prob_id = (item == -1) ? 0 : probs[item].id;
+	if(cr.exec()) {
+		int item = cr.problemSelection->currentItem() - 1;
+		uint32_t prob_id = (item == -1) ? 0 : probs[item].id;
 
 		_server_con.clarificationRequest(prob_id, cr.question->text());
-        }
-        updateClarificationRequests();
+	}
 }
 
 void MainWindow::doShowClarificationRequest(QListViewItem *item) {
 	ViewClarificationRequestSub vcr(atol(item->text(0)), &_server_con);
 
-        if (_active_type == "contestant")
-            vcr.reply->setEnabled(false);
+	if (_active_type == "contestant")
+	    vcr.reply->setEnabled(false);
 	vcr.problem->setText(item->text(2));
 	vcr.question->setText(item->text(3));
-        vcr.exec();
+	vcr.exec();
 }
 
 void MainWindow::doShowClarificationReply(QListViewItem *item) {
@@ -434,7 +433,7 @@ void MainWindow::doShowClarificationReply(QListViewItem *item) {
 	vcr.problem->setText(item->text(2));
 	vcr.question->setText(item->text(3));
 	vcr.answer->setText(item->text(4));
-        vcr.exec();
+	vcr.exec();
 }
 
 void MainWindow::doJudgeSubscribeToProblems() {

@@ -24,7 +24,7 @@ CREATE TABLE `Clarification` (
   `user_id` int(11) NOT NULL default '0',
   `time` int(11) NOT NULL default '0',
   `public` tinyint(1) default NULL,
-  `text` varchar(255) default NULL,
+  `text` text default NULL,
   PRIMARY KEY  (`clarification_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
@@ -38,7 +38,7 @@ CREATE TABLE `ClarificationRequest` (
   `user_id` int(11) NOT NULL default '0',
   `time` int(11) NOT NULL default '0',
   `problem_id` int(11) default NULL,
-  `text` varchar(255) default NULL,
+  `text` text default NULL,
   PRIMARY KEY  (`clarification_req_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
