@@ -5,6 +5,8 @@
 #include "logger.h"
 #include "ui_adduser.h"
 #include "ui_submit.h"
+#include "ui_changepassworddialog.h"
+#include "ui_problemsubscription.h"
 #include "problemconfig.h"
 #include "guievent.h"
 #include "messageblock.h"
@@ -20,6 +22,9 @@
 #include <qfiledialog.h>
 #include <qpushbutton.h>
 #include <qlistview.h>
+#include <qbuttongroup.h>
+#include <qcheckbox.h>
+#include <qlayout.h>
 
 #include <time.h>
 
@@ -81,7 +86,7 @@ static void window_log(int priority, const char* format, va_list ap) {
 static void event_msg(const MessageBlock* mb, void*) {
 	string title = (*mb)["title"];
 	string text = (*mb)["text"];
-	
+
 	NotifyEvent *ne = new NotifyEvent(title, text, QMessageBox::NoIcon);
 	ne->post();
 }
@@ -139,7 +144,7 @@ MainWindow::MainWindow() {
 
 	_login_dialog.serverName->setText(config["server"]["address"]);
 	_login_dialog.service->setText(config["server"]["service"]);
-	
+
 	GUIEvent::setReceiver(this);
 	register_log_listener(window_log);
 }
@@ -212,37 +217,36 @@ void MainWindow::doFileConnect() {
 	}
 }
 
-void MainWindow::doFileDisconnect() {
-	if(!_server_con.disconnect())
-		return;
+	void MainWindow::doFileDisconnect() {
+		if(!_server_con.disconnect())
+			return;
 
-	fileConnectAction->setEnabled(true);
-    fileDisconnectAction->setEnabled(false);
-    changePasswordAction->setEnabled(false);
+		fileConnectAction->setEnabled(true);
+		fileDisconnectAction->setEnabled(false);
+		changePasswordAction->setEnabled(false);
 
-	switchType("");
-}
+		switchType("");
+	}
 
 void MainWindow::doChangePassword() {
-    _change_password_dialog.password->setText("");
-    _change_password_dialog.confirm->setText("");
-    if (_change_password_dialog.exec()) {
-	std::string password = _change_password_dialog.password->text();
-	if (password != _change_password_dialog.confirm->text()) {
-	    QMessageBox("Password mismatch", "The two passwords entered must be the same!",
-			QMessageBox::Critical, QMessageBox::Ok,
-			QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
-	    return;
+	ChangePasswordDialog change_password_dialog;
+	if (change_password_dialog.exec()) {
+		std::string password = change_password_dialog.password->text();
+		if (password != change_password_dialog.confirm->text()) {
+			QMessageBox("Password mismatch", "The two passwords entered must be the same!",
+					QMessageBox::Critical, QMessageBox::Ok,
+					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+			return;
+		}
+		if (_server_con.changePassword(password))
+			QMessageBox("Password changed!", "Password successfully changed",
+					QMessageBox::Information, QMessageBox::Ok,
+					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+		else
+			QMessageBox("Failed to change password!", "Something went wront while changing password...",
+					QMessageBox::Critical, QMessageBox::Ok,
+					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
 	}
-	if (_server_con.changePassword(password))
-	    QMessageBox("Password changed!", "Password successfully changed",
-			QMessageBox::Information, QMessageBox::Ok,
-			QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
-	else
-	    QMessageBox("Failed to change password!", "Something went wront while changing password...",
-			QMessageBox::Critical, QMessageBox::Ok,
-			QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
-    }
 }
 
 void MainWindow::doAdminCreateUser() {
@@ -307,7 +311,7 @@ void MainWindow::doAdminProblemConfig() {
 		NOT_IMPLEMENTED();
 		return;
 	}
-	
+
 	string prob_desc = _server_con.getProblemDescription(prob_type);
 	if(prob_desc == "")
 		return;
@@ -342,17 +346,17 @@ void MainWindow::doSubmit() {
 		QMessageBox::critical(this, "Error", "There are no active problems to submit solutions for!", "O&k");
 		return;
 	}
-	
+
 	Submit submit;
 
 	// This code is here because Qt messes up.
 	QFileDialog* fileDiag = new QFileDialog(&submit);
-	
+
 	connect(submit.browse, SIGNAL( clicked() ),
 			fileDiag, SLOT( exec() ));
 	connect(fileDiag, SIGNAL( fileSelected(const QString&) ),
 			submit.filename, SLOT( setText(const QString&) ));
-	
+
 	vector<ProblemInfo>::iterator i;
 	for(i = probs.begin(); i != probs.end(); ++i) {
 		submit.problemSelection->insertItem(i->code + ": " + i->name);
@@ -374,7 +378,65 @@ void MainWindow::doSubmit() {
 		::close(fd);
 	}
 }
+
+void MainWindow::doJudgeSubscribeToProblems() {
+    ProblemSubscriptionDialog problem_subscription_dialog;
+    std::vector<QCheckBox *> problem_subscription_buttons;
+
+	// first, get a list of all problems
+	std::vector<ProblemInfo> problems = _server_con.getProblems();
+	if(problems.empty()) {
+		QMessageBox::critical(this, "Error", "There are no active problems to submit solutions for!", "O&k");
+		return;
+	}
+		
+	// then a list of all problems that this judge is
+	// subscribed to
+	std::vector<bool> subscribed = _server_con.getSubscriptions(problems);
+
+	QVBoxLayout *l = new QVBoxLayout(problem_subscription_dialog.problemButtons);
 	
+	for (unsigned int p = 0; p < problems.size(); p++) {
+		QCheckBox *button = new QCheckBox(
+				problems[p].name.c_str(),
+				problem_subscription_dialog.problemButtons);
+		l->addWidget(button);
+		button->setChecked(subscribed[p]);
+		problem_subscription_buttons.push_back(button);
+	}
+    
+	QSpacerItem *spacer = new QSpacerItem( 20, 20, QSizePolicy::Expanding, QSizePolicy::Minimum );
+    l->addItem( spacer );
+	
+	
+	if (problem_subscription_dialog.exec()) {
+		bool changes = false;
+		bool failure = false;
+		for (unsigned int p = 0; p < problems.size(); p++) {
+			if (problem_subscription_buttons[p]->isChecked() != subscribed[p]) {
+				// effect the change
+				bool result;
+				if (subscribed[p])
+					result = _server_con.unsubscribeToProblem(problems[p]);
+				else
+					result = _server_con.subscribeToProblem(problems[p]);
+				failure = failure | (!result);
+				changes = true;
+			}
+		}
+		if (changes) {
+			if (failure)
+				QMessageBox("Error changing subscription!", "An error occurred whilst changing your subscription settings",
+						QMessageBox::Critical, QMessageBox::Ok,
+						QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+			else
+				QMessageBox("Subscriptions changed!", "Your subscription settings have been changed",
+						QMessageBox::Information, QMessageBox::Ok,
+						QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+		}
+	}
+}
+
 void MainWindow::tabChanged(QWidget* newtab) {
 	if(newtab == tabSubmissions) {
 		updateSubmissions();
@@ -386,7 +448,7 @@ void MainWindow::tabChanged(QWidget* newtab) {
 		updateClarificationRequests();
 	}
 }
-	
+
 void MainWindow::customEvent(QCustomEvent *ev) {
 	GUIEvent *guiev = dynamic_cast<GUIEvent*>(ev);
 	if(guiev)
@@ -403,7 +465,7 @@ void MainWindow::updateSubmissions() {
 	SubmissionList list = _server_con.getSubmissions();
 
 	submissions->clear();
-	
+
 	SubmissionList::iterator l;
 	for(l = list.begin(); l != list.end(); ++l) {
 		log(LOG_DEBUG, "submission:");
@@ -420,9 +482,6 @@ void MainWindow::updateSubmissions() {
 		item->setText(0, time_buffer);
 		item->setText(1, (*l)["problem"]);
 		item->setText(2, (*l)["result"]);
-
-		for(a = l->begin(); a != l->end(); ++a)
-			log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());
 	}
 }
 

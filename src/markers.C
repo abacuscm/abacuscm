@@ -106,7 +106,7 @@ void Markers::issue(ClientConnection* cc, uint32_t sd) {
 		return;
 	}
 
-	log(LOG_DEBUG, "Issueing submission %u to %p", sd, cc);
+	log(LOG_DEBUG, "Issuing submission %u to %p", sd, cc);
 
 	std::ostringstream tmp;
 

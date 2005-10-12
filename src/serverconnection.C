@@ -12,6 +12,7 @@
 #include <openssl/rand.h>
 #include <sstream>
 #include <string.h>
+#include <unistd.h>
 
 // 16K is the max size of an SSL block, thus
 // optimal in terms of speed, but memory intensive.
@@ -530,9 +531,15 @@ vector<ProblemInfo> ServerConnection::getProblems() {
 	MessageBlock mb("getproblems");
 
 	MessageBlock *res = sendMB(&mb);
-	if(!res)
-		return response;
+    if(!res)
+        return response;
 
+	if(res->action() != "ok") {
+		log(LOG_ERR, "%s", (*res)["msg"].c_str());
+		delete res;
+		return response;
+	}
+	
 	unsigned i = 0;
 	while(true) {
 		ostringstream strstrm;
@@ -549,12 +556,48 @@ vector<ProblemInfo> ServerConnection::getProblems() {
 		strstrm.str(""); strstrm << "name" << i;
 		tmp.name = (*res)[strstrm.str()];
 
+		log(LOG_DEBUG, "Added problem '%s' (%s)", tmp.code.c_str(), tmp.name.c_str());
 		response.push_back(tmp);
 		i++;
 	}
-	
+
 	delete res;
 	return response;
+}
+
+vector<bool> ServerConnection::getSubscriptions(vector<ProblemInfo> problems) {
+    vector<bool> response;
+    for (unsigned int p = 0; p < problems.size(); p++) {
+        MessageBlock mb("problem_subscription");
+        mb["action"] = "is_subscribed";
+        mb["event"] = string("judge_") + problems[p].code;
+
+		MessageBlock *res = sendMB(&mb);
+		if(res && res->action() == "ok")
+			response.push_back((*res)["subscribed"] == "yes");
+		else {
+			if(res)
+				log(LOG_ERR, "%s", (*res)["msg"].c_str());
+			else
+				log(LOG_ERR, "Unknown error retrieving subscription status");
+			return response;
+		}
+    }
+    return response;
+}
+
+bool ServerConnection::subscribeToProblem(ProblemInfo info) {
+    MessageBlock mb("problem_subscription");
+    mb["action"] = "subscribe";
+    mb["event"] = string("judge_") + info.name;
+    return simpleAction(mb);
+}
+
+bool ServerConnection::unsubscribeToProblem(ProblemInfo info) {
+    MessageBlock mb("problem_subscription");
+    mb["action"] = "unsubscribe";
+    mb["event"] = string("judge_") + info.name;
+    return simpleAction(mb);
 }
 
 bool ServerConnection::submit(uint32_t prob_id, int fd, const string& lang) {

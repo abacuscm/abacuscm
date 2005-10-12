@@ -52,7 +52,7 @@ public:
 	virtual uint32_t maxSubmissionId();
 	virtual uint32_t maxClarificationReqId();
 	virtual uint32_t maxClarificationId();
-	virtual ProblemList getProblems();
+    virtual ProblemList getProblems();
 	virtual time_t getProblemUpdateTime(uint32_t problem_id);
 	virtual bool setProblemUpdateTime(uint32_t problem_id, time_t time);
 	virtual string getProblemType(uint32_t problem_id);
@@ -708,7 +708,7 @@ bool MySQL::putSubmission(uint32_t submission_id, uint32_t user_id, uint32_t pro
 
 SubmissionList MySQL::getSubmissions(uint32_t uid) {
 	ostringstream query;
-	query << "SELECT username, time, value FROM User, ProblemAttributes, Submission WHERE User.user_id = Submission.user_id AND Submission.prob_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute = 'shortname'";
+	query << "SELECT submission_id, time, value FROM User, ProblemAttributes, Submission WHERE User.user_id = Submission.user_id AND Submission.prob_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute = 'shortname'";
 	
 	if(uid)
 		query << " AND User.user_id = " << uid;
@@ -726,7 +726,7 @@ SubmissionList MySQL::getSubmissions(uint32_t uid) {
 	MYSQL_ROW row;
 	while((row = mysql_fetch_row(res)) != 0) {
 		AttributeList attrs;
-		attrs["contestant"] = row[0];
+		attrs["submission_id"] = row[0];
 		attrs["time"] = row[1];
 		attrs["problem"] = row[2];
 		attrs["result"] = "pending";

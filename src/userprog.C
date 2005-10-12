@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <sstream>
+#include <unistd.h>
 
 using namespace std;
 

@@ -55,7 +55,8 @@ abacus_objects = abacus \
 	ui_submit moc_ui_submit \
 	ui_problemconfigbase moc_ui_problemconfigbase \
 	ui_mainwindowbase moc_ui_mainwindowbase \
-	ui_changepassworddialog moc_ui_changepassworddialog
+	ui_changepassworddialog moc_ui_changepassworddialog \
+	ui_problemsubscription moc_ui_problemsubscription
 $(abacus_name) : ldflags += -L$(QTDIR)/lib -lqt -labacus-client
 $(abacus_name) : $(libabacus_c_name)
 $(abacus_name) : $(libabacus_name)
@@ -95,6 +96,7 @@ modules = udpmessenger \
 	act_events \
 	act_mark \
 	act_startstop \
+	act_problem_subscription \
 	prob_testcasedriventype
 modules_d = $(foreach mod,$(modules),modules/mod_$(mod).so)
 $(modules_d) : ldflags += -shared -labacus-server

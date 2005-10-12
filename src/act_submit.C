@@ -288,6 +288,7 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "submit", &_act_submit);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getproblems", &_act_getproblems);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "getproblems", &_act_getproblems);
+	ClientAction::registerAction(USER_TYPE_ADMIN, "getproblems", &_act_getproblems);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getsubmissions", &_act_getsubs);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissions", &_act_getsubs);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "getsubmissions", &_act_getsubs);

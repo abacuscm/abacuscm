@@ -511,11 +511,14 @@
         <action name="adminAdd_ServerAction"/>
         <action name="adminProblem_ConfigAction"/>
         <action name="adminContestAction"/>
-        <item text="&amp;Contest" name="popupMenu_8" accel="">
+        <item text="&amp;Contest" name="popupMenu_10" accel="">
             <action name="adminContestStartAction"/>
             <action name="adminContestPauseAction"/>
             <action name="adminContestResumeAction"/>
         </item>
+    </item>
+    <item text="&amp;Judges" name="Judges">
+        <action name="judgesSubscribeToProblemsAction"/>
     </item>
     <item text="&amp;Help" name="Help">
         <action name="helpAboutAction"/>
@@ -556,20 +559,20 @@
         </property>
     </action>
     <action>
-    	<property name="name">
-        	<cstring>changePasswordAction</cstring>
+        <property name="name">
+            <cstring>changePasswordAction</cstring>
         </property>
         <property name="enabled">
-        	<bool>false</bool>
+            <bool>false</bool>
         </property>
         <property name="text">
-        	<string>Change &amp;password</string>
+            <string>Change &amp;password</string>
         </property>
         <property name="menuText">
-        	<string>Change &amp;password</string>
+            <string>Change &amp;password</string>
         </property>
         <property name="toolTip">
-        	<string>Change the password of the currently logged in user</string>
+            <string>Change the password of the currently logged in user</string>
         </property>
     </action>
     <action>
@@ -698,6 +701,20 @@
             <string>&amp;Resume</string>
         </property>
     </action>
+    <action>
+        <property name="name">
+            <cstring>judgesSubscribeToProblemsAction</cstring>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>Subscribe to problems</string>
+        </property>
+        <property name="menuText">
+            <string>Subscribe to problems</string>
+        </property>
+    </action>
 </actions>
 <images>
     <image name="image0">
@@ -727,7 +744,7 @@
         <slot>doFileConnect()</slot>
     </connection>
     <connection>
-    	<sender>changePasswordAction</sender>
+        <sender>changePasswordAction</sender>
         <signal>activated()</signal>
         <receiver>MainWindowBase</receiver>
         <slot>doChangePassword()</slot>
@@ -804,6 +821,18 @@
         <receiver>MainWindowBase</receiver>
         <slot>tabChanged(QWidget*)</slot>
     </connection>
+    <connection>
+        <sender>judgesSubscribeToProblemsAction</sender>
+        <signal>activated()</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>doJudgeSubscribeToProblems()</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalJudgeControls(bool)</signal>
+        <receiver>judgesSubscribeToProblemsAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
 </connections>
 <signals>
     <signal>signalAdminControls(bool)</signal>
@@ -819,6 +848,7 @@
     <slot access="protected" specifier="pure virtual">doFileDisconnect()</slot>
     <slot access="protected" specifier="pure virtual">doSubmit()</slot>
     <slot access="protected" specifier="pure virtual">tabChanged(QWidget *newtab)</slot>
+    <slot access="protected">doJudgeSubscribeToProblems()</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

@@ -3,9 +3,10 @@
 
 #include "ui_mainwindowbase.h"
 #include "ui_logindialog.h"
-#include "ui_changepassworddialog.h"
 
 #include "serverconnection.h"
+
+class QCheckBox;
 
 typedef struct {
 	int prio_level;
@@ -16,7 +17,6 @@ class MainWindow : public MainWindowBase {
 private:
 	LoginDialog _login_dialog;
 	ServerConnection _server_con;
-	ChangePasswordDialog _change_password_dialog;
 
 	std::string _active_type;
 
@@ -31,6 +31,7 @@ protected:
 	virtual void doSubmit();
 	virtual void tabChanged(QWidget*);
 	virtual void doChangePassword();
+    virtual void doJudgeSubscribeToProblems();
 
 	virtual void customEvent(QCustomEvent *ev);
 public:

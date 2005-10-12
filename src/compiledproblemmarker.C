@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <fstream>
 #include <sstream>
+#include <unistd.h>
 
 using namespace std;
 

@@ -26,12 +26,12 @@ void EventRegister::registerClient(ClientConnection *cc) {
 };
 
 bool EventRegister::registerClient(string eventname, ClientConnection *cc) {
-	Event* ev = _eventmap[eventname];
-	if(!ev) {
+	EventMap::iterator i = _eventmap.find(eventname);
+    if(i == _eventmap.end()) {
 		log(LOG_INFO, "Attempt to register for non-existant event '%s' from user %u.", eventname.c_str(), cc->getProperty("user_id"));
 		return false;
 	}
-	ev->registerClient(cc);
+	i->second->registerClient(cc);
 	return true;
 }
 				
@@ -50,11 +50,22 @@ void EventRegister::deregisterClient(ClientConnection *cc) {
 }
 
 void EventRegister::deregisterClient(string eventname, ClientConnection *cc) {
-	Event* ev = _eventmap[eventname];
+    Event* ev = _eventmap[eventname];
+    log(LOG_DEBUG, "Deregistering from event '%s'", eventname.c_str());
 	if(!ev)
 		log(LOG_INFO, "Attempt by user %d to deregister from non-existant event '%s'", cc->getProperty("user_id"), eventname.c_str());
 	else
 		ev->deregisterClient(cc);
+}
+
+bool EventRegister::isClientRegistered(string eventname, ClientConnection *cc) {
+	EventMap::iterator i = _eventmap.find(eventname);
+    if(i == _eventmap.end()) {
+        log(LOG_INFO, "Attempt by user %d to check registration for non-existant event '%s'", cc->getProperty("user_id"), eventname.c_str());
+        return false;
+    }
+	else
+		return i->second->isClientRegistered(cc);
 }
 
 void EventRegister::registerEvent(string eventname) {
@@ -69,12 +80,12 @@ void EventRegister::registerEvent(string eventname) {
 }
 
 void EventRegister::triggerEvent(string eventname, const MessageBlock *mb) {
-	Event* ev = _eventmap[eventname];
-	if(!ev)
+	EventMap::iterator i = _eventmap.find(eventname);
+	if(i == _eventmap.end())
 		log(LOG_ERR, "Attempt to trigger unknown event '%s'",
 				eventname.c_str());
 	else
-		ev->triggerEvent(mb);
+		i->second->triggerEvent(mb);
 }
 
 void EventRegister::sendMessage(uint32_t user_id, const MessageBlock *mb) {
@@ -117,4 +128,16 @@ void EventRegister::Event::deregisterClient(ClientConnection *cc) {
 	if(i != _clients.end())
 		_clients.erase(i);
 	pthread_mutex_unlock(&_lock);
+}
+
+bool EventRegister::Event::isClientRegistered(ClientConnection *cc) {
+    bool result;
+    pthread_mutex_lock(&_lock);
+    ClientConnectionPool::iterator i = _clients.find(cc);
+    if (i != _clients.end())
+        result = true;
+    else
+        result = false;
+    pthread_mutex_unlock(&_lock);
+    return result;
 }
