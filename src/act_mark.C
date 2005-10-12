@@ -7,6 +7,7 @@
 #include "message_type_ids.h"
 #include "server.h"
 #include "dbcon.h"
+#include "eventregister.h"
 
 #include <string>
 #include <list>
@@ -101,6 +102,11 @@ bool MarkMessage::process() const {
 		if(!db->putMarkFile(_submission_id, _marker, i->name, i->data, i->len))
 			log(LOG_WARNING, "An error occured placing a marker file into the database - continueing in any case");
 	}
+
+	MessageBlock mb("submission");
+	mb["msg"] = "You have newly marked information available under submissions";
+
+	EventRegister::getInstance().sendMessage(db->submission2userid(_submission_id), &mb);
 
 	db->release();
 	
