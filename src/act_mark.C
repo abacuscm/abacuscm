@@ -208,7 +208,8 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 		return cc->sendError("Invalid submission_id");
 	}
 
-	// TODO: Validate that this connection _may_ put a mark for this submission.
+	if(cc->getProperty("user_type") == USER_TYPE_MARKER && Markers::getInstance().hasIssued(cc) != submission_id)
+		return cc->sendError("Markers may only mark submissions issued to them");
 
 	uint32_t result = strtoll((*mb)["result"].c_str(), &errpnt, 0);
 	if(*errpnt || (*mb)["result"] == "") {
@@ -241,6 +242,7 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 		}
 	}
 
+	Markers::getInstance().notifyMarked(cc, submission_id);
 	return triggerMessage(cc, markmsg);
 }
 

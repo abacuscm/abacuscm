@@ -21,6 +21,7 @@ private:
 
 	void issue(ClientConnection*, uint32_t);
 	void real_enqueueSubmission(uint32_t);
+	void real_enqueueMarker(ClientConnection*);
 
 	Markers();
 	~Markers();
@@ -28,8 +29,10 @@ public:
 	void enqueueMarker(ClientConnection*);
 	void preemptMarker(ClientConnection*);
 
-	bool putMark(ClientConnection*, MessageBlock*);
 	void enqueueSubmission(uint32_t);
+
+	uint32_t hasIssued(ClientConnection*);
+	void notifyMarked(ClientConnection*, uint32_t submission_id);
 
 	static Markers& getInstance();
 };

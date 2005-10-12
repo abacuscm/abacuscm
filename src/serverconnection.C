@@ -762,7 +762,7 @@ void* ServerConnection::receive_thread() {
 		if(res < 0) {
 			log_ssl_errors("SSL_read");
 		} else if(res == 0) {
-			log(LOG_INFO, "Connection got shut down, terminating receive_thread");
+			log(LOG_DEBUG, "Connection got shut down, terminating receive_thread");
 			break;
 		} else while(res > 0) {
 			if(!mb)

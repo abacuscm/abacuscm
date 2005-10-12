@@ -29,14 +29,7 @@ void Markers::enqueueMarker(ClientConnection* cc) {
 	} else if(list_find(_markers, cc) != _markers.end()) {
 		log(LOG_NOTICE, "Marker %p is already enqueued!", cc);
 	} else {
-		if(_problems.empty()) {
-			_markers.push_back(cc);
-		} else {
-			uint32_t sd = _problems.front();
-			_problems.pop_front();
-
-			issue(cc, sd);
-		}
+		real_enqueueMarker(cc);
 	}
 	pthread_mutex_unlock(&_lock);
 }
@@ -71,6 +64,17 @@ void Markers::real_enqueueSubmission(uint32_t sd) {
 	}
 }
 
+void Markers::real_enqueueMarker(ClientConnection* cc) {
+	if(_problems.empty()) {
+		_markers.push_back(cc);
+	} else {
+		uint32_t sd = _problems.front();
+		_problems.pop_front();
+
+		issue(cc, sd);
+	}
+}
+
 void Markers::enqueueSubmission(uint32_t submission_id) {
 	pthread_mutex_lock(&_lock);
 	real_enqueueSubmission(submission_id);
@@ -91,10 +95,10 @@ void Markers::issue(ClientConnection* cc, uint32_t sd) {
 	int length;
 	std::string language;
 	uint32_t prob_id;
-	
+
 	bool has_data = db->retrieveSubmission(sd, &content, &length, language, &prob_id);
 	db->release();
-	
+
 	if(!has_data) {
 		log(LOG_CRIT, "Markers::issue() was unable to obtain the actual submission data (submission_id=%u) - this is _VERY_ serious!", sd);
 		_problems.push_back(sd);
@@ -105,7 +109,7 @@ void Markers::issue(ClientConnection* cc, uint32_t sd) {
 	log(LOG_DEBUG, "Issueing submission %u to %p", sd, cc);
 
 	std::ostringstream tmp;
-	
+
 	MessageBlock mb("mark");
 	tmp << sd;
 	mb["submission_id"] = tmp.str();
@@ -120,7 +124,33 @@ void Markers::issue(ClientConnection* cc, uint32_t sd) {
 		enqueueSubmission(sd);
 }
 
-bool Markers::putMark(ClientConnection* cc, MessageBlock*) {
-	NOT_IMPLEMENTED();
-	return cc->sendError("Not implemented");
+uint32_t Markers::hasIssued(ClientConnection*cc) {
+	uint32_t result = 0;
+
+	pthread_mutex_lock(&_lock);
+	std::map<ClientConnection*, uint32_t>::const_iterator i = _issued.find(cc);
+	if(i != _issued.end())
+		result = i->second;
+	pthread_mutex_unlock(&_lock);
+
+	return result;
+}
+
+void Markers::notifyMarked(ClientConnection* cc, uint32_t submission_id) {
+	pthread_mutex_lock(&_lock);
+
+	std::map<ClientConnection*, uint32_t>::iterator i = _issued.find(cc);
+	if(i != _issued.end()) {
+		if(submission_id != i->second) {
+			log(LOG_WARNING, "Marker %p marked submission %u instead of %u, re-enqueueing %u", cc, submission_id, i->second, i->second);
+			real_enqueueSubmission(i->second);
+		}
+
+		_issued.erase(i);
+		
+		// chuck the submission_id - it has now been marked.
+		// re-enqueue the ClientConnection.
+		real_enqueueMarker(cc);
+	}
+	pthread_mutex_unlock(&_lock);
 }
