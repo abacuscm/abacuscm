@@ -7,6 +7,7 @@
 #include "ui_submit.h"
 #include "problemconfig.h"
 #include "guievent.h"
+#include "messageblock.h"
 
 #include <qlineedit.h>
 #include <qmessagebox.h>
@@ -75,6 +76,14 @@ static void window_log(int priority, const char* format, va_list ap) {
 	free(msg);
 }
 
+static void event_msg(const MessageBlock* mb, void*) {
+	string title = (*mb)["title"];
+	string text = (*mb)["text"];
+	
+	NotifyEvent *ne = new NotifyEvent(title, text, QMessageBox::NoIcon);
+	ne->post();
+}
+
 /********************* MainWindowCaller *****************************/
 typedef void (MainWindow::*MainWindowFuncPtr)();
 class MainWindowCaller : public GUIEvent {
@@ -104,9 +113,12 @@ static void updateStandingsFunctor(const MessageBlock*, void*) {
 	ev->post();
 }
 
-static void updateSubmissionsFunctor(const MessageBlock*, void*) {
+static void updateSubmissionsFunctor(const MessageBlock* mb, void*) {
 	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateSubmissions);
 	ev->post();
+
+	NotifyEvent *ne = new NotifyEvent("Submission", (*mb)["msg"], QMessageBox::NoIcon);
+	ne->post();
 }
 /************************** MainWindow ******************************/
 MainWindow::MainWindow() {
@@ -170,6 +182,7 @@ void MainWindow::doFileConnect() {
 
 				_server_con.registerEventCallback("submission", updateSubmissionsFunctor, NULL);
 				_server_con.registerEventCallback("standings", updateStandingsFunctor, NULL);
+				_server_con.registerEventCallback("msg", event_msg, NULL);
 			} else {
 				QMessageBox("Auth error", "Invalid username and/or password",
 						QMessageBox::Information, QMessageBox::Ok,
