@@ -28,7 +28,8 @@ protected:
 	virtual void doFileDisconnect();
 	virtual void doAdminCreateUser();
 	virtual void doAdminProblemConfig();
-	virtual void doSubmit();
+        virtual void doSubmit();
+        virtual void doClarificationRequest();
 	virtual void tabChanged(QWidget*);
 	virtual void doChangePassword();
     virtual void doJudgeSubscribeToProblems();

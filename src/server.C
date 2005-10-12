@@ -102,6 +102,42 @@ err:
 	return ~0U;
 }
 
+uint32_t Server::nextClarificationRequestId() {
+	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+	static uint32_t cur_max_id = 0;
+
+	uint32_t local_max_id;
+	
+	pthread_mutex_lock(&lock);
+
+	if(!cur_max_id) {
+		DbCon *db = DbCon::getInstance();
+		if(!db)
+			goto err;
+		cur_max_id = db->maxClarificationReqId();
+		db->release();
+
+		if(cur_max_id == ~0U) {
+			cur_max_id = 0;
+			goto err;
+		}
+	}
+
+	if(!cur_max_id)
+		cur_max_id = getId();
+	else
+		cur_max_id += ID_GRANULARITY;
+	
+	local_max_id = cur_max_id;
+	
+	pthread_mutex_unlock(&lock);
+
+	return local_max_id;
+err:
+	pthread_mutex_unlock(&lock);
+	return ~0U;
+}
+
 uint32_t Server::nextServerId() {
 	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 	static uint32_t cur_max_id = 0;

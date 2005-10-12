@@ -5,7 +5,7 @@ dflags=-Iinclude
 ldflags=-rdynamic -g -ggdb -O0 -Llib -Wl,-rpath,$(libdir)
 
 .PHONY: default
-default : all
+default: all
 
 libabacus_name = lib/libabacus.so
 libabacus_objects = config \
@@ -56,6 +56,7 @@ abacus_objects = abacus \
 	ui_problemconfigbase moc_ui_problemconfigbase \
 	ui_mainwindowbase moc_ui_mainwindowbase \
 	ui_changepassworddialog moc_ui_changepassworddialog \
+	ui_clarificationrequest moc_ui_clarificationrequest \
 	ui_problemsubscription moc_ui_problemsubscription
 $(abacus_name) : ldflags += -L$(QTDIR)/lib -lqt -labacus-client
 $(abacus_name) : $(libabacus_c_name)

@@ -5,6 +5,7 @@
 #include "logger.h"
 #include "ui_adduser.h"
 #include "ui_submit.h"
+#include "ui_clarificationrequest.h"
 #include "ui_changepassworddialog.h"
 #include "ui_problemsubscription.h"
 #include "problemconfig.h"
@@ -22,6 +23,7 @@
 #include <qfiledialog.h>
 #include <qpushbutton.h>
 #include <qlistview.h>
+#include <qtextedit.h>
 #include <qbuttongroup.h>
 #include <qcheckbox.h>
 #include <qlayout.h>
@@ -217,16 +219,16 @@ void MainWindow::doFileConnect() {
 	}
 }
 
-	void MainWindow::doFileDisconnect() {
-		if(!_server_con.disconnect())
-			return;
+void MainWindow::doFileDisconnect() {
+	if(!_server_con.disconnect())
+		return;
 
-		fileConnectAction->setEnabled(true);
-		fileDisconnectAction->setEnabled(false);
-		changePasswordAction->setEnabled(false);
+	fileConnectAction->setEnabled(true);
+	fileDisconnectAction->setEnabled(false);
+	changePasswordAction->setEnabled(false);
 
-		switchType("");
-	}
+	switchType("");
+}
 
 void MainWindow::doChangePassword() {
 	ChangePasswordDialog change_password_dialog;
@@ -379,6 +381,26 @@ void MainWindow::doSubmit() {
 	}
 }
 
+void MainWindow::doClarificationRequest() {
+	vector<ProblemInfo> probs = _server_con.getProblems();
+
+	ClarificationRequest cr;
+
+        vector<ProblemInfo>::iterator i;
+        cr.problemSelection->insertItem("General");
+	for(i = probs.begin(); i != probs.end(); ++i) {
+		cr.problemSelection->insertItem(i->code + ": " + i->name);
+	}
+
+        if(cr.exec()) {
+                int item = cr.problemSelection->currentItem() - 1;
+                uint32_t prob_id = (item == -1) ? 0 : probs[item].id;
+
+		_server_con.clarificationRequest(prob_id, cr.question->text());
+        }
+        updateClarificationRequests();
+}
+
 void MainWindow::doJudgeSubscribeToProblems() {
     ProblemSubscriptionDialog problem_subscription_dialog;
     std::vector<QCheckBox *> problem_subscription_buttons;
@@ -404,11 +426,10 @@ void MainWindow::doJudgeSubscribeToProblems() {
 		button->setChecked(subscribed[p]);
 		problem_subscription_buttons.push_back(button);
 	}
-    
+
 	QSpacerItem *spacer = new QSpacerItem( 20, 20, QSizePolicy::Expanding, QSizePolicy::Minimum );
-    l->addItem( spacer );
-	
-	
+	l->addItem( spacer );
+
 	if (problem_subscription_dialog.exec()) {
 		bool changes = false;
 		bool failure = false;

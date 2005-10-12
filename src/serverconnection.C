@@ -76,12 +76,12 @@ void ServerConnection::sockdata_unlock() {
 		if(--_reader_count == 0)
 			pthread_cond_signal(&_cond_read_count);
 	}
-	pthread_mutex_unlock(&_lock_sockdata);	
+	pthread_mutex_unlock(&_lock_sockdata);
 }
 
 bool ServerConnection::connect(string server, string service) {
 	Config &config = Config::getConfig();
-	
+
 	struct addrinfo hints;
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_socktype = SOCK_STREAM;
@@ -129,7 +129,7 @@ bool ServerConnection::connect(string server, string service) {
 
 	if(_sock < 0)
 		goto err;
-	
+
 	if(::connect(_sock, i->ai_addr, i->ai_addrlen) < 0) {
 		lerror("connect");
 		goto err;
@@ -185,7 +185,7 @@ bool ServerConnection::disconnect() {
 	if(_ssl)
 		SSL_shutdown(_ssl);
 	sockdata_unlock();
-	
+
 	sockdata_writelock();
 	if(_sock < 0) {
 		log(LOG_WARNING, "Attempting to disconnect non-connected socket.");
@@ -260,7 +260,7 @@ bool ServerConnection::simpleAction(MessageBlock &mb) {
 		log(LOG_ERR, "%s", (*ret)["msg"].c_str());
 
 	delete ret;
-	
+
 	return response;
 }
 
@@ -399,10 +399,10 @@ bool ServerConnection::setProblemAttributes(uint32_t prob_id, std::string type,
 	uint32_t file_offset = 0;
 
 	ostrstrm << prob_id;
-	
+
 	mb["prob_id"] = ostrstrm.str();
 	mb["prob_type"] = type;
-	
+
 	for(i = file.begin(); i != file.end(); ++i) {
 		int fd = open(i->second.c_str(), O_RDONLY | O_EXCL);
 		if(fd < 0) {
@@ -420,7 +420,7 @@ bool ServerConnection::setProblemAttributes(uint32_t prob_id, std::string type,
 
 			return false;
 		}
-		
+
 		ostrstrm.str("");
 		char *tmp = strdup(i->second.c_str());
 		ostrstrm << file_offset << " " << st_stat.st_size << " " << basename(tmp);
@@ -470,11 +470,11 @@ bool ServerConnection::setProblemAttributes(uint32_t prob_id, std::string type,
 
 	return simpleAction(mb);
 }
-	
+
 bool ServerConnection::getProblemAttributes(uint32_t prob_id, AttributeMap& attrs) {
 	ostringstream strm;
 	strm << prob_id;
-	
+
 	MessageBlock mb("getprobattrs");
 	mb["prob_id"] = strm.str();
 
@@ -494,7 +494,7 @@ bool ServerConnection::getProblemAttributes(uint32_t prob_id, AttributeMap& attr
 		if(i->first != "content-length")
 			attrs[i->first] = i->second;
 	}
-	
+
 	delete ret;
 	return true;
 }
@@ -502,11 +502,11 @@ bool ServerConnection::getProblemAttributes(uint32_t prob_id, AttributeMap& attr
 bool ServerConnection::getProblemFile(uint32_t prob_id, string attrib, char **bufferptr, uint32_t *bufferlen) {
 	ostringstream strm;
 	strm << prob_id;
-	
+
 	MessageBlock mb("getprobfile");
 	mb["prob_id"] = strm.str();
 	mb["file"] = attrib;
-	
+
 	MessageBlock *ret = sendMB(&mb);
 	if(!ret)
 		return false;
@@ -552,7 +552,7 @@ vector<ProblemInfo> ServerConnection::getProblems() {
 
 		strstrm.str(""); strstrm << "code" << i;
 		tmp.code = (*res)[strstrm.str()];
-		
+
 		strstrm.str(""); strstrm << "name" << i;
 		tmp.name = (*res)[strstrm.str()];
 
@@ -603,7 +603,7 @@ bool ServerConnection::unsubscribeToProblem(ProblemInfo info) {
 bool ServerConnection::submit(uint32_t prob_id, int fd, const string& lang) {
 	ostringstream str_prob_id;
 	str_prob_id << prob_id;
-	
+
 	MessageBlock mb("submit");
 	mb["prob_id"] = str_prob_id.str();
 	mb["lang"] = lang;
@@ -611,12 +611,29 @@ bool ServerConnection::submit(uint32_t prob_id, int fd, const string& lang) {
 	struct stat statbuf;
 	if(fstat(fd, &statbuf) < 0)
 		return false;
-	
+
 	void *ptr = mmap(NULL, statbuf.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
 	if(!ptr)
 		return false;
 	mb.setContent((char*)ptr, statbuf.st_size);
 	munmap(ptr, statbuf.st_size);
+
+	return simpleAction(mb);
+}
+
+bool ServerConnection::clarificationRequest(uint32_t prob_id, const string& question) {
+        if (!_ssl)
+                return false;
+
+	ostringstream str_prob_id;
+	str_prob_id << prob_id;
+
+	string flatquestion = question;
+	replace(flatquestion.begin(), flatquestion.end(), '\n', ' ');
+
+	MessageBlock mb("clarificationrequest");
+	mb["prob_id"] = str_prob_id.str();
+	mb["question"] = flatquestion;
 
 	return simpleAction(mb);
 }
@@ -679,7 +696,7 @@ bool ServerConnection::mark(uint32_t submission_id, RunResult result, std::strin
 	uint32_t file_offset = 0;
 
 	ostrstrm << submission_id;
-	
+
 	mb["submission_id"] = ostrstrm.str();
 
 	ostrstrm.str("");
@@ -706,7 +723,7 @@ bool ServerConnection::mark(uint32_t submission_id, RunResult result, std::strin
 
 			return false;
 		}
-		
+
 		ostrstrm.str("");
 		ostrstrm << c;
 
@@ -753,7 +770,7 @@ bool ServerConnection::mark(uint32_t submission_id, RunResult result, std::strin
 
 	mb.dump();
 
-	return simpleAction(mb);	
+	return simpleAction(mb);
 }
 
 bool ServerConnection::registerEventCallback(string event, EventCallback func, void *custom) {
@@ -774,7 +791,7 @@ bool ServerConnection::registerEventCallback(string event, EventCallback func, v
 		t.p = custom;
 		list.push_back(t);
 	}
-	
+
 	pthread_mutex_unlock(&_lock_eventmap);
 	return true;
 }
@@ -788,7 +805,7 @@ bool ServerConnection::deregisterEventCallback(string event, EventCallback func)
 		if(i->func == func)
 			list.erase(i);
 	}
-	
+
 	pthread_mutex_unlock(&_lock_eventmap);
 	return true;
 }
@@ -830,7 +847,7 @@ void* ServerConnection::receive_thread() {
 		}
 		int res = SSL_read(_ssl, buffer, BFR_SIZE);
 		sockdata_unlock();
-	
+
 		char *pos = buffer;
 		if(res < 0) {
 			log_ssl_errors("SSL_read");
@@ -857,11 +874,11 @@ void* ServerConnection::receive_thread() {
 			}
 		}
 	}
-	
+
 	pthread_mutex_lock(&_lock_thread);
 	_has_thread = false;
 	pthread_mutex_unlock(&_lock_thread);
-	
+
 	log(LOG_DEBUG, "Stopping ServerConnection receive_thread");
 
 	return NULL;

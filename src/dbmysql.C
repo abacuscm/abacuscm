@@ -52,7 +52,7 @@ public:
 	virtual uint32_t maxSubmissionId();
 	virtual uint32_t maxClarificationReqId();
 	virtual uint32_t maxClarificationId();
-    virtual ProblemList getProblems();
+	virtual ProblemList getProblems();
 	virtual time_t getProblemUpdateTime(uint32_t problem_id);
 	virtual bool setProblemUpdateTime(uint32_t problem_id, time_t time);
 	virtual string getProblemType(uint32_t problem_id);
@@ -73,6 +73,9 @@ public:
 	virtual SubmissionList getSubmissions(uint32_t uid);
 	virtual ClarificationList getClarifications(uint32_t uid);
 	virtual ClarificationRequestList getClarificationRequests(uint32_t uid);
+	virtual bool putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t prob_id,
+					     uint32_t time, uint32_t server_id,
+					     const std::string& question);
 	virtual bool retrieveSubmission(uint32_t sub_id, char** buffer, int *length,
 			string& language, uint32_t* prob_id);
 	virtual IdList getUnmarked(uint32_t server_id);
@@ -796,6 +799,22 @@ ClarificationRequestList MySQL::getClarificationRequests(uint32_t uid) {
 	mysql_free_result(res);
 
 	return lst;
+}
+
+bool MySQL::putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t prob_id,
+				    uint32_t time, uint32_t server_id,
+				    const std::string& question)
+{
+	ostringstream query;
+	query << "INSERT INTO ClarificationRequest (clarification_req_id, user_id, problem_id, time, text)";
+	query << " VALUES (" << cr_id << ", " << user_id << ", " << prob_id << ", " << time << ", '" << escape_string(question) << "')";
+
+	if (mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	}
+
+	return true;
 }
 
 bool MySQL::retrieveSubmission(uint32_t sub_id, char** buffer, int *length, string& language, uint32_t* prob_id) {

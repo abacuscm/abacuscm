@@ -230,7 +230,14 @@ public:
 	/**
 	 * Retrieves all clarification requests relevant to a specific user.
 	 */
-	virtual ClarificationRequestList getClarificationRequests(uint32_t user_id = 0) = 0;
+        virtual ClarificationRequestList getClarificationRequests(uint32_t user_id = 0) = 0;
+
+        /**
+         * Add a clarification request to the database
+         */
+	virtual bool putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t prob_id,
+					     uint32_t time, uint32_t server_id,
+					     const std::string& question) = 0;
 
 	/**
 	 * Retrieve Submission content (and language).

@@ -1,0 +1,208 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>ClarificationRequest</class>
+<widget class="QDialog">
+    <property name="name">
+        <cstring>ClarificationRequest</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>443</width>
+            <height>228</height>
+        </rect>
+    </property>
+    <property name="caption">
+        <string>Clarification request</string>
+    </property>
+    <property name="sizeGripEnabled">
+        <bool>true</bool>
+    </property>
+    <widget class="QLayoutWidget">
+        <property name="name">
+            <cstring>layout4</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>10</y>
+                <width>420</width>
+                <height>150</height>
+            </rect>
+        </property>
+        <grid>
+            <property name="name">
+                <cstring>unnamed</cstring>
+            </property>
+            <widget class="QLabel" row="0" column="0">
+                <property name="name">
+                    <cstring>textLabel1</cstring>
+                </property>
+                <property name="text">
+                    <string>Problem:</string>
+                </property>
+                <property name="buddy" stdset="0">
+                    <cstring>problemSelection</cstring>
+                </property>
+            </widget>
+            <widget class="QComboBox" row="0" column="1">
+                <property name="name">
+                    <cstring>problemSelection</cstring>
+                </property>
+            </widget>
+            <widget class="QTextEdit" row="1" column="1">
+                <property name="name">
+                    <cstring>question</cstring>
+                </property>
+                <property name="textFormat">
+                    <enum>PlainText</enum>
+                </property>
+            </widget>
+            <widget class="QLabel" row="1" column="0">
+                <property name="name">
+                    <cstring>textLabel2</cstring>
+                </property>
+                <property name="text">
+                    <string>Question</string>
+                </property>
+                <property name="buddy" stdset="0">
+                    <cstring>question</cstring>
+                </property>
+            </widget>
+        </grid>
+    </widget>
+    <spacer>
+        <property name="name">
+            <cstring>spacer4</cstring>
+        </property>
+        <property name="orientation">
+            <enum>Vertical</enum>
+        </property>
+        <property name="sizeType">
+            <enum>Expanding</enum>
+        </property>
+        <property name="sizeHint">
+            <size>
+                <width>20</width>
+                <height>16</height>
+            </size>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>220</x>
+                <y>160</y>
+                <width>20</width>
+                <height>16</height>
+            </rect>
+        </property>
+    </spacer>
+    <widget class="QLayoutWidget">
+        <property name="name">
+            <cstring>Layout1</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>180</y>
+                <width>421</width>
+                <height>36</height>
+            </rect>
+        </property>
+        <hbox>
+            <property name="name">
+                <cstring>unnamed</cstring>
+            </property>
+            <property name="margin">
+                <number>0</number>
+            </property>
+            <property name="spacing">
+                <number>6</number>
+            </property>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>buttonHelp</cstring>
+                </property>
+                <property name="text">
+                    <string>&amp;Help</string>
+                </property>
+                <property name="accel">
+                    <string>F1</string>
+                </property>
+                <property name="autoDefault">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <spacer>
+                <property name="name">
+                    <cstring>Horizontal Spacing2</cstring>
+                </property>
+                <property name="orientation">
+                    <enum>Horizontal</enum>
+                </property>
+                <property name="sizeType">
+                    <enum>Expanding</enum>
+                </property>
+                <property name="sizeHint">
+                    <size>
+                        <width>20</width>
+                        <height>20</height>
+                    </size>
+                </property>
+            </spacer>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>buttonOk</cstring>
+                </property>
+                <property name="text">
+                    <string>&amp;OK</string>
+                </property>
+                <property name="accel">
+                    <string></string>
+                </property>
+                <property name="autoDefault">
+                    <bool>true</bool>
+                </property>
+                <property name="default">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>buttonCancel</cstring>
+                </property>
+                <property name="text">
+                    <string>&amp;Cancel</string>
+                </property>
+                <property name="accel">
+                    <string></string>
+                </property>
+                <property name="autoDefault">
+                    <bool>true</bool>
+                </property>
+            </widget>
+        </hbox>
+    </widget>
+</widget>
+<connections>
+    <connection>
+        <sender>buttonOk</sender>
+        <signal>clicked()</signal>
+        <receiver>ClarificationRequest</receiver>
+        <slot>accept()</slot>
+    </connection>
+    <connection>
+        <sender>buttonCancel</sender>
+        <signal>clicked()</signal>
+        <receiver>ClarificationRequest</receiver>
+        <slot>reject()</slot>
+    </connection>
+</connections>
+<tabstops>
+    <tabstop>problemSelection</tabstop>
+    <tabstop>question</tabstop>
+    <tabstop>buttonOk</tabstop>
+    <tabstop>buttonCancel</tabstop>
+    <tabstop>buttonHelp</tabstop>
+</tabstops>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>

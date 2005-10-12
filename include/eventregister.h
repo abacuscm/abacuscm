@@ -25,8 +25,8 @@ private:
 		void triggerEvent(const MessageBlock* mb);
 		void triggerOne(const MessageBlock*mb, bool remove);
 		void registerClient(ClientConnection *);
-        void deregisterClient(ClientConnection *);
-        bool isClientRegistered(ClientConnection *);
+		void deregisterClient(ClientConnection *);
+		bool isClientRegistered(ClientConnection *);
 	};
 
 	typedef std::map<std::string, Event*> EventMap;

@@ -198,7 +198,7 @@ bool SubmissionMessage::process() const {
 	if(result)
 		mb["msg"] = "Your submission for '" + problem + "' has been accepted";
 	else
-		mb["msg"] = "Your sumission for '" + problem + "' has failed - please notify the contest administrator";
+		mb["msg"] = "Your submission for '" + problem + "' has failed - please notify the contest administrator";
 
 	EventRegister::getInstance().sendMessage(_user_id, &mb);
 
