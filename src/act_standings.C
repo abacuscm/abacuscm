@@ -133,8 +133,16 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 
 	{
 		ostringstream col;
+		col << ncols++;
+		mb["row_0_" + col.str()] = "Solved";
+
+		col.str("");
+		col << ncols++;
+		mb["row_0_" + col.str()] = "Total time";
+
+		col.str("");
 		col << ncols;
-		mb["row_0_" + col.str()] = "Time";
+		mb["ncols"] = col.str();
 	}
 
 	int r = 1;
@@ -147,10 +155,13 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 		mb[headername.str()] = db->user_id2name(i->user_id);
 
 		headername.str("");
-		headername << "row_" << r << "_" << ncols;
-
+		headername << "row_" << r << "_" << (ncols - 1);
 		val << i->time;
-		
+		mb[headername.str()] = val.str();
+
+		headername.str("");
+		headername << "row_" << r << "_" << (ncols - 2);
+		val << i->correct;
 		mb[headername.str()] = val.str();
 
 		map<uint32_t, uint32_t>::iterator pc;
@@ -165,6 +176,12 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 
 			mb[headername.str()] = val.str();
 		}
+	}
+
+	{
+		ostringstream row;
+		row << r;
+		mb["nrows"] = row.str();
 	}
 
 	db->release();
