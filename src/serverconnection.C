@@ -648,6 +648,7 @@ SubmissionList ServerConnection::getSubmissions() {
 	attrs.push_back("time");
 	attrs.push_back("problem");
 	attrs.push_back("result");
+	attrs.push_back("comment");
 
 	return multiVectorAction(mb, attrs);
 }

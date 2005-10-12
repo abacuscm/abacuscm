@@ -502,7 +502,7 @@ void MainWindow::updateSubmissions() {
 		
 		item->setText(0, time_buffer);
 		item->setText(1, (*l)["problem"]);
-		item->setText(2, (*l)["result"]);
+		item->setText(2, (*l)["comment"]);
 	}
 }
 

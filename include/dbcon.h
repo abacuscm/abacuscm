@@ -7,6 +7,8 @@
 #include <map>
 #include <stdint.h>
 
+#include "misc.h"
+
 class Message;
 
 typedef std::list<Message*> MessageList;
@@ -251,6 +253,9 @@ public:
 
 	virtual bool putMarkFile(uint32_t submission_id, uint32_t marker_id,
 			std::string name, const void* data, uint32_t len) = 0;
+	
+	virtual bool getSubmissionState(uint32_t submission_id, RunResult& state, uint32_t& utype, std::string& comment) = 0;
+	
 	/**
 	 * Functions for determining the contest state - they really don't
 	 * belong here but making SQL calculate this is so much easier ...

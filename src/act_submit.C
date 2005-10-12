@@ -135,7 +135,6 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 		lst = db->getSubmissions(uid);
 	else
 		lst = db->getSubmissions();
-	db->release();
 
 	MessageBlock mb("ok");
 	
@@ -149,7 +148,28 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 		AttributeList::iterator a;
 		for(a = s->begin(); a != s->end(); ++a)
 			mb[a->first + cntr] = a->second;
+
+		RunResult resinfo;
+		uint32_t type;
+		std::string comment;
+		
+		if(db->getSubmissionState(
+					strtoll((*s)["submission_id"].c_str(), NULL, 0),
+					resinfo,
+					type,
+					comment)) {
+			if(resinfo == WRONG && type == USER_TYPE_MARKER)
+				comment = "Awaiting Judge";
+			tmp.str("");
+			tmp << (int)resinfo;
+			mb["result" + cntr] = tmp.str();
+			mb["comment" + cntr] = comment;
+		} else {
+			mb["result"] = OTHER;
+			mb["comment"] = "Unknown";
+		}
 	}
+	db->release();
 	
 	return cc->sendMessageBlock(&mb);
 }

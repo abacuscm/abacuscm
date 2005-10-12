@@ -83,6 +83,7 @@ public:
 			uint32_t time, uint32_t result, std::string comment, uint32_t server_id);
 	virtual bool putMarkFile(uint32_t submission_id, uint32_t marker_id,
 			std::string name, const void* data, uint32_t len);
+	virtual bool getSubmissionState(uint32_t submission_id, RunResult& state, uint32_t& utype, string& comment);
 	virtual bool contestRunning(uint32_t server_id, uint32_t unix_time);
 	virtual uint32_t contestTime(uint32_t server_id, uint32_t unix_time);
 	virtual bool startStopContest(uint32_t server_id, uint32_t unix_time, bool start);
@@ -732,7 +733,6 @@ SubmissionList MySQL::getSubmissions(uint32_t uid) {
 		attrs["submission_id"] = row[0];
 		attrs["time"] = row[1];
 		attrs["problem"] = row[2];
-		attrs["result"] = "pending";
 
 		lst.push_back(attrs);
 	}
@@ -895,6 +895,35 @@ bool MySQL::putMarkFile(uint32_t submission_id, uint32_t marker_id,
 		return false;
 	} else
 		return true;
+}
+
+bool MySQL::getSubmissionState(uint32_t submission_id, RunResult& state, uint32_t &utype, string& comment) {
+	ostringstream query;
+	query << "SELECT result, remark, type FROM SubmissionMark, User WHERE marker_id = user_id AND submission_id=" << submission_id << " ORDER BY type LIMIT 1";
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	} else {
+		MYSQL_RES* res = mysql_use_result(&_mysql);
+		if(!res) {
+			log_mysql_error();
+			return false;
+		}
+
+		MYSQL_ROW row = mysql_fetch_row(res);
+		bool result = false;
+		
+		if(row) {
+			state = (RunResult)strtoll(row[0], NULL, 0);
+			comment = row[1];
+			utype = strtoll(row[2], NULL, 0);
+			result = true;
+		}
+
+		mysql_free_result(res);
+		return result;
+	}
 }
 
 bool MySQL::setProblemUpdateTime(uint32_t problem_id, time_t time) {

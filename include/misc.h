@@ -18,7 +18,8 @@ typedef enum {
     TIME_EXCEEDED = 2,
     ABNORMAL = 3,
     COMPILE_FAILED = 4,
-    OTHER = 5
+	JUDGE = 5,
+    OTHER = 6
 } RunResult;
 
 extern char *runMessages[];
