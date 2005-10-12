@@ -592,7 +592,25 @@ void MainWindow::judgeSubmissionHandler(QListViewItem *item) {
             judgeDecisionDialog.FileSelector->insertItem(name.c_str());
         }
 
-        if (judgeDecisionDialog.exec()) {
+        int result = judgeDecisionDialog.exec();
+        switch (result) {
+        case 1:
+            // deferred
+            // in this case, we just do nothing
+            log(LOG_INFO, "Judge deferred marking of submission %u", submission_id);
+            return;
+        case 2:
+            // correct
+            // need to mark the problem as being correct
+            if (_server_con.mark(submission_id, CORRECT, "Correct answer", AttributeMap()))
+                log(LOG_INFO, "Judge marked submission %u as correct", submission_id);
+            return;
+        case 3:
+            // wrong
+            // need to mark the problem as being wrong
+            if (_server_con.mark(submission_id, WRONG, "Wrong answer", AttributeMap()))
+                log(LOG_INFO, "Judge marked submission %u as wrong", submission_id);
+            return;
         }
     }
 }

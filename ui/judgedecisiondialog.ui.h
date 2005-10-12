@@ -22,17 +22,17 @@ void JudgeDecisionDialog::FileSelector_activated( const QString &key )
 
 void JudgeDecisionDialog::deferred()
 {
-    accept();
+    done(1);
 }
 
 
 void JudgeDecisionDialog::correct()
 {
-    accept();
+    done(2);
 }
 
 
 void JudgeDecisionDialog::wrong()
 {
-    accept();
+    done(3);
 }

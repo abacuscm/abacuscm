@@ -309,9 +309,6 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
 	if(!db)
 		return cc->sendError("Error connecting to database");
 
-	uint32_t uid = cc->getProperty("user_id");
-	uint32_t utype = cc->getProperty("user_type");
-
     std::string request = (*mb)["request"];
     uint32_t submission_id = strtoll((*mb)["submission_id"].c_str(), NULL, 0);
 

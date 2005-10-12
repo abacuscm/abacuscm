@@ -217,6 +217,38 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 	if(cc->getProperty("user_type") == USER_TYPE_MARKER && Markers::getInstance().hasIssued(cc) != submission_id)
 		return cc->sendError("Markers may only mark submissions issued to them");
 
+    if (cc->getProperty("user_type") == USER_TYPE_JUDGE) {
+        // extra code to avoid race conditions for judge marking
+        RunResult resinfo;
+        uint32_t utype;
+        std::string comment;
+
+        DbCon *db = DbCon::getInstance();
+        if(!db)
+            return cc->sendError("Error connecting to database");
+
+        // POSSIBLE RACE BETWEEN DOING THIS CHECK AND ASSIGNING THE MARK
+        // but it's very small & unlikely :-)
+        if(db->getSubmissionState(
+                                  submission_id,
+                                  resinfo,
+                                  utype,
+                                  comment)) {
+            db->release();
+            if (utype == USER_TYPE_JUDGE) {
+                return cc->sendError("A judge has already beat you to it and marked this submission, sorry!");
+            }
+            if (resinfo != WRONG) {
+                return cc->sendError("You cannot change the status of this submission: the decision was black and white; no human required ;-)");
+            }
+        }
+        else {
+            db->release();
+            return cc->sendError("This hasn't been compiled or even run: you really think I'm going to let you fiddle with the marks?");
+        }
+        db->release();
+    }
+
 	uint32_t result = strtoll((*mb)["result"].c_str(), &errpnt, 0);
 	if(*errpnt || (*mb)["result"] == "") {
 		Markers::getInstance().preemptMarker(cc);
@@ -263,5 +295,6 @@ static void init() __attribute__((constructor));
 static void init() {
 	ClientAction::registerAction(USER_TYPE_MARKER, "subscribemark", &_act_subscribe_mark);
 	ClientAction::registerAction(USER_TYPE_MARKER, "mark", &_act_place_mark);
+	ClientAction::registerAction(USER_TYPE_JUDGE, "mark", &_act_place_mark);
     Message::registerMessageFunctor(TYPE_ID_SUBMISSION_MARK, create_mark_message);
 }
