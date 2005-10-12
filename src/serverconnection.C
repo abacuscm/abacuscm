@@ -663,7 +663,8 @@ SubmissionList ServerConnection::getSubmissions() {
 		return SubmissionList();
 
 	MessageBlock mb("getsubmissions");
-	list<string> attrs;
+    list<string> attrs;
+    attrs.push_back("submission_id");
 	attrs.push_back("contestant");
 	attrs.push_back("time");
 	attrs.push_back("problem");
@@ -792,6 +793,40 @@ bool ServerConnection::mark(uint32_t submission_id, RunResult result, std::strin
 	mb.dump();
 
 	return simpleAction(mb);
+}
+
+uint32_t ServerConnection::countMarkFiles(uint32_t submission_id) {
+    MessageBlock mb("fetchfile");
+    mb["request"] = "count";
+    ostringstream str("");
+    str << submission_id;
+    mb["submission_id"] = str.str();
+
+    MessageBlock *result = sendMB(&mb);
+
+    uint32_t count = strtoll((*result)["count"].c_str(), NULL, 0);
+    delete result;
+    return count;
+}
+
+bool ServerConnection::getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length) {
+    MessageBlock mb("fetchfile");
+    mb["request"] = "data";
+    ostringstream str("");
+    str << submission_id;
+    mb["submission_id"] = str.str();
+    str.str("");
+    str << file_index;
+    mb["index"] = str.str();
+
+    MessageBlock *result = sendMB(&mb);
+
+    name = (*result)["name"];
+    length = strtoll((*result)["length"].c_str(), NULL, 0);
+    *data = (void *) new char[length + 1];
+    memcpy(*data, result->content(), length);
+    ((char *) *data) [length] = 0;
+    return true;
 }
 
 uint32_t ServerConnection::contestTime() {

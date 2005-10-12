@@ -56,6 +56,7 @@ abacus_objects = abacus \
 	ui_problemconfigbase moc_ui_problemconfigbase \
 	ui_mainwindowbase moc_ui_mainwindowbase \
 	ui_changepassworddialog moc_ui_changepassworddialog \
+	ui_judgedecisiondialog moc_ui_judgedecisiondialog \
 	ui_clarificationrequest moc_ui_clarificationrequest \
 	ui_viewclarificationrequest moc_ui_viewclarificationrequest \
 	viewclarificationrequestsub \

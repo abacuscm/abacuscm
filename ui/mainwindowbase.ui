@@ -313,44 +313,6 @@
                             <enum>Reject</enum>
                         </property>
                     </widget>
-                    <widget class="QLayoutWidget">
-                        <property name="name">
-                            <cstring>layout2</cstring>
-                        </property>
-                        <hbox>
-                            <property name="name">
-                                <cstring>unnamed</cstring>
-                            </property>
-                            <spacer>
-                                <property name="name">
-                                    <cstring>spacer2</cstring>
-                                </property>
-                                <property name="orientation">
-                                    <enum>Horizontal</enum>
-                                </property>
-                                <property name="sizeType">
-                                    <enum>Expanding</enum>
-                                </property>
-                                <property name="sizeHint">
-                                    <size>
-                                        <width>40</width>
-                                        <height>20</height>
-                                    </size>
-                                </property>
-                            </spacer>
-                            <widget class="QPushButton">
-                                <property name="name">
-                                    <cstring>clarifyButton</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>Request &amp;Clarification</string>
-                                </property>
-                                <property name="accel">
-                                    <string>Alt+C</string>
-                                </property>
-                            </widget>
-                        </hbox>
-                    </widget>
                 </vbox>
             </widget>
             <widget class="QWidget">
@@ -453,6 +415,17 @@
                         <cstring>unnamed</cstring>
                     </property>
                     <widget class="QListView">
+                        <column>
+                            <property name="text">
+                                <string>Submission ID</string>
+                            </property>
+                            <property name="clickable">
+                                <bool>true</bool>
+                            </property>
+                            <property name="resizable">
+                                <bool>true</bool>
+                            </property>
+                        </column>
                         <column>
                             <property name="text">
                                 <string>Time</string>
@@ -882,12 +855,6 @@
         <slot>tabChanged(QWidget*)</slot>
     </connection>
     <connection>
-        <sender>clarifyButton</sender>
-        <signal>clicked()</signal>
-        <receiver>MainWindowBase</receiver>
-        <slot>doClarificationRequest()</slot>
-    </connection>
-    <connection>
         <sender>judgesSubscribeToProblemsAction</sender>
         <signal>activated()</signal>
         <receiver>MainWindowBase</receiver>
@@ -898,6 +865,12 @@
         <signal>signalJudgeControls(bool)</signal>
         <receiver>judgesSubscribeToProblemsAction</receiver>
         <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>submissions</sender>
+        <signal>doubleClicked(QListViewItem*)</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>judgeSubmissionHandler(QListViewItem*)</slot>
     </connection>
     <connection>
         <sender>clarificationRequests</sender>
@@ -925,9 +898,9 @@
     <slot access="protected" specifier="pure virtual">doAdminProblemConfig()</slot>
     <slot access="protected" specifier="pure virtual">doFileDisconnect()</slot>
     <slot access="protected" specifier="pure virtual">doSubmit()</slot>
-    <slot access="protected" specifier="pure virtual">tabChanged(QWidget *newtab)</slot>
-    <slot access="protected" specifier="pure virtual">doClarificationRequest()</slot>
-    <slot access="protected">doJudgeSubscribeToProblems()</slot>
+    <slot access="protected" specifier="pure virtual">tabChanged( QWidget * newtab )</slot>
+    <slot access="protected" specifier="pure virtual">doJudgeSubscribeToProblems()</slot>
+    <slot specifier="pure virtual">judgeSubmissionHandler(QListViewItem *)</slot>
     <slot access="protected" specifier="pure virtual">doShowClarificationRequest(QListViewItem *item)</slot>
     <slot access="protected" specifier="pure virtual">doShowClarificationReply(QListViewItem *item)</slot>
 </slots>

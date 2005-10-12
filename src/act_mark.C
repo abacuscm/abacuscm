@@ -263,5 +263,5 @@ static void init() __attribute__((constructor));
 static void init() {
 	ClientAction::registerAction(USER_TYPE_MARKER, "subscribemark", &_act_subscribe_mark);
 	ClientAction::registerAction(USER_TYPE_MARKER, "mark", &_act_place_mark);
-	Message::registerMessageFunctor(TYPE_ID_SUBMISSION_MARK, create_mark_message);
+    Message::registerMessageFunctor(TYPE_ID_SUBMISSION_MARK, create_mark_message);
 }

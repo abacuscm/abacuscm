@@ -1,0 +1,135 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>JudgeDecisionDialog</class>
+<widget class="QDialog">
+    <property name="name">
+        <cstring>JudgeDecisionDialog</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>667</width>
+            <height>555</height>
+        </rect>
+    </property>
+    <property name="caption">
+        <string>Submission review</string>
+    </property>
+    <widget class="QPushButton">
+        <property name="name">
+            <cstring>CorrectButton</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>340</x>
+                <y>520</y>
+                <width>111</width>
+                <height>31</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Correct</string>
+        </property>
+    </widget>
+    <widget class="QPushButton">
+        <property name="name">
+            <cstring>WrongButton</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>470</x>
+                <y>520</y>
+                <width>111</width>
+                <height>30</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Wrong</string>
+        </property>
+    </widget>
+    <widget class="QTextBrowser">
+        <property name="name">
+            <cstring>FileData</cstring>
+        </property>
+        <property name="enabled">
+            <bool>true</bool>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>0</x>
+                <y>50</y>
+                <width>661</width>
+                <height>460</height>
+            </rect>
+        </property>
+    </widget>
+    <widget class="QComboBox">
+        <property name="name">
+            <cstring>FileSelector</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>10</y>
+                <width>271</width>
+                <height>30</height>
+            </rect>
+        </property>
+    </widget>
+    <widget class="QPushButton">
+        <property name="name">
+            <cstring>DeferButton</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>200</x>
+                <y>520</y>
+                <width>120</width>
+                <height>30</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Defer decision</string>
+        </property>
+    </widget>
+</widget>
+<connections>
+    <connection>
+        <sender>FileSelector</sender>
+        <signal>activated(const QString&amp;)</signal>
+        <receiver>JudgeDecisionDialog</receiver>
+        <slot>FileSelector_activated(const QString&amp;)</slot>
+    </connection>
+    <connection>
+        <sender>DeferButton</sender>
+        <signal>pressed()</signal>
+        <receiver>JudgeDecisionDialog</receiver>
+        <slot>deferred()</slot>
+    </connection>
+    <connection>
+        <sender>CorrectButton</sender>
+        <signal>pressed()</signal>
+        <receiver>JudgeDecisionDialog</receiver>
+        <slot>correct()</slot>
+    </connection>
+    <connection>
+        <sender>WrongButton</sender>
+        <signal>pressed()</signal>
+        <receiver>JudgeDecisionDialog</receiver>
+        <slot>wrong()</slot>
+    </connection>
+</connections>
+<includes>
+    <include location="local" impldecl="in implementation">judgedecisiondialog.ui.h</include>
+</includes>
+<variables>
+    <variable access="public">std::map&lt;std::string, char *&gt; data;</variable>
+</variables>
+<slots>
+    <slot>FileSelector_activated( const QString &amp; key )</slot>
+    <slot access="protected">deferred()</slot>
+    <slot access="protected">correct()</slot>
+    <slot access="protected">wrong()</slot>
+</slots>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>

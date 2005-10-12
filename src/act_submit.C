@@ -27,6 +27,11 @@ protected:
 	bool int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
+class ActSubmissionFileFetcher : public ClientAction {
+protected:
+    bool int_process(ClientConnection *cc, MessageBlock *mb);
+};
+
 class SubmissionMessage : public Message {
 private:
 	uint32_t _submission_id;
@@ -299,9 +304,52 @@ static Message* create_submission_msg() {
 	return new SubmissionMessage();
 }
 
+bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *mb) {
+	DbCon *db = DbCon::getInstance();
+	if(!db)
+		return cc->sendError("Error connecting to database");
+
+	uint32_t uid = cc->getProperty("user_id");
+	uint32_t utype = cc->getProperty("user_type");
+
+    std::string request = (*mb)["request"];
+    uint32_t submission_id = strtoll((*mb)["submission_id"].c_str(), NULL, 0);
+
+    MessageBlock result_mb("ok");
+
+    if (request == "count") {
+        uint32_t count = db->countMarkFiles(submission_id);
+        std::ostringstream str("");
+        str << count;
+        result_mb["count"] = str.str();
+    }
+    else if (request == "data") {
+        uint32_t index = strtoll((*mb)["index"].c_str(), NULL, 0);
+        std::string name;
+        void *data;
+        uint32_t length;
+        bool result = db->getMarkFile(submission_id, index, name, &data, length);
+
+        if (!result) {
+            log(LOG_ERR, "Failed to get submission file with index %u for submission_id %u\n", index, submission_id);
+            return false;
+        }
+
+        result_mb["name"] = name;
+        std::ostringstream str("");
+        str << length;
+        result_mb["length"] = str.str();
+        result_mb.setContent((char *) data, length);
+    }
+
+	return cc->sendMessageBlock(&result_mb);
+}
+
+
 static ActSubmit _act_submit;
 static ActGetProblems _act_getproblems;
 static ActGetSubmissions _act_getsubs;
+static ActSubmissionFileFetcher _act_submission_file_fetcher;
 
 static void init() __attribute__((constructor));
 static void init() {
@@ -312,5 +360,6 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getsubmissions", &_act_getsubs);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissions", &_act_getsubs);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "getsubmissions", &_act_getsubs);
+    ClientAction::registerAction(USER_TYPE_JUDGE, "fetchfile", &_act_submission_file_fetcher);
 	Message::registerMessageFunctor(TYPE_ID_SUBMISSION, create_submission_msg);
 }

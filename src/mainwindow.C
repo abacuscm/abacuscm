@@ -14,6 +14,7 @@
 #include "problemconfig.h"
 #include "guievent.h"
 #include "messageblock.h"
+#include "ui_judgedecisiondialog.h"
 
 #include <qlineedit.h>
 #include <qmessagebox.h>
@@ -30,6 +31,7 @@
 #include <qbuttongroup.h>
 #include <qcheckbox.h>
 #include <qlayout.h>
+#include <qcombobox.h>
 #include <qlabel.h>
 #include <qtextbrowser.h>
 
@@ -533,11 +535,40 @@ void MainWindow::updateSubmissions() {
 		time = atol((*l)["time"].c_str());
 		localtime_r(&time, &time_tm);
 		strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
-		
-		item->setText(0, time_buffer);
-		item->setText(1, (*l)["problem"]);
-		item->setText(2, (*l)["comment"]);
+
+        item->setText(0, (*l)["submission_id"]);
+		item->setText(1, time_buffer);
+		item->setText(2, (*l)["problem"]);
+        item->setText(3, (*l)["comment"]);
 	}
+}
+
+void MainWindow::judgeSubmissionHandler(QListViewItem *item) {
+    if (_active_type == "judge") {
+        JudgeDecisionDialog judgeDecisionDialog;
+        uint32_t submission_id = strtoll(item->text(0), NULL, 0);
+        uint32_t fileCount = _server_con.countMarkFiles(submission_id);
+        log(LOG_DEBUG, "Submission %d has %d mark files\n", submission_id, fileCount);
+        for (map<string, char *>::iterator i = judgeDecisionDialog.data.begin(); i != judgeDecisionDialog.data.end(); i++)
+            delete[] i->second;
+        judgeDecisionDialog.data.clear();
+        while (judgeDecisionDialog.FileSelector->count() > 0)
+            judgeDecisionDialog.FileSelector->removeItem(0);
+        judgeDecisionDialog.FileSelector->insertItem("Select file to view...");
+        for (uint32_t index = 0; index < fileCount; index++) {
+            string name;
+            uint32_t length;
+            char *fdata;
+            bool result = _server_con.getMarkFile(submission_id, index, name, (void **) &fdata, length);
+            if (!result)
+                log(LOG_DEBUG, "Uh-oh, something went wrong when getting file from server");
+            judgeDecisionDialog.data[name] = fdata;
+            judgeDecisionDialog.FileSelector->insertItem(name.c_str());
+        }
+
+        if (judgeDecisionDialog.exec()) {
+        }
+    }
 }
 
 void MainWindow::updateClarifications() {

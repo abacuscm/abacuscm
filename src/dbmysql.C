@@ -88,6 +88,8 @@ public:
 			uint32_t time, uint32_t result, std::string comment, uint32_t server_id);
 	virtual bool putMarkFile(uint32_t submission_id, uint32_t marker_id,
 			std::string name, const void* data, uint32_t len);
+    virtual uint32_t countMarkFiles(uint32_t submission_id);
+    virtual bool getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length);
 	virtual bool getSubmissionState(uint32_t submission_id, RunResult& state, uint32_t& utype, string& comment);
 	virtual uint32_t submission2userid(uint32_t submission_id);
 	virtual bool contestRunning(uint32_t server_id, uint32_t unix_time);
@@ -944,6 +946,69 @@ bool MySQL::putMarkFile(uint32_t submission_id, uint32_t marker_id,
 		return false;
 	} else
 		return true;
+}
+
+uint32_t MySQL::countMarkFiles(uint32_t submission_id) {
+    ostringstream query;
+    query << "SELECT COUNT(*) FROM SubmissionMarkFile where submission_id=" << submission_id;
+
+    if (mysql_query(&_mysql, query.str().c_str())) {
+        log_mysql_error();
+        return 0;
+    } else {
+        MYSQL_RES *res = mysql_use_result(&_mysql);
+        if (!res) {
+            log_mysql_error();
+            return false;
+        }
+
+        MYSQL_ROW row = mysql_fetch_row(res);
+
+        uint32_t result;
+
+        if (row)
+            result = strtoll(row[0], NULL, 0);
+        else
+            result = 0;
+        mysql_free_result(res);
+        return result;
+    }
+}
+
+bool MySQL::getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length) {
+    ostringstream query;
+    query << "SELECT name, content FROM SubmissionMarkFile where submission_id=" << submission_id;
+
+    if (mysql_query(&_mysql, query.str().c_str())) {
+        log_mysql_error();
+        return 0;
+    } else {
+        MYSQL_RES *res = mysql_use_result(&_mysql);
+        if (!res) {
+            log_mysql_error();
+            return false;
+        }
+
+        MYSQL_ROW row;
+        uint32_t cur = 0;
+        while ((row = mysql_fetch_row(res)) != 0 && cur < file_index)
+            cur++;
+
+        if (row == 0) {
+            log_mysql_error();
+            mysql_free_result(res);
+            return false;
+        }
+
+        name = row[0];
+        unsigned long *lengths = mysql_fetch_lengths(res);
+        *data = (void *) (new char[lengths[1]]);
+        memcpy(*data, row[1], lengths[1]);
+        length = lengths[1];
+
+        mysql_free_result(res);
+        return true;
+    }
 }
 
 bool MySQL::getSubmissionState(uint32_t submission_id, RunResult& state, uint32_t &utype, string& comment) {

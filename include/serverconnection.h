@@ -108,6 +108,9 @@ public:
 	ClarificationList getClarifications();
 	ClarificationRequestList getClarificationRequests();
 
+    uint32_t countMarkFiles(uint32_t submission_id);
+    bool getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length);
+
 	uint32_t contestTime();
 	bool contestRunning();
 	bool subscribeTime();

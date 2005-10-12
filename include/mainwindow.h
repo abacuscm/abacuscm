@@ -7,6 +7,7 @@
 #include "serverconnection.h"
 
 class QCheckBox;
+class QListViewItem;
 
 typedef struct {
 	int prio_level;
@@ -35,6 +36,7 @@ protected:
 	virtual void tabChanged(QWidget*);
 	virtual void doChangePassword();
 	virtual void doJudgeSubscribeToProblems();
+    virtual void judgeSubmissionHandler(QListViewItem *);
 
 	virtual void customEvent(QCustomEvent *ev);
 public:

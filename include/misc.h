@@ -23,5 +23,6 @@ typedef enum {
 } RunResult;
 
 extern char *runMessages[];
+extern char *shortRunMessages[];
 
 #endif
