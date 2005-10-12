@@ -161,6 +161,7 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 
 		headername.str("");
 		headername << "row_" << r << "_" << (ncols - 2);
+		val.str("");
 		val << i->correct;
 		mb[headername.str()] = val.str();
 
