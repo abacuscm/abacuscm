@@ -165,8 +165,8 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 			mb["result" + cntr] = tmp.str();
 			mb["comment" + cntr] = comment;
 		} else {
-			mb["result"] = OTHER;
-			mb["comment"] = "Unknown";
+			mb["result" + cntr] = OTHER;
+			mb["comment" + cntr] = "Pending";
 		}
 	}
 	db->release();
