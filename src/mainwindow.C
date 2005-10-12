@@ -22,51 +22,57 @@
 
 using namespace std;
 
-/****************** Class to handle log messages. *******************/
-class LogEvent : public GUIEvent {
+/********************** Notification Dialogs ************************/
+class NotifyEvent : public GUIEvent {
 private:
-	int _level;
-	char *_msg;
+	QString _caption;
+	QString _text;
+	QMessageBox::Icon _icon;
 public:
-	LogEvent(int level, char* msg);
-	virtual ~LogEvent();
+	NotifyEvent(const QString& caption, const QString& text, QMessageBox::Icon icon);
 
 	virtual void process(QWidget*);
 };
 
-LogEvent::LogEvent(int level, char* msg) {
-	_level = level;
-	_msg = msg;
+NotifyEvent::NotifyEvent(const QString& caption, const QString& text, QMessageBox::Icon icon) {
+	_caption = caption;
+	_text = text;
+	_icon = icon;
 }
 
-LogEvent::~LogEvent() {
-	free(_msg);
-}
-
-void LogEvent::process(QWidget *p) {
-	switch(_level) {
-	case LOG_DEBUG:
-	case LOG_NOTICE:
-		break;
-	case LOG_INFO:
-		QMessageBox::information(p, "Info Message", _msg, "O&k");
-		break;
-	case LOG_WARNING:
-		QMessageBox::warning(p, "Warning", _msg, "O&k");
-		break;
-	case LOG_ERR:
-	case LOG_CRIT:
-		QMessageBox::critical(p, "Error", _msg, "O&k");
-		break;
-	}
+void NotifyEvent::process(QWidget *parent) {
+	QMessageBox(_caption, _text, _icon, QMessageBox::Ok, QMessageBox::NoButton, QMessageBox::NoButton, parent).exec();
 }
 
 static void window_log(int priority, const char* format, va_list ap) {
+	QString caption;
+	QMessageBox::Icon icon;
+
+	switch(priority) {
+	case LOG_INFO:
+		caption = "Info Message";
+		icon = QMessageBox::Information;
+		break;
+	case LOG_WARNING:
+		caption = "Warning";
+		icon = QMessageBox::Warning;
+		break;
+	case LOG_ERR:
+	case LOG_CRIT:
+		caption = "Error";
+		icon = QMessageBox::Critical;
+		break;
+	default:
+		return;
+	}
+
 	char *msg;
 	vasprintf(&msg, format, ap);
 
-	LogEvent *le = new LogEvent(priority, msg);
+	NotifyEvent *le = new NotifyEvent(caption, msg, icon);
 	le->post();
+
+	free(msg);
 }
 
 /********************* MainWindowCaller *****************************/
