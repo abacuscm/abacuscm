@@ -1,6 +1,6 @@
 -- MySQL dump 10.9
 --
--- Host: xacatecas.lan    Database: abacus
+-- Host: localhost    Database: abacus
 -- ------------------------------------------------------
 -- Server version	4.1.14-log
 
@@ -24,7 +24,7 @@ CREATE TABLE `Clarification` (
   `user_id` int(11) NOT NULL default '0',
   `time` int(11) NOT NULL default '0',
   `public` tinyint(1) default NULL,
-  `text` text default NULL,
+  `text` text,
   PRIMARY KEY  (`clarification_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
@@ -38,7 +38,7 @@ CREATE TABLE `ClarificationRequest` (
   `user_id` int(11) NOT NULL default '0',
   `time` int(11) NOT NULL default '0',
   `problem_id` int(11) default NULL,
-  `text` text default NULL,
+  `text` text,
   PRIMARY KEY  (`clarification_req_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
@@ -49,9 +49,9 @@ CREATE TABLE `ClarificationRequest` (
 DROP TABLE IF EXISTS `ContestStartStop`;
 CREATE TABLE `ContestStartStop` (
   `server_id` int(10) unsigned NOT NULL default '0',
+  `action` enum('START','STOP') NOT NULL default 'START',
   `time` int(10) unsigned NOT NULL default '0',
-  `action` enum('START','STOP') default NULL,
-  PRIMARY KEY  (`server_id`,`time`)
+  PRIMARY KEY  (`server_id`,`action`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 --

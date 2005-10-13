@@ -29,6 +29,7 @@ protected:
 	virtual void doFileDisconnect();
 	virtual void doAdminCreateUser();
 	virtual void doAdminProblemConfig();
+	virtual void doAdminStartStop();
 	virtual void doSubmit();
 	virtual void doClarificationRequest();
 	virtual void doShowClarificationRequest(QListViewItem*);

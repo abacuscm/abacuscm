@@ -724,10 +724,10 @@
             <bool>false</bool>
         </property>
         <property name="text">
-            <string>&amp;Start</string>
+            <string>&amp;Start/Stop times</string>
         </property>
         <property name="menuText">
-            <string>&amp;Start</string>
+            <string>&amp;Start/Stop times</string>
         </property>
     </action>
     <action>
@@ -975,6 +975,12 @@
         <receiver>judgesNotify_about_Correct_SubmissionsAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
+    <connection>
+        <sender>adminContestStartAction</sender>
+        <signal>activated()</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>doAdminStartStop()</slot>
+    </connection>
 </connections>
 <signals>
     <signal>signalAdminControls(bool)</signal>
@@ -997,6 +1003,7 @@
     <slot access="protected" specifier="pure virtual">doClarificationRequest()</slot>
     <slot>updateSubmissions()</slot>
     <slot access="protected" specifier="pure virtual">toggleBalloonPopups(bool)</slot>
+    <slot access="protected" specifier="pure virtual">doAdminStartStop()</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

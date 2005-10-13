@@ -6,6 +6,7 @@
 
 #include <mysql/mysql.h>
 #include <sstream>
+#include <time.h>
 
 #define log_mysql_error()	log(LOG_ERR,"%s line %d: %s", __PRETTY_FUNCTION__, __LINE__, mysql_error(&_mysql))
 
@@ -19,6 +20,8 @@ private:
 	string escape_buffer(const uint8_t* bfr, uint32_t size);
 	
 	list<Message*> getMessages(std::string query);
+
+	time_t contestStartStopTime(uint32_t server_id, const std::string& action);
 public:
 	MySQL();
 	virtual ~MySQL();
@@ -98,6 +101,7 @@ public:
 	virtual std::string submission2problem(uint32_t submission_id);
 	virtual bool contestRunning(uint32_t server_id, uint32_t unix_time);
 	virtual uint32_t contestTime(uint32_t server_id, uint32_t unix_time);
+	virtual uint32_t contestRemaining(uint32_t server_id, uint32_t unix_time);
 	virtual bool startStopContest(uint32_t server_id, uint32_t unix_time, bool start);
 	bool init();
 };
@@ -742,7 +746,7 @@ uint32_t MySQL::maxClarificationId() {
 			else
 				max_user_id = 0;
 		}
-		mysql_free_result(res);	
+		mysql_free_result(res);
 	}
 
 	return max_user_id;
@@ -896,7 +900,7 @@ ClarificationRequestList MySQL::getClarificationRequests(uint32_t uid) {
 }
 
 bool MySQL::putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t prob_id,
-				    uint32_t time, uint32_t server_id,
+				    uint32_t time, uint32_t /* server_id */,
 				    const std::string& question) {
 	ostringstream query;
 	query << "INSERT INTO ClarificationRequest (clarification_req_id, user_id, problem_id, time, text)";
@@ -912,7 +916,7 @@ bool MySQL::putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t p
 
 bool MySQL::putClarification(uint32_t cr_id, uint32_t c_id,
 			     uint32_t user_id, uint32_t time,
-			     uint32_t server_id, uint32_t pub,
+			     uint32_t /* server_id */, uint32_t pub,
 			     const std::string& answer) {
 	ostringstream query;
 	query << "INSERT INTO Clarification (clarification_id, clarification_req_id, user_id, time, public, text)";
@@ -1319,73 +1323,73 @@ bool MySQL::getProblemFileData(uint32_t problem_id, std::string attr, uint8_t **
 	}
 	return *dataptr != NULL;
 }
-	
-bool MySQL::contestRunning(uint32_t server_id, uint32_t unix_time) {
+
+time_t MySQL::contestStartStopTime(uint32_t server_id, const std::string& mode) {
 	ostringstream query;
-	query << "SELECT action FROM ContestStartStop WHERE time < ";
-	if(unix_time)
-		query << unix_time;
-	else
-		query << "UNIX_TIMESTAMP()";
-	query << " AND server_id IN (0," << server_id << ") ORDER BY time DESC LIMIT 1";
+	time_t t = 0;
 
-	bool running = false;
-
-	if(mysql_query(&_mysql, query.str().c_str())) {
-		log_mysql_error();
-	} else {
-		MYSQL_RES *res = mysql_use_result(&_mysql);
-		MYSQL_ROW row = mysql_fetch_row(res);
-		if(row)
-			running = strcmp(row[0], "START") == 0;
-		mysql_free_result(res);
-	}
-
-	// 18000 translates to 5 hours.  This really should be property based.
-	return running && contestTime(server_id, unix_time) < 18000;
-}
-
-uint32_t MySQL::contestTime(uint32_t server_id, uint32_t unix_time) {
-	ostringstream query;
-	query << "SELECT SUM(IF(action = 'START', -time, time)), UNIX_TIMESTAMP() FROM ContestStartStop WHERE time < ";
-	if(unix_time)
-		query << unix_time;
-	else
-		query << "UNIX_TIMESTAMP()";	
-	query << " AND server_id IN (0," << server_id << ")";
-
-	uint32_t time = 0;
-	
-	if(mysql_query(&_mysql, query.str().c_str())) {
+	query << "SELECT time FROM ContestStartStop WHERE server_id IN (0, " << server_id << ") AND action='" << mode << "' ORDER BY server_id DESC LIMIT 1";
+	if (mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();
 	} else {
 		MYSQL_RES *res = mysql_use_result(&_mysql);
 		MYSQL_ROW row = mysql_fetch_row(res);
 		if(row) {
-			long long t = atoll(row[0]);
-
-			if(t < 0)
-				t += unix_time ? unix_time : atoll(row[1]);
-
-			time = t;
+			t = atol(row[0]);
 		}
 		mysql_free_result(res);
 	}
+	return t;
+}
 
-	return time;
+bool MySQL::contestRunning(uint32_t server_id, uint32_t unix_time) {
+	uint32_t start, stop;
+
+	start = contestStartStopTime(server_id, "START");
+	stop = contestStartStopTime(server_id, "STOP");
+	if (!unix_time) unix_time = time(NULL);
+
+	return unix_time >= start && unix_time < stop;
+}
+
+uint32_t MySQL::contestTime(uint32_t server_id, uint32_t unix_time) {
+	uint32_t start = contestStartStopTime(server_id, "START");
+
+	if (!unix_time) unix_time = time(NULL);
+        if (unix_time < start) return 0;
+        return unix_time - start;
+}
+
+uint32_t MySQL::contestRemaining(uint32_t server_id, uint32_t unix_time) {
+	time_t stop = contestStartStopTime(server_id, "STOP");
+
+	if (!unix_time) unix_time = time(NULL);
+	if (stop < unix_time) return 0;
+	return stop - unix_time;
 }
 	
 bool MySQL::startStopContest(uint32_t server_id, uint32_t unix_time, bool start) {
 	ostringstream query;
-	query << "INSERT INTO ContestStartStop(server_id, time, action) VALUES("
-		<< server_id << ", " << unix_time << ", '" << (start ? "START" : "STOP")
-		<< "')";
+	query << "REPLACE INTO ContestStartStop(server_id, action, time) VALUES("
+		<< server_id << ", '" << (start ? "START" : "STOP") << "', " << unix_time << ")";
 
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();
 		return false;
-	} else
-		return true;
+	}
+
+	if (server_id == 0)
+	{
+		/* Remove per-server start/stop */
+		query.str("");
+		query << "DELETE FROM ContestStartStop WHERE server_id != 0";
+		if(mysql_query(&_mysql, query.str().c_str())) {
+			log_mysql_error();
+			return false;
+		}
+	}
+
+	return true;
 }
 
 bool MySQL::init() {

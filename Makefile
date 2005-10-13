@@ -63,6 +63,7 @@ abacus_objects = abacus \
 	ui_clarificationreply moc_ui_clarificationreply \
 	ui_viewclarificationreply moc_ui_viewclarificationreply \
 	ui_problemsubscription moc_ui_problemsubscription \
+	ui_startstopdialog moc_ui_startstopdialog \
 	ui_compileroutputdialog moc_ui_compileroutputdialog
 $(abacus_name) : ldflags += -L$(QTDIR)/lib -lqt -labacus-client
 $(abacus_name) : $(libabacus_c_name)

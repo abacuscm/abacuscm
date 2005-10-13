@@ -10,6 +10,7 @@
 #include "ui_viewclarificationreply.h"
 #include "ui_changepassworddialog.h"
 #include "ui_problemsubscription.h"
+#include "ui_startstopdialog.h"
 #include "viewclarificationrequestsub.h"
 #include "problemconfig.h"
 #include "guievent.h"
@@ -459,6 +460,50 @@ void MainWindow::doAdminProblemConfig() {
 	}
 }
 
+void MainWindow::doAdminStartStop() {
+	StartStopDialog dialog;
+	struct tm start_tm, stop_tm;
+	time_t start, stop, now;
+	bool correct = false;
+
+	now = time(NULL);
+	localtime_r(&now, &start_tm);
+	localtime_r(&now, &stop_tm);
+	while (!correct)
+	{
+		if (dialog.exec())
+		{
+			string start_str, stop_str;
+			char *err;
+			correct = true;
+
+			start_str = (const char *) dialog.start->text();
+			stop_str = (const char *) dialog.stop->text();
+			err = strptime(start_str.c_str(), "%T", &start_tm);
+			if (*err || start_str == "")
+                                correct = false;
+			err = strptime(stop_str.c_str(), "%T", &stop_tm);
+			if (*err || stop_str == "")
+				correct = false;
+
+			start = mktime(&start_tm);
+			stop = mktime(&stop_tm);
+			correct = correct && start < stop && start != (time_t) -1 && stop != (time_t) -1;
+		}
+		else
+			return;
+
+		if (!correct)
+			QMessageBox("Error", "Please enter start and end times as HH:MM:SS",
+				    QMessageBox::Warning, QMessageBox::Ok,
+				    QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+	}
+
+        bool global = dialog.server->currentItem() == 0;
+	_server_con.startStop(global, true, start)
+	&& _server_con.startStop(global, false, stop);
+}
+
 void MainWindow::doSubmit() {
 	vector<ProblemInfo> probs = _server_con.getProblems();
 	if(probs.empty()) {
@@ -649,14 +694,14 @@ void MainWindow::updateStandings() {
 void MainWindow::updateSubmissions() {
 	SubmissionList list = _server_con.getSubmissions();
 
-    std::vector<ProblemInfo> problems = _server_con.getProblems();
-    bool filter = (_active_type == "judge") && judgesShowOnlySubscribedSubmissionsAction->isOn();
-    std::map<string, bool> is_subscribed;
-    if (filter) {
-        std::vector<bool> subscribed = _server_con.getSubscriptions(problems);
-        for (unsigned int p = 0; p < problems.size(); p++)
-            is_subscribed[problems[p].code] = subscribed[p];
-    }
+	std::vector<ProblemInfo> problems = _server_con.getProblems();
+	bool filter = (_active_type == "judge") && judgesShowOnlySubscribedSubmissionsAction->isOn();
+	std::map<string, bool> is_subscribed;
+	if (filter) {
+		std::vector<bool> subscribed = _server_con.getSubscriptions(problems);
+		for (unsigned int p = 0; p < problems.size(); p++)
+			is_subscribed[problems[p].code] = subscribed[p];
+	}
 
 	submissions->clear();
 

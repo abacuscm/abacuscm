@@ -94,7 +94,9 @@ public:
 	std::string whatAmI();
 	bool createuser(std::string username, std::string password, std::string type);
 	bool changePassword(std::string password);
-	bool changePassword(uint32_t id, std::string password);
+        bool changePassword(uint32_t id, std::string password);
+
+        bool startStop(bool global, bool start, time_t time);
 
 	std::vector<std::string> getProblemTypes();
 	std::vector<ProblemInfo> getProblems();

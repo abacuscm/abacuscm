@@ -285,6 +285,7 @@ public:
 	 */
 	virtual bool contestRunning(uint32_t server_id, uint32_t unix_time = 0) = 0;
 	virtual uint32_t contestTime(uint32_t server_id, uint32_t unix_time = 0) = 0;
+	virtual uint32_t contestRemaining(uint32_t server_id, uint32_t unix_time = 0) = 0;
 	virtual bool startStopContest(uint32_t server_id, uint32_t unix_time, bool start) = 0;
 
 	/**

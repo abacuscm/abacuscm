@@ -410,6 +410,18 @@ bool ServerConnection::changePassword(uint32_t id, string password) {
 	return simpleAction(mb);
 }
 
+bool ServerConnection::startStop(bool global, bool start, time_t time) {
+	MessageBlock mb("startstop");
+	ostringstream t;
+
+	t << time;
+	mb["action"] = start ? "start" : "stop";
+	mb["time"] = t.str();
+	mb["server_id"] = global ? "all" : "self";
+
+	return simpleAction(mb);
+}
+
 vector<string> ServerConnection::getProblemTypes() {
 	MessageBlock mb("getprobtypes");
 

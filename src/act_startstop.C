@@ -85,10 +85,16 @@ bool ActStartStop::int_process(ClientConnection* cc, MessageBlock *mb) {
 		return cc->sendError("Invalid start/stop time specified");
 
 	// note that an omitted or blank server_id translates to 0, meaning
-	// "all" servers.
-	server_id = strtoll((*mb)["server_id"].c_str(), &errpnt, 0);
-	if(*errpnt)
-		return cc->sendError("Invalid server_id specified");
+        // "all" servers.
+        string server_id_str = (*mb)["server_id"];
+        if (server_id_str == "all" || server_id_str == "") server_id = 0;
+        else if (server_id_str == "self") server_id = Server::getId();
+        else
+        {
+                server_id = strtoll((*mb)["server_id"].c_str(), &errpnt, 0);
+                if(*errpnt)
+                        return cc->sendError("Invalid server_id specified");
+        }
 
 	return triggerMessage(cc, new MsgStartStop(server_id, time, action));
 }
