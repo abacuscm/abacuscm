@@ -23,6 +23,10 @@ static void mark_request(const MessageBlock* mb, void*) {
 	_mark_requests.enqueue(mr);
 }
 
+static void server_close(const MessageBlock*, void*) {
+	_mark_requests.enqueue(NULL);
+}
+
 int main(int argc, char **argv) {
 	setup_sigsegv();
 	Config &conf = Config::getConfig();
@@ -41,6 +45,8 @@ int main(int argc, char **argv) {
 	log(LOG_DEBUG, "Connected to server!");
 	
 	_server_con.registerEventCallback("mark", mark_request, NULL);
+	_server_con.registerEventCallback("close", server_close, NULL);
+	
 	if(!_server_con.becomeMarker())
 		return -1;
 
