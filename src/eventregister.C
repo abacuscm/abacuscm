@@ -8,7 +8,8 @@ using namespace std;
 EventRegister EventRegister::_instance;
 
 EventRegister::EventRegister() {
-	pthread_mutex_init(&_lock, NULL);
+    pthread_mutex_init(&_lock, NULL);
+    _clients.clear();
 }
 
 EventRegister::~EventRegister() {
@@ -19,6 +20,10 @@ EventRegister::~EventRegister() {
 }
 
 void EventRegister::registerClient(ClientConnection *cc) {
+    if (cc == NULL) {
+        log(LOG_ERR, "F**K!!!! A NULL ClientConnection!!!");
+        return;
+    }
 	uint32_t user_id = cc->getProperty("user_id");
 	pthread_mutex_lock(&_lock);
 	_clients[user_id] = cc;
@@ -90,16 +95,22 @@ void EventRegister::triggerEvent(string eventname, const MessageBlock *mb) {
 
 void EventRegister::broadcastEvent(const MessageBlock *mb) {
 	pthread_mutex_lock(&_lock);
-	for(ClientMap::iterator i = _clients.begin(); i != _clients.end(); ++i)
-		i->second->sendMessageBlock(mb);
+    for(ClientMap::iterator i = _clients.begin(); i != _clients.end(); ++i) {
+        log(LOG_INFO, "broadcasting to client %p (with id %d)", i->second, i->first);
+        if (i->second != NULL)
+            i->second->sendMessageBlock(mb);
+    }
 	pthread_mutex_unlock(&_lock);
 }
 
 void EventRegister::sendMessage(uint32_t user_id, const MessageBlock *mb) {
-	pthread_mutex_lock(&_lock);
-	ClientConnection *cc = _clients[user_id];
-	if(cc)
-		cc->sendMessageBlock(mb);
+    pthread_mutex_lock(&_lock);
+    ClientMap::iterator i = _clients.find(user_id);
+    if (i != _clients.end()) {
+        ClientConnection *cc = i->second;
+        if(cc)
+            cc->sendMessageBlock(mb);
+    }
 	pthread_mutex_unlock(&_lock);
 }
 
