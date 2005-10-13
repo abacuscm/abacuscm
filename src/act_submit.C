@@ -150,16 +150,23 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 		tmp << c;
 		std::string cntr = tmp.str();
 
+		uint32_t submission_id = strtoll((*s)["submission_id"].c_str(), NULL, 0);
 		AttributeList::iterator a;
 		for(a = s->begin(); a != s->end(); ++a)
 			mb[a->first + cntr] = a->second;
+
+		tmp.str("");
+		tmp << db->contestTime(db->submission2server_id(submission_id),
+				strtoll((*s)["time"].c_str(), NULL, 0));
+		
+		mb["contesttime" + cntr] = tmp.str();
 
 		RunResult resinfo;
 		uint32_t type;
 		std::string comment;
 		
 		if(db->getSubmissionState(
-					strtoll((*s)["submission_id"].c_str(), NULL, 0),
+					submission_id,
 					resinfo,
 					type,
 					comment)) {

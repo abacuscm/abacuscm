@@ -450,7 +450,18 @@
                         </column>
                         <column>
                             <property name="text">
-                                <string>Time</string>
+                                <string>Contest Time</string>
+                            </property>
+                            <property name="clickable">
+                                <bool>true</bool>
+                            </property>
+                            <property name="resizable">
+                                <bool>true</bool>
+                            </property>
+                        </column>
+                        <column>
+                            <property name="text">
+                                <string>Real Time</string>
                             </property>
                             <property name="clickable">
                                 <bool>true</bool>
@@ -494,7 +505,7 @@
                             <bool>true</bool>
                         </property>
                         <property name="resizeMode">
-                            <enum>NoColumn</enum>
+                            <enum>LastColumn</enum>
                         </property>
                         <property name="defaultRenameAction">
                             <enum>Reject</enum>
@@ -991,7 +1002,7 @@
     <slot access="protected" specifier="pure virtual">doHelpAbout()</slot>
     <slot access="protected" specifier="pure virtual">doFileConnect()</slot>
     <slot access="protected" specifier="pure virtual">doChangePassword()</slot>
-    <slot access="protected" specifier="pure virtual">doAdminCreateUser()</slot>
+    <slot access="protected" specifier="pure virtual">toggleBalloonPopups(bool)</slot>
     <slot access="protected" specifier="pure virtual">doAdminProblemConfig()</slot>
     <slot access="protected" specifier="pure virtual">doFileDisconnect()</slot>
     <slot access="protected" specifier="pure virtual">doSubmit()</slot>
@@ -1002,7 +1013,7 @@
     <slot access="protected" specifier="pure virtual">doShowClarificationReply(QListViewItem *item)</slot>
     <slot access="protected" specifier="pure virtual">doClarificationRequest()</slot>
     <slot>updateSubmissions()</slot>
-    <slot access="protected" specifier="pure virtual">toggleBalloonPopups(bool)</slot>
+    <slot access="protected" specifier="pure virtual">doAdminCreateUser()</slot>
     <slot access="protected" specifier="pure virtual">doAdminStartStop()</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>

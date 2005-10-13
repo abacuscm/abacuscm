@@ -754,6 +754,7 @@ SubmissionList ServerConnection::getSubmissions() {
 	attrs.push_back("submission_id");
 	attrs.push_back("contestant");
 	attrs.push_back("time");
+	attrs.push_back("contesttime");
 	attrs.push_back("problem");
 	attrs.push_back("result");
 	attrs.push_back("comment");

@@ -723,17 +723,23 @@ void MainWindow::updateSubmissions() {
 		AttributeMap::iterator a;
 		QListViewItem *item = new QListViewItem(submissions);
 		char time_buffer[64];
+		char contesttime_buffer[64];
 		struct tm time_tm;
 		time_t time;
+		uint32_t contesttime;
 
 		time = atol((*l)["time"].c_str());
 		localtime_r(&time, &time_tm);
 		strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
 
+		contesttime = atoll((*l)["contesttime"].c_str());
+		sprintf(contesttime_buffer, "%02d:%02d:%02d", contesttime / 3600, contesttime / 60 % 60, contesttime % 60);
+				
         item->setText(0, (*l)["submission_id"]);
-		item->setText(1, time_buffer);
-		item->setText(2, (*l)["problem"]);
-        item->setText(3, (*l)["comment"]);
+		item->setText(1, contesttime_buffer);
+		item->setText(2, time_buffer);
+		item->setText(3, (*l)["problem"]);
+        item->setText(4, (*l)["comment"]);
 	}
 }
 
