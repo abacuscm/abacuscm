@@ -164,7 +164,8 @@ uint16_t MsgStartStop::message_type_id() const {
 static void initialise_startstop_events() {
 	DbCon *db = DbCon::getInstance();
 	time_t start = db->contestStartStopTime(Server::getId(), true);
-	time_t stop = db->contestStartStopTime(Server::getId(), false);
+    time_t stop = db->contestStartStopTime(Server::getId(), false);
+    db->release();
 	time_t now = time(NULL);
 
 	if (start > now)

@@ -139,7 +139,9 @@ bool PasswdMessage::process() const {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return false;
-	return db->setPassword(_user_id, _newpass);
+    bool result = db->setPassword(_user_id, _newpass);
+    db->release();
+    return result;
 }
 
 static ActPasswd _act_passwd;

@@ -6,7 +6,7 @@
 
 using namespace std;
 
-static queue<DbCon*> _con_stack;
+static vector<DbCon*> _con_stack;
 static DbCon * (*_functor)() = 0;
 static pthread_mutex_t _lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -25,8 +25,8 @@ DbCon* DbCon::getInstance() {
 		else
 			log(LOG_ERR, "No functor specified to create DB Connections!");
 	} else {
-		tmp = _con_stack.front();
-		_con_stack.pop();
+		tmp = _con_stack.back();
+		_con_stack.pop_back();
 	}
 	pthread_mutex_unlock(&_lock);
 	if(tmp && !tmp->ok()) {
@@ -39,8 +39,16 @@ DbCon* DbCon::getInstance() {
 }
 
 void DbCon::release() {
-	pthread_mutex_lock(&_lock);
-	_con_stack.push(this);
+    pthread_mutex_lock(&_lock);
+    bool ok = true;
+    for (vector<DbCon *>::iterator i = _con_stack.begin(); i != _con_stack.end(); i++)
+        if (*i == this) {
+            log(LOG_ERR, "F**k, trying to release an already released DB connection!!!");
+            ok = false;
+            break;
+        }
+    if (ok)
+        _con_stack.push_back(this);
 	pthread_mutex_unlock(&_lock);
 }
 
@@ -52,8 +60,8 @@ bool DbCon::registerFunctor(DbCon* (*functor)()) {
 void DbCon::cleanup() {
 	pthread_mutex_lock(&_lock);
 	while(!_con_stack.empty()) {
-		delete _con_stack.front();
-		_con_stack.pop();
+		delete _con_stack.back();
+		_con_stack.pop_back();
 	}
 	pthread_mutex_unlock(&_lock);	
 }

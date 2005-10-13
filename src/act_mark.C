@@ -45,8 +45,8 @@ private:
 	uint32_t _time;
     uint32_t _marker;
     uint32_t _type;
-	uint32_t _server_id;
-	
+    uint32_t _server_id;
+
 	std::string _comment;
 	std::list<File> _files;
 
@@ -74,7 +74,7 @@ MarkMessage::MarkMessage(uint32_t submission_id, uint32_t marker, uint32_t type,
     _type = type;
 	_result = result;
 	_comment = comment;
-	_server_id = Server::getId();
+    _server_id = Server::getId();
 	_time = ::time(NULL);
 }
 
@@ -130,12 +130,13 @@ bool MarkMessage::process() const {
 		bl["server"] = db->server_id2name(db->submission2server_id(_submission_id));
 		bl["contestant"] = db->user_id2name(db->submission2user_id(_submission_id));
 		bl["problem"] = db->submission2problem(_submission_id);
+        db->release();db=NULL;
 
 		EventRegister::getInstance().triggerEvent("balloon", &bl);
 	}
+    else
+        db->release();
 
-	db->release();db=NULL;
-	
 	return true;
 }
 
@@ -272,7 +273,30 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
             db->release();db=NULL;
             return cc->sendError("This hasn't been compiled or even run: you really think I'm going to let you fiddle with the marks?");
         }
-        db->release();db=NULL;
+    }
+
+    if (cc->getProperty("user_type") == USER_TYPE_ADMIN) {
+        RunResult resinfo;
+        uint32_t utype;
+        std::string comment;
+
+        DbCon *db = DbCon::getInstance();
+        if(!db)
+            return cc->sendError("Error connecting to database");
+
+        if(db->getSubmissionState(
+                                  submission_id,
+                                  resinfo,
+                                  utype,
+                                  comment)) {
+            db->release();
+            if (utype == USER_TYPE_MARKER && resinfo == CORRECT)
+                return cc->sendError("An automatic marker has already marked this submission as being correct, you can't change that. Sorry!");
+        }
+        else {
+            db->release();db=NULL;
+            return cc->sendError("This hasn't been compiled or even run: you really think I'm going to let you fiddle with the marks?");
+        }
     }
 
 	uint32_t result = strtoll((*mb)["result"].c_str(), &errpnt, 0);
@@ -333,6 +357,7 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_MARKER, "subscribemark", &_act_subscribe_mark);
 	ClientAction::registerAction(USER_TYPE_MARKER, "mark", &_act_place_mark);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "mark", &_act_place_mark);
+	ClientAction::registerAction(USER_TYPE_ADMIN, "mark", &_act_place_mark);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "balloonnotify", &_act_balloon);
     Message::registerMessageFunctor(TYPE_ID_SUBMISSION_MARK, create_mark_message);
 	EventRegister::getInstance().registerEvent("balloon");

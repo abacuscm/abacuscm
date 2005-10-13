@@ -346,6 +346,7 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
         }
         else {
             // no state => it hasn't been marked!
+            db->release(); db = NULL;
             return cc->sendError("This submission hasn't been marked yet, please be patient :-)");
         }
 
@@ -353,8 +354,6 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
             db->release();db=NULL;
             return cc->sendError("This submission doesn't belong to you; I can't let you look at it");
         }
-
-        db->release();db=NULL;
     }
 
     if (request == "count") {

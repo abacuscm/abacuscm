@@ -29,7 +29,8 @@ public:
 	virtual uint32_t name2server_id(const string& name);
 	virtual std::string server_id2name(uint32_t user_id);
 	virtual uint32_t name2user_id(const string& name);
-	virtual std::string user_id2name(uint32_t user_id);
+    virtual std::string user_id2name(uint32_t user_id);
+    //virtual uint32_t user_id2type(uint32_t user_id);
 	virtual UserList getUsers();
 	virtual ServerList getServers();
 	virtual string getServerAttribute(uint32_t server_id,
@@ -987,7 +988,9 @@ IdList MySQL::getUnmarked(uint32_t server_id) {
 bool MySQL::putMark(uint32_t submission_id, uint32_t marker_id, uint32_t time, uint32_t result, std::string comment, uint32_t server_id) {
 	ostringstream query;
 	query << "INSERT INTO SubmissionMark (submission_id, marker_id, mark_time, result, remark, server_id) VALUES("
-		<< submission_id << ", " << marker_id << ", " << time << ", " << result << ", '" << escape_string(comment) << "', " << server_id << ")";
+        << submission_id << ", " << marker_id << ", " << time << ", " << result << ", '" << escape_string(comment) << "', " << server_id << ")";
+    if (true)
+        query << " ON DUPLICATE KEY UPDATE mark_time=" << time << ",result=" << result << ",remark='" << escape_string(comment) << "',server_id=" << server_id;
 
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();
