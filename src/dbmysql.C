@@ -1054,12 +1054,10 @@ bool MySQL::getMarkFile(uint32_t submission_id, uint32_t file_index, std::string
 
         MYSQL_ROW row;
         uint32_t cur = 0;
-        while ((row = mysql_fetch_row(res)) != 0 && cur < file_index)
+        while ((row = mysql_fetch_row(res)) != NULL && cur < file_index)
             cur++;
-        while (mysql_fetch_row(res) != NULL)
-            ;
 
-        if (row == 0) {
+        if (row == NULL) {
             log_mysql_error();
             mysql_free_result(res);
             return false;
@@ -1070,6 +1068,10 @@ bool MySQL::getMarkFile(uint32_t submission_id, uint32_t file_index, std::string
         *data = (void *) (new char[lengths[1]]);
         memcpy(*data, row[1], lengths[1]);
         length = lengths[1];
+
+        if (row != NULL)
+            while (mysql_fetch_row(res) != NULL)
+                ;
 
         mysql_free_result(res);
         return true;
