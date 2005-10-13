@@ -199,6 +199,12 @@ bool ServerConnection::disconnect() {
 	close(_sock);
 	_sock = -1;
 	sockdata_unlock();
+
+	pthread_mutex_lock(&_lock_thread);
+	if(_has_thread)
+		pthread_cond_wait(&_cond_thread, &_lock_thread);
+	pthread_mutex_unlock(&_lock_thread);
+	
 	return true;
 }
 
@@ -1108,13 +1114,14 @@ void* ServerConnection::receive_thread() {
 		}
 	}
 
-	pthread_mutex_lock(&_lock_thread);
-	_has_thread = false;
-	pthread_mutex_unlock(&_lock_thread);
-
 	log(LOG_DEBUG, "Stopping ServerConnection receive_thread");
 
 	processMB(new MessageBlock("close"));
+
+	pthread_mutex_lock(&_lock_thread);
+	_has_thread = false;
+	pthread_cond_signal(&_cond_thread);
+	pthread_mutex_unlock(&_lock_thread);
 
 	return NULL;
 }
