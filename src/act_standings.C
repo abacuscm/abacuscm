@@ -60,9 +60,7 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 		string comment;
 		
 		if(db->getSubmissionState(sub_id, state, utype, comment)) {
-/*			if(state == COMPILE_FAILED || (state == WRONG && utype == USER_TYPE_MARKER)) {
-				// we ignore compile failures and wrong answers that hasn't been seen by a judge.
-			} else */{
+			if(state != COMPILE_FAILED) { // we ignore compile failures.
 				SubData tmp;
 				tmp.correct = state == CORRECT;
 				tmp.time = strtoll((*s)["time"].c_str(), NULL, 0);

@@ -107,6 +107,12 @@ bool MarkMessage::process() const {
 	mb["msg"] = "You have newly marked information available under submissions";
 
 	EventRegister::getInstance().sendMessage(db->submission2userid(_submission_id), &mb);
+	
+	if(_result == CORRECT) {
+		MessageBlock st("standings");
+
+		EventRegister::getInstance().broadcastEvent(&st);
+	}
 
 	db->release();
 	
