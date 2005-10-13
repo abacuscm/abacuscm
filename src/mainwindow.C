@@ -162,6 +162,10 @@ MainWindow::MainWindow() {
 	_login_dialog.serverName->setText(config["server"]["address"]);
 	_login_dialog.service->setText(config["server"]["service"]);
 
+	clarifications->setSorting(1);
+	clarificationRequests->setSorting(1);
+	submissions->setSorting(1);
+	
 	GUIEvent::setReceiver(this);
 	register_log_listener(window_log);
 }
@@ -574,7 +578,6 @@ void MainWindow::updateSubmissions() {
 
 	SubmissionList::iterator l;
 	for(l = list.begin(); l != list.end(); ++l) {
-		log(LOG_DEBUG, "submission:");
 		AttributeMap::iterator a;
 		QListViewItem *item = new QListViewItem(submissions);
 		char time_buffer[64];
@@ -708,8 +711,8 @@ void MainWindow::updateClarificationRequests() {
 		item->setText(0, (*l)["id"]);
 		item->setText(1, time_buffer);
 		item->setText(2, (*l)["problem"]);
-		item->setText(3, (*l)["question"]);
-		item->setText(4, (*l)["status"]);
+		item->setText(3, (*l)["status"]);
+		item->setText(4, (*l)["question"]);
 
 		for(a = l->begin(); a != l->end(); ++a)
 			log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());

@@ -202,6 +202,9 @@
                         <property name="name">
                             <cstring>standings</cstring>
                         </property>
+                        <property name="showSortIndicator">
+                            <bool>true</bool>
+                        </property>
                     </widget>
                 </vbox>
             </widget>
@@ -252,7 +255,7 @@
                         </column>
                         <column>
                             <property name="text">
-                                <string>Question</string>
+                                <string>Status</string>
                             </property>
                             <property name="clickable">
                                 <bool>true</bool>
@@ -263,7 +266,7 @@
                         </column>
                         <column>
                             <property name="text">
-                                <string>Status</string>
+                                <string>Question</string>
                             </property>
                             <property name="clickable">
                                 <bool>true</bool>
@@ -285,7 +288,7 @@
                             <bool>true</bool>
                         </property>
                         <property name="resizeMode">
-                            <enum>NoColumn</enum>
+                            <enum>LastColumn</enum>
                         </property>
                         <property name="defaultRenameAction">
                             <enum>Reject</enum>
@@ -414,7 +417,7 @@
                             <bool>true</bool>
                         </property>
                         <property name="resizeMode">
-                            <enum>NoColumn</enum>
+                            <enum>LastColumn</enum>
                         </property>
                         <property name="defaultRenameAction">
                             <enum>Reject</enum>
