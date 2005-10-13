@@ -583,6 +583,25 @@ bool ServerConnection::getProblemFile(uint32_t prob_id, string attrib, char **bu
 	return true;
 }
 
+bool ServerConnection::getSubmissionSource(uint32_t submission_id, char **bufferptr, uint32_t *bufferlen) {
+    ostringstream str;
+
+    MessageBlock mb("getsubmissionsource");
+    str << submission_id;
+    mb["submission_id"] = str.str();
+
+    MessageBlock *ret = sendMB(&mb);
+    if (!ret)
+        return false;
+
+    *bufferlen = ret->content_size();
+    *bufferptr = new char[(*bufferlen)];
+    memcpy(*bufferptr, ret->content(), *bufferlen);
+
+    delete ret;
+    return true;
+}
+
 vector<ProblemInfo> ServerConnection::getProblems() {
 	vector<ProblemInfo> response;
 	MessageBlock mb("getproblems");

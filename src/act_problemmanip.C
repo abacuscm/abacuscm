@@ -577,5 +577,7 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getprobattrs", &_act_getprobattrs);
 	ClientAction::registerAction(USER_TYPE_MARKER, "getprobattrs", &_act_getprobattrs);
 	ClientAction::registerAction(USER_TYPE_MARKER, "getprobfile", &_act_getprobfile);
+	ClientAction::registerAction(USER_TYPE_JUDGE, "getprobfile", &_act_getprobfile);
+	ClientAction::registerAction(USER_TYPE_ADMIN, "getprobfile", &_act_getprobfile);
 	Message::registerMessageFunctor(TYPE_ID_PROBLEMUPDATE, create_prob_message);
 }

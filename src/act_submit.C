@@ -32,6 +32,11 @@ protected:
     bool int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
+class ActGetSubmissionSource : public ClientAction {
+protected:
+    bool int_process(ClientConnection *cc, MessageBlock *mb);
+};
+
 class SubmissionMessage : public Message {
 private:
 	uint32_t _submission_id;
@@ -392,11 +397,34 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
 	return cc->sendMessageBlock(&result_mb);
 }
 
+bool ActGetSubmissionSource::int_process(ClientConnection *cc, MessageBlock *mb) {
+    DbCon *db = DbCon::getInstance();
+    if (!db)
+        return cc->sendError("Error connecting to database");
+
+    uint32_t submission_id = strtoll((*mb)["submission_id"].c_str(), NULL, 0);
+	char* content;
+	int length;
+	std::string language;
+	uint32_t prob_id;
+
+	bool has_data = db->retrieveSubmission(submission_id, &content, &length, language, &prob_id);
+	db->release();db=NULL;
+
+    if (!has_data)
+        return cc->sendError("Unable to retrieve contestant source code");
+
+    MessageBlock result_mb("ok");
+    result_mb.setContent(content, length);
+
+    return cc->sendMessageBlock(&result_mb);
+}
 
 static ActSubmit _act_submit;
 static ActGetProblems _act_getproblems;
 static ActGetSubmissions _act_getsubs;
 static ActSubmissionFileFetcher _act_submission_file_fetcher;
+static ActGetSubmissionSource _act_get_submission_source;
 
 static void init() __attribute__((constructor));
 static void init() {
@@ -410,5 +438,7 @@ static void init() {
     ClientAction::registerAction(USER_TYPE_JUDGE, "fetchfile", &_act_submission_file_fetcher);
     ClientAction::registerAction(USER_TYPE_ADMIN, "fetchfile", &_act_submission_file_fetcher);
     ClientAction::registerAction(USER_TYPE_CONTESTANT, "fetchfile", &_act_submission_file_fetcher);
+    ClientAction::registerAction(USER_TYPE_JUDGE, "getsubmissionsource", &_act_get_submission_source);
+    ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissionsource", &_act_get_submission_source);
 	Message::registerMessageFunctor(TYPE_ID_SUBMISSION, create_submission_msg);
 }

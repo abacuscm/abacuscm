@@ -823,6 +823,42 @@ void MainWindow::submissionHandler(QListViewItem *item) {
             judgeDecisionDialog.FileSelector->insertItem(name.c_str());
         }
 
+        // fetch expected output
+        vector<ProblemInfo> problems = _server_con.getProblems();
+        uint32_t problemId = 0;
+        for (uint32_t p = 0; p < problems.size(); p++)
+            if (item->text(3) == problems[p].code) {
+                problemId = problems[p].id;
+                break;
+            }
+        if (problemId != 0) {
+            // now add other files
+            char *expectedOutput;
+            uint32_t expectedOutputLength;
+            if (_server_con.getProblemFile(problemId, "testcase.output", &expectedOutput, &expectedOutputLength)) {
+                // got it
+                char *temp = new char[expectedOutputLength + 1];
+                memcpy(temp, expectedOutput, expectedOutputLength);
+                temp[expectedOutputLength] = 0;
+                delete[] expectedOutput;
+                judgeDecisionDialog.data["Expected output"] = temp;
+                judgeDecisionDialog.FileSelector->insertItem("Expected output");
+            }
+        }
+
+        // and now fetch contestant's source
+        char *contestantSource;
+        uint32_t contestantSourceLength;
+        if (_server_con.getSubmissionSource(submission_id, &contestantSource, &contestantSourceLength)) {
+            // got it
+            char *temp = new char[contestantSourceLength + 1];
+            memcpy(temp, contestantSource, contestantSourceLength);
+            temp[contestantSourceLength] = 0;
+            delete[] contestantSource;
+            judgeDecisionDialog.data["Contestant source"] = temp;
+            judgeDecisionDialog.FileSelector->insertItem("Contestant source");
+        }
+
         int result = judgeDecisionDialog.exec();
         switch (result) {
         case 1:
