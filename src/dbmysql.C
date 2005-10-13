@@ -99,7 +99,8 @@ public:
 	virtual uint32_t submission2user_id(uint32_t submission_id);
 	virtual uint32_t submission2server_id(uint32_t submission_id);
 	virtual std::string submission2problem(uint32_t submission_id);
-        virtual time_t contestStartStopTime(uint32_t server_id, bool start);
+	virtual bool hasSolved(uint32_t user_id, uint32_t prob_id);
+	virtual time_t contestStartStopTime(uint32_t server_id, bool start);
 	virtual bool contestRunning(uint32_t server_id, uint32_t unix_time);
 	virtual uint32_t contestTime(uint32_t server_id, uint32_t unix_time);
 	virtual uint32_t contestRemaining(uint32_t server_id, uint32_t unix_time);
@@ -1177,6 +1178,30 @@ std::string MySQL::submission2problem(uint32_t submission_id) {
 		mysql_free_result(res);
 		return problem;
 	}
+}
+	
+bool MySQL::hasSolved(uint32_t user_id, uint32_t prob_id) {
+	ostringstream query;
+	query << "SELECT user_id, prob_id FROM Submission, SubmissionMark WHERE "
+		"Submission.submission_id = SubmissionMark.submission_id AND result = 0 AND user_id = "
+		<< user_id << " AND prob_id = " << prob_id;
+
+	bool solved = false;
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+	} else {
+		MYSQL_RES *res = mysql_use_result(&_mysql);
+		if(!res)
+			log_mysql_error();
+		else {
+			MYSQL_ROW row = mysql_fetch_row(res);
+			if(row)
+				solved = atoll(row[0]) != 0;
+			mysql_free_result(res);
+		}
+	}
+
+	return solved;
 }
 
 bool MySQL::setProblemUpdateTime(uint32_t problem_id, time_t time) {

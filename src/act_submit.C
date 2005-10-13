@@ -70,15 +70,21 @@ bool ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
 	if(!db)
 		return cc->sendError("Unable to connect to database");
 	ProblemList probs = db->getProblems();
-	db->release();db=NULL;
 
 	ProblemList::iterator p;
 	for(p = probs.begin(); p != probs.end(); ++p)
 		if(*p == prob_id)
 			break;
-	if(p == probs.end())
+	if(p == probs.end()) {
+		db->release();db=NULL;
 		return cc->sendError("Invalid prob_id - no such id");
-
+	}
+	
+	bool solved = db->hasSolved(user_id, prob_id);
+	db->release();db=NULL;
+	if(solved)
+		return cc->sendError("You have already solved this problem, you may no longer submit solutions for it");
+	
 	std::string lang = (*mb)["lang"];
 
 	// TODO:  Proper check - this will do for now:

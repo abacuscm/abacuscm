@@ -278,6 +278,7 @@ public:
 	virtual uint32_t submission2user_id(uint32_t submission_id) = 0;
 	virtual uint32_t submission2server_id(uint32_t submission_id) = 0;
 	virtual std::string submission2problem(uint32_t submission_id) = 0;
+	virtual bool hasSolved(uint32_t user_id, uint32_t prob_id) = 0;
 
 	/**
 	 * Functions for determining the contest state - they really don't
