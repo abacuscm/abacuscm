@@ -51,6 +51,7 @@ public:
 	virtual void updateSubmissions();
 	void updateClarificationRequests();
 	void updateClarifications();
+	void serverDisconnect();
 
 	std::string getActiveType();
 };

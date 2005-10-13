@@ -982,9 +982,11 @@ bool ServerConnection::deregisterEventCallback(string event, EventCallback func)
 
 	CallbackList &list = _eventmap[event];
 	CallbackList::iterator i;
-	for(i = list.begin(); i != list.end(); ++i) {
+	for(i = list.begin(); i != list.end();) {
 		if(i->func == func)
-			list.erase(i);
+			list.erase(i++);
+		else
+			++i;
 	}
 
 	pthread_mutex_unlock(&_lock_eventmap);

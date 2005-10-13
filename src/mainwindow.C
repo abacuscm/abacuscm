@@ -199,6 +199,13 @@ static void contestStartStop(const MessageBlock* mb, void*) {
 	ne->post();
 }
 
+static void server_disconnect(const MessageBlock*, void*) {
+	NotifyEvent *ne = new NotifyEvent("Server Disconnected", "You have been disconnected from the server", QMessageBox::Critical);
+	ne->post();
+
+	GUIEvent *ev = new MainWindowCaller(&MainWindow::serverDisconnect);
+	ev->post();
+}
 /************************** MainWindow ******************************/
 MainWindow::MainWindow() {
 	Config &config = Config::getConfig();
@@ -251,6 +258,8 @@ void MainWindow::doFileConnect() {
 		std::string sname = _login_dialog.serverName->text();
 		std::string service = _login_dialog.service->text();
 		if(_server_con.connect(sname, service)) {
+			_server_con.registerEventCallback("close", server_disconnect, NULL);
+
 			std::string uname = _login_dialog.username->text();
 			std::string pass = _login_dialog.password->text();
 			if(_server_con.auth(uname, pass)) {
@@ -294,8 +303,12 @@ void MainWindow::doFileConnect() {
 }
 
 void MainWindow::doFileDisconnect() {
-	if(!_server_con.disconnect())
+	_server_con.deregisterEventCallback("close", server_disconnect);
+	if(!_server_con.disconnect()) {
+		_server_con.registerEventCallback("close", server_disconnect, NULL);
 		return;
+	}
+	
 
 	fileConnectAction->setEnabled(true);
 	fileDisconnectAction->setEnabled(false);
@@ -796,6 +809,10 @@ void MainWindow::updateClarificationRequests() {
 		for(a = l->begin(); a != l->end(); ++a)
 			log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());
 	}
+}
+
+void MainWindow::serverDisconnect() {
+	doFileDisconnect();
 }
 
 std::string MainWindow::getActiveType() {
