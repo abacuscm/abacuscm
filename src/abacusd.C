@@ -179,7 +179,7 @@ static bool initialise() {
 	IdList sublist;
 	if(local_id && db->getServerAttribute(local_id, "marker") == "yes")
 		sublist = db->getUnmarked(local_id);
-	db->release();
+	db->release();db=NULL;
 
 	if(local_id == ~0U) {
 		return false;
@@ -228,7 +228,7 @@ static bool initialise() {
 			EventRegister::getInstance().registerEvent("judge_" + prob["shortname"]);
         }
         EventRegister::getInstance().registerEvent("judgesubmission");
-		db->release();
+		db->release();db=NULL;
 	} else
 		log(LOG_ERR, "Error obtaining DbCon to load existing problems");
 
@@ -272,7 +272,7 @@ static void* message_handler(void *) {
 			DbCon *db = DbCon::getInstance();
 			if(db) {
 				db->markProcessed(m->server_id(), m->message_id());
-				db->release();
+				db->release();db=NULL;
 			} else {
 				log(LOG_ERR, "Unable to mark message (%d, %d) as processed!",
 						m->server_id(), m->message_id());
@@ -469,7 +469,7 @@ void resend_message(uint32_t server_id) {
 	MessageList msg = db->getUnacked(server_id, TYPE_ID_CREATESERVER);
 	if(msg.empty())
 		msg = db->getUnacked(server_id, 0, 1);
-	db->release();
+	db->release();db=NULL;
 
 	MessageList::iterator i;
 	for(i = msg.begin(); i != msg.end(); ++i) {
@@ -495,7 +495,7 @@ void* message_resender(void*) {
 			DbCon *db = DbCon::getInstance();
 			if(db) {
 				vector<uint32_t> servers = db->getRemoteServers();
-				db->release();
+				db->release();db=NULL;
 
 				vector<uint32_t>::iterator i;
 				for(i = servers.begin(); i != servers.end(); ++i) {

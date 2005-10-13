@@ -306,7 +306,7 @@ bool ProbMessage::process() const {
 		uint32_t lst_updated = db->getProblemUpdateTime(_prob_id);
 		if(lst_updated > _update_time) {
 			log(LOG_INFO, "Discarding udpate for problem_id=%u that is older than current version", _prob_id);
-			db->release();
+			db->release();db=NULL;
 			return true;
 		}
 		AttributeList cur_attrs = db->getProblemAttributes(_prob_id);
@@ -321,7 +321,7 @@ bool ProbMessage::process() const {
 	}
 
 	if(ex_prob_type != _type && !db->setProblemType(_prob_id, _type)) {
-		db->release();
+		db->release();db=NULL;
 		return false;
 	}
 
@@ -355,7 +355,7 @@ bool ProbMessage::process() const {
 	else
 		db->setProblemUpdateTime(_prob_id, _update_time);
 
-	db->release();
+	db->release();db=NULL;
 	
 	if(ex_prob_type == "" && code != "")
 		EventRegister::getInstance().registerEvent("judge_" + code);
@@ -381,7 +381,7 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 		if(!db)
 			return cc->sendError("Error obtaining connection to database");
 		prob_type = db->getProblemType(prob_id);
-		db->release();
+		db->release();db=NULL;
 	}
 
 	if(prob_type == "")
@@ -515,7 +515,7 @@ bool ActGetProbAttrs::int_process(ClientConnection* cc, MessageBlock*mb) {
 		return cc->sendError("Error connecting to database");
 	string prob_type = db->getProblemType(prob_id);
 	AttributeList attrs = db->getProblemAttributes(prob_id);
-	db->release();
+	db->release();db=NULL;
 	
 	if(attrs.empty() || prob_type == "")
 		return cc->sendError("No such problem");
@@ -550,7 +550,7 @@ bool ActGetProblemFile::int_process(ClientConnection* cc, MessageBlock* mb) {
 	uint32_t datalen;
 	
 	bool dbres = db->getProblemFileData(prob_id, file, &dataptr, &datalen);
-	db->release();
+	db->release();db=NULL;
 
 	if(!dbres)
 		return cc->sendError("You have specified an invalid problem id");

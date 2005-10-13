@@ -31,7 +31,7 @@ bool ActAddServer::int_process(ClientConnection* cc, MessageBlock* mb) {
 		return cc->sendError("Error connecting to database.");
 	
 	uint32_t server_id = db->name2server_id(servername);
-	db->release();
+	db->release();db=NULL;
 
 	if(server_id)
 		return cc->sendError("Servername is already in use!");

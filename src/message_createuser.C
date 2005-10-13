@@ -24,7 +24,7 @@ bool Message_CreateUser::process() const {
 	if(!db)
 		return false;
 	bool added = db->addUser(_name, _password, _user_id, _type);
-	db->release();
+	db->release();db=NULL;
 
 	if(added)
 		log(LOG_NOTICE, "Added user '%s'", _name.c_str());

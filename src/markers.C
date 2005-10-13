@@ -97,7 +97,7 @@ void Markers::issue(ClientConnection* cc, uint32_t sd) {
 	uint32_t prob_id;
 
 	bool has_data = db->retrieveSubmission(sd, &content, &length, language, &prob_id);
-	db->release();
+	db->release();db=NULL;
 
 	if(!has_data) {
 		log(LOG_CRIT, "Markers::issue() was unable to obtain the actual submission data (submission_id=%u) - this is _VERY_ serious!", sd);

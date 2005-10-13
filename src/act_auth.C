@@ -20,7 +20,7 @@ bool ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
 	uint32_t user_id;
 	uint32_t user_type;
 	int result = db->authenticate((*mb)["user"], (*mb)["pass"], &user_id, &user_type);
-	db->release();
+	db->release();db=NULL;
 	
 	if(result < 0)
 		return cc->sendError("Database error.");

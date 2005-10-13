@@ -22,7 +22,7 @@ uint32_t Server::getId() {
 		if(!db)
 			return ~0U;
 		local_id = db->name2server_id(config["initialisation"]["name"]);
-		db->release();
+		db->release();db=NULL;
 		if(local_id == 0 && config["initialisation"]["type"] == "master")
 			local_id = 1;
 		log(LOG_DEBUG, "local_id=%d", local_id);
@@ -43,7 +43,7 @@ uint32_t Server::nextUserId() {
 		if(!db)
 			goto err;
 		cur_max_id = db->maxUserId();
-		db->release();
+		db->release();db=NULL;
 
 		if(cur_max_id == ~0U) {
 			cur_max_id = 0;
@@ -79,7 +79,7 @@ uint32_t Server::nextSubmissionId() {
 		if(!db)
 			goto err;
 		cur_max_id = db->maxSubmissionId();
-		db->release();
+		db->release();db=NULL;
 
 		if(cur_max_id == ~0U) {
 			cur_max_id = 0;
@@ -115,7 +115,7 @@ uint32_t Server::nextClarificationRequestId() {
 		if(!db)
 			goto err;
 		cur_max_id = db->maxClarificationReqId();
-		db->release();
+		db->release();db=NULL;
 
 		if(cur_max_id == ~0U) {
 			cur_max_id = 0;
@@ -151,7 +151,7 @@ uint32_t Server::nextClarificationId() {
 		if(!db)
 			goto err;
 		cur_max_id = db->maxClarificationId();
-		db->release();
+		db->release();db=NULL;
 
 		if(cur_max_id == ~0U) {
 			cur_max_id = 0;
@@ -187,7 +187,7 @@ uint32_t Server::nextServerId() {
 		if(!db)
 			goto err;
 		cur_max_id = db->maxServerId();
-		db->release();
+		db->release();db=NULL;
 
 		if(cur_max_id == ~0U) {
 			cur_max_id = 0;
@@ -224,7 +224,7 @@ bool Server::hasMessage(uint32_t server_id, uint32_t message_id) {
 		return false;
 	}
 	bool res = db->hasMessage(server_id, message_id);
-	db->release();
+	db->release();db=NULL;
 	return res;
 }
 
@@ -245,7 +245,7 @@ void Server::putAck(uint32_t server_id, uint32_t message_id, uint32_t ack_id) {
 			return;
 		}
 		db->ackMessage(server_id, message_id, ack_id);
-		db->release();
+		db->release();db=NULL;
 	}
 }
 
@@ -271,7 +271,7 @@ bool Server::isContestRunning() {
 		return false;
 	
 	running = db->contestRunning(getId());
-	db->release();
+	db->release();db=NULL;
 	return running;
 }
 
@@ -282,7 +282,7 @@ uint32_t Server::contestTime() {
 		return 0;
 	
 	tm = db->contestTime(getId());
-	db->release();
+	db->release();db=NULL;
 	return tm;
 }
 
@@ -293,6 +293,6 @@ uint32_t Server::contestRemaining() {
 		return 0;
 	
 	tm = db->contestRemaining(getId());
-	db->release();
+	db->release();db=NULL;
 	return tm;
 }

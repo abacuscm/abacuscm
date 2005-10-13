@@ -75,7 +75,7 @@ bool ActGetClarifications::int_process(ClientConnection *cc, MessageBlock *) {
 		lst = db->getClarifications(uid);
 	else
                 lst = db->getClarifications();
-        db->release();
+        db->release();db=NULL;
 
 	MessageBlock mb("ok");
 
@@ -113,7 +113,7 @@ bool ActGetClarificationRequests::int_process(ClientConnection *cc, MessageBlock
 		lst = db->getClarificationRequests(uid);
 	else
                 lst = db->getClarificationRequests();
-        db->release();
+        db->release();db=NULL;
 
 	MessageBlock mb("ok");
 
@@ -251,7 +251,7 @@ bool ClarificationMessage::process() const {
 					      _prob_id, /* Actually pub */
 					      _text);
 	}
-	db->release();
+	db->release();db=NULL;
 	return result;
 }
 
@@ -272,7 +272,7 @@ bool ActClarificationRequest::int_process(ClientConnection *cc, MessageBlock *mb
 		if(!db)
 			return cc->sendError("Unable to connect to database");
 		ProblemList probs = db->getProblems();
-		db->release();
+		db->release();db=NULL;
 
 		ProblemList::iterator p;
 		for(p = probs.begin(); p != probs.end(); ++p)
@@ -310,7 +310,7 @@ bool ActClarification::int_process(ClientConnection *cc, MessageBlock *mb) {
 	if(!db)
 		return cc->sendError("Unable to connect to database");
 	ClarificationRequestList crs = db->getClarificationRequests();
-	db->release();
+	db->release();db=NULL;
 	ClarificationRequestList::iterator c;
 	for(c = crs.begin(); c != crs.end(); ++c)
 		if((*c)["id"] == (*mb)["clarification_request_id"])

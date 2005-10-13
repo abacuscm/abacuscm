@@ -296,7 +296,7 @@ const sockaddr_in* UDPPeerMessenger::getSockAddr(uint32_t server_id) {
 			ip = db->getServerAttribute(server_id, "ip");
 			port = db->getServerAttribute(server_id, "udppeerport");
 			
-			db->release();
+			db->release();db=NULL;
 		}
 
 		if(ip == "") {
@@ -375,7 +375,7 @@ void UDPPeerMessenger::sendAck(uint32_t server_id, uint32_t message_id) {
 		return;
 	}
 	vector<uint32_t> servers = db->getRemoteServers();
-	db->release();
+	db->release();db=NULL;
 
 	vector<uint32_t>::iterator i;
 	for(i = servers.begin(); i != servers.end(); ++i)

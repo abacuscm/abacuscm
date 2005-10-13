@@ -100,7 +100,7 @@ bool MarkMessage::process() const {
 		return false;
 
 	if(!db->putMark(_submission_id, _marker, _time, _result, _comment, _server_id)) {
-		db->release();
+		db->release();db=NULL;
 		return false;
 	}
 	
@@ -134,7 +134,7 @@ bool MarkMessage::process() const {
 		EventRegister::getInstance().triggerEvent("balloon", &bl);
 	}
 
-	db->release();
+	db->release();db=NULL;
 	
 	return true;
 }
@@ -260,7 +260,7 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
                                   resinfo,
                                   utype,
                                   comment)) {
-            db->release();
+            db->release();db=NULL;
             if (utype == USER_TYPE_JUDGE) {
                 return cc->sendError("A judge has already beat you to it and marked this submission, sorry!");
             }
@@ -269,10 +269,10 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
             }
         }
         else {
-            db->release();
+            db->release();db=NULL;
             return cc->sendError("This hasn't been compiled or even run: you really think I'm going to let you fiddle with the marks?");
         }
-        db->release();
+        db->release();db=NULL;
     }
 
 	uint32_t result = strtoll((*mb)["result"].c_str(), &errpnt, 0);

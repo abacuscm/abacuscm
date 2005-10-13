@@ -183,7 +183,7 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 		mb["nrows"] = row.str();
 	}
 
-	db->release();
+	db->release();db=NULL;
 	
 	return cc->sendMessageBlock(&mb);
 }

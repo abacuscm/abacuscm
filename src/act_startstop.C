@@ -149,7 +149,7 @@ bool MsgStartStop::process() const {
 		return false;
 
 	bool dbres = db->startStopContest(_server_id, _time, _action == ACT_START);
-	db->release();
+	db->release();db=NULL;
 
 	if(!_server_id || _server_id == Server::getId())
 		Server::putTimedAction(new StartStopAction(_time, _action));

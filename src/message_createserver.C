@@ -92,13 +92,13 @@ bool Message_CreateServer::process() const {
 			if(!db->setServerAttribute(_server_id, i->first, i->second))
 				log(LOG_WARNING, "Unable to set attribute '%s' = '%s' for '%s'.", i->first.c_str(), i->second.c_str(), _name.c_str());
 
-		db->release();
+		db->release();db=NULL;
 
 		Server::putAck(0, 0, _server_id);
 
 		return true;
 	} else {
-		db->release();
+		db->release();db=NULL;
 		return false;
 	}
 }

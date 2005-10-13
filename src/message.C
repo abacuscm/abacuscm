@@ -59,7 +59,7 @@ bool Message::makeMessage() {
 
 		DbCon *db = DbCon::getInstance();
 		if(!db->putLocalMessage(this)) {
-			db->release();
+			db->release();db=NULL;
 			return false;
 		}
 
@@ -75,7 +75,7 @@ bool Message::makeMessage() {
 						_server_id, _message_id, *i);
 //				db->setSent(_server_id, _message_id, *i);
 		}
-		db->release();
+		db->release();db=NULL;
 		return true;
 	} catch(...) {
 		log(LOG_ERR, "Failed to pack message, exception caught");

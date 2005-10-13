@@ -47,7 +47,7 @@ bool ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
 		return cc->sendError("Error connecting to database");
 
 	uint32_t tmp_user_id = db->name2user_id(new_username);
-	db->release();
+	db->release();db=NULL;
 
 	if(tmp_user_id)
 		return cc->sendError("Username is already in use");

@@ -61,7 +61,7 @@ bool ActIdPasswd::int_process(ClientConnection *cc, MessageBlock *mb) {
 
 	DbCon *db = DbCon::getInstance();
 	string username = db->user_id2name(user_id);
-	db->release();
+	db->release();db=NULL;
 	if (username == "")
 		return cc->sendError("user_id does not identify a valid user");
 
@@ -77,7 +77,7 @@ bool ActGetUsers::int_process(ClientConnection *cc, MessageBlock *) {
 	if(!db)
 		return cc->sendError("Error connecting to database");
         UserList lst = db->getUsers();
-	db->release();
+	db->release();db=NULL;
 
 	MessageBlock res("ok");
 

@@ -70,7 +70,7 @@ bool ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
 	if(!db)
 		return cc->sendError("Unable to connect to database");
 	ProblemList probs = db->getProblems();
-	db->release();
+	db->release();db=NULL;
 
 	ProblemList::iterator p;
 	for(p = probs.begin(); p != probs.end(); ++p)
@@ -103,7 +103,6 @@ bool ActGetProblems::int_process(ClientConnection *cc, MessageBlock *) {
 		return cc->sendError("Error connecting to database");
 
 	ProblemList probs = db->getProblems();
-	db->release();
 
 	MessageBlock mb("ok");
 
@@ -122,6 +121,7 @@ bool ActGetProblems::int_process(ClientConnection *cc, MessageBlock *) {
 		mb["code" + cstr] = lst["shortname"];
 		mb["name" + cstr] = lst["longname"];
 	}
+	db->release();db=NULL;
 	
 	return cc->sendMessageBlock(&mb);
 }
@@ -181,7 +181,7 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 			mb["comment" + cntr] = "Pending";
 		}
 	}
-	db->release();
+	db->release();db=NULL;
 	
 	return cc->sendMessageBlock(&mb);
 }
@@ -240,7 +240,7 @@ bool SubmissionMessage::process() const {
 	if(db->getServerAttribute(Server::getId(), "marker") == "yes")
 		Markers::getInstance().enqueueSubmission(_submission_id);
 
-	db->release();
+	db->release();db=NULL;
 	
 	return result;
 }
@@ -340,7 +340,7 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
                                   utype,
                                   comment)) {
             if (resinfo != COMPILE_FAILED) {
-                db->release();
+                db->release();db=NULL;
                 return cc->sendError("Not allowed to fetch file data for anything except failed compilations");
             }
         }
@@ -350,11 +350,11 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
         }
 
         if (db->submission2user_id(submission_id) != uid) {
-            db->release();
+            db->release();db=NULL;
             return cc->sendError("This submission doesn't belong to you; I can't let you look at it");
         }
 
-        db->release();
+        db->release();db=NULL;
     }
 
     if (request == "count") {
@@ -382,7 +382,7 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
         result_mb.setContent((char *) data, length);
     }
 
-	db->release();
+	db->release();db=NULL;
 	
 	return cc->sendMessageBlock(&result_mb);
 }

@@ -16,7 +16,7 @@ bool ServerListAct::int_process(ClientConnection *cc, MessageBlock *) {
 		return cc->sendError("Error connecting to database");
 
 	ServerList list = db->getServers();
-	db->release();
+	db->release();db=NULL;
 
 	MessageBlock mb("ok");
 	int c = 0;
