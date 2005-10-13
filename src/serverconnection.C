@@ -963,6 +963,24 @@ uint32_t ServerConnection::contestTime() {
 	}
 }
 
+uint32_t ServerConnection::contestRemain() {
+	MessageBlock mb("contesttime");
+
+	MessageBlock *res = sendMB(&mb);
+
+	if(res && res->action() == "ok") {
+		uint32_t time = strtoll((*res)["remain"].c_str(), NULL, 0);
+		delete res;
+		return time;
+	} else {
+		if(res) {
+			log(LOG_ERR, "%s", (*res)["msg"].c_str());
+			delete res;
+		}
+		return ~0U;
+	}
+}
+
 bool ServerConnection::contestRunning() {
 	MessageBlock mb("contesttime");
 

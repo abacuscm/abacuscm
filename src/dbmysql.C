@@ -1370,13 +1370,13 @@ uint32_t MySQL::contestTime(uint32_t server_id, uint32_t unix_time) {
 }
 
 uint32_t MySQL::contestRemaining(uint32_t server_id, uint32_t unix_time) {
-	time_t stop = contestStartStopTime(server_id, false);
+	uint32_t stop = contestStartStopTime(server_id, false);
 
 	if (!unix_time) unix_time = time(NULL);
 	if (stop < unix_time) return 0;
 	return stop - unix_time;
 }
-	
+
 bool MySQL::startStopContest(uint32_t server_id, uint32_t unix_time, bool start) {
 	ostringstream query;
 	query << "REPLACE INTO ContestStartStop(server_id, action, time) VALUES("

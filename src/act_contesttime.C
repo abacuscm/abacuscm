@@ -3,6 +3,8 @@
 #include "messageblock.h"
 #include "server.h"
 
+#include <sstream>
+
 class ActContesttime : public ClientAction {
 protected:
 	virtual bool int_process(ClientConnection* cc, MessageBlock*mb);
@@ -10,17 +12,20 @@ protected:
 
 bool ActContesttime::int_process(ClientConnection* cc, MessageBlock*) {
 	uint32_t contesttime = Server::contestTime();
+	uint32_t contestremain = Server::contestRemaining();
 	bool running = Server::isContestRunning();
 
-	if(contesttime > 5 * 60 * 60)
-		contesttime = 5 * 60 * 60;
-
-	char buffer[20];
-	sprintf(buffer, "%u", contesttime);
+	std::ostringstream os;
 
 	MessageBlock res("ok");
-	res["time"] = buffer;
 	res["running"] = running ? "yes" : "no";
+
+	os << contesttime;
+	res["time"] = os.str();
+
+	os.str("");
+	os << contestremain;
+	res["remain"] = os.str();
 
 	return cc->sendMessageBlock(&res);
 }

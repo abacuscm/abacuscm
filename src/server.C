@@ -285,3 +285,14 @@ uint32_t Server::contestTime() {
 	db->release();
 	return tm;
 }
+
+uint32_t Server::contestRemaining() {
+	uint32_t tm = 0;
+	DbCon *db = DbCon::getInstance();
+	if(!db)
+		return 0;
+	
+	tm = db->contestRemaining(getId());
+	db->release();
+	return tm;
+}

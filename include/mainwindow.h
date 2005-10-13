@@ -8,6 +8,7 @@
 
 class QCheckBox;
 class QListViewItem;
+class QTimer;
 
 typedef struct {
 	int prio_level;
@@ -19,7 +20,11 @@ private:
 	LoginDialog _login_dialog;
 	ServerConnection _server_con;
 
-	std::string _active_type;
+        std::string _active_type;
+
+        /* Clock-related stuff */
+        QTimer *timer;
+        time_t projected_stop;
 
 	void triggerType(std::string type, bool status);
 	void switchType(std::string type);
@@ -33,12 +38,13 @@ protected:
 	virtual void doSubmit();
 	virtual void doClarificationRequest();
 	virtual void doShowClarificationRequest(QListViewItem*);
-	virtual void doShowClarificationReply(QListViewItem*);
+        virtual void doShowClarificationReply(QListViewItem*);
+        virtual void doTimer();
 	virtual void tabChanged(QWidget*);
 	virtual void doChangePassword();
 	virtual void doJudgeSubscribeToProblems();
 	virtual void submissionHandler(QListViewItem *);
-	virtual void toggleBalloonPopups(bool);
+        virtual void toggleBalloonPopups(bool);
 
 	virtual void customEvent(QCustomEvent *ev);
 public:
@@ -53,6 +59,7 @@ public:
 	virtual void updateSubmissions();
 	void updateClarificationRequests();
 	void updateClarifications();
+        void updateStatus();
 	void serverDisconnect();
 
 	std::string getActiveType();

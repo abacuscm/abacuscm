@@ -125,12 +125,13 @@ public:
 	bool getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length);
 
 	uint32_t contestTime();
+	uint32_t contestRemain();
 	bool contestRunning();
 	bool subscribeTime();
 
 	bool watchBalloons(bool yesno);
 
-    bool watchJudgeSubmissions();
+	bool watchJudgeSubmissions();
 
 	bool becomeMarker();
 	bool mark(uint32_t submission_id, RunResult result, std::string comment, const AttributeMap &files);

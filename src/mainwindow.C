@@ -36,6 +36,7 @@
 #include <qcombobox.h>
 #include <qlabel.h>
 #include <qtextbrowser.h>
+#include <qtimer.h>
 
 #include <time.h>
 
@@ -170,6 +171,11 @@ void MainWindowCaller::process(QWidget* wid) {
 }
 
 // Would've prefered a single function here ...
+static void updateStatusFunctor(const MessageBlock*, void*) {
+	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateStatus);
+	ev->post();
+}
+
 static void updateStandingsFunctor(const MessageBlock*, void*) {
 	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateStandings);
 	ev->post();
@@ -179,10 +185,10 @@ static void updateSubmissionsFunctor(const MessageBlock* mb, void*) {
 	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateSubmissions);
 	ev->post();
 
-    if ((*mb)["msg"] != "") {
-        NotifyEvent *ne = new NotifyEvent("Submission", (*mb)["msg"], QMessageBox::NoIcon);
-        ne->post();
-    }
+	if ((*mb)["msg"] != "") {
+		NotifyEvent *ne = new NotifyEvent("Submission", (*mb)["msg"], QMessageBox::NoIcon);
+		ne->post();
+	}
 }
 
 static void updateClarificationRequestsFunctor(const MessageBlock*, void*) {
@@ -208,6 +214,9 @@ static void contestStartStop(const MessageBlock* mb, void*) {
 	NotifyEvent *ne = new NotifyEvent("Contest Status", string("The contest has been ") + 
 			(((*mb)["action"] == "start") ? "started" : "stopped"), QMessageBox::NoIcon);
 	ne->post();
+
+	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateStatus);
+	ev->post();
 }
 
 static void server_disconnect(const MessageBlock*, void*) {
@@ -230,6 +239,11 @@ MainWindow::MainWindow() {
 	
 	GUIEvent::setReceiver(this);
 	register_log_listener(window_log);
+
+	projected_stop = 0;
+	timer = new QTimer(this);
+	connect(timer, SIGNAL(timeout()), this, SLOT(doTimer()));
+	timer->start(1000, false); // Updates clock once per second
 }
 
 MainWindow::~MainWindow() {
@@ -258,6 +272,23 @@ void MainWindow::switchType(std::string type) {
 		triggerType(_active_type, true);
 }
 
+void MainWindow::doTimer() {
+	if (projected_stop > 0)
+	{
+		time_t now = time(NULL);
+		time_t remain = 0;
+		if (now < projected_stop)
+			remain = projected_stop - now;
+
+		char buffer[30];
+		sprintf(buffer, "%02ld:%02ld:%02ld",
+			remain / 3600,
+			(remain / 60) % 60,
+			remain % 60);
+		clock->setText(buffer);
+	}
+}
+
 void MainWindow::doHelpAbout() {
 	AboutDialog about;
 	about.exec();
@@ -281,7 +312,7 @@ void MainWindow::doFileConnect() {
 				switchType(type);
 				fileConnectAction->setEnabled(false);
 				fileDisconnectAction->setEnabled(true);
-                                changePasswordAction->setEnabled(true);
+				changePasswordAction->setEnabled(true);
 				clarifyButton->setEnabled(true);
 
 				_server_con.registerEventCallback("submission", updateSubmissionsFunctor, NULL);
@@ -297,10 +328,11 @@ void MainWindow::doFileConnect() {
 				{
 					_server_con.registerEventCallback("updateclarificationrequests", updateClarificationRequestsFunctor, NULL);
 					_server_con.registerEventCallback("updateclarifications", updateClarificationsFunctor, NULL);
-                    _server_con.watchJudgeSubmissions();
+					_server_con.watchJudgeSubmissions();
 				}
 
 				_server_con.subscribeTime();
+				updateStatus();
 			} else {
 				QMessageBox("Auth error", "Invalid username and/or password",
 						QMessageBox::Information, QMessageBox::Ok,
@@ -322,13 +354,13 @@ void MainWindow::doFileDisconnect() {
 		return;
 	}
 	
-
 	fileConnectAction->setEnabled(true);
 	fileDisconnectAction->setEnabled(false);
 	changePasswordAction->setEnabled(false);
 	clarifyButton->setEnabled(false);
 
 	switchType("");
+	updateStatus();
 }
 
 void MainWindow::doChangePassword() {
@@ -661,6 +693,25 @@ void MainWindow::customEvent(QCustomEvent *ev) {
 		guiev->process(this);
 	else
 		log(LOG_DEBUG, "Unknown QCustomEvent!!!");
+}
+
+void MainWindow::updateStatus() {
+	if (_active_type == "")
+	{
+		status->setText("Not connected");
+		projected_stop = 0;
+		clock->setText("");
+	} else if (_server_con.contestRunning()) {
+		time_t remain = _server_con.contestRemain();
+		time_t now = time(NULL);
+		projected_stop = remain + now;
+		status->setText("Contest running");
+		clock->setText("");  // timer event will update it
+	} else {
+		status->setText("Contest stopped");
+		projected_stop = 0;
+		clock->setText("");
+	}
 }
 
 void MainWindow::updateStandings() {

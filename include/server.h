@@ -32,6 +32,7 @@ public:
 	static void setAckQueue(Queue<uint32_t> *ack_queue);
 	static bool isContestRunning();
 	static uint32_t contestTime();
+	static uint32_t contestRemaining();
 	static void putTimedAction(TimedAction *action);
 	static void setTimedQueue(Queue<TimedAction*> *queue);
 };
