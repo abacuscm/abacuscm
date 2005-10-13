@@ -748,6 +748,9 @@ void MainWindow::updateStandings() {
 void MainWindow::updateSubmissions() {
 	SubmissionList list = _server_con.getSubmissions();
 
+	if(list.empty())
+		return;
+
 	std::vector<ProblemInfo> problems = _server_con.getProblems();
 	bool filter = (_active_type == "judge") && judgesShowOnlySubscribedSubmissionsAction->isOn();
 	std::map<string, bool> is_subscribed;
