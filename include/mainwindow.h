@@ -37,6 +37,7 @@ protected:
 	virtual void doChangePassword();
 	virtual void doJudgeSubscribeToProblems();
 	virtual void submissionHandler(QListViewItem *);
+	virtual void toggleBalloonPopups(bool);
 
 	virtual void customEvent(QCustomEvent *ev);
 public:

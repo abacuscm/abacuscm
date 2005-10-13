@@ -788,6 +788,17 @@ Grid ServerConnection::getStandings() {
 	return gridAction(mb);
 }
 
+bool ServerConnection::watchBalloons(bool yesno) {
+	MessageBlock mb("balloonnotify");
+
+	if(yesno)
+		mb["action"] = "subscribe";
+	else
+		mb["action"] = "unsubscribe";
+
+	return simpleAction(mb);
+}
+
 bool ServerConnection::becomeMarker() {
 	MessageBlock mb("subscribemark");
 

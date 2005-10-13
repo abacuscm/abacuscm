@@ -126,6 +126,8 @@ public:
 	bool contestRunning();
 	bool subscribeTime();
 
+	bool watchBalloons(bool yesno);
+
 	bool becomeMarker();
 	bool mark(uint32_t submission_id, RunResult result, std::string comment, const AttributeMap &files);
 

@@ -137,6 +137,14 @@ static void event_msg(const MessageBlock* mb, void*) {
 	ne->post();
 }
 
+static void event_balloon(const MessageBlock *mb, void*) {
+	string msg = (*mb)["contestant"] + " has solved " +
+		(*mb)["problem"] + " (server: " + (*mb)["server"] + ")";
+
+	NotifyEvent *ne = new NotifyEvent("Balloon Notification", msg, QMessageBox::Information);
+	ne->post();
+}
+
 /********************* MainWindowCaller *****************************/
 typedef void (MainWindow::*MainWindowFuncPtr)();
 class MainWindowCaller : public GUIEvent {
@@ -277,6 +285,7 @@ void MainWindow::doFileConnect() {
 				_server_con.registerEventCallback("standings", updateStandingsFunctor, NULL);
 				_server_con.registerEventCallback("msg", event_msg, NULL);
 				_server_con.registerEventCallback("startstop", contestStartStop, NULL);
+				_server_con.registerEventCallback("balloon", event_balloon, NULL);
 				if (_active_type == "contestant")
 				{
 					_server_con.registerEventCallback("newclarification", newClarificationFunctor, NULL);
@@ -751,6 +760,14 @@ void MainWindow::submissionHandler(QListViewItem *item) {
             compilerOutputDialog.exec();
         }
     }
+}
+
+void MainWindow::toggleBalloonPopups(bool activate) {
+	if(!_server_con.watchBalloons(activate)) {
+		judgesNotify_about_Correct_SubmissionsAction->setOn(false);
+		//QMessageBox::critical(this, "Error", "Error subscribing to balloon notifications", "O&k");
+
+	}
 }
 
 void MainWindow::updateClarifications() {

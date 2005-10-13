@@ -575,6 +575,7 @@
     <item text="&amp;Judges" name="Judges">
         <action name="judgesSubscribeToProblemsAction"/>
         <action name="judgesShowOnlySubscribedSubmissionsAction"/>
+        <action name="judgesNotify_about_Correct_SubmissionsAction"/>
     </item>
     <item text="&amp;Help" name="Help">
         <action name="helpAboutAction"/>
@@ -791,6 +792,23 @@
             <string>Show only subscribed submissions</string>
         </property>
     </action>
+    <action>
+        <property name="name">
+            <cstring>judgesNotify_about_Correct_SubmissionsAction</cstring>
+        </property>
+        <property name="toggleAction">
+            <bool>true</bool>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>Notify about Correct Submissions</string>
+        </property>
+        <property name="menuText">
+            <string>Notify about Correct Submissions</string>
+        </property>
+    </action>
 </actions>
 <images>
     <image name="image0">
@@ -945,6 +963,18 @@
         <receiver>judgesShowOnlySubscribedSubmissionsAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
+    <connection>
+        <sender>judgesNotify_about_Correct_SubmissionsAction</sender>
+        <signal>toggled(bool)</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>toggleBalloonPopups(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalJudgeControls(bool)</signal>
+        <receiver>judgesNotify_about_Correct_SubmissionsAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
 </connections>
 <signals>
     <signal>signalAdminControls(bool)</signal>
@@ -966,6 +996,7 @@
     <slot access="protected" specifier="pure virtual">doShowClarificationReply(QListViewItem *item)</slot>
     <slot access="protected" specifier="pure virtual">doClarificationRequest()</slot>
     <slot>updateSubmissions()</slot>
+    <slot access="protected" specifier="pure virtual">toggleBalloonPopups(bool)</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>
