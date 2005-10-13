@@ -764,8 +764,8 @@ ProblemList MySQL::getProblems() {
 			while((row = mysql_fetch_row(res)) != 0) {
 				result.push_back(atol(row[0]));
 			}
+            mysql_free_result(res);
 		}
-		mysql_free_result(res);
 	}
 	return result;
 }
@@ -1337,7 +1337,11 @@ time_t MySQL::contestStartStopTime(uint32_t server_id, bool start) {
 	if (mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();
 	} else {
-		MYSQL_RES *res = mysql_use_result(&_mysql);
+        MYSQL_RES *res = mysql_use_result(&_mysql);
+        if (!res) {
+            log_mysql_error();
+            return 0;
+        }
 		MYSQL_ROW row = mysql_fetch_row(res);
 		if(row) {
 			t = atol(row[0]);
