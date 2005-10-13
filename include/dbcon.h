@@ -36,6 +36,7 @@ public:
 	 * maps a servername to a server_id
 	 */
 	virtual uint32_t name2server_id(const std::string& name) = 0;
+	virtual std::string server_id2name(uint32_t user_id) = 0;
 
 	/**
 	 * Retrieves a list of all servers, mapped with id -> name
@@ -274,8 +275,10 @@ public:
 	virtual bool getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length) = 0;
 	
 	virtual bool getSubmissionState(uint32_t submission_id, RunResult& state, uint32_t& utype, std::string& comment) = 0;
-	virtual uint32_t submission2userid(uint32_t submission_id) = 0;
-	
+	virtual uint32_t submission2user_id(uint32_t submission_id) = 0;
+	virtual uint32_t submission2server_id(uint32_t submission_id) = 0;
+	virtual std::string submission2problem(uint32_t submission_id) = 0;
+
 	/**
 	 * Functions for determining the contest state - they really don't
 	 * belong here but making SQL calculate this is so much easier ...

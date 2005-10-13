@@ -25,6 +25,7 @@ public:
 
 	virtual bool ok();
 	virtual uint32_t name2server_id(const string& name);
+	virtual std::string server_id2name(uint32_t user_id);
 	virtual uint32_t name2user_id(const string& name);
 	virtual std::string user_id2name(uint32_t user_id);
 	virtual UserList getUsers();
@@ -92,7 +93,9 @@ public:
 	virtual uint32_t countMarkFiles(uint32_t submission_id);
 	virtual bool getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length);
 	virtual bool getSubmissionState(uint32_t submission_id, RunResult& state, uint32_t& utype, string& comment);
-	virtual uint32_t submission2userid(uint32_t submission_id);
+	virtual uint32_t submission2user_id(uint32_t submission_id);
+	virtual uint32_t submission2server_id(uint32_t submission_id);
+	virtual std::string submission2problem(uint32_t submission_id);
 	virtual bool contestRunning(uint32_t server_id, uint32_t unix_time);
 	virtual uint32_t contestTime(uint32_t server_id, uint32_t unix_time);
 	virtual bool startStopContest(uint32_t server_id, uint32_t unix_time, bool start);
@@ -160,6 +163,31 @@ uint32_t MySQL::name2server_id(const string& name) {
 	mysql_free_result(res);
 	
 	return server_id;
+}
+
+std::string MySQL::server_id2name(uint32_t server_id) {
+	string servername;
+	ostringstream query;
+	query << "SELECT server_name FROM Server WHERE server_id=" << server_id;
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return "";
+	}
+
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if(!res) {
+		log_mysql_error();
+		return "";
+	}
+
+	MYSQL_ROW row = mysql_fetch_row(res);
+	if(row)
+		servername = row[0];
+
+	mysql_free_result(res);
+
+	return servername;
 }
 
 uint32_t MySQL::name2user_id(const string& name) {
@@ -1066,7 +1094,7 @@ bool MySQL::getSubmissionState(uint32_t submission_id, RunResult& state, uint32_
 	}
 }
 
-uint32_t MySQL::submission2userid(uint32_t submission_id) {
+uint32_t MySQL::submission2user_id(uint32_t submission_id) {
 	ostringstream query;
 	query << "SELECT user_id FROM Submission WHERE submission_id = " << submission_id;
 
@@ -1086,6 +1114,52 @@ uint32_t MySQL::submission2userid(uint32_t submission_id) {
 			uid = strtoll(row[0], NULL, 0);
 		mysql_free_result(res);
 		return uid;
+	}
+}
+
+uint32_t MySQL::submission2server_id(uint32_t submission_id) {
+	ostringstream query;
+	query << "SELECT server_id FROM Submission WHERE submission_id = " << submission_id;
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return ~0U;
+	} else {
+		MYSQL_RES* res = mysql_use_result(&_mysql);
+		if(!res) {
+			log_mysql_error();
+			return ~0U;
+		}
+
+		uint32_t sid = ~0U;
+		MYSQL_ROW row = mysql_fetch_row(res);
+		if(row)
+			sid = strtoll(row[0], NULL, 0);
+		mysql_free_result(res);
+		return sid;
+	}
+}
+	
+std::string MySQL::submission2problem(uint32_t submission_id) {
+	ostringstream query;
+	query << "SELECT value FROM Submission, ProblemAttributes WHERE prob_id = problem_id AND attribute='shortname' AND submission_id=" << submission_id;
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return "";
+	} else {
+		MYSQL_RES* res = mysql_use_result(&_mysql);
+		if(!res) {
+			log_mysql_error();
+			return "";
+		}
+
+		string problem = "";
+		MYSQL_ROW row = mysql_fetch_row(res);
+		if(row)
+			problem = row[0];
+		mysql_free_result(res);
+		return problem;
 	}
 }
 

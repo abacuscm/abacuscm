@@ -339,7 +339,7 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
             return cc->sendError("This submission hasn't been marked yet, please be patient :-)");
         }
 
-        if (db->submission2userid(submission_id) != uid) {
+        if (db->submission2user_id(submission_id) != uid) {
             db->release();
             return cc->sendError("This submission doesn't belong to you; I can't let you look at it");
         }

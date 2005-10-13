@@ -50,7 +50,7 @@ public:
 	void registerEvent(std::string eventname);
 	void triggerEvent(std::string eventname, const MessageBlock *mb);
 	void broadcastEvent(const MessageBlock *mb); /* To ALL clients */
-	void triggerOne(std::string eventname, const MessageBlock*mb, bool remove);
+//	void triggerOne(std::string eventname, const MessageBlock*mb, bool remove);
 	void sendMessage(uint32_t user_id, const MessageBlock *mb);
 	
 	static EventRegister& getInstance();

@@ -66,7 +66,7 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 				tmp.time = strtoll((*s)["time"].c_str(), NULL, 0);
 
 				uint32_t prob_id = strtoll((*s)["prob_id"].c_str(), NULL, 0);
-				uint32_t team_id = db->submission2userid(sub_id);
+				uint32_t team_id = db->submission2user_id(sub_id);
 
 				problemdata[team_id][prob_id].push_back(tmp);
 			}
