@@ -1062,6 +1062,8 @@ void* ServerConnection::receive_thread() {
 
 	log(LOG_DEBUG, "Stopping ServerConnection receive_thread");
 
+	processMB(new MessageBlock("close"));
+
 	return NULL;
 }
 
