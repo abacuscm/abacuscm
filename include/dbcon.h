@@ -282,11 +282,17 @@ public:
 	/**
 	 * Functions for determining the contest state - they really don't
 	 * belong here but making SQL calculate this is so much easier ...
+	 * The top two do belong here, the other three REALLY belong at
+	 * a higher level - Bruce
 	 */
+	// Action is "START" or "STOP"
+	virtual time_t contestStartStopTime(uint32_t server_id, bool start) = 0;
+	// Sets either a start or a stop time
+	virtual bool startStopContest(uint32_t server_id, uint32_t unix_time, bool start) = 0;
+
 	virtual bool contestRunning(uint32_t server_id, uint32_t unix_time = 0) = 0;
 	virtual uint32_t contestTime(uint32_t server_id, uint32_t unix_time = 0) = 0;
 	virtual uint32_t contestRemaining(uint32_t server_id, uint32_t unix_time = 0) = 0;
-	virtual bool startStopContest(uint32_t server_id, uint32_t unix_time, bool start) = 0;
 
 	/**
 	 * Functions to register a DbCon functor (function to create DbCons),

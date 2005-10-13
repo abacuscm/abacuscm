@@ -483,10 +483,10 @@ void MainWindow::doAdminStartStop() {
 			start_str = (const char *) dialog.start->text();
 			stop_str = (const char *) dialog.stop->text();
 			err = strptime(start_str.c_str(), "%T", &start_tm);
-			if (*err || start_str == "")
+			if (!err || *err || start_str == "")
                                 correct = false;
 			err = strptime(stop_str.c_str(), "%T", &stop_tm);
-			if (*err || stop_str == "")
+			if (!err || *err || stop_str == "")
 				correct = false;
 
 			start = mktime(&start_tm);

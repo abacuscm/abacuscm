@@ -21,7 +21,6 @@ private:
 	
 	list<Message*> getMessages(std::string query);
 
-	time_t contestStartStopTime(uint32_t server_id, const std::string& action);
 public:
 	MySQL();
 	virtual ~MySQL();
@@ -99,6 +98,7 @@ public:
 	virtual uint32_t submission2user_id(uint32_t submission_id);
 	virtual uint32_t submission2server_id(uint32_t submission_id);
 	virtual std::string submission2problem(uint32_t submission_id);
+        virtual time_t contestStartStopTime(uint32_t server_id, bool start);
 	virtual bool contestRunning(uint32_t server_id, uint32_t unix_time);
 	virtual uint32_t contestTime(uint32_t server_id, uint32_t unix_time);
 	virtual uint32_t contestRemaining(uint32_t server_id, uint32_t unix_time);
@@ -1325,11 +1325,11 @@ bool MySQL::getProblemFileData(uint32_t problem_id, std::string attr, uint8_t **
 	return *dataptr != NULL;
 }
 
-time_t MySQL::contestStartStopTime(uint32_t server_id, const std::string& mode) {
+time_t MySQL::contestStartStopTime(uint32_t server_id, bool start) {
 	ostringstream query;
 	time_t t = 0;
 
-	query << "SELECT time FROM ContestStartStop WHERE server_id IN (0, " << server_id << ") AND action='" << mode << "' ORDER BY server_id DESC LIMIT 1";
+	query << "SELECT time FROM ContestStartStop WHERE server_id IN (0, " << server_id << ") AND action='" << (start ? "START" : "STOP") << "' ORDER BY server_id DESC LIMIT 1";
 	if (mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();
 	} else {
@@ -1346,15 +1346,15 @@ time_t MySQL::contestStartStopTime(uint32_t server_id, const std::string& mode) 
 bool MySQL::contestRunning(uint32_t server_id, uint32_t unix_time) {
 	uint32_t start, stop;
 
-	start = contestStartStopTime(server_id, "START");
-	stop = contestStartStopTime(server_id, "STOP");
+	start = contestStartStopTime(server_id, true);
+	stop = contestStartStopTime(server_id, false);
 	if (!unix_time) unix_time = time(NULL);
 
 	return unix_time >= start && unix_time < stop;
 }
 
 uint32_t MySQL::contestTime(uint32_t server_id, uint32_t unix_time) {
-	uint32_t start = contestStartStopTime(server_id, "START");
+	uint32_t start = contestStartStopTime(server_id, true);
 
 	if (!unix_time) unix_time = time(NULL);
         if (unix_time < start) return 0;
@@ -1362,7 +1362,7 @@ uint32_t MySQL::contestTime(uint32_t server_id, uint32_t unix_time) {
 }
 
 uint32_t MySQL::contestRemaining(uint32_t server_id, uint32_t unix_time) {
-	time_t stop = contestStartStopTime(server_id, "STOP");
+	time_t stop = contestStartStopTime(server_id, false);
 
 	if (!unix_time) unix_time = time(NULL);
 	if (stop < unix_time) return 0;

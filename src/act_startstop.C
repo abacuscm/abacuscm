@@ -153,12 +153,30 @@ bool MsgStartStop::process() const {
 
 	if(!_server_id || _server_id == Server::getId())
 		Server::putTimedAction(new StartStopAction(_time, _action));
-	
+
 	return dbres;
 }
 
 uint16_t MsgStartStop::message_type_id() const {
 	return TYPE_ID_STARTSTOP;
+}
+
+static void initialise_startstop_events() {
+	DbCon *db = DbCon::getInstance();
+	time_t start = db->contestStartStopTime(Server::getId(), true);
+	time_t stop = db->contestStartStopTime(Server::getId(), false);
+	time_t now = time(NULL);
+
+	if (start > now)
+	{
+		Server::putTimedAction(new StartStopAction(start, ACT_START));
+		log(LOG_INFO, "Setting start alarm for %u", (unsigned) start);
+	}
+	if (stop > now)
+	{
+		Server::putTimedAction(new StartStopAction(stop, ACT_STOP));
+		log(LOG_INFO, "Setting stop alarm for %u", (unsigned) stop);
+	}
 }
 
 static ActStartStop _act_startstop;
@@ -176,4 +194,6 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "subscribetime", &_act_subscribetime);
 	Message::registerMessageFunctor(TYPE_ID_STARTSTOP, StartStopFunctor);
 	EventRegister::getInstance().registerEvent("startstop");
+
+	initialise_startstop_events();
 }
