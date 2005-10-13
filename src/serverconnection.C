@@ -780,6 +780,9 @@ ClarificationRequestList ServerConnection::getClarificationRequests() {
 }
 
 Grid ServerConnection::getStandings() {
+	if(!_ssl)
+		return Grid();
+
 	MessageBlock mb("standings");
 
 	return gridAction(mb);
