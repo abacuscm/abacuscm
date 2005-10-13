@@ -269,9 +269,9 @@ public:
 	virtual bool putMarkFile(uint32_t submission_id, uint32_t marker_id,
 			std::string name, const void* data, uint32_t len) = 0;
 
-    virtual uint32_t countMarkFiles(uint32_t submission_id) = 0;
+	virtual uint32_t countMarkFiles(uint32_t submission_id) = 0;
 
-    virtual bool getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length) = 0;
+	virtual bool getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length) = 0;
 	
 	virtual bool getSubmissionState(uint32_t submission_id, RunResult& state, uint32_t& utype, std::string& comment) = 0;
 	virtual uint32_t submission2userid(uint32_t submission_id) = 0;

@@ -298,6 +298,8 @@ bool ActClarificationRequest::int_process(ClientConnection *cc, MessageBlock *mb
 bool ActClarification::int_process(ClientConnection *cc, MessageBlock *mb) {
 	uint32_t user_id = cc->getProperty("user_id");
 	uint32_t req_user_id = 0;
+	std::string problem = "";
+	std::string question = "";
 	std::string answer = (*mb)["answer"];
 
 	char *errptr;
@@ -314,6 +316,8 @@ bool ActClarification::int_process(ClientConnection *cc, MessageBlock *mb) {
 		if((*c)["id"] == (*mb)["clarification_request_id"])
 		{
 			req_user_id = atol((*c)["user_id"].c_str());
+			question = (*c)["question"];
+			problem = (*c)["problem"];
 			break;
 		}
 	if(c == crs.end())
@@ -325,19 +329,20 @@ bool ActClarification::int_process(ClientConnection *cc, MessageBlock *mb) {
 		return cc->sendError("Internal server error. Error obtaining new clarification id");
 
 	ClarificationMessage *msg = new ClarificationMessage(cr_id, c_id, user_id, pub, answer);
-	log(LOG_INFO, "User %u submitted clarification for request %u", user_id, cr_id);
+	log(LOG_INFO, "User %u submitted clarification %u for request %u", user_id, c_id, cr_id);
 	if (!triggerMessage(cc, msg)) return false;
 
-	MessageBlock notify("updateclarifications");
-	EventRegister::getInstance().broadcastEvent(&notify);
+	MessageBlock update("updateclarifications");
+	EventRegister::getInstance().broadcastEvent(&update);
 
-	MessageBlock alert("msg");
-	alert["title"] = "New clarification";
-	alert["text"] = answer;
+	MessageBlock notify("newclarification");
+	notify["problem"] = problem;
+	notify["question"] = question;
+	notify["answer"] = answer;
 	if (pub)
-		EventRegister::getInstance().broadcastEvent(&alert);
+		EventRegister::getInstance().broadcastEvent(&notify);
 	else
-		EventRegister::getInstance().sendMessage(req_user_id, &alert);
+		EventRegister::getInstance().sendMessage(req_user_id, &notify);
 	return true;
 }
 

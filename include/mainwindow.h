@@ -36,7 +36,7 @@ protected:
 	virtual void tabChanged(QWidget*);
 	virtual void doChangePassword();
 	virtual void doJudgeSubscribeToProblems();
-    virtual void submissionHandler(QListViewItem *);
+	virtual void submissionHandler(QListViewItem *);
 
 	virtual void customEvent(QCustomEvent *ev);
 public:
@@ -51,6 +51,8 @@ public:
 	void updateSubmissions();
 	void updateClarificationRequests();
 	void updateClarifications();
+
+	std::string getActiveType();
 };
 
 #endif

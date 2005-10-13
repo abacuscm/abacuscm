@@ -884,7 +884,7 @@ bool MySQL::putClarification(uint32_t cr_id, uint32_t c_id,
 			     const std::string& answer) {
 	ostringstream query;
 	query << "INSERT INTO Clarification (clarification_id, clarification_req_id, user_id, time, public, text)";
-	query << " VALUES (" << cr_id << ", " << c_id << ", " << user_id << ", " << time << ", " << (pub ? 1 : 0) << ", '" << escape_string(answer) << "')";
+	query << " VALUES (" << c_id << ", " << cr_id << ", " << user_id << ", " << time << ", " << (pub ? 1 : 0) << ", '" << escape_string(answer) << "')";
 
 	if (mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();

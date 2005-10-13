@@ -62,6 +62,42 @@ void NotifyEvent::process(QWidget *parent) {
 	QMessageBox(_caption, _text, _icon, QMessageBox::Ok, QMessageBox::NoButton, QMessageBox::NoButton, parent).exec();
 }
 
+class NewClarificationEvent : public GUIEvent {
+private:
+	QString _problem;
+	QString _question;
+	QString _answer;
+public:
+	NewClarificationEvent(const QString &problem, const QString &question, const QString &answer);
+
+	virtual void process(QWidget*);
+};
+
+NewClarificationEvent::NewClarificationEvent(const QString &problem, const QString &question, const QString &answer) {
+	_problem = problem;
+	_question = question;
+	_answer = answer;
+}
+
+void NewClarificationEvent::process(QWidget *parent) {
+        bool popup = true;
+	MainWindow* mainwin = dynamic_cast<MainWindow*>(parent);
+	if(mainwin)
+		popup = mainwin->getActiveType() == "contestant";
+	else
+		log(LOG_WARNING, "NewClarificationEvent::process must receive an instance of MainWindow as parent!");
+
+	if (popup)
+	{
+		ViewClarificationReply dialog;
+
+		dialog.problem->setText(_problem);
+		dialog.question->setText(_question);
+		dialog.answer->setText(_answer);
+		dialog.exec();
+	}
+}
+
 static void window_log(int priority, const char* format, va_list ap) {
 	QString caption;
 	QMessageBox::Icon icon;
@@ -148,6 +184,14 @@ static void updateClarificationsFunctor(const MessageBlock*, void*) {
 	ev->post();
 }
 
+static void newClarificationFunctor(const MessageBlock* mb, void*) {
+	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateClarifications);
+	ev->post();
+
+	NewClarificationEvent *nce = new NewClarificationEvent((*mb)["problem"], (*mb)["question"], (*mb)["answer"]);
+	nce->post();
+}
+
 static void contestStartStop(const MessageBlock* mb, void*) {
 	// TODO: Something with the clock ...
 	NotifyEvent *ne = new NotifyEvent("Contest Status", string("The contest has been ") + 
@@ -222,10 +266,17 @@ void MainWindow::doFileConnect() {
 
 				_server_con.registerEventCallback("submission", updateSubmissionsFunctor, NULL);
 				_server_con.registerEventCallback("standings", updateStandingsFunctor, NULL);
-				_server_con.registerEventCallback("updateclarifications", updateClarificationsFunctor, NULL);
-				_server_con.registerEventCallback("updateclarificationrequests", updateClarificationRequestsFunctor, NULL);
 				_server_con.registerEventCallback("msg", event_msg, NULL);
 				_server_con.registerEventCallback("startstop", contestStartStop, NULL);
+				if (_active_type == "contestant")
+				{
+					_server_con.registerEventCallback("newclarification", newClarificationFunctor, NULL);
+				}
+				else
+				{
+					_server_con.registerEventCallback("updateclarificationrequests", updateClarificationRequestsFunctor, NULL);
+					_server_con.registerEventCallback("updateclarifications", updateClarificationsFunctor, NULL);
+				}
 
 				_server_con.subscribeTime();
 			} else {
@@ -441,6 +492,7 @@ void MainWindow::doClarificationRequest() {
 		uint32_t prob_id = (item == -1) ? 0 : probs[item].id;
 
 		_server_con.clarificationRequest(prob_id, cr.question->text());
+		updateClarificationRequests();
 	}
 }
 
@@ -717,4 +769,8 @@ void MainWindow::updateClarificationRequests() {
 		for(a = l->begin(); a != l->end(); ++a)
 			log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());
 	}
+}
+
+std::string MainWindow::getActiveType() {
+	return _active_type;
 }
