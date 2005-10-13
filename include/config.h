@@ -6,6 +6,8 @@
 #include <iostream>
 
 #define DEFAULT_SERVER_CONFIG		"/etc/abacus/server.conf"
+#define DEFAULT_CLIENT_CONFIG		"/etc/abacus/client.conf"
+#define DEFAULT_MARKER_CONFIG		"/etc/abacus/marker.conf"
 #define DEFAULT_UDPRECEIVER_PORT	7368
 #define DEFAULT_MODULE_DIR			"/usr/lib/abacus"
 

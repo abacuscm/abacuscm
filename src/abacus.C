@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
 
 	Config &config = Config::getConfig();
 
-	config.load("/etc/abacus.conf");
+	config.load(DEFAULT_CLIENT_CONFIG);
 	char *home = getenv("HOME");
 	if(home)
 		config.load(string(home) + "/.abacus");

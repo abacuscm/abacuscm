@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
 
 	setup_sigsegv();
 	Config &conf = Config::getConfig();
-	conf.load("/etc/abacus/marker.conf");
+	conf.load(DEFAULT_CLIENT_CONFIG);
 	if(argc > 1)
 		conf.load(argv[1]);
 
