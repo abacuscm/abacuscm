@@ -63,7 +63,7 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 			if(state != COMPILE_FAILED) { // we ignore compile failures.
 				SubData tmp;
 				tmp.correct = state == CORRECT;
-				tmp.time = strtoll((*s)["time"].c_str(), NULL, 0);
+				tmp.time = db->contestTime(db->submission2server_id(sub_id), strtoll((*s)["time"].c_str(), NULL, 0));
 
 				uint32_t prob_id = strtoll((*s)["prob_id"].c_str(), NULL, 0);
 				uint32_t team_id = db->submission2user_id(sub_id);
@@ -99,7 +99,7 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 			if(correct) {
 				teamdata.correct++;
 				teamdata.time += (tries - 1) * 20;
-				teamdata.time += db->contestTime(0, correct_time);
+				teamdata.time += correct_time;
 				teamdata.tries[p->first] = tries;
 			}
 		}
