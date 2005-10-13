@@ -812,7 +812,11 @@ SubmissionList MySQL::getSubmissions(uint32_t uid) {
 
 	SubmissionList lst;
 
-	MYSQL_RES *res = mysql_use_result(&_mysql);
+    MYSQL_RES *res = mysql_use_result(&_mysql);
+    if (!res) {
+        log_mysql_error();
+        return SubmissionList();
+    }
 	MYSQL_ROW row;
 	while((row = mysql_fetch_row(res)) != 0) {
 		AttributeList attrs;

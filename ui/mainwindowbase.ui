@@ -574,6 +574,7 @@
     </item>
     <item text="&amp;Judges" name="Judges">
         <action name="judgesSubscribeToProblemsAction"/>
+        <action name="judgesShowOnlySubscribedSubmissionsAction"/>
     </item>
     <item text="&amp;Help" name="Help">
         <action name="helpAboutAction"/>
@@ -770,6 +771,26 @@
             <string>Subscribe to problems</string>
         </property>
     </action>
+    <action>
+        <property name="name">
+            <cstring>judgesShowOnlySubscribedSubmissionsAction</cstring>
+        </property>
+        <property name="toggleAction">
+            <bool>true</bool>
+        </property>
+        <property name="on">
+            <bool>true</bool>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>Show only subscribed submissions</string>
+        </property>
+        <property name="menuText">
+            <string>Show only subscribed submissions</string>
+        </property>
+    </action>
 </actions>
 <images>
     <image name="image0">
@@ -912,6 +933,18 @@
         <receiver>MainWindowBase</receiver>
         <slot>doClarificationRequest()</slot>
     </connection>
+    <connection>
+        <sender>judgesShowOnlySubscribedSubmissionsAction</sender>
+        <signal>toggled(bool)</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>updateSubmissions()</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalJudgeControls(bool)</signal>
+        <receiver>judgesShowOnlySubscribedSubmissionsAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
 </connections>
 <signals>
     <signal>signalAdminControls(bool)</signal>
@@ -932,6 +965,7 @@
     <slot access="protected" specifier="pure virtual">doShowClarificationRequest(QListViewItem *item)</slot>
     <slot access="protected" specifier="pure virtual">doShowClarificationReply(QListViewItem *item)</slot>
     <slot access="protected" specifier="pure virtual">doClarificationRequest()</slot>
+    <slot>updateSubmissions()</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

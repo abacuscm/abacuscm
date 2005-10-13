@@ -564,11 +564,12 @@ void MainWindow::doJudgeSubscribeToProblems() {
 				QMessageBox("Error changing subscription!", "An error occurred whilst changing your subscription settings",
 						QMessageBox::Critical, QMessageBox::Ok,
 						QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
-			else
+            else
 				QMessageBox("Subscriptions changed!", "Your subscription settings have been changed",
 						QMessageBox::Information, QMessageBox::Ok,
 						QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
-		}
+            updateSubmissions();
+        }
 	}
 }
 
@@ -626,10 +627,32 @@ void MainWindow::updateStandings() {
 void MainWindow::updateSubmissions() {
 	SubmissionList list = _server_con.getSubmissions();
 
+    std::vector<ProblemInfo> problems = _server_con.getProblems();
+    bool filter = (_active_type == "judge") && judgesShowOnlySubscribedSubmissionsAction->isOn();
+    std::map<string, bool> is_subscribed;
+    if (filter) {
+        std::vector<bool> subscribed = _server_con.getSubscriptions(problems);
+        for (unsigned int p = 0; p < problems.size(); p++)
+            is_subscribed[problems[p].code] = subscribed[p];
+    }
+
 	submissions->clear();
 
 	SubmissionList::iterator l;
 	for(l = list.begin(); l != list.end(); ++l) {
+        //log(LOG_DEBUG, "submission:");
+        if (filter) {
+            if (is_subscribed.find((*l)["problem"]) == is_subscribed.end())
+                log(LOG_DEBUG, "Couldn't find %s in subscription map", (*l)["problem"].c_str());
+            else
+                if (!is_subscribed[(*l)["problem"]])
+                    // not subscribed to this problem
+                    continue;
+            if ((*l)["comment"] != "Awaiting Judge")
+                // not in the awaiting judge state
+                continue;
+        }
+
 		AttributeMap::iterator a;
 		QListViewItem *item = new QListViewItem(submissions);
 		char time_buffer[64];
@@ -680,14 +703,18 @@ void MainWindow::submissionHandler(QListViewItem *item) {
         case 2:
             // correct
             // need to mark the problem as being correct
-            if (_server_con.mark(submission_id, CORRECT, "Correct answer", AttributeMap()))
+            if (_server_con.mark(submission_id, CORRECT, "Correct answer", AttributeMap())) {
                 log(LOG_INFO, "Judge marked submission %u as correct", submission_id);
+                updateSubmissions();
+            }
             return;
         case 3:
             // wrong
             // need to mark the problem as being wrong
-            if (_server_con.mark(submission_id, WRONG, "Wrong answer", AttributeMap()))
+            if (_server_con.mark(submission_id, WRONG, "Wrong answer", AttributeMap())) {
                 log(LOG_INFO, "Judge marked submission %u as wrong", submission_id);
+                updateSubmissions();
+            }
             return;
         }
     }

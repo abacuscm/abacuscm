@@ -48,7 +48,7 @@ public:
 	// why though - can probably memcpy them but that would be
 	// even uglier.
 	void updateStandings();
-	void updateSubmissions();
+	virtual void updateSubmissions();
 	void updateClarificationRequests();
 	void updateClarifications();
 
