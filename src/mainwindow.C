@@ -179,8 +179,10 @@ static void updateSubmissionsFunctor(const MessageBlock* mb, void*) {
 	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateSubmissions);
 	ev->post();
 
-	NotifyEvent *ne = new NotifyEvent("Submission", (*mb)["msg"], QMessageBox::NoIcon);
-	ne->post();
+    if ((*mb)["msg"] != "") {
+        NotifyEvent *ne = new NotifyEvent("Submission", (*mb)["msg"], QMessageBox::NoIcon);
+        ne->post();
+    }
 }
 
 static void updateClarificationRequestsFunctor(const MessageBlock*, void*) {
@@ -295,6 +297,7 @@ void MainWindow::doFileConnect() {
 				{
 					_server_con.registerEventCallback("updateclarificationrequests", updateClarificationRequestsFunctor, NULL);
 					_server_con.registerEventCallback("updateclarifications", updateClarificationsFunctor, NULL);
+                    _server_con.watchJudgeSubmissions();
 				}
 
 				_server_con.subscribeTime();

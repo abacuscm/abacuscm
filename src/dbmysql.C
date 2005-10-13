@@ -441,7 +441,8 @@ std::vector<uint32_t> MySQL::getRemoteServers() {
 		MYSQL_ROW row;
 		while((row = mysql_fetch_row(res)) != 0) {
 			remservers.push_back(atol(row[0]));
-		}
+        }
+        mysql_free_result(res);
 	}
 
 	return remservers;

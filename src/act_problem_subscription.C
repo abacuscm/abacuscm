@@ -35,5 +35,6 @@ static Act_ProblemSubscription _act_eventreg;
 
 static void init() __attribute__((constructor));
 static void init() {
-	ClientAction::registerAction(USER_TYPE_JUDGE, "problem_subscription", &_act_eventreg);
+    ClientAction::registerAction(USER_TYPE_JUDGE, "problem_subscription", &_act_eventreg);
+    ClientAction::registerAction(USER_TYPE_ADMIN, "problem_subscription", &_act_eventreg);
 }

@@ -226,7 +226,8 @@ static bool initialise() {
 		for(ProblemList::iterator j = problst.begin(); j != problst.end(); ++j) {
 			AttributeList prob = db->getProblemAttributes(*j);
 			EventRegister::getInstance().registerEvent("judge_" + prob["shortname"]);
-		}
+        }
+        EventRegister::getInstance().registerEvent("judgesubmission");
 		db->release();
 	} else
 		log(LOG_ERR, "Error obtaining DbCon to load existing problems");

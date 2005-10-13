@@ -43,7 +43,8 @@ private:
 	uint32_t _submission_id;
 	uint32_t _result;
 	uint32_t _time;
-	uint32_t _marker;
+    uint32_t _marker;
+    uint32_t _type;
 	uint32_t _server_id;
 	
 	std::string _comment;
@@ -55,7 +56,7 @@ protected:
 	virtual uint32_t load(const uint8_t *buffer, uint32_t size);
 public:
 	MarkMessage();
-	MarkMessage(uint32_t submission_id, uint32_t marker, uint32_t result, std::string comment);
+	MarkMessage(uint32_t submission_id, uint32_t marker, uint32_t type, uint32_t result, std::string comment);
 	virtual ~MarkMessage();
 
 	virtual bool process() const;
@@ -67,9 +68,10 @@ public:
 MarkMessage::MarkMessage() {
 }
 
-MarkMessage::MarkMessage(uint32_t submission_id, uint32_t marker, uint32_t result, std::string comment) {
+MarkMessage::MarkMessage(uint32_t submission_id, uint32_t marker, uint32_t type, uint32_t result, std::string comment) {
 	_submission_id = submission_id;
-	_marker = marker;
+    _marker = marker;
+    _type = type;
 	_result = result;
 	_comment = comment;
 	_server_id = Server::getId();
@@ -108,11 +110,17 @@ bool MarkMessage::process() const {
 			log(LOG_WARNING, "An error occured placing a marker file into the database - continueing in any case");
 	}
 
-	MessageBlock mb("submission");
-	mb["msg"] = "You have newly marked information available under submissions";
+    if(_result != WRONG || _type != USER_TYPE_MARKER) {
+        // in a non awaiting judge state
+        MessageBlock mb("submission");
+        mb["msg"] = "You have newly marked information available under submissions";
 
-	EventRegister::getInstance().sendMessage(db->submission2user_id(_submission_id), &mb);
-	
+        EventRegister::getInstance().sendMessage(db->submission2user_id(_submission_id), &mb);
+    }
+
+    MessageBlock mb("submission");
+    EventRegister::getInstance().triggerEvent("judgesubmission", &mb);
+
 	if(_result == CORRECT) {
 		MessageBlock st("standings");
 
@@ -275,7 +283,7 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 
 	std::string comment = (*mb)["comment"];
 
-	MarkMessage *markmsg = new MarkMessage(submission_id, cc->getProperty("user_id"), result, comment);
+	MarkMessage *markmsg = new MarkMessage(submission_id, cc->getProperty("user_id"), cc->getProperty("user_type"), result, comment);
 	int c = 0;
 	regex_t file_reg;
 	regcomp(&file_reg, "^([0-9]{1,7}) ([0-9]{1,7}) ([[:print:]]+)$", REG_EXTENDED);
