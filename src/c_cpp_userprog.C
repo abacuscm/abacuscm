@@ -18,7 +18,7 @@ protected:
 	virtual list<string> getProgramArgv();
 public:
 	virtual string sourceFilename(const Buffer&);
-	virtual bool compile(string infile, string outdir);
+	virtual bool compile(string infile, string compiler_log, string outdir);
 };
 
 C_CPP_UserProg::C_CPP_UserProg(string language) {
@@ -46,14 +46,14 @@ string C_CPP_UserProg::sourceFilename(const Buffer&) {
 	}
 }
 
-bool C_CPP_UserProg::compile(string infile, string outdir) {
+bool C_CPP_UserProg::compile(string infile, string compiler_log, string outdir) {
 	list<string> argv;
 	argv.push_back(compiler());
 	argv.push_back("-static");
 	argv.push_back("-o");
 	argv.push_back(outdir + "/" + _progname);
-	argv.push_back(infile);
-	return execcompiler(argv) == 0;
+    argv.push_back(infile);
+	return execcompiler(argv, compiler_log) == 0;
 }
 
 string C_CPP_UserProg::compiler() {

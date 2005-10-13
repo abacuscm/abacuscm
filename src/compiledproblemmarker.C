@@ -59,10 +59,12 @@ void CompiledProblemMarker::mark() {
 	
 	if(mkdir(jaildir.c_str(), 0711) < 0) {
 		lerror("mkdir");
-	} else {
+    } else {
+        string compiler_log = wdir + "/compiler_log";
 		log(LOG_INFO, "Compiling user program ...");
-		if(!_uprog->compile(fname, jaildir)) {
-			setResult(COMPILE_FAILED);
+		if(!_uprog->compile(fname, compiler_log, jaildir)) {
+            setResult(COMPILE_FAILED);
+            addResultFile("Compilation log",  compiler_log);
 			log(LOG_ERR, "User program failed to compile.");
 			return;
 		}

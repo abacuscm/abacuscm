@@ -24,7 +24,7 @@ public:
 	virtual void setMemLimit(unsigned memlimit);
 	virtual void setMaxProcs(unsigned nproc);
 	virtual string sourceFilename(const Buffer&);
-	virtual bool compile(string infile, string outdir);
+	virtual bool compile(string infile, string compiler_log, string outdir);
 };
 
 Java_UserProg::Java_UserProg() {
@@ -116,7 +116,7 @@ string Java_UserProg::sourceFilename(const Buffer& src) {
 	return sourcename;
 }
 
-bool Java_UserProg::compile(string infile, string outdir) {
+bool Java_UserProg::compile(string infile, string compiler_log, string outdir) {
 	string compiler = Config::getConfig()["java"]["compiler"];
 	if(compiler == "") {
 		log(LOG_INFO, "[java][compiler] not set, defaulting to /usr/bin/javac");
@@ -128,7 +128,7 @@ bool Java_UserProg::compile(string infile, string outdir) {
 	argv.push_back("-d");
 	argv.push_back(outdir);
 	argv.push_back(infile);
-	return execcompiler(argv) == 0;
+	return execcompiler(argv, compiler_log) == 0;
 }
 
 UserProg* Java_Functor() {

@@ -19,7 +19,7 @@ UserProg::UserProg() {
 UserProg::~UserProg() {
 }
 
-int UserProg::execcompiler(list<string> p_argv) {
+int UserProg::execcompiler(list<string> p_argv, string compiler_log) {
 	pid_t pid = fork();
 	if(pid < 0) {
 		lerror("fork");
@@ -34,7 +34,7 @@ int UserProg::execcompiler(list<string> p_argv) {
 		// we are not interrested in compiler output.
 		close(1);
 		close(2);
-		int fd = open("/dev/null", O_RDONLY);
+		int fd = open(compiler_log.c_str(), O_RDWR | O_CREAT);
 		if(fd > 0) {
 			if(fd != 1)
 				dup2(fd, 1);

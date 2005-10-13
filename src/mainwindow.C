@@ -15,6 +15,7 @@
 #include "guievent.h"
 #include "messageblock.h"
 #include "ui_judgedecisiondialog.h"
+#include "ui_compileroutputdialog.h"
 
 #include <qlineedit.h>
 #include <qmessagebox.h>
@@ -591,8 +592,8 @@ void MainWindow::updateSubmissions() {
 	}
 }
 
-void MainWindow::judgeSubmissionHandler(QListViewItem *item) {
-    if (_active_type == "judge") {
+void MainWindow::submissionHandler(QListViewItem *item) {
+    if (_active_type == "judge" || _active_type == "admin") {
         JudgeDecisionDialog judgeDecisionDialog;
         uint32_t submission_id = strtoll(item->text(0), NULL, 0);
         uint32_t fileCount = _server_con.countMarkFiles(submission_id);
@@ -633,6 +634,26 @@ void MainWindow::judgeSubmissionHandler(QListViewItem *item) {
             if (_server_con.mark(submission_id, WRONG, "Wrong answer", AttributeMap()))
                 log(LOG_INFO, "Judge marked submission %u as wrong", submission_id);
             return;
+        }
+    }
+    else if (_active_type == "contestant") {
+        if (item->text(3) == "Compilation failed") {
+            CompilerOutputDialog compilerOutputDialog;
+            string name;
+            uint32_t length;
+            char *data;
+            uint32_t submission_id = strtoll(item->text(0), NULL, 0);
+            bool result = _server_con.getMarkFile(submission_id, 0, name, (void **) &data, length);
+            if (!result) {
+                log(LOG_DEBUG, "Uh-oh, something went wrong when getting file from server");
+                QMessageBox("Failed to fetch compilation log", "There was a problem fetching your compilation log",
+                            QMessageBox::Critical, QMessageBox::Ok,
+                            QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+                return;
+            }
+            compilerOutputDialog.FileData->setText(data);
+            delete[] data;
+            compilerOutputDialog.exec();
         }
     }
 }

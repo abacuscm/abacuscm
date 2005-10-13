@@ -309,10 +309,43 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
 	if(!db)
 		return cc->sendError("Error connecting to database");
 
+	uint32_t uid = cc->getProperty("user_id");
+	uint32_t utype = cc->getProperty("user_type");
+
     std::string request = (*mb)["request"];
     uint32_t submission_id = strtoll((*mb)["submission_id"].c_str(), NULL, 0);
 
     MessageBlock result_mb("ok");
+
+    if (utype == USER_TYPE_CONTESTANT) {
+        // make sure that this is a compilation failed type of error
+        // and that the submission belongs to this contestant
+        RunResult resinfo;
+        uint32_t utype;
+        std::string comment;
+
+        if(db->getSubmissionState(
+                                  submission_id,
+                                  resinfo,
+                                  utype,
+                                  comment)) {
+            if (resinfo != COMPILE_FAILED) {
+                db->release();
+                return cc->sendError("Not allowed to fetch file data for anything except failed compilations");
+            }
+        }
+        else {
+            // no state => it hasn't been marked!
+            return cc->sendError("This submission hasn't been marked yet, please be patient :-)");
+        }
+
+        if (db->submission2userid(submission_id) != uid) {
+            db->release();
+            return cc->sendError("This submission doesn't belong to you; I can't let you look at it");
+        }
+
+        db->release();
+    }
 
     if (request == "count") {
         uint32_t count = db->countMarkFiles(submission_id);
@@ -339,6 +372,8 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
         result_mb.setContent((char *) data, length);
     }
 
+	db->release();
+	
 	return cc->sendMessageBlock(&result_mb);
 }
 
@@ -358,5 +393,7 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissions", &_act_getsubs);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "getsubmissions", &_act_getsubs);
     ClientAction::registerAction(USER_TYPE_JUDGE, "fetchfile", &_act_submission_file_fetcher);
+    ClientAction::registerAction(USER_TYPE_ADMIN, "fetchfile", &_act_submission_file_fetcher);
+    ClientAction::registerAction(USER_TYPE_CONTESTANT, "fetchfile", &_act_submission_file_fetcher);
 	Message::registerMessageFunctor(TYPE_ID_SUBMISSION, create_submission_msg);
 }
