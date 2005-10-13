@@ -1056,6 +1056,8 @@ bool MySQL::getMarkFile(uint32_t submission_id, uint32_t file_index, std::string
         uint32_t cur = 0;
         while ((row = mysql_fetch_row(res)) != 0 && cur < file_index)
             cur++;
+        while (mysql_fetch_row(res) != NULL)
+            ;
 
         if (row == 0) {
             log_mysql_error();
