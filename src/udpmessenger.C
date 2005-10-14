@@ -332,7 +332,9 @@ bool UDPPeerMessenger::sendFrame(uint8_t *buffer, int packetsize,
 		const struct sockaddr_in* dest) {
 	int sendlen;
 	int tlen;
-	
+
+	usleep(100);
+
 	// See ENV_EncryptUpdate(3) for an explanation of why this needs
 	// to be larger.
 	uint8_t sendbuffer[BUFFER_SIZE + MAX_BLOCKSIZE];
