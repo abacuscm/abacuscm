@@ -242,7 +242,7 @@ MainWindow::MainWindow() {
 	clarifications->setSorting(1);
 	clarificationRequests->setSorting(1);
 	submissions->setSorting(1);
-	
+
 	GUIEvent::setReceiver(this);
 	register_log_listener(window_log);
 
@@ -250,6 +250,9 @@ MainWindow::MainWindow() {
 	timer = new QTimer(this);
 	connect(timer, SIGNAL(timeout()), this, SLOT(doTimer()));
 	timer->start(1000, false); // Updates clock once per second
+
+	_submit_dialog = NULL;
+	_submit_file_dialog = NULL;
 }
 
 MainWindow::~MainWindow() {
@@ -561,32 +564,42 @@ void MainWindow::doSubmit() {
 		return;
 	}
 
-	Submit submit;
-
-	// This code is here because Qt messes up.
-	QFileDialog* fileDiag = new QFileDialog(&submit);
-
-	connect(submit.browse, SIGNAL( clicked() ),
-			fileDiag, SLOT( exec() ));
-	connect(fileDiag, SIGNAL( fileSelected(const QString&) ),
-			submit.filename, SLOT( setText(const QString&) ));
-
-	vector<ProblemInfo>::iterator i;
-	for(i = probs.begin(); i != probs.end(); ++i) {
-		submit.problemSelection->insertItem(i->code + ": " + i->name);
+	if (!_submit_dialog)
+	{
+                _submit_dialog = new Submit(this);
+	}
+	if (!_submit_file_dialog)
+	{
+		_submit_file_dialog = new QFileDialog(_submit_dialog);
+		connect(_submit_dialog->browse, SIGNAL( clicked() ),
+			_submit_file_dialog, SLOT( exec() ));
+		connect(_submit_file_dialog, SIGNAL( fileSelected(const QString&) ),
+			_submit_dialog->filename, SLOT( setText(const QString&) ));
 	}
 
-	if(submit.exec()) {
+	QString old_text = _submit_dialog->problemSelection->currentText();
+	int new_item = 0;
+
+	_submit_dialog->problemSelection->clear();
+	vector<ProblemInfo>::iterator i;
+	for(i = probs.begin(); i != probs.end(); ++i) {
+		QString text = i->code + ": " + i->name;
+		_submit_dialog->problemSelection->insertItem(text);
+		if (text == old_text) new_item = i - probs.begin();
+	}
+	_submit_dialog->problemSelection->setCurrentItem(new_item);
+
+	if(_submit_dialog->exec()) {
 		// Do _NOT_ drop the ::s here - Qt has at least a close() function
 		// that overloads this and causes extremely weird errors.
-		int fd = ::open(submit.filename->text().ascii(), O_RDONLY);
+		int fd = ::open(_submit_dialog->filename->text().ascii(), O_RDONLY);
 		if(fd < 0) {
 			QMessageBox::critical(this, "Error", "Unable to open specified file for reading - not submitting!", "O&k");
 			return;
 		}
 
-		uint32_t prob_id = probs[submit.problemSelection->currentItem()].id;
-		std::string lang = submit.language->currentText();
+		uint32_t prob_id = probs[_submit_dialog->problemSelection->currentItem()].id;
+		std::string lang = _submit_dialog->language->currentText();
 
 		_server_con.submit(prob_id, fd, lang);
 		::close(fd);

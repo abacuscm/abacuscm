@@ -9,6 +9,8 @@
 class QCheckBox;
 class QListViewItem;
 class QTimer;
+class QFileDialog;
+class Submit;
 
 typedef struct {
 	int prio_level;
@@ -18,13 +20,16 @@ typedef struct {
 class MainWindow : public MainWindowBase {
 private:
 	LoginDialog _login_dialog;
+        Submit *_submit_dialog;
+        QFileDialog *_submit_file_dialog;
+
 	ServerConnection _server_con;
 
-        std::string _active_type;
+	std::string _active_type;
 
-        /* Clock-related stuff */
-        QTimer *timer;
-        time_t projected_stop;
+	/* Clock-related stuff */
+	QTimer *timer;
+	time_t projected_stop;
 
 	void triggerType(std::string type, bool status);
 	void switchType(std::string type);
