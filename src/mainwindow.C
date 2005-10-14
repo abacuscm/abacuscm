@@ -763,6 +763,8 @@ void MainWindow::updateStandings() {
 void MainWindow::updateSubmissions() {
 	SubmissionList list = _server_con.getSubmissions();
 
+	submissions->clear();
+
 	if(list.empty())
 		return;
 
@@ -774,8 +776,6 @@ void MainWindow::updateSubmissions() {
 		for (unsigned int p = 0; p < problems.size(); p++)
 			is_subscribed[problems[p].code] = subscribed[p];
 	}
-
-	submissions->clear();
 
 	SubmissionList::iterator l;
 	for(l = list.begin(); l != list.end(); ++l) {
