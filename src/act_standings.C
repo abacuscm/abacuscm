@@ -25,7 +25,7 @@ typedef struct {
 	uint32_t user_id;
 	uint32_t correct;
 	uint32_t time;
-	map<uint32_t, uint32_t> tries;
+    map<uint32_t, int32_t> tries;
 } TeamData;
 
 bool TeamDataLessThan(const TeamData& td1, const TeamData& td2) {
@@ -98,10 +98,12 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 
 			if(correct) {
 				teamdata.correct++;
-				teamdata.time += (tries - 1) * 20;
+				teamdata.time += (tries - 1) * 20 * 60;
 				teamdata.time += correct_time;
-				teamdata.tries[p->first] = tries;
-			}
+                teamdata.tries[p->first] = tries;
+            }
+            else
+                teamdata.tries[p->first] = -tries;
 		}
 
 		standings.push_back(teamdata);
@@ -167,7 +169,7 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 		val << i->correct;
 		mb[headername.str()] = val.str();
 
-		map<uint32_t, uint32_t>::iterator pc;
+		map<uint32_t, int32_t>::iterator pc;
 		for(pc = i->tries.begin(); pc != i->tries.end(); ++pc) {
 			int col = prob2col[pc->first];
 
@@ -175,7 +177,10 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 			headername << "row_" << r << "_" << col;
 
 			val.str("");
-			val << pc->second;
+            if (pc->second > 0)
+                val << "(" << pc->second << ")  Yes";
+            else
+                val << "(" << -pc->second << ")";
 
 			mb[headername.str()] = val.str();
 		}
