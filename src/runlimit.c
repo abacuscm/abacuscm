@@ -163,8 +163,8 @@ void __attribute__((noreturn)) do_child(char **argv) {
         }
 
 	if (1) { /* FIXME: take a command line option */
-		limit.rlim_cur = 0x1000000; /* 16MB */
-		limit.rlim_max = 0x1000000;
+		limit.rlim_cur = 0xf00000; /* 15MB */
+		limit.rlim_max = 0xf00000;
 
 		if (setrlimit(RLIMIT_FSIZE, &limit) < 0) {
 			errmsg("setrlimit(RLIMIT_FSIZE): %s\n", strerror(errno));
