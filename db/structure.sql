@@ -65,7 +65,7 @@ CREATE TABLE `PeerMessage` (
   `message_type_id` int(10) unsigned NOT NULL default '0',
   `time` int(10) unsigned NOT NULL default '0',
   `signature` varchar(128) character set latin1 collate latin1_bin default NULL,
-  `data` blob,
+  `data` longblob,
   `processed` tinyint(1) default NULL,
   PRIMARY KEY  (`server_id`,`message_id`),
   KEY `processed` (`processed`)
@@ -117,7 +117,7 @@ DROP TABLE IF EXISTS `ProblemFileData`;
 CREATE TABLE `ProblemFileData` (
   `problem_id` int(11) NOT NULL default '0',
   `attribute` varchar(128) NOT NULL default '',
-  `data` blob,
+  `data` mediumblob,
   PRIMARY KEY  (`problem_id`,`attribute`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
@@ -156,7 +156,7 @@ CREATE TABLE `Submission` (
   `prob_id` int(11) NOT NULL default '0',
   `time` int(11) NOT NULL default '0',
   `server_id` int(11) NOT NULL default '0',
-  `content` blob,
+  `content` mediumblob,
   `language` varchar(16) default NULL,
   PRIMARY KEY  (`submission_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
@@ -185,7 +185,7 @@ CREATE TABLE `SubmissionMarkFile` (
   `submission_id` int(11) NOT NULL default '0',
   `marker_id` int(11) NOT NULL default '0',
   `name` varchar(255) NOT NULL default '',
-  `content` blob,
+  `content` mediumblob,
   PRIMARY KEY  (`submission_id`,`marker_id`,`name`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
