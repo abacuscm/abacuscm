@@ -47,8 +47,10 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 		return cc->sendError("Unable to connect to the database");
 
 	SubmissionList submissions = db->getSubmissions();
-	
-	map<uint32_t, map<uint32_t, vector<SubData> > > problemdata;
+
+    uint32_t uType = cc->getProperty("user_type");
+
+    map<uint32_t, map<uint32_t, vector<SubData> > > problemdata;
 	vector<TeamData> standings;
 
 	SubmissionList::iterator s;
@@ -61,10 +63,15 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 		
 		if(db->getSubmissionState(sub_id, state, utype, comment)) {
 			if(state != COMPILE_FAILED) { // we ignore compile failures.
-				SubData tmp;
-				tmp.correct = state == CORRECT;
-				tmp.time = db->contestTime(db->submission2server_id(sub_id), strtoll((*s)["time"].c_str(), NULL, 0));
+                uint32_t server_id = db->submission2server_id(sub_id);
+                uint32_t timeRemaining = db->contestRemaining(server_id, 0);
+                uint32_t tRemain = db->contestRemaining(server_id, strtoll((*s)["time"].c_str(), NULL, 0));
+                if ((timeRemaining < 3600) && (tRemain < 3600) && (uType == USER_TYPE_CONTESTANT))
+                    continue;
 
+				SubData tmp;
+                tmp.correct = state == CORRECT;
+				tmp.time = db->contestTime(server_id, strtoll((*s)["time"].c_str(), NULL, 0));
 				uint32_t prob_id = strtoll((*s)["prob_id"].c_str(), NULL, 0);
 				uint32_t team_id = db->submission2user_id(sub_id);
 

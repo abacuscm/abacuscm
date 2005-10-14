@@ -847,6 +847,7 @@ void MainWindow::submissionHandler(QListViewItem *item) {
             bool result = _server_con.getMarkFile(submission_id, index, name, (void **) &fdata, length);
             if (!result)
                 log(LOG_DEBUG, "Uh-oh, something went wrong when getting file from server");
+            log(LOG_DEBUG, "Length of file %d is %u bytes", index + 1, length);
             judgeDecisionDialog.data[name] = fdata;
             judgeDecisionDialog.FileSelector->insertItem(name.c_str());
         }
