@@ -113,7 +113,7 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 
 	MessageBlock mb("ok");
 
-	mb["row_0_0"] = "Contestant";
+	mb["row_0_0"] = "Team";
 
 	int ncols = 1;
 	
