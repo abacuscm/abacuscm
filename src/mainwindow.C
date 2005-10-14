@@ -604,7 +604,7 @@ void MainWindow::doShowClarificationRequest(QListViewItem *item) {
 	if (_active_type == "contestant")
 	    vcr.reply->setEnabled(false);
 	vcr.problem->setText(item->text(2));
-	vcr.question->setText(item->text(3));
+	vcr.question->setText(item->text(4));
 	vcr.exec();
 }
 
