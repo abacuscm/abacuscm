@@ -217,7 +217,7 @@ static void newClarificationFunctor(const MessageBlock* mb, void*) {
 
 static void contestStartStop(const MessageBlock* mb, void*) {
 	// TODO: Something with the clock ...
-	NotifyEvent *ne = new NotifyEvent("Contest Status", string("The contest has been ") + 
+	NotifyEvent *ne = new NotifyEvent("Contest Status", string("The contest has been ") +
 			(((*mb)["action"] == "start") ? "started" : "stopped"), QMessageBox::NoIcon);
 	ne->post();
 
@@ -367,7 +367,7 @@ void MainWindow::doFileDisconnect() {
 		_server_con.registerEventCallback("close", server_disconnect, NULL);
 		return;
 	}
-	
+
 	fileConnectAction->setEnabled(true);
 	fileDisconnectAction->setEnabled(false);
 	changePasswordAction->setEnabled(false);
@@ -655,13 +655,13 @@ void MainWindow::doJudgeSubscribeToProblems() {
 		QMessageBox::critical(this, "Error", "There are no active problems to submit solutions for!", "O&k");
 		return;
 	}
-		
+
 	// then a list of all problems that this judge is
 	// subscribed to
 	std::vector<bool> subscribed = _server_con.getSubscriptions(problems);
 
 	QVBoxLayout *l = new QVBoxLayout(problem_subscription_dialog.problemButtons);
-	
+
 	for (unsigned int p = 0; p < problems.size(); p++) {
 		QCheckBox *button = new QCheckBox(
 				problems[p].name.c_str(),
@@ -819,7 +819,7 @@ void MainWindow::updateSubmissions() {
 
 		contesttime = atoll((*l)["contesttime"].c_str());
 		sprintf(contesttime_buffer, "%02d:%02d:%02d", contesttime / 3600, contesttime / 60 % 60, contesttime % 60);
-				
+
         item->setText(0, (*l)["submission_id"]);
 		item->setText(1, contesttime_buffer);
 		item->setText(2, time_buffer);
@@ -829,110 +829,102 @@ void MainWindow::updateSubmissions() {
 }
 
 void MainWindow::submissionHandler(QListViewItem *item) {
-    if (_active_type == "judge" || _active_type == "admin") {
-        JudgeDecisionDialog judgeDecisionDialog;
-        uint32_t submission_id = strtoll(item->text(0), NULL, 0);
-        uint32_t fileCount = _server_con.countMarkFiles(submission_id);
-        log(LOG_DEBUG, "Submission %d has %d mark files\n", submission_id, fileCount);
-        for (map<string, char *>::iterator i = judgeDecisionDialog.data.begin(); i != judgeDecisionDialog.data.end(); i++)
-            delete[] i->second;
-        judgeDecisionDialog.data.clear();
-        while (judgeDecisionDialog.FileSelector->count() > 0)
-            judgeDecisionDialog.FileSelector->removeItem(0);
-        judgeDecisionDialog.FileSelector->insertItem("Select file to view...");
-        for (uint32_t index = 0; index < fileCount; index++) {
-            string name;
-            uint32_t length;
-            char *fdata;
-            bool result = _server_con.getMarkFile(submission_id, index, name, (void **) &fdata, length);
-            if (!result)
-                log(LOG_DEBUG, "Uh-oh, something went wrong when getting file from server");
-            log(LOG_DEBUG, "Length of file %d is %u bytes", index + 1, length);
-            judgeDecisionDialog.data[name] = fdata;
-            judgeDecisionDialog.FileSelector->insertItem(name.c_str());
-        }
+	if (_active_type == "judge" || _active_type == "admin") {
+		JudgeDecisionDialog judgeDecisionDialog;
+		uint32_t submission_id = strtoll(item->text(0), NULL, 0);
+		uint32_t fileCount = _server_con.countMarkFiles(submission_id);
+		log(LOG_DEBUG, "Submission %d has %d mark files\n", submission_id, fileCount);
+		judgeDecisionDialog.data.clear();
+		while (judgeDecisionDialog.FileSelector->count() > 0)
+			judgeDecisionDialog.FileSelector->removeItem(0);
+		judgeDecisionDialog.FileSelector->insertItem("Select file to view...");
+		for (uint32_t index = 0; index < fileCount; index++) {
+			string name;
+			uint32_t length;
+			char *fdata;
+			bool result = _server_con.getMarkFile(submission_id, index, name, (void **) &fdata, length);
+			if (!result)
+				log(LOG_DEBUG, "Uh-oh, something went wrong when getting file from server");
+			judgeDecisionDialog.data[name] = string(fdata, length);
+			judgeDecisionDialog.FileSelector->insertItem(name.c_str());
+			delete[] fdata;
+		}
 
-        // fetch expected output
-        vector<ProblemInfo> problems = _server_con.getProblems();
-        uint32_t problemId = 0;
-        for (uint32_t p = 0; p < problems.size(); p++)
-            if (item->text(3) == problems[p].code) {
-                problemId = problems[p].id;
-                break;
-            }
-        if (problemId != 0) {
-            // now add other files
-            char *expectedOutput;
-            uint32_t expectedOutputLength;
-            if (_server_con.getProblemFile(problemId, "testcase.output", &expectedOutput, &expectedOutputLength)) {
-                // got it
-                char *temp = new char[expectedOutputLength + 1];
-                memcpy(temp, expectedOutput, expectedOutputLength);
-                temp[expectedOutputLength] = 0;
-                delete[] expectedOutput;
-                judgeDecisionDialog.data["Expected output"] = temp;
-                judgeDecisionDialog.FileSelector->insertItem("Expected output");
-            }
-        }
+		// fetch expected output
+		vector<ProblemInfo> problems = _server_con.getProblems();
+		uint32_t problemId = 0;
+		for (uint32_t p = 0; p < problems.size(); p++)
+			if (item->text(3) == problems[p].code) {
+				problemId = problems[p].id;
+				break;
+			}
+		if (problemId != 0) {
+			// now add other files
+			char *expectedOutput;
+			uint32_t expectedOutputLength;
+			if (_server_con.getProblemFile(problemId, "testcase.output", &expectedOutput, &expectedOutputLength)) {
+				// got it
+				judgeDecisionDialog.data["Expected output"] = string(expectedOutput, expectedOutputLength);
+				delete[] expectedOutput;
+				judgeDecisionDialog.FileSelector->insertItem("Expected output");
+			}
+		}
 
-        // and now fetch contestant's source
-        char *contestantSource;
-        uint32_t contestantSourceLength;
-        if (_server_con.getSubmissionSource(submission_id, &contestantSource, &contestantSourceLength)) {
-            // got it
-            char *temp = new char[contestantSourceLength + 1];
-            memcpy(temp, contestantSource, contestantSourceLength);
-            temp[contestantSourceLength] = 0;
-            delete[] contestantSource;
-            judgeDecisionDialog.data["Contestant source"] = temp;
-            judgeDecisionDialog.FileSelector->insertItem("Contestant source");
-        }
+		// and now fetch contestant's source
+		char *contestantSource;
+		uint32_t contestantSourceLength;
+		if (_server_con.getSubmissionSource(submission_id, &contestantSource, &contestantSourceLength)) {
+			// got it
+			judgeDecisionDialog.data["Contestant source"] = string(contestantSource, contestantSourceLength);
+			delete[] contestantSource;
+			judgeDecisionDialog.FileSelector->insertItem("Contestant source");
+		}
 
-        int result = judgeDecisionDialog.exec();
-        switch (result) {
-        case 1:
-            // deferred
-            // in this case, we just do nothing
-            log(LOG_INFO, "Judge deferred marking of submission %u", submission_id);
-            return;
-        case 2:
-            // correct
-            // need to mark the problem as being correct
-            if (_server_con.mark(submission_id, CORRECT, "Correct answer", AttributeMap())) {
-                log(LOG_INFO, "Judge marked submission %u as correct", submission_id);
-                updateSubmissions();
-            }
-            return;
-        case 3:
-            // wrong
-            // need to mark the problem as being wrong
-            if (_server_con.mark(submission_id, WRONG, "Wrong answer", AttributeMap())) {
-                log(LOG_INFO, "Judge marked submission %u as wrong", submission_id);
-                updateSubmissions();
-            }
-            return;
-        }
-    }
-    else if (_active_type == "contestant") {
-        if (item->text(4) == "Compilation failed") {
-            CompilerOutputDialog compilerOutputDialog;
-            string name;
-            uint32_t length;
-            char *data;
-            uint32_t submission_id = strtoll(item->text(0), NULL, 0);
-            bool result = _server_con.getMarkFile(submission_id, 0, name, (void **) &data, length);
-            if (!result) {
-                log(LOG_DEBUG, "Uh-oh, something went wrong when getting file from server");
-                QMessageBox("Failed to fetch compilation log", "There was a problem fetching your compilation log",
-                            QMessageBox::Critical, QMessageBox::Ok,
-                            QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
-                return;
-            }
-            compilerOutputDialog.FileData->setText(data);
-            delete[] data;
-            compilerOutputDialog.exec();
-        }
-    }
+		int result = judgeDecisionDialog.exec();
+		switch (result) {
+		case 1:
+			// deferred
+			// in this case, we just do nothing
+			log(LOG_INFO, "Judge deferred marking of submission %u", submission_id);
+			return;
+		case 2:
+			// correct
+			// need to mark the problem as being correct
+			if (_server_con.mark(submission_id, CORRECT, "Correct answer", AttributeMap())) {
+				log(LOG_INFO, "Judge marked submission %u as correct", submission_id);
+				updateSubmissions();
+			}
+			return;
+		case 3:
+			// wrong
+			// need to mark the problem as being wrong
+			if (_server_con.mark(submission_id, WRONG, "Wrong answer", AttributeMap())) {
+				log(LOG_INFO, "Judge marked submission %u as wrong", submission_id);
+				updateSubmissions();
+			}
+			return;
+		}
+	}
+	else if (_active_type == "contestant") {
+		if (item->text(4) == "Compilation failed") {
+			CompilerOutputDialog compilerOutputDialog;
+			string name;
+			uint32_t length;
+			char *data;
+			uint32_t submission_id = strtoll(item->text(0), NULL, 0);
+			bool result = _server_con.getMarkFile(submission_id, 0, name, (void **) &data, length);
+			if (!result) {
+				log(LOG_DEBUG, "Uh-oh, something went wrong when getting file from server");
+				QMessageBox("Failed to fetch compilation log", "There was a problem fetching your compilation log",
+					    QMessageBox::Critical, QMessageBox::Ok,
+					    QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+				return;
+			}
+			compilerOutputDialog.FileData->setText(data);
+			delete[] data;
+			compilerOutputDialog.exec();
+		}
+	}
 }
 
 void MainWindow::toggleBalloonPopups(bool activate) {
@@ -960,7 +952,7 @@ void MainWindow::updateClarifications() {
 		time = atol((*l)["time"].c_str());
 		localtime_r(&time, &time_tm);
 		strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
-		
+
 		item->setText(0, (*l)["id"]);
 		item->setText(1, time_buffer);
 		item->setText(2, (*l)["problem"]);
@@ -989,7 +981,7 @@ void MainWindow::updateClarificationRequests() {
 		time = atol((*l)["time"].c_str());
 		localtime_r(&time, &time_tm);
 		strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
-		
+
 		item->setText(0, (*l)["id"]);
 		item->setText(1, time_buffer);
 		item->setText(2, (*l)["problem"]);

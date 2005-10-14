@@ -10,27 +10,38 @@
 ** destructor.
 *****************************************************************************/
 
+#include "logger.h"
 
 void JudgeDecisionDialog::FileSelector_activated( const QString &key )
 {
-    if (key == "Select file to view...")
-	FileData->setText("");
-    else
-	FileData->setText(data[key]);
+	if (key == "Select file to view...")
+		FileData->setText("");
+	else {
+		const std::string &text = data[key];
+		std::string display = "";
+		for (std::string::size_type i = 0; i < text.length(); i++) {
+			if (::isprint(text[i]) || ::isspace(text[i]))
+				display += text[i];
+			else {
+				char buffer[10];
+				sprintf(buffer, "\\%03o", text[i]);
+				log(LOG_DEBUG, "buffer: %s", buffer);
+				display += buffer;
+			}
+		}
+		FileData->setText(display);
+        }
 }
-
 
 void JudgeDecisionDialog::deferred()
 {
     done(1);
 }
 
-
 void JudgeDecisionDialog::correct()
 {
     done(2);
 }
-
 
 void JudgeDecisionDialog::wrong()
 {

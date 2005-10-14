@@ -47,22 +47,6 @@
             <string>Wrong</string>
         </property>
     </widget>
-    <widget class="QTextBrowser">
-        <property name="name">
-            <cstring>FileData</cstring>
-        </property>
-        <property name="enabled">
-            <bool>true</bool>
-        </property>
-        <property name="geometry">
-            <rect>
-                <x>0</x>
-                <y>50</y>
-                <width>661</width>
-                <height>460</height>
-            </rect>
-        </property>
-    </widget>
     <widget class="QComboBox">
         <property name="name">
             <cstring>FileSelector</cstring>
@@ -90,6 +74,25 @@
         </property>
         <property name="text">
             <string>Defer decision</string>
+        </property>
+    </widget>
+    <widget class="QTextBrowser">
+        <property name="name">
+            <cstring>FileData</cstring>
+        </property>
+        <property name="enabled">
+            <bool>true</bool>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>0</x>
+                <y>50</y>
+                <width>661</width>
+                <height>460</height>
+            </rect>
+        </property>
+        <property name="textFormat">
+            <enum>PlainText</enum>
         </property>
     </widget>
 </widget>
@@ -123,7 +126,7 @@
     <include location="local" impldecl="in implementation">judgedecisiondialog.ui.h</include>
 </includes>
 <variables>
-    <variable access="public">std::map&lt;std::string, char *&gt; data;</variable>
+    <variable access="public">std::map&lt;std::string, std::string&gt; data;</variable>
 </variables>
 <slots>
     <slot>FileSelector_activated( const QString &amp; key )</slot>
