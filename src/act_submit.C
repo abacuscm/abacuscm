@@ -239,7 +239,7 @@ bool SubmissionMessage::process() const {
 	
 	MessageBlock mb("submission");
 	if(result)
-		mb["msg"] = "Your submission for '" + problem + "' has been accepted";
+		mb["msg"] = "Your submission for '" + problem + "' has been queued for marking";
 	else
 		mb["msg"] = "Your submission for '" + problem + "' has failed - please notify the contest administrator";
 

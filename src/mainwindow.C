@@ -732,10 +732,10 @@ void MainWindow::updateStatus() {
 void MainWindow::updateStandings() {
 	Grid data = _server_con.getStandings();
 
+	standings->clear();
 	if(data.empty())
 		return;
 
-	standings->clear();
 	while(standings->columns())
 		standings->removeColumn(0);
 

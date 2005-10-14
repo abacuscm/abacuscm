@@ -149,13 +149,17 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 	for(i = standings.begin(); i != standings.end(); ++i, ++r) {
 		ostringstream headername;
 		ostringstream val;
+		char time_buffer[64];
 		headername << "row_" << r << "_0";
 		mb[headername.str()] = db->user_id2name(i->user_id);
 
 		headername.str("");
 		headername << "row_" << r << "_" << (ncols - 1);
-		val << i->time;
-		mb[headername.str()] = val.str();
+		sprintf(time_buffer, "%02d:%02d:%02d",
+			i->time / 3600,
+			(i->time / 60) % 60,
+                        i->time % 60);
+		mb[headername.str()] = time_buffer;
 
 		headername.str("");
 		headername << "row_" << r << "_" << (ncols - 2);
