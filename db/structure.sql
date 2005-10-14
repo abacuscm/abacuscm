@@ -65,7 +65,7 @@ CREATE TABLE `PeerMessage` (
   `message_type_id` int(10) unsigned NOT NULL default '0',
   `time` int(10) unsigned NOT NULL default '0',
   `signature` varchar(128) character set latin1 collate latin1_bin default NULL,
-  `data` longblob,
+  `data` mediumblob,
   `processed` tinyint(1) default NULL,
   PRIMARY KEY  (`server_id`,`message_id`),
   KEY `processed` (`processed`)
