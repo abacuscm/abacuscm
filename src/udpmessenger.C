@@ -441,7 +441,7 @@ bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) 
 	for(uint16_t i = 1; i <= numfrags; i++) {
 		frame.fragment_num = i;
 		if(i == numfrags)
-			frame.fragment_num |= 1 << (sizeof(frame.fragment_len) * 8 - 1);
+			frame.fragment_num |= 1 << (sizeof(frame.fragment_num) * 8 - 1);
 
 		frame.fragment_len = base_frag_size;
 		if(i <= num_large_frags)
