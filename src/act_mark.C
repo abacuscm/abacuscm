@@ -218,6 +218,8 @@ uint32_t MarkMessage::load(const uint8_t *buffer, uint32_t size) {
 
 		pos += tmp.len;
 		size -= tmp.len;
+
+		_files.push_back(tmp);
 	}
 
 	if(size)
