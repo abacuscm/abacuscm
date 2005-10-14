@@ -119,6 +119,8 @@ UDPPeerMessenger::~UDPPeerMessenger() {
 }
 
 bool UDPPeerMessenger::initialise() {
+	_checksum_seed = atoll(Config::getConfig()["udpmessenger"]["checksumseed"].c_str());
+	log(LOG_DEBUG, "Using %u as checksum seed", _checksum_seed);
 	if(_sock < 0)
 		return startup();
 	return true;
