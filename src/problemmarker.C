@@ -2,6 +2,9 @@
 #include "logger.h"
 #include "config.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 using namespace std;
 
 ProblemMarker::FunctorMap ProblemMarker::_functors
@@ -112,9 +115,11 @@ string ProblemMarker::workdir() {
 		lerror("mkdtemp");
 	} else {
 		log(LOG_INFO, "Using working directory '%s'", ch_templ);
+		chmod(workdir, 0711);
 		_workdir = workdir;
 	}
 	free(ch_templ);
+
 
 	log(LOG_INFO, "Using working directory: %s", _workdir.c_str());
 
