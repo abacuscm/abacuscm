@@ -37,9 +37,14 @@ Java_UserProg::~Java_UserProg() {
 list<string> Java_UserProg::getProgramArgv() {
 	list<string> argv;
 	string runtime = Config::getConfig()["java"]["runtime"];
+	string policy = Config::getConfig()["java"]["policy"];
 	if(runtime == "") {
 		log(LOG_INFO, "[java][runtime] not set, defaulting to /usr/bin/java");
 		runtime = "/usr/bin/java";
+	}
+	if(policy == "") {
+		log(LOG_WARNING, "[java][runtime] not set, defaulting to config/java.policy");
+		policy = "conf/java.policy";
 	}
 	
 	argv.push_back(runtime);
@@ -52,6 +57,8 @@ list<string> Java_UserProg::getProgramArgv() {
 		argv.push_back("-Xms" + tmp.str());
 		argv.push_back("-Xmx" + tmp.str());
 	}
+	argv.push_back("-Djava.security.manager");
+	argv.push_back("-Djava.security.policy==" + policy);
 
 	argv.push_back(_classname);
 	return argv;
