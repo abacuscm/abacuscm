@@ -160,7 +160,17 @@ void __attribute__((noreturn)) do_child(char **argv) {
 			errmsg("setrlimit(RLIMIT_AS): %s\n", strerror(errno));
 			exit(-1);
 		}
-	}
+        }
+
+	if (1) { /* FIXME: take a command line option */
+		limit.rlim_cur = 0x1000000; /* 16MB */
+		limit.rlim_max = 0x1000000;
+
+		if (setrlimit(RLIMIT_FSIZE, &limit) < 0) {
+			errmsg("setrlimit(RLIMIT_FSIZE): %s\n", strerror(errno));
+			exit(-1);
+		}
+        }
 
 	if(nproc) {
 		limit.rlim_cur = nproc;
