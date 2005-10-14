@@ -34,7 +34,7 @@ int UserProg::execcompiler(list<string> p_argv, string compiler_log) {
 		// we are not interrested in compiler output.
 		close(1);
 		close(2);
-		int fd = open(compiler_log.c_str(), O_RDWR | O_CREAT);
+		int fd = open(compiler_log.c_str(), O_RDWR | O_CREAT, 0600);
 		if(fd > 0) {
 			if(fd != 1)
 				dup2(fd, 1);
