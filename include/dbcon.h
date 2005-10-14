@@ -237,6 +237,12 @@ public:
 	 */
 	virtual ClarificationList getClarifications(uint32_t user_id = 0) = 0;
 
+        /**
+         * Retrieves clarification with given ID. Returns empty list on
+         * failure.
+         */
+        virtual AttributeList getClarificationRequest(uint32_t req_id) = 0;
+
 	/**
 	 * Retrieves all clarification requests relevant to a specific user.
 	 */

@@ -47,6 +47,10 @@ public:
 class StartStopAction : public TimedAction {
 private:
 	uint32_t _action;
+	/* This field is used to check that the DB hasn't changed in the
+	 * meantime.
+         */
+        uint32_t _time;
 public:
 	StartStopAction(uint32_t time, uint32_t action);
 
@@ -56,13 +60,19 @@ public:
 StartStopAction::StartStopAction(uint32_t time, uint32_t action)
 	: TimedAction(time)
 {
+        _time = time;
 	_action = action;
 }
 
 void StartStopAction::perform() {
-	MessageBlock mb("startstop");
-	mb["action"] = _action == ACT_START ? "start" : "stop";
-	EventRegister::getInstance().triggerEvent("startstop", &mb);
+	DbCon *db = DbCon::getInstance();
+	uint32_t time = db->contestStartStopTime(Server::getId(), _action == ACT_START);
+        db->release(); db = NULL;
+	if (time == _time) {
+		MessageBlock mb("startstop");
+		mb["action"] = _action == ACT_START ? "start" : "stop";
+		EventRegister::getInstance().triggerEvent("startstop", &mb);
+	}
 }
 
 bool ActStartStop::int_process(ClientConnection* cc, MessageBlock *mb) {
@@ -100,7 +110,8 @@ bool ActStartStop::int_process(ClientConnection* cc, MessageBlock *mb) {
 }
 
 bool ActSubscribeTime::int_process(ClientConnection* cc, MessageBlock*) {
-	if(EventRegister::getInstance().registerClient("startstop", cc))
+	if(EventRegister::getInstance().registerClient("startstop", cc)
+	   && EventRegister::getInstance().registerClient("updateclock", cc))
 		return cc->reportSuccess();
 	else
 		return cc->sendError("Unable to subscribe to the 'startstop' event");
@@ -108,7 +119,7 @@ bool ActSubscribeTime::int_process(ClientConnection* cc, MessageBlock*) {
 
 MsgStartStop::MsgStartStop() {
 }
-	
+
 MsgStartStop::MsgStartStop(uint32_t server_id, uint32_t time, uint32_t action) {
 	_server_id = server_id;
 	_time = time;
@@ -148,13 +159,29 @@ bool MsgStartStop::process() const {
 	if(!db)
 		return false;
 
+	uint32_t now = ::time(NULL);
+	bool oldRunning = db->contestRunning(Server::getId(), now);
+	uint32_t oldTime = db->contestStartStopTime(Server::getId(), _action == ACT_START);
 	bool dbres = db->startStopContest(_server_id, _time, _action == ACT_START);
+	bool newRunning = db->contestRunning(Server::getId(), now);
+	uint32_t newTime = db->contestStartStopTime(Server::getId(), _action == ACT_START);
 	db->release();db=NULL;
+        if (!dbres) return false;
 
-	if(!_server_id || _server_id == Server::getId())
-		Server::putTimedAction(new StartStopAction(_time, _action));
+	if (oldRunning != newRunning)
+	{
+		MessageBlock mb("startstop");
+		mb["action"] = newRunning ? "start" : "stop";
+		EventRegister::getInstance().triggerEvent("startstop", &mb);
+	}
+	if (oldTime != newTime && newTime >= now)
+	{
+		Server::putTimedAction(new StartStopAction(newTime, _action));
+		MessageBlock mb("updateclock");
+		EventRegister::getInstance().triggerEvent("updateclock", &mb);
+	}
 
-	return dbres;
+	return true;
 }
 
 uint16_t MsgStartStop::message_type_id() const {
@@ -164,8 +191,8 @@ uint16_t MsgStartStop::message_type_id() const {
 static void initialise_startstop_events() {
 	DbCon *db = DbCon::getInstance();
 	time_t start = db->contestStartStopTime(Server::getId(), true);
-    time_t stop = db->contestStartStopTime(Server::getId(), false);
-    db->release();
+	time_t stop = db->contestStartStopTime(Server::getId(), false);
+	db->release();
 	time_t now = time(NULL);
 
 	if (start > now)
@@ -195,6 +222,7 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "subscribetime", &_act_subscribetime);
 	Message::registerMessageFunctor(TYPE_ID_STARTSTOP, StartStopFunctor);
 	EventRegister::getInstance().registerEvent("startstop");
+	EventRegister::getInstance().registerEvent("updateclock");
 
 	initialise_startstop_events();
 }

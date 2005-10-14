@@ -18,7 +18,7 @@ private:
 
 	string escape_string(const string& str);
 	string escape_buffer(const uint8_t* bfr, uint32_t size);
-	
+
 	list<Message*> getMessages(std::string query);
 
 public:
@@ -29,8 +29,8 @@ public:
 	virtual uint32_t name2server_id(const string& name);
 	virtual std::string server_id2name(uint32_t user_id);
 	virtual uint32_t name2user_id(const string& name);
-    virtual std::string user_id2name(uint32_t user_id);
-    //virtual uint32_t user_id2type(uint32_t user_id);
+	virtual std::string user_id2name(uint32_t user_id);
+	//virtual uint32_t user_id2type(uint32_t user_id);
 	virtual UserList getUsers();
 	virtual ServerList getServers();
 	virtual string getServerAttribute(uint32_t server_id,
@@ -79,6 +79,7 @@ public:
 	virtual SubmissionList getSubmissions(uint32_t uid);
 	virtual ClarificationList getClarifications(uint32_t uid);
 	virtual ClarificationRequestList getClarificationRequests(uint32_t uid);
+        virtual AttributeList getClarificationRequest(uint32_t req_id);
 	virtual bool putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t prob_id,
 					     uint32_t time, uint32_t server_id,
 					     const std::string& question);
@@ -868,6 +869,36 @@ ClarificationList MySQL::getClarifications(uint32_t uid) {
 	mysql_free_result(res);
 
 	return lst;
+}
+
+AttributeList MySQL::getClarificationRequest(uint32_t req_id) {
+	ostringstream query;
+	query << "SELECT ClarificationRequest.clarification_req_id, ClarificationRequest.user_id, username, value, ClarificationRequest.time, ClarificationRequest.text AS question, COUNT(clarification_id) AS answers FROM ClarificationRequest LEFT OUTER JOIN Clarification USING(clarification_req_id) LEFT JOIN User ON ClarificationRequest.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ClarificationRequest.problem_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute='shortname'";
+	query << " WHERE ClarificationRequest.clarification_req_id = " << req_id;
+	query << " GROUP BY ClarificationRequest.clarification_req_id";
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return AttributeList();
+	}
+
+        AttributeList attrs;
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	MYSQL_ROW row = mysql_fetch_row(res);
+	if (row)
+	{
+		attrs["id"] = row[0];
+		attrs["user_id"] = row[1];
+		/* Leave out contestant for now; can be used later */
+		attrs["problem"] = row[3] ? row[3] : "General";
+		attrs["time"] = row[4];
+		attrs["question"] = row[5];
+		attrs["status"] = atoi(row[6]) ? "answered" : "pending";
+		while (mysql_fetch_row(res));
+	}
+	mysql_free_result(res);
+
+	return attrs;
 }
 
 ClarificationRequestList MySQL::getClarificationRequests(uint32_t uid) {

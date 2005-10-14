@@ -331,6 +331,7 @@ void MainWindow::doFileConnect() {
 					_server_con.watchJudgeSubmissions();
 				}
 
+                                _server_con.registerEventCallback("updateclock", updateStatusFunctor, NULL);
 				_server_con.subscribeTime();
 				updateStatus();
 			} else {

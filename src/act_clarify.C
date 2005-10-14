@@ -235,14 +235,17 @@ bool ClarificationMessage::process() const {
 	if (_request)
 	{
 		result = db->putClarificationRequest(_clarification_request_id,
-							  _user_id,
-							  _prob_id,
-							  _time,
-							  _server_id,
-							  _text);
+						     _user_id,
+						     _prob_id,
+						     _time,
+						     _server_id,
+						     _text);
+		MessageBlock notify("updateclarificationrequests");
+		EventRegister::getInstance().broadcastEvent(&notify);
 	}
 	else
 	{
+		AttributeList req = db->getClarificationRequest(_clarification_request_id);
 		result = db->putClarification(_clarification_request_id,
 					      _clarification_id,
 					      _user_id,
@@ -250,6 +253,17 @@ bool ClarificationMessage::process() const {
 					      _server_id,
 					      _prob_id, /* Actually pub */
 					      _text);
+		MessageBlock update("updateclarifications");
+		EventRegister::getInstance().broadcastEvent(&update);
+
+		MessageBlock notify("newclarification");
+		notify["problem"] = req["problem"];
+		notify["question"] = req["question"];
+		notify["answer"] = _text;
+		if (_prob_id) /* public */
+			EventRegister::getInstance().broadcastEvent(&notify);
+		else
+			EventRegister::getInstance().sendMessage(atol(req["user_id"].c_str()), &notify);
 	}
 	db->release();db=NULL;
 	return result;
@@ -290,16 +304,11 @@ bool ActClarificationRequest::int_process(ClientConnection *cc, MessageBlock *mb
 	log(LOG_INFO, "User %u submitted clarification request for problem %u", user_id, prob_id);
 	if (!triggerMessage(cc, msg)) return false;
 
-	MessageBlock notify("updateclarificationrequests");
-	EventRegister::getInstance().broadcastEvent(&notify);
 	return true;
 }
 
 bool ActClarification::int_process(ClientConnection *cc, MessageBlock *mb) {
 	uint32_t user_id = cc->getProperty("user_id");
-	uint32_t req_user_id = 0;
-	std::string problem = "";
-	std::string question = "";
 	std::string answer = (*mb)["answer"];
 
 	char *errptr;
@@ -309,18 +318,10 @@ bool ActClarification::int_process(ClientConnection *cc, MessageBlock *mb) {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return cc->sendError("Unable to connect to database");
-	ClarificationRequestList crs = db->getClarificationRequests();
+        AttributeList cr = db->getClarificationRequest(cr_id);
 	db->release();db=NULL;
-	ClarificationRequestList::iterator c;
-	for(c = crs.begin(); c != crs.end(); ++c)
-		if((*c)["id"] == (*mb)["clarification_request_id"])
-		{
-			req_user_id = atol((*c)["user_id"].c_str());
-			question = (*c)["question"];
-			problem = (*c)["problem"];
-			break;
-		}
-	if(c == crs.end())
+
+	if(cr.empty())
 		return cc->sendError("Invalid clarification_request_id - no such id");
 
 	uint32_t pub = (*mb)["public"] == "1";
@@ -330,20 +331,7 @@ bool ActClarification::int_process(ClientConnection *cc, MessageBlock *mb) {
 
 	ClarificationMessage *msg = new ClarificationMessage(cr_id, c_id, user_id, pub, answer);
 	log(LOG_INFO, "User %u submitted clarification %u for request %u", user_id, c_id, cr_id);
-	if (!triggerMessage(cc, msg)) return false;
-
-	MessageBlock update("updateclarifications");
-	EventRegister::getInstance().broadcastEvent(&update);
-
-	MessageBlock notify("newclarification");
-	notify["problem"] = problem;
-	notify["question"] = question;
-	notify["answer"] = answer;
-	if (pub)
-		EventRegister::getInstance().broadcastEvent(&notify);
-	else
-		EventRegister::getInstance().sendMessage(req_user_id, &notify);
-	return true;
+	return triggerMessage(cc, msg);
 }
 
 ////////////////////////////////////////////////////////////////////
