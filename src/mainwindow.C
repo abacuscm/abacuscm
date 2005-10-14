@@ -199,6 +199,12 @@ static void updateClarificationRequestsFunctor(const MessageBlock*, void*) {
 static void updateClarificationsFunctor(const MessageBlock*, void*) {
 	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateClarifications);
 	ev->post();
+
+	/* Also need to update the clarifications window, since the status
+	 * of one of our requests may have changed
+	 */
+	GUIEvent *ev2 = new MainWindowCaller(&MainWindow::updateClarificationRequests);
+	ev2->post();
 }
 
 static void newClarificationFunctor(const MessageBlock* mb, void*) {
@@ -334,6 +340,10 @@ void MainWindow::doFileConnect() {
                                 _server_con.registerEventCallback("updateclock", updateStatusFunctor, NULL);
 				_server_con.subscribeTime();
 				updateStatus();
+				updateClarificationRequests();
+				updateClarifications();
+				updateStandings();
+				updateSubmissions();
 			} else {
 				QMessageBox("Auth error", "Invalid username and/or password",
 						QMessageBox::Information, QMessageBox::Ok,
@@ -362,6 +372,10 @@ void MainWindow::doFileDisconnect() {
 
 	switchType("");
 	updateStatus();
+	updateClarifications();
+	updateClarificationRequests();
+	updateSubmissions();
+	updateStandings();
 }
 
 void MainWindow::doChangePassword() {
