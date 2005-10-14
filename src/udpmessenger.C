@@ -515,10 +515,10 @@ Message* UDPPeerMessenger::getMessage() {
 				log(LOG_INFO, "Received fragment for (%u,%u) which we already have.", frame.server_id, frame.message_id);
 				sendAck(frame.server_id, frame.message_id);
 			} else {
-				bool lastfragment = frame.fragment_num & (1 << (sizeof(frame.fragment_num) * 8 - 1)) != 0;
+				bool lastfragment = (frame.fragment_num & (1 << (sizeof(frame.fragment_num) * 8 - 1))) != 0;
 				frame.fragment_num &= (1 << (sizeof(frame.fragment_num) * 8 - 1)) - 1;
 
-				log(LOG_DEBUG, "Received fragment %u for (%u,%u).", frame.fragment_num, frame.server_id, frame.message_id);
+				log(LOG_DEBUG, "Received fragment %u for (%u,%u)%s.", frame.fragment_num, frame.server_id, frame.message_id, lastfragment ? " - last fragment" : "");
 
 				ServerFragmentMap::iterator i = _fragments[frame.server_id].find(frame.message_id);
 
