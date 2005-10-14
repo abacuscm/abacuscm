@@ -900,7 +900,7 @@ void MainWindow::submissionHandler(QListViewItem *item) {
         }
     }
     else if (_active_type == "contestant") {
-        if (item->text(3) == "Compilation failed") {
+        if (item->text(4) == "Compilation failed") {
             CompilerOutputDialog compilerOutputDialog;
             string name;
             uint32_t length;
