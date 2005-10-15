@@ -381,6 +381,7 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
         bool result = db->getMarkFile(submission_id, index, name, &data, length);
 
         if (!result) {
+		db->release(); db = NULL;
             log(LOG_ERR, "Failed to get submission file with index %u for submission_id %u\n", index, submission_id);
             return false;
         }
