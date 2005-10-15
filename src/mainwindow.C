@@ -764,7 +764,7 @@ void MainWindow::updateStandings() {
 		QListViewItem *item = new QListViewItem(standings);
 
 		char bfr[20];
-		sprintf(bfr, "% 4d", ++pos);
+		sprintf(bfr, "%02d", ++pos);
 		item->setText(0, bfr);
 
 		int c = 1;
