@@ -260,7 +260,7 @@ UserList MySQL::getUsers() {
 	MYSQL_RES *res = mysql_use_result(&_mysql);
 	if (!res) {
 		log_mysql_error();
-		return "";
+		return UserList();
 	}
 	MYSQL_ROW row;
 	while ((row = mysql_fetch_row(res)) != 0) {
