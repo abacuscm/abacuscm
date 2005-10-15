@@ -258,6 +258,10 @@ UserList MySQL::getUsers() {
 
 	UserList lst;
 	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if (!res) {
+		log_mysql_error();
+		return "";
+	}
 	MYSQL_ROW row;
 	while ((row = mysql_fetch_row(res)) != 0) {
 		AttributeList attrs;
@@ -359,8 +363,8 @@ bool MySQL::putLocalMessage(Message* message) {
 		MYSQL_ROW row = mysql_fetch_row(res);
 		if(row && row[0])
 			message_id = atol(row[0]);
+		mysql_free_result(res);
 	}
-	mysql_free_result(res);
 
 	message_id++;
 	message->setMessageId(message_id);
@@ -767,7 +771,7 @@ ProblemList MySQL::getProblems() {
 			while((row = mysql_fetch_row(res)) != 0) {
 				result.push_back(atol(row[0]));
 			}
-            mysql_free_result(res);
+            		mysql_free_result(res);
 		}
 	}
 	return result;
@@ -854,6 +858,10 @@ ClarificationList MySQL::getClarifications(uint32_t uid) {
 
 	ClarificationList lst;
 	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if (!res) {
+		log_mysql_error();
+		return ClarificationList();
+	}
 	MYSQL_ROW row;
 	while ((row = mysql_fetch_row(res)) != 0) {
 		AttributeList attrs;
@@ -884,6 +892,10 @@ AttributeList MySQL::getClarificationRequest(uint32_t req_id) {
 
         AttributeList attrs;
 	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if (!res) {
+		log_mysql_error();
+		return AttributeList();
+	}
 	MYSQL_ROW row = mysql_fetch_row(res);
 	if (row)
 	{
@@ -915,6 +927,10 @@ ClarificationRequestList MySQL::getClarificationRequests(uint32_t uid) {
 
 	ClarificationRequestList lst;
 	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if (!res) {
+		log_mysql_error();
+		return ClarificationRequestList();
+	}
 	MYSQL_ROW row;
 	while ((row = mysql_fetch_row(res)) != 0) {
 		AttributeList attrs;
@@ -1057,7 +1073,7 @@ uint32_t MySQL::countMarkFiles(uint32_t submission_id) {
         MYSQL_RES *res = mysql_use_result(&_mysql);
         if (!res) {
             log_mysql_error();
-            return false;
+            return 0;
         }
 
         MYSQL_ROW row = mysql_fetch_row(res);
@@ -1256,8 +1272,10 @@ string MySQL::getProblemType(uint32_t problem_id) {
 	}
 
 	MYSQL_RES *res = mysql_use_result(&_mysql);
-	if(!res)
+	if(!res) {
+		log_mysql_error();
 		return "";
+	}
 
 	string result;
 	
@@ -1296,8 +1314,12 @@ AttributeList MySQL::getProblemAttributes(uint32_t problem_id) {
 
 	AttributeList attrs;
 	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if (!res) {
+		log_mysql_error();
+		return AttributeList();
+	}
 	MYSQL_ROW row;
-	while(0 != (row = mysql_fetch_row(res))) {
+	while(NULL != (row = mysql_fetch_row(res))) {
 		attrs[row[0]] = row[1];
 	}
 	mysql_free_result(res);
