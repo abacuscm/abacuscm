@@ -228,7 +228,8 @@ static bool initialise() {
 			EventRegister::getInstance().registerEvent("judge_" + prob["shortname"]);
         }
         EventRegister::getInstance().registerEvent("judgesubmission");
-		db->release();db=NULL;
+		if (db)
+			db->release();db=NULL;
 	} else
 		log(LOG_ERR, "Error obtaining DbCon to load existing problems");
 
@@ -252,6 +253,7 @@ static void* peer_listener(void *) {
 					messenger->sendAck(message->server_id(), message->message_id());
 				} else
 					delete message;
+				db->release(); db = NULL;
 			} else
 				delete message;
 		} else
