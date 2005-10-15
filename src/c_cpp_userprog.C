@@ -49,6 +49,7 @@ string C_CPP_UserProg::sourceFilename(const Buffer&) {
 bool C_CPP_UserProg::compile(string infile, string compiler_log, string outdir) {
 	list<string> argv;
 	argv.push_back(compiler());
+	argv.push_back("-lm");
 	argv.push_back("-static");
 	argv.push_back("-o");
 	argv.push_back(outdir + "/" + _progname);
