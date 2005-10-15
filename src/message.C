@@ -41,6 +41,7 @@ bool Message::makeMessage() {
 		return false;
 	}
 
+	DbCon *db = NULL;
 	try {
 		uint8_t *buffer = new uint8_t[size];
 		uint32_t used = store(buffer, size);
@@ -57,7 +58,7 @@ bool Message::makeMessage() {
 		_data = buffer;
 		_data_size = size;
 
-		DbCon *db = DbCon::getInstance();
+		db = DbCon::getInstance();
 		if(!db->putLocalMessage(this)) {
 			db->release();db=NULL;
 			return false;
@@ -79,6 +80,8 @@ bool Message::makeMessage() {
 		return true;
 	} catch(...) {
 		log(LOG_ERR, "Failed to pack message, exception caught");
+		if (db)
+			db->release(); db = NULL;
 		return false;
 		// I only ever expect a memory exception...
 	}
