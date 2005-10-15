@@ -74,6 +74,11 @@ balloon_objects = balloon \
 	sigsegv
 $(balloon_name) : ldflags += -labacus-client
 
+createuser_name = bin/createuser
+createuser_objects = createuser \
+	sigsegv
+$(createuser_name) : ldflags += -labacus-client
+
 runlimit_name = bin/runlimit
 runlimit_objects = runlimit
 $(runlimit_name) : cc=gcc
@@ -119,7 +124,7 @@ $(modules_d) : ldflags += -shared -labacus-server
 modules/mod_dbmysql.so : ldflags += -lmysqlclient
 
 ###############################################################
-depfiles=$(foreach m,$(libabacus_objects) $(libabacus_s_objects) $(libabacus_c_objects) $(abacusd_objects) $(abacus_objects) $(modules) $(balloon_objects) $(runlimit_objects) $(markerd_objects),deps/$(m).d)
+depfiles=$(foreach m,$(libabacus_objects) $(libabacus_s_objects) $(libabacus_c_objects) $(abacusd_objects) $(abacus_objects) $(modules) $(balloon_objects) $(createuser_objects) $(runlimit_objects) $(markerd_objects),deps/$(m).d)
 abacusd_objects_d = $(foreach m,$(abacusd_objects),obj/$(m).o)
 abacus_objects_d = $(foreach m,$(abacus_objects),obj/$(m).o)
 libabacus_objects_d = $(foreach m,$(libabacus_objects),obj/$(m).o)
@@ -128,6 +133,7 @@ libabacus_s_objects_d = $(foreach m,$(libabacus_s_objects),obj/$(m).o)
 runlimit_objects_d = $(foreach m,$(runlimit_objects),obj/$(m).o)
 markerd_objects_d = $(foreach m,$(markerd_objects),obj/$(m).o)
 balloon_objects_d = $(foreach m,$(balloon_objects),obj/$(m).o)
+createuser_objects_d = $(foreach m,$(createuser_objects),obj/$(m).o)
 
 $(foreach m,$(abacus_objects),deps/$(m).d) : dflags += -I$(QTDIR)/include
 $(foreach m,$(abacus_objects),obj/$(m).o) : cflags += -I$(QTDIR)/include
@@ -137,7 +143,7 @@ all : client server modules marker
 #$(libabacus_name) $(libabacus_s_name) $(libabacus_c_name) $(abacusd_name) $(abacus_name) $(modules_d)
 
 .PHONY: client
-client: $(libabacus_name) $(libabacus_c_name) $(abacus_name) $(balloon_name)
+client: $(libabacus_name) $(libabacus_c_name) $(abacus_name) $(balloon_name) $(createuser_name)
 
 .PHONY: server
 server: $(libabacus_name) $(libabacus_s_name) $(abacusd_name)
@@ -179,6 +185,10 @@ $(markerd_name) : $(markerd_objects_d)
 $(balloon_name) : $(balloon_objects_d)
 	@[ -d $(@D) ] || mkdir $(@D)
 	$(cc) $(ldflags) -o $@ $(balloon_objects_d)
+
+$(createuser_name) : $(createuser_objects_d)
+	@[ -d $(@D) ] || mkdir $(@D)
+	$(cc) $(ldflags) -o $@ $(createuser_objects_d)
 
 modules/mod_%.so : obj/%.o
 	@[ -d $(@D) ] || mkdir $(@D)

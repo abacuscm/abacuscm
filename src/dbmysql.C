@@ -1312,8 +1312,15 @@ AttributeList MySQL::getProblemAttributes(uint32_t problem_id) {
 		return AttributeList();
 	}
 
-	AttributeList attrs;
 	MYSQL_RES *res = mysql_use_result(&_mysql);
+
+	if(!res) {
+		log_mysql_error();
+		return AttributeList();
+	}
+	
+	AttributeList attrs;
+	
 	if (!res) {
 		log_mysql_error();
 		return AttributeList();

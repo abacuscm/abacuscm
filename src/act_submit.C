@@ -182,7 +182,7 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 					type,
 					comment)) {
 			if(resinfo == WRONG && type == USER_TYPE_MARKER)
-				comment = "Awaiting Judge";
+				comment = "Awaiting judge";
 			tmp.str("");
 			tmp << (int)resinfo;
 			mb["result" + cntr] = tmp.str();

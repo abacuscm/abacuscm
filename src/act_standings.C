@@ -3,6 +3,7 @@
 #include "clientconnection.h"
 #include "dbcon.h"
 #include "logger.h"
+#include "server.h"
 
 #include <vector>
 #include <map>
@@ -48,6 +49,7 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 
 	SubmissionList submissions = db->getSubmissions();
 
+	uint32_t start_time = db->contestStartStopTime(Server::getId(), true);
     uint32_t uType = cc->getProperty("user_type");
 
     map<uint32_t, map<uint32_t, vector<SubData> > > problemdata;
@@ -71,7 +73,8 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 
 				SubData tmp;
                 tmp.correct = state == CORRECT;
-				tmp.time = db->contestTime(server_id, strtoll((*s)["time"].c_str(), NULL, 0));
+				tmp.time = strtoll((*s)["time"].c_str(), NULL, 0) - start_time;
+					//db->contestTime(server_id, strtoll((*s)["time"].c_str(), NULL, 0));
 				uint32_t prob_id = strtoll((*s)["prob_id"].c_str(), NULL, 0);
 				uint32_t team_id = db->submission2user_id(sub_id);
 

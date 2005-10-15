@@ -159,7 +159,7 @@ Message* Message::buildMessage(uint32_t server_id, uint32_t message_id,
 
 	Message *tmp = func();
 
-	if(!tmp->buildMessage(server_id, message_id, time, signature, data,
+	if(~0U == tmp->buildMessage(server_id, message_id, time, signature, data,
 				data_len, NULL, 0)) {
 		delete tmp;
 		return NULL;

@@ -221,7 +221,6 @@ bool Server::hasMessage(uint32_t server_id, uint32_t message_id) {
 	if(!db) {
 		log(LOG_ERR, "Unable to check for existence of message (%u,%u)",
 				server_id, message_id);
-		db->release();
 		return false;
 	}
 	bool res = db->hasMessage(server_id, message_id);
