@@ -25,7 +25,9 @@ CREATE TABLE `Clarification` (
   `time` int(11) NOT NULL default '0',
   `public` tinyint(1) default NULL,
   `text` text,
-  PRIMARY KEY  (`clarification_id`)
+  PRIMARY KEY  (`clarification_id`),
+  KEY `clarification_req_id` (`clarification_req_id`),
+  KEY `user_id` (`user_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 --
@@ -39,7 +41,9 @@ CREATE TABLE `ClarificationRequest` (
   `time` int(11) NOT NULL default '0',
   `problem_id` int(11) default NULL,
   `text` text,
-  PRIMARY KEY  (`clarification_req_id`)
+  PRIMARY KEY  (`clarification_req_id`),
+  KEY `user_id` (`user_id`),
+  KEY `problem_id` (`problem_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 --
@@ -68,7 +72,8 @@ CREATE TABLE `PeerMessage` (
   `data` mediumblob,
   `processed` tinyint(1) default NULL,
   PRIMARY KEY  (`server_id`,`message_id`),
-  KEY `processed` (`processed`)
+  KEY `processed` (`processed`),
+  KEY `time` (`time`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 --
@@ -158,7 +163,9 @@ CREATE TABLE `Submission` (
   `server_id` int(11) NOT NULL default '0',
   `content` mediumblob,
   `language` varchar(16) default NULL,
-  PRIMARY KEY  (`submission_id`)
+  PRIMARY KEY  (`submission_id`),
+  KEY `user_id` (`user_id`),
+  KEY `prob_id` (`prob_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 --
@@ -186,7 +193,8 @@ CREATE TABLE `SubmissionMarkFile` (
   `marker_id` int(11) NOT NULL default '0',
   `name` varchar(255) NOT NULL default '',
   `content` mediumblob,
-  PRIMARY KEY  (`submission_id`,`marker_id`,`name`)
+  PRIMARY KEY  (`submission_id`,`marker_id`,`name`),
+  KEY `marker_id` (`marker_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 --
@@ -201,8 +209,7 @@ CREATE TABLE `User` (
   `type` int(11) NOT NULL default '0',
   PRIMARY KEY  (`user_id`),
   UNIQUE KEY `user_id` (`user_id`),
-  UNIQUE KEY `username` (`username`),
-  KEY `username_2` (`username`)
+  UNIQUE KEY `username` (`username`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
