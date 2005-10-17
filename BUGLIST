@@ -1,0 +1,128 @@
+BUGLIST
+#######
+
+This file contains a list of BUGS and or nice to havs (wishlist).
+
+* username vs realname
+	A user should have both a username and a real-name.  The username can be
+	used to log in whilst the real-name can be used for display in standings
+	or clarification requests.
+
+	PRIORITY: low
+
+* Start/Stop invalid events
+	If the start/stop time change then the server will still generate the
+	previous start/stop signals as set up unless the server gets restarted.
+
+	PRIORITY: medium
+
+* Java classname handling.
+	Need a better heuristic.  Quite probably force the classname to equal
+	the JavaCase of the problem code (shortname).
+
+	PRIORITY: medium
+
+* Better handling of large PeerMessages is udpmessenger.
+	Transmitting 4MB of udp packets at full speed onto a 10MB/s network is
+	easy, getting those same packets over a lower-speed link causes problems,
+	udppeermessenger should find a better method of deciding how fast to send
+	packets etc.
+
+	PRIORITY: high
+
+* udpmessenger should stop re-transmit of a Message upon receiving and ACK.
+	If udppeermessenger is re-sending a message and an ACK for such a message
+	is received there is no point in re-transmitting the remainder of such
+	a message.  A mechanism for stopping such a re-transmit would be a good idea.
+
+	PRIORITY: medium
+
+* udpmessenger sends too many fragments.
+	udpmessenger only needs to send fragments that has not yet been received.
+	A mechanism should be put in place to only resend required fragments if
+	a PeerMessage is larger than a certain size.
+
+	PRIORITY: low
+
+* No problem names to contestants befoer contest start
+	Problem names should not be available to contestants before the start
+	of the contest.  This allows them to potentially deduce what a problem
+	is about and potentially start coding on solutions before the contest
+	actually starts.
+
+	PRIORITY: medium
+	
+* C/C++ libraries per-problem.
+	The configuration of compiling and run-time environment should be more
+	flexible.  Linking against libmath is an advantage for some problems
+	and having to code functions like exp() or ln() is truly hard.  And
+	these in turn are required to efficiently implement sqrt() and the like.
+
+	PRIORITY: medium
+
+* Invalid or missing CA certificate crashes the server
+	If the client program does not supply a valid CA certificate the server
+	crashes.  This should not happen!
+
+	PRIORITY: high
+
+* Sort order for standings
+	Should be numeric and the leading 0 hack really should not be needed.
+
+	PRIORITY: medium
+
+* runlimit information to judges
+	The runlimit output file should be made available to judges.
+
+	PRIORITY: medium
+
+* Client-side execution environment
+	Somehow the execution environment should be made available to
+	contestants and judges to allow for more thorough testing.  Contestants
+	want this to double-check their submissions before final submission and
+	judges just want this to confirm the results from the automated judging
+	system.
+
+	PRIORITY: medium
+
+* Port to Qt4.
+	To allow for Windows ...
+
+	PRIORITY: low
+
+* Request for clarification on submissions page
+	Well, when a submission is selected a button to request a clarification
+	with regard to that submission is probably a good idea.
+
+	PRIORITY: very low
+
+* Server-side cache of standings
+	Will tremendously improve responsiveness.  When 50 clients simultaniously
+	requests standings the server currently grinds to a halt.  That should
+	not be happening.
+
+	PRIORITY: high
+
+* Auto-reconnect
+	It would be nice if the server could automatically attempt to reconnect.
+
+	PRIORITY: low
+
+* Reverse time sorting
+	It would make sence to reverse-sort the clarifications, as well as reponses
+	and submissions in reverse according to time instead of forward.  This is
+	because the list boxes goes back to the op on every refresh.
+
+	PRIORITY: low
+
+* item-based refresh
+	In the list boxes it would be very cool to only update single items as
+	needed instead of flushing out the entire list and rebuilding it.
+
+	PRIORITY: medium
+
+* No response on marking
+	Judges want the ability to add a response (their own comment) to a 
+	judge response.
+
+	PRIORITY: very low
