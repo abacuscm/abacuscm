@@ -44,7 +44,7 @@ This file contains a list of BUGS and or nice to havs (wishlist).
 
 	PRIORITY: low
 
-* No problem names to contestants befoer contest start
+* No problem names to contestants before contest start
 	Problem names should not be available to contestants before the start
 	of the contest.  This allows them to potentially deduce what a problem
 	is about and potentially start coding on solutions before the contest
@@ -126,3 +126,21 @@ This file contains a list of BUGS and or nice to havs (wishlist).
 	judge response.
 
 	PRIORITY: very low
+
+* Team name should be displayed.
+	On the 'submissions' tab judges should be able to see team-names after
+	submissions has been properly marked.
+
+	PRIORITY: low
+	
+* Web standings
+	There should be some mechanism to view standings from the web.  This
+	may potentially be done using a PHP-based library that only knows
+	how to fetch the standings.
+
+	PRIORITY: medium
+
+* Select all problems for judge by default
+	By default the filter for a judge should be all problems.  Not none.
+
+	PRIORITY: low
