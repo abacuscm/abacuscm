@@ -144,3 +144,26 @@ This file contains a list of BUGS and or nice to havs (wishlist).
 	By default the filter for a judge should be all problems.  Not none.
 
 	PRIORITY: low
+
+* Change colour of tabs to reflect status
+	It would be extremely cool to change the colour of tabs depending on
+	it's status.  For example, if there is new information in a tab change
+	it's colour to blue or something.  As soon as the user switch to that
+	tab, change it back.
+
+	PRIORITY: very low
+
+* Colours in listbox's.
+	Different lines could be made different colours to reflect the content
+	they contain.  For example clarification requests that has not yet been
+	answered could be made red, a similar colour scheme could be used for
+	submissions and potentially for unread clarifications as well as (at a
+	long shot) for standings.
+
+	PRIORITY: very low
+
+* Indication of processing of submissions by judges
+	Some indication/warning of judges that has solutions open.  Not critical
+	but would make live a lot easier.
+
+	PRIORITY: medium
