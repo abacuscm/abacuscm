@@ -25,6 +25,7 @@ static struct option const long_options[] = {
 
 	{"chroot", required_argument, 0, 'r'},
 	{"cputime", required_argument, 0, 'c'},
+	{"filelimit", required_argument, 0, 'f'},
 	{"realtime", required_argument, 0, 't'},
 	{"memory", required_argument, 0, 'm'},
 	{"user", required_argument, 0, 'u'},
@@ -33,11 +34,12 @@ static struct option const long_options[] = {
 	{NULL, 0, NULL, 0}
 };
 
-static const char *optstring = "hvdr:c:t:m:u:g:n:";
+static const char *optstring = "hvdr:c:f:t:m:u:g:n:";
 
 static unsigned cputime = 0;
 static unsigned realtime = 0;
 static unsigned memlimit = 0;
+static unsigned filelimit = 0;
 static unsigned nproc = 0;
 static char* chrootdir = NULL;
 static int verbose = 0;
@@ -93,6 +95,7 @@ static void help() {
 			"    --version, -v   Display version info and exit\n"
 			"    --chroot, -r    chroot to given directory before executing command\n"
 			"    --cputime, -c   CPU-time limit in milliseconds\n"
+			"    --filelimit, -f Limit the filesize of input/output files\n"
 			"    --realtime, -t  realtime limit in milliseconds\n"
 			"    --memory, -m    Virtual memory size limit in bytes\n"
 			"    --user, -u      User to run command as\n"
@@ -162,9 +165,9 @@ void __attribute__((noreturn)) do_child(char **argv) {
 		}
 	}
 
-	if (1) { /* FIXME: take a command line option */
-		limit.rlim_cur = 0xf00000; /* 15MB */
-		limit.rlim_max = 0xf00000;
+	if(filelimit) {
+		limit.rlim_cur = filelimit;
+		limit.rlim_max = filelimit;
 
 		if (setrlimit(RLIMIT_FSIZE, &limit) < 0) {
 			errmsg("setrlimit(RLIMIT_FSIZE): %s\n", strerror(errno));
@@ -238,6 +241,13 @@ int main(int argc, char** argv) {
 				return -1;
 			}
 			break;
+		case 'f':
+			filelimit = strtol(optarg, &err, 0);
+			if(*err) {
+				errmsg("'%s' is not a valid integer!\n", optarg);
+				return -1;
+			}
+			break;
 		case 'm':
 			memlimit = strtol(optarg, &err, 0);
 			if(*err) {
@@ -287,7 +297,8 @@ int main(int argc, char** argv) {
 	msg("chroot:          '%s'\n", chrootdir);
 	msg("CPU-time limit:  %ums\n", cputime);
 	msg("Real-time limit: %ums\n", realtime);
-	msg("Memory limit:    %ubytes\n", memlimit);
+	msg("Memory limit:    %u bytes\n", memlimit);
+	msg("Filesize limit:  %u bytes\n", filelimit);
 	msg("Target User:     '%s'\n", to_uname);
 	msg("Target Group:    '%s'\n", to_gname);
 	msg("Target uid:      %d\n", to_uid);
