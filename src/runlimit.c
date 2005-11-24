@@ -22,7 +22,7 @@ static struct option const long_options[] = {
 	{"help", no_argument, 0, 'h'},
 	{"version", no_argument, 0, 'v'},
 	{"debug", no_argument, 0, 'd'},
-	
+
 	{"chroot", required_argument, 0, 'r'},
 	{"cputime", required_argument, 0, 'c'},
 	{"realtime", required_argument, 0, 't'},
@@ -75,11 +75,11 @@ static void infmsg(const char* fmt, ...) {
 }
 
 static void msg(const char* fmt, ...) __attribute__((format (printf, 1, 2)));
-inline
-static void msg(const char* fmt, ...) {
+
+inline static void msg(const char* fmt, ...) {
 	if(!verbose)
 		return;
-	
+
 	va_list ap;
 	va_start(ap, fmt);
 	msgout("RUNDBG", fmt, ap);
@@ -98,7 +98,7 @@ static void help() {
 			"    --user, -u      User to run command as\n"
 			"    --group, -g     Group to run command as\n"
 			"    --nproc, -n     Max number of processes (BE WARNED: This is enforced on a per user basis)\n"
-	   );
+		   );
 }
 
 void __attribute__((noreturn)) do_child(char **argv) {
@@ -136,7 +136,7 @@ void __attribute__((noreturn)) do_child(char **argv) {
 			setuid(getuid());	
 	} else if(to_grp || to_uid)
 		errmsg("Cannot change user/group since effective user id of runlimit is not root\n");
-	
+
 	if(cputime) {
 		/**
 		 * this rlimit is in seconds, and we always want to
@@ -160,7 +160,7 @@ void __attribute__((noreturn)) do_child(char **argv) {
 			errmsg("setrlimit(RLIMIT_AS): %s\n", strerror(errno));
 			exit(-1);
 		}
-        }
+	}
 
 	if (1) { /* FIXME: take a command line option */
 		limit.rlim_cur = 0xf00000; /* 15MB */
@@ -170,7 +170,7 @@ void __attribute__((noreturn)) do_child(char **argv) {
 			errmsg("setrlimit(RLIMIT_FSIZE): %s\n", strerror(errno));
 			exit(-1);
 		}
-        }
+	}
 
 	if(nproc) {
 		limit.rlim_cur = nproc;
@@ -186,7 +186,7 @@ void __attribute__((noreturn)) do_child(char **argv) {
 		errmsg("access: %s\n", strerror(errno));
 		exit(-1);
 	}
-	
+
 	setsid();
 
 	fflush(runmsg);
@@ -314,7 +314,7 @@ int main(int argc, char** argv) {
 		errmsg("argv[] must have a NULL at the end!");
 		return -1;
 	}
-	
+
 	pid = fork();
 	if(pid < 0) {
 		errmsg("fork: %s\n", strerror(errno));
@@ -329,11 +329,11 @@ int main(int argc, char** argv) {
 
 		if(realtime) {
 			struct sigaction action;
-			
+
 			memset(&action, 0, sizeof(action));
 			action.sa_handler = sig_alarm;
 			sigaction(SIGALRM, &action, NULL);
-			
+
 			alarm((realtime + 1050) / 1000);
 		}
 		while((res = waitpid(pid, &status, 0)) < 0) {
@@ -376,7 +376,7 @@ int main(int argc, char** argv) {
 			totaltime += cpu_usage.ru_utime.tv_usec;
 			totaltime += cpu_usage.ru_stime.tv_usec;
 			totaltime = (totaltime + 500) / 1000; // round to closest millisec.
-			
+
 			const char *time_reason = "ok";
 			if(cputime && totaltime > cputime)
 				time_reason = "cpu_exceeded";
