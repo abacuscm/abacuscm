@@ -236,5 +236,14 @@ deps/%.d : src/%.c
 	@[ -d $(@D) ] || mkdir $(@D)
 	$(cc) -x c $(dflags) -MM $< | sed -e 's:$*.o:obj/$*.o $@:' > $@ || rm $@
 
-# need some protection here, must include iff the not all of targets in (clean,distclean).
+depinc := 1
+ifneq (,$(filter clean distclean,$(MAKECMDGOALS)))
+depinc := 0
+endif
+ifneq (,$(filter-out clean distclean,$(MAKECMDGOALS)))
+depinc := 1
+endif
+
+ifeq ($(depinc),1)
 -include $(depfiles)
+endif
