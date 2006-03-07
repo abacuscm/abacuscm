@@ -202,12 +202,15 @@ obj/%.o : src/%.c Makefile
 	@[ -d $(@D) ] || mkdir $(@D)
 	$(cc) -x c $(cflags) -o $@ -c $<
 
+.PRECIOUS: include/ui_%.h
 include/ui_%.h : ui/%.ui
 	uic $< -o $@
 
+.PRECIOUS: src/moc_%.C
 src/moc_%.C : include/%.h
 	moc $< -o $@
 
+.PRECIOUS: src/ui_%.C
 src/ui_%.C : ui/%.ui
 	uic -impl ui_$*.h $< -o $@
 
