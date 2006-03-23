@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "markers.h"
 #include "messageblock.h"
 #include "clientconnection.h"
@@ -37,7 +46,7 @@ void Markers::enqueueMarker(ClientConnection* cc) {
 void Markers::preemptMarker(ClientConnection* cc) {
 	log(LOG_DEBUG, "Removing %p from available markers", cc);
 	pthread_mutex_lock(&_lock);
-	
+
 	std::list<ClientConnection*>::iterator i1;
 	std::map<ClientConnection*, uint32_t>::iterator i2;
 
@@ -120,7 +129,7 @@ void Markers::issue(ClientConnection* cc, uint32_t sd) {
 
 	if(cc->sendMessageBlock(&mb)) {
 		_issued[cc] = sd;
-	} else 
+	} else
 		enqueueSubmission(sd);
 }
 
@@ -147,7 +156,7 @@ void Markers::notifyMarked(ClientConnection* cc, uint32_t submission_id) {
 		}
 
 		_issued.erase(i);
-		
+
 		// chuck the submission_id - it has now been marked.
 		// re-enqueue the ClientConnection.
 		real_enqueueMarker(cc);

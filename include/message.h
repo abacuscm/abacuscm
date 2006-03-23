@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #ifndef __MESSAGE_H__
 #define __MESSAGE_H__
 
@@ -13,7 +22,7 @@ typedef Message* (*MessageFunctor)();
 class Message {
 private:
 	static std::map<uint32_t, MessageFunctor> _functors;
-	
+
 	struct st_blob {
 		uint32_t server_id;
 		uint32_t message_id;
@@ -31,7 +40,7 @@ private:
 	uint8_t *_signature;
 	uint32_t _blob_size;
 	struct st_blob *_blob;
-	
+
 	bool buildMessage(uint32_t server_id, uint32_t message_id,
 			uint32_t time, uint8_t *signature, uint8_t *data,
 			uint32_t data_len, struct st_blob *blob, uint32_t blob_size);
@@ -72,7 +81,7 @@ protected:
 	 * initiate the load process.
 	 */
 	virtual uint32_t load(const uint8_t *buffer, uint32_t size) = 0;
-	
+
 	/**
 	 * This function can be used by subclasses to check for zero-terminators
 	 * in buffers in a particular buffer area.  It can specify how many
@@ -92,7 +101,7 @@ public:
 	uint32_t server_id() const { return _server_id; };
 	uint32_t message_id() const { return _message_id; };
 	uint32_t time() const { return _time; };
-	
+
 	/**
 	 * This function needs to return the message_type_id for
 	 * the message type.  This must be the same for all instances

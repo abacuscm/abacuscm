@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "clientaction.h"
 #include "clientconnection.h"
 #include "messageblock.h"
@@ -35,7 +44,7 @@ bool ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
 
 	if(!new_type)
 		return cc->sendError("Invalid user type " + (*mb)["type"]);
-	
+
 	if(new_passwd == "")
 		return cc->sendError("Cannot set a blank password");
 
@@ -55,7 +64,7 @@ bool ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
 	uint32_t new_id = Server::nextUserId();
 	if(new_id == ~0U)
 		return cc->sendError("Unable to determine next usable user_id");
-	
+
 	return triggerMessage(cc, new Message_CreateUser(new_username,
 				new_passwd, new_id, new_type, user_id));
 }

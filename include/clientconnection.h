@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #ifndef __CLIENTCONNECTION_H__
 #define __CLIENTCONNECTION_H__
 
@@ -22,7 +31,7 @@ class MessageBlock;
 class ClientConnection : public Socket {
 private:
 	typedef std::map<std::string, uint32_t> ClientProps;
-	
+
 	static SSL_METHOD *_method;
 	static SSL_CTX *_context;
 
@@ -48,7 +57,7 @@ public:
 	uint32_t setProperty(const std::string& prop, uint32_t value);
 	uint32_t getProperty(const std::string& prop); // const ... (fails)
 	uint32_t delProperty(const std::string& prop);
-	
+
 	static bool init();
 };
 

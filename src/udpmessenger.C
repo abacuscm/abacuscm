@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -169,7 +178,7 @@ bool UDPPeerMessenger::startup() {
 		lerror("bind");
 		goto err;
 	}
-	
+
 	_max_fragment_size = atol(config["udpmessenger"]["maxfragmentsize"].c_str());
 	if(_max_fragment_size < MIN_FRAGMENT_SIZE) {
 		log(LOG_ERR, "maxfragmentsize (%u) is too small, increasing to %u.", _max_fragment_size, MIN_FRAGMENT_SIZE);
@@ -190,7 +199,7 @@ bool UDPPeerMessenger::startup() {
 
 		OBJ_NAME_do_all_sorted(OBJ_NAME_TYPE_CIPHER_METH,
 				log_ciphers, NULL);
-		
+
 		goto err;
 	}
 
@@ -222,7 +231,7 @@ bool UDPPeerMessenger::startup() {
 	}
 
 	close(fd);
-	
+
 	fd = open(cipher_iv.c_str(), O_RDONLY);
 	if(fd < 0) {
 		lerror("open");
@@ -241,7 +250,7 @@ bool UDPPeerMessenger::startup() {
 	// if we are logging with syslog() and using remote logging.
 //	log_buffer(LOG_DEBUG, "cipher key", _cipher_key, _cipher_keysize);
 //	log_buffer(LOG_DEBUG, "cipher iv", _cipher_iv, _cipher_ivsize);
-	
+
 	log(LOG_INFO, "UDPPeerMessenger started up");
 	return true;
 
@@ -283,7 +292,7 @@ uint32_t UDPPeerMessenger::checksum(const uint8_t *data, uint16_t len) {
 
 const sockaddr_in* UDPPeerMessenger::getSockAddr(uint32_t server_id) {
 	sockaddr_in *result = NULL;
-	
+
 	pthread_mutex_lock(&_lock_addrmap);
 
 	map<uint32_t, struct sockaddr_in>::iterator i;
@@ -297,7 +306,7 @@ const sockaddr_in* UDPPeerMessenger::getSockAddr(uint32_t server_id) {
 		if(db) {
 			ip = db->getServerAttribute(server_id, "ip");
 			port = db->getServerAttribute(server_id, "udppeerport");
-			
+
 			db->release();db=NULL;
 		}
 

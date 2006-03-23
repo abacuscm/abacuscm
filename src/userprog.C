@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "userprog.h"
 #include "logger.h"
 #include "config.h"
@@ -82,7 +91,7 @@ void UserProg::setMemLimit(unsigned bytes) {
 	_runlimit_args.push_back("-m");
 	_runlimit_args.push_back(tmpstrm.str());
 }
-	
+
 void UserProg::setRuntimeUser(std::string uname) {
 	_runlimit_args.push_back("-u");
 	_runlimit_args.push_back(uname);
@@ -118,12 +127,12 @@ string UserProg::sourceFilename(const Buffer&) {
 
 int UserProg::exec(int fd_in, int fd_out, int fd_err, int fd_run) {
 	list<string> prog_argv = getProgramArgv();
-	
+
 	char ** argv = new char*[_runlimit_args.size() + prog_argv.size() + 3];
 	char ** ptr = argv;
 
 	*ptr++ = strdup(Config::getConfig()["marker"]["runlimit"].c_str());
-	
+
 	list<string>::iterator i;
 	for(i = _runlimit_args.begin(); i != _runlimit_args.end(); ++i)
 		*ptr++ = strdup(i->c_str());

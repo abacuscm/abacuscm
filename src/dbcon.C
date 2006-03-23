@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "dbcon.h"
 #include "logger.h"
 
@@ -63,5 +72,5 @@ void DbCon::cleanup() {
 		delete _con_stack.back();
 		_con_stack.pop_back();
 	}
-	pthread_mutex_unlock(&_lock);	
+	pthread_mutex_unlock(&_lock);
 }

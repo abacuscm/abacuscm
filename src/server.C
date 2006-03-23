@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "server.h"
 #include "dbcon.h"
 #include "config.h"
@@ -35,7 +44,7 @@ uint32_t Server::nextUserId() {
 	static uint32_t cur_max_id = 0;
 
 	uint32_t local_max_id;
-	
+
 	pthread_mutex_lock(&lock);
 
 	if(!cur_max_id) {
@@ -55,9 +64,9 @@ uint32_t Server::nextUserId() {
 		cur_max_id = getId();
 	else
 		cur_max_id += ID_GRANULARITY;
-	
+
 	local_max_id = cur_max_id;
-	
+
 	pthread_mutex_unlock(&lock);
 
 	return local_max_id;
@@ -71,7 +80,7 @@ uint32_t Server::nextSubmissionId() {
 	static uint32_t cur_max_id = 0;
 
 	uint32_t local_max_id;
-	
+
 	pthread_mutex_lock(&lock);
 
 	if(!cur_max_id) {
@@ -91,9 +100,9 @@ uint32_t Server::nextSubmissionId() {
 		cur_max_id = getId();
 	else
 		cur_max_id += ID_GRANULARITY;
-	
+
 	local_max_id = cur_max_id;
-	
+
 	pthread_mutex_unlock(&lock);
 
 	return local_max_id;
@@ -107,7 +116,7 @@ uint32_t Server::nextClarificationRequestId() {
 	static uint32_t cur_max_id = 0;
 
 	uint32_t local_max_id;
-	
+
 	pthread_mutex_lock(&lock);
 
 	if(!cur_max_id) {
@@ -127,9 +136,9 @@ uint32_t Server::nextClarificationRequestId() {
 		cur_max_id = getId();
 	else
 		cur_max_id += ID_GRANULARITY;
-	
+
 	local_max_id = cur_max_id;
-	
+
 	pthread_mutex_unlock(&lock);
 
 	return local_max_id;
@@ -143,7 +152,7 @@ uint32_t Server::nextClarificationId() {
 	static uint32_t cur_max_id = 0;
 
 	uint32_t local_max_id;
-	
+
 	pthread_mutex_lock(&lock);
 
 	if(!cur_max_id) {
@@ -163,9 +172,9 @@ uint32_t Server::nextClarificationId() {
 		cur_max_id = getId();
 	else
 		cur_max_id += ID_GRANULARITY;
-	
+
 	local_max_id = cur_max_id;
-	
+
 	pthread_mutex_unlock(&lock);
 
 	return local_max_id;
@@ -177,9 +186,9 @@ err:
 uint32_t Server::nextServerId() {
 	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 	static uint32_t cur_max_id = 0;
-	
+
 	uint32_t local_max_id;
-	
+
 	pthread_mutex_lock(&lock);
 
 	if(!cur_max_id) {
@@ -200,15 +209,15 @@ uint32_t Server::nextServerId() {
 		goto err;
 	} else
 		cur_max_id += 1;
-	
+
 	local_max_id = cur_max_id;
-	
+
 	pthread_mutex_unlock(&lock);
 
 	return local_max_id;
 err:
 	pthread_mutex_unlock(&lock);
-	return ~0U;	
+	return ~0U;
 }
 
 uint32_t Server::nextProblemId() {
@@ -233,7 +242,7 @@ void Server::putAck(uint32_t server_id, uint32_t message_id, uint32_t ack_id) {
 		log(LOG_ERR, "ack_id == 0 cannot possibly be correct.  This could potentially happen if/when a server didn't initialise properly upon first creation (the first PeerMessage a server receives must be it's own initialisation message.  Please see the Q&A for more info.");
 		return;
 	}
-	
+
 	if(ack_queue)
 		ack_queue->enqueue(ack_id);
 
@@ -269,7 +278,7 @@ bool Server::isContestRunning() {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return false;
-	
+
 	running = db->contestRunning(getId());
 	db->release();db=NULL;
 	return running;
@@ -280,7 +289,7 @@ uint32_t Server::contestTime() {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return 0;
-	
+
 	tm = db->contestTime(getId());
 	db->release();db=NULL;
 	return tm;
@@ -291,7 +300,7 @@ uint32_t Server::contestRemaining() {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return 0;
-	
+
 	tm = db->contestRemaining(getId());
 	db->release();db=NULL;
 	return tm;

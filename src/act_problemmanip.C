@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "problemtype.h"
 #include "clientaction.h"
 #include "clientconnection.h"
@@ -56,7 +65,7 @@ private:
 	uint32_t _update_time;
 
 	string _type;
-	
+
 	FileMap _files;
 	StringMap _strings;
 	IntMap _ints;
@@ -142,7 +151,7 @@ uint32_t ProbMessage::store(uint8_t *buffer, uint32_t size) {
 		buffer += sizeof(int32_t);
 		used += 1 + i->first.length() + 1 + sizeof(i->second);
 	}
-	
+
 	StringMap::iterator s;
 	for(s = _strings.begin(); s != _strings.end(); ++s) {
 		*buffer++ = 'S';
@@ -334,14 +343,14 @@ bool ProbMessage::process() const {
 			result &= db->setProblemAttribute(_prob_id, f->first,
 					f->second.name, f->second.data, f->second.len);
 	}
-	
+
 	IntMap::const_iterator i;
 	for(i = _ints.begin(); i != _ints.end(); ++i) {
 		result &= db->setProblemAttribute(_prob_id, i->first, i->second);
 	}
 
 	string code;
-	
+
 	StringMap::const_iterator s;
 	for(s = _strings.begin(); s != _strings.end(); ++s) {
 		result &= db->setProblemAttribute(_prob_id, s->first, s->second);
@@ -350,14 +359,14 @@ bool ProbMessage::process() const {
 	}
 
 	result &= db->setProblemUpdateTime(_prob_id, _update_time);
-	
+
 	if(!result)
 		log(LOG_CRIT, "Setting of at least one attribute for problem_id=%u has failed, continuing anyway - please figure out what went wrong and fix it, then restart abacus to automatically recover", _prob_id);
 	else
 		db->setProblemUpdateTime(_prob_id, _update_time);
 
 	db->release();db=NULL;
-	
+
 	if(ex_prob_type == "" && code != "")
 		EventRegister::getInstance().registerEvent("judge_" + code);
 
@@ -375,7 +384,7 @@ ActSetProbAttrs::~ActSetProbAttrs() {
 #define act_error(x)	{ delete msg; return cc->sendError(x); }
 bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 	uint32_t prob_id = atol((*mb)["prob_id"].c_str());
-	
+
 	string prob_type = (*mb)["prob_type"];
 	if(prob_id && prob_type == "") {
 		DbCon *db = DbCon::getInstance();
@@ -387,11 +396,11 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 
 	if(prob_type == "")
 		return cc->sendError("You must specify prob_type for new problems");
-	
+
 	string attr_desc = ProblemType::getProblemDescription(prob_type);
 	if(attr_desc == "")
 		return cc->sendError("Invalid prob_type or internal server error");
-	
+
 	// this crap should be rewritten to make use of regular expressions
 	// for example 'a S' relates to ^a$ for an attribute name, any attributes
 	// matching that is valid.  in the same way a (b S, c S) can translate
@@ -405,7 +414,7 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 	vector<string> stack;
 
 	ProbMessage *msg = new ProbMessage(prob_id, prob_type);
-	
+
 	size_t pos = 0;
 	while(pos < attr_desc.length()) {
 		// find attribute name
@@ -430,7 +439,7 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 			string attr = attrname.str();
 			attr += attr_name;
 			log(LOG_DEBUG, "attr: '%s'", attr.c_str());
-			
+
 			if(!mb->hasAttribute(attr)) {
 				act_error("Missing attribute " + attr);
 			} else if(attr_desc[pos] == 'S') {
@@ -510,19 +519,19 @@ bool ActGetProbAttrs::int_process(ClientConnection* cc, MessageBlock*mb) {
 	uint32_t prob_id = strtoll((*mb)["prob_id"].c_str(), &errpnt, 0);
 	if(!prob_id || *errpnt)
 		return cc->sendError("Invalid problem Id");
-	
+
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return cc->sendError("Error connecting to database");
 	string prob_type = db->getProblemType(prob_id);
 	AttributeList attrs = db->getProblemAttributes(prob_id);
 	db->release();db=NULL;
-	
+
 	if(attrs.empty() || prob_type == "")
 		return cc->sendError("No such problem");
-	
+
 	MessageBlock res("ok");
-	
+
 	AttributeList::iterator i;
 	for(i = attrs.begin(); i != attrs.end(); ++i) {
 		res[i->first] = i->second;
@@ -549,7 +558,7 @@ bool ActGetProblemFile::int_process(ClientConnection* cc, MessageBlock* mb) {
 
 	uint8_t *dataptr;
 	uint32_t datalen;
-	
+
 	bool dbres = db->getProblemFileData(prob_id, file, &dataptr, &datalen);
 	db->release();db=NULL;
 

@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "problemconfig.h"
 #include "logger.h"
 
@@ -94,7 +103,7 @@ bool ProblemConfig::addAttribute(QGridLayout *g, std::string attr_name, std::str
 	QPushButton *b = new QPushButton("?", prop_data);
 	b->setMaximumWidth(30);
 	g->addWidget(b, row, 1);
-	
+
 	g->addWidget(control, row, 2);
 
 	return true;
@@ -145,7 +154,7 @@ bool ProblemConfig::getProblemAttributes(AttributeMap &normal, AttributeMap &fil
 	StringAttrsMap::const_iterator s;
 	ComboAttrsMap::const_iterator c;
 	IntAttrsMap::const_iterator i;
-	
+
 	for(s = _files.begin(); s != _files.end(); ++s) {
 		std::string val = s->second->text().ascii();
 		if(val == "" || val == KEEP_STRING)
@@ -159,7 +168,7 @@ bool ProblemConfig::getProblemAttributes(AttributeMap &normal, AttributeMap &fil
 
 	for(c = _enums.begin(); c != _enums.end(); ++c)
 		normal[c->first] = c->second->currentText().ascii();
-	
+
 	for(i = _ints.begin(); i != _ints.end(); ++i)
 		normal[i->first] = i->second->cleanText().ascii();
 

@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "dbcon.h"
 #include "logger.h"
 #include "config.h"
@@ -145,7 +154,7 @@ bool MySQL::ok() {
 	} else
 		return true;
 }
-	
+
 uint32_t MySQL::name2server_id(const string& name) {
 	uint32_t server_id = 0;
 	ostringstream query;
@@ -163,12 +172,12 @@ uint32_t MySQL::name2server_id(const string& name) {
 	}
 
 	MYSQL_ROW row = mysql_fetch_row(res);
-	
+
 	if(row)
 		server_id = atol(row[0]);
-	
+
 	mysql_free_result(res);
-	
+
 	return server_id;
 }
 
@@ -221,7 +230,7 @@ uint32_t MySQL::name2user_id(const string& name) {
 
 	return user_id;
 }
-	
+
 std::string MySQL::user_id2name(uint32_t user_id) {
 	string username;
 	ostringstream query;
@@ -277,7 +286,7 @@ UserList MySQL::getUsers() {
 
 ServerList MySQL::getServers() {
 	ServerList list;
-	
+
 	if(mysql_query(&_mysql, "SELECT server_id, server_name FROM Server")) {
 		log_mysql_error();
 	} else {
@@ -293,7 +302,7 @@ ServerList MySQL::getServers() {
 
 	return list;
 }
-	
+
 string MySQL::getServerAttribute(uint32_t server_id, const string& attribute) {
 	string value = "";
 	ostringstream query;
@@ -319,7 +328,7 @@ bool MySQL::setServerAttribute(uint32_t server_id, const string& attribute, cons
 	string esc_value = escape_string(value);
 	ostringstream query;
 	query << "INSERT INTO ServerAttributes (server_id, attribute, value) "
-		"VALUES(" << server_id << ", '" << esc_attribute << 
+		"VALUES(" << server_id << ", '" << esc_attribute <<
 		"', '" << esc_value << "')";
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		// most likely cause is that the attribute already exists, update it.
@@ -351,7 +360,7 @@ bool MySQL::putLocalMessage(Message* message) {
 		log_mysql_error();
 		return false;
 	}
-	
+
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();
 		mysql_query(&_mysql, "UNLOCK TABLES");
@@ -384,15 +393,15 @@ bool MySQL::putLocalMessage(Message* message) {
 		return false;
 	}
 
-	query.str(""); 
+	query.str("");
 	query << "INSERT INTO PeerMessageNoAck(server_id, message_id, "
 		"ack_server_id, lastsent) SELECT " << message->server_id() <<
 		", " << message->message_id() << ", server_id, 0 FROM Server WHERE "
 		"server_id != " << Server::getId();
-	
+
 	if(mysql_query(&_mysql, query.str().c_str()))
 		log_mysql_error();
-	
+
 	mysql_query(&_mysql, "UNLOCK TABLES");
 
 	return true;
@@ -402,7 +411,7 @@ bool MySQL::putRemoteMessage(const Message* message) {
 	const uint8_t *blob;
 	uint32_t blobsize;
 	ostringstream query;
-	
+
 	if(!message->getData(&blob, &blobsize))
 		return false;
 
@@ -430,7 +439,7 @@ bool MySQL::putRemoteMessage(const Message* message) {
 
 	return true;
 }
-	
+
 std::vector<uint32_t> MySQL::getRemoteServers() {
 	ostringstream query;
 	query << "SELECT server_id FROM Server WHERE server_id != "
@@ -438,7 +447,7 @@ std::vector<uint32_t> MySQL::getRemoteServers() {
 
 	vector<uint32_t> remservers;
 	MYSQL_RES *res;
-	
+
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		// this is extremely bad!
 		log_mysql_error();
@@ -454,7 +463,7 @@ std::vector<uint32_t> MySQL::getRemoteServers() {
 
 	return remservers;
 }
-	
+
 bool MySQL::markProcessed(uint32_t server_id, uint32_t message_id) {
 	ostringstream query;
 	query << "UPDATE PeerMessage SET processed=1 WHERE server_id=" <<
@@ -485,10 +494,10 @@ bool MySQL::addServer(const string& name, uint32_t id) {
 			// return false;
 		}
 	}
-	
+
 	return true;
 }
-	
+
 bool MySQL::addUser(const std::string& name, const std::string& pass, uint32_t id, uint32_t type) {
 	ostringstream query;
 
@@ -501,7 +510,7 @@ bool MySQL::addUser(const std::string& name, const std::string& pass, uint32_t i
 
 	return true;
 }
-	
+
 int MySQL::authenticate(const std::string& uname, const std::string& pass, uint32_t *user_id, uint32_t *user_type) {
 	ostringstream query;
 
@@ -511,7 +520,7 @@ int MySQL::authenticate(const std::string& uname, const std::string& pass, uint3
 		log_mysql_error();
 		return -1;
 	}
-	
+
 	int ret = -1;
 	MYSQL_RES *res = mysql_store_result(&_mysql);
 	if(res) {
@@ -525,13 +534,13 @@ int MySQL::authenticate(const std::string& uname, const std::string& pass, uint3
 					*user_id = atol(row[0]);
 			} else
 				ret = -1;
-			
+
 			if(row[1]) {
 				if(user_type)
 					*user_type = atol(row[1]);
 			} else
 				ret = -1;
-		}	
+		}
 		mysql_free_result(res);
 	}
 	return ret;
@@ -583,7 +592,7 @@ MessageList MySQL::getMessages(std::string query) {
 		}
 		mysql_free_result(res);
 	}
-	
+
 	return msglist;
 }
 
@@ -604,12 +613,12 @@ MessageList MySQL::getUnacked(uint32_t server_id, uint32_t message_type_id, uint
 
 	if(message_type_id)
 		query << " AND PeerMessage.message_type_id = " << message_type_id;
-	
+
 	query << " ORDER BY time";
 
 	if(limit)
 		query << " LIMIT " << limit;
-	
+
 	return getMessages(query.str());
 }
 
@@ -619,11 +628,11 @@ void MySQL::ackMessage(uint32_t server_id, uint32_t message_id,
 	query << "DELETE FROM PeerMessageNoAck WHERE server_id=" << server_id <<
 		" AND message_id=" << message_id << " AND ack_server_id=" <<
 		ack_server;
-	
+
 	if(mysql_query(&_mysql, query.str().c_str()))
 		log_mysql_error();
 }
-	
+
 bool MySQL::hasMessage(uint32_t server_id, uint32_t message_id) {
 	ostringstream query;
 	query << "SELECT processed FROM PeerMessage WHERE server_id=" <<
@@ -658,9 +667,9 @@ uint32_t MySQL::maxServerId() {
 		MYSQL_ROW row = mysql_fetch_row(res);
 		if(row && row[0])
 			max_server_id = atol(row[0]);
-		mysql_free_result(res);	
+		mysql_free_result(res);
 	}
-	
+
 	return max_server_id;
 }
 
@@ -682,7 +691,7 @@ uint32_t MySQL::maxUserId() {
 			else
 				max_user_id = 0;
 		}
-		mysql_free_result(res);	
+		mysql_free_result(res);
 	}
 
 	return max_user_id;
@@ -706,7 +715,7 @@ uint32_t MySQL::maxSubmissionId() {
 			else
 				max_user_id = 0;
 		}
-		mysql_free_result(res);	
+		mysql_free_result(res);
 	}
 
 	return max_user_id;
@@ -730,7 +739,7 @@ uint32_t MySQL::maxClarificationReqId() {
 			else
 				max_user_id = 0;
 		}
-		mysql_free_result(res);	
+		mysql_free_result(res);
 	}
 
 	return max_user_id;
@@ -811,12 +820,12 @@ bool MySQL::putSubmission(uint32_t submission_id, uint32_t user_id, uint32_t pro
 SubmissionList MySQL::getSubmissions(uint32_t uid) {
 	ostringstream query;
 	query << "SELECT submission_id, time, value, Submission.prob_id FROM User, ProblemAttributes, Submission WHERE User.user_id = Submission.user_id AND Submission.prob_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute = 'shortname'";
-	
+
 	if(uid)
 		query << " AND User.user_id = " << uid;
 
 	query << " ORDER BY time";
-	
+
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();
 		return SubmissionList();
@@ -1028,7 +1037,7 @@ IdList MySQL::getUnmarked(uint32_t server_id) {
 		}
 		mysql_free_result(res);
 	}
-	
+
 	return result;
 }
 // SELECT user_id, prob_id, time, (SELECT correct FROM SubmissionMark WHERE Submission.user_id = Submission.user_id AND Submission.prob_id = SubmissionMark.prob_id AND Submission.time = SubmissionMark.time AND server_id = 1) AS mark FROM Submission HAVING IsNull(mark);
@@ -1046,7 +1055,7 @@ bool MySQL::putMark(uint32_t submission_id, uint32_t marker_id, uint32_t time, u
 	} else
 		return true;
 }
-	
+
 bool MySQL::putMarkFile(uint32_t submission_id, uint32_t marker_id,
 			std::string name, const void* data, uint32_t len) {
 	ostringstream query;
@@ -1145,7 +1154,7 @@ bool MySQL::getSubmissionState(uint32_t submission_id, RunResult& state, uint32_
 
 		MYSQL_ROW row = mysql_fetch_row(res);
 		bool result = false;
-		
+
 		if(row) {
 			state = (RunResult)strtoll(row[0], NULL, 0);
 			comment = row[1];
@@ -1203,7 +1212,7 @@ uint32_t MySQL::submission2server_id(uint32_t submission_id) {
 		return sid;
 	}
 }
-	
+
 std::string MySQL::submission2problem(uint32_t submission_id) {
 	ostringstream query;
 	query << "SELECT value FROM Submission, ProblemAttributes WHERE prob_id = problem_id AND attribute='shortname' AND submission_id=" << submission_id;
@@ -1226,7 +1235,7 @@ std::string MySQL::submission2problem(uint32_t submission_id) {
 		return problem;
 	}
 }
-	
+
 bool MySQL::hasSolved(uint32_t user_id, uint32_t prob_id) {
 	ostringstream query;
 	query << "SELECT user_id, prob_id FROM Submission, SubmissionMark WHERE "
@@ -1262,7 +1271,7 @@ bool MySQL::setProblemUpdateTime(uint32_t problem_id, time_t time) {
 	} else
 		return true;
 }
-	
+
 string MySQL::getProblemType(uint32_t problem_id) {
 	ostringstream query;
 	query << "SELECT type FROM Problem WHERE problem_id=" << problem_id;
@@ -1278,7 +1287,7 @@ string MySQL::getProblemType(uint32_t problem_id) {
 	}
 
 	string result;
-	
+
 	MYSQL_ROW row = mysql_fetch_row(res);
 	if(row)
 		result = row[0];
@@ -1318,9 +1327,9 @@ AttributeList MySQL::getProblemAttributes(uint32_t problem_id) {
 		log_mysql_error();
 		return AttributeList();
 	}
-	
+
 	AttributeList attrs;
-	
+
 	if (!res) {
 		log_mysql_error();
 		return AttributeList();
@@ -1343,7 +1352,7 @@ bool MySQL::setProblemAttribute(uint32_t problem_id, std::string attr, int32_t v
 bool MySQL::setProblemAttribute(uint32_t problem_id, std::string attr, std::string value) {
 	if(!delProblemAttribute(problem_id, attr))
 		return false;
-	
+
 	ostringstream query;
 	query << "INSERT INTO ProblemAttributes (problem_id, attribute, value)"
 		" VALUES(" << problem_id << ", '" << escape_string(attr) << "', '"
@@ -1376,13 +1385,13 @@ bool MySQL::delProblemAttribute(uint32_t problem_id, std::string attr) {
 	ostringstream query;
 	query << "DELETE FROM ProblemAttributes WHERE problem_id=" << problem_id <<
 		" AND attribute='" << escape_string(attr) << "'";
-	
+
 	int r1 = mysql_query(&_mysql, query.str().c_str());
 	if(r1)
 		log_mysql_error();
-	
+
 	query.str("");
-	
+
 	query << "DELETE FROM ProblemFileData WHERE problem_id=" << problem_id <<
 		" AND attribute='" << escape_string(attr) << "'";
 	int r2 = mysql_query(&_mysql, query.str().c_str());
@@ -1491,13 +1500,13 @@ bool MySQL::startStopContest(uint32_t server_id, uint32_t unix_time, bool start)
 
 bool MySQL::init() {
 	Config &config = Config::getConfig();
-	
+
 	string host = config["mysql"]["host"];
 	string user = config["mysql"]["user"];
 	string pass = config["mysql"]["password"];
 	string db   = config["mysql"]["db"];
 	unsigned int port = atol(config["mysql"]["port"].c_str());
-	
+
 	mysql_init(&_mysql);
 
 	if(!mysql_real_connect(&_mysql, host.c_str(), user.c_str(), pass.c_str(), db.c_str(), port, NULL, 0)) {

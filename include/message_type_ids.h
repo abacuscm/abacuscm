@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #define TYPE_ID_CREATESERVER			0x0001
 #define TYPE_ID_CREATEUSER				0x0002
 #define TYPE_ID_UPDATEPASS				0x0003

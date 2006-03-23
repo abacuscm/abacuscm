@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "problemtype.h"
 #include "clientaction.h"
 #include "clientconnection.h"
@@ -39,7 +48,7 @@ bool ActGetProbDescript::int_process(ClientConnection *cc, MessageBlock *mb) {
 	string type = (*mb)["type"];
 	if(type == "")
 		return cc->sendError("You must specify the type to describe");
-	
+
 	string desc = ProblemType::getProblemDescription(type);
 	if(desc == "")
 		return cc->sendError("Error retrieving description for type " + type);

@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #ifndef __QUEUE_H__
 #define __QUEUE_H__
 
@@ -38,11 +47,11 @@ public:
 		struct timespec timeout;
 		int retcode = 0;
 		T t = def;
-		
+
 		gettimeofday(&now, NULL);
 		timeout.tv_sec = now.tv_sec + sec;
 		timeout.tv_nsec = now.tv_usec * 1000;
-		
+
 		pthread_mutex_lock(&_m);
 		while(_q.empty() && retcode != ETIMEDOUT)
 			retcode = pthread_cond_timedwait(&_e, &_m, &timeout);
@@ -54,7 +63,7 @@ public:
 		pthread_mutex_unlock(&_m);
 		return t;
 	}
-	
+
 	void enqueue(T v) {
 		pthread_mutex_lock(&_m);
 		pthread_cond_signal(&_e);

@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "clientaction.h"
 #include "logger.h"
 #include "messageblock.h"
@@ -11,7 +20,7 @@ protected:
 
 bool Act_EventRegister::int_process(ClientConnection* cc, MessageBlock* mb) {
 	EventRegister& evReg = EventRegister::getInstance();
-	
+
 	std::string action = (*mb)["action"];
 	std::string event = (*mb)["event"];
 
@@ -23,7 +32,7 @@ bool Act_EventRegister::int_process(ClientConnection* cc, MessageBlock* mb) {
 	} else if(action == "unsubscribe") {
 		evReg.deregisterClient(event, cc);
 		return cc->reportSuccess();
-	} else 
+	} else
 		return cc->sendError("Unknown action");
 }
 

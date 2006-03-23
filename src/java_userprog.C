@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "userprog.h"
 #include "config.h"
 #include "logger.h"
@@ -46,7 +55,7 @@ list<string> Java_UserProg::getProgramArgv() {
 		log(LOG_WARNING, "[java][runtime] not set, defaulting to config/java.policy");
 		policy = "conf/java.policy";
 	}
-	
+
 	argv.push_back(runtime);
 	argv.push_back("-cp");
 	argv.push_back(_cp_dir);
@@ -129,7 +138,7 @@ bool Java_UserProg::compile(string infile, string compiler_log, string outdir) {
 		log(LOG_INFO, "[java][compiler] not set, defaulting to /usr/bin/javac");
 		compiler = "/usr/bin/javac";
 	}
-	
+
 	list<string> argv;
 	argv.push_back(compiler);
 	argv.push_back("-d");

@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #ifndef __EVENTREGISTER_H__
 #define __EVENTREGISTER_H__
 
@@ -14,7 +23,7 @@ private:
 	class Event {
 	private:
 		typedef std::set<ClientConnection*> ClientConnectionPool;
-		
+
 		ClientConnectionPool _clients;
 		ClientConnection* _next_single;
 		pthread_mutex_t _lock;
@@ -35,7 +44,7 @@ private:
 	EventMap _eventmap;
 	ClientMap _clients;
 	pthread_mutex_t _lock;
-	
+
 	EventRegister();
 	~EventRegister();
 
@@ -52,7 +61,7 @@ public:
 	void broadcastEvent(const MessageBlock *mb); /* To ALL clients */
 //	void triggerOne(std::string eventname, const MessageBlock*mb, bool remove);
 	void sendMessage(uint32_t user_id, const MessageBlock *mb);
-	
+
 	static EventRegister& getInstance();
 };
 

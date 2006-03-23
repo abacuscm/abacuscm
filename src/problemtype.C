@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "problemtype.h"
 #include "logger.h"
 
@@ -42,7 +51,7 @@ string ProblemType::getProblemDescription(const string& problemtype) {
 		return "";
 
 	ostringstream descript;
-	
+
 	vector<string> attrlist = i->second->getAttributeList();
 	copy(attrlist.begin(), attrlist.end(), ostream_iterator<string>(descript, ", "));
 

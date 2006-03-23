@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "clientaction.h"
 #include "clientconnection.h"
 #include "messageblock.h"
@@ -131,7 +140,7 @@ uint32_t PasswdMessage::load(const uint8_t *buffer, uint32_t size) {
 
 	_user_id = *(uint32_t*)buffer;
 	_newpass = (char*)buffer + sizeof(uint32_t);
-	
+
 	return storageRequired();
 }
 

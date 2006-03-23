@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -49,7 +58,7 @@ bool Config::load(const string& fname) {
 
 		while(p < len && isspace(conf_line[p]))
 			p++;
-	
+
 		if(p == len) // blank line.
 			continue;
 
@@ -72,7 +81,7 @@ bool Config::load(const string& fname) {
 			}
 
 			string opt_name = conf_line.substr(p, p3 - p + 1);
-			
+
 			p2++;
 			while(p2 < len && isspace(conf_line[p2]))
 				p2++;
@@ -89,7 +98,7 @@ bool Config::load(const string& fname) {
 				_sections[cur_section][opt_name] = opt_value;
 		}
 	}
-	
+
 	return true;
 }
 

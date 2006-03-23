@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #ifndef __MAINWINDOW_H__
 #define __MAINWINDOW_H__
 
@@ -57,7 +66,7 @@ public:
 	~MainWindow();
 
 	// made public so that my functors can get to them since
-	// we can't cast member function pointers to void* - no idea 
+	// we can't cast member function pointers to void* - no idea
 	// why though - can probably memcpy them but that would be
 	// even uglier.
 	void updateStandings();

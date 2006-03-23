@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include <syslog.h>
 #include <stdio.h>
 #include <time.h>
@@ -35,7 +44,7 @@ static void log_file(int prio, const char* format, va_list ap) {
 	const char *priostring = "?!?";
 	time_t t = time(NULL);
 	char time_buf[26];
-	
+
 	if(0 <= prio && prio < (int)(sizeof(priostrings) / sizeof(*priostrings)))
 		priostring = priostrings[prio];
 
@@ -54,7 +63,7 @@ void log(int priority, const char* format, ...) {
 	if(log_listeners.empty()) {
 		string log_method = Config::getConfig()["logger"]["method"];
 
-		if(log_method == "file") {	
+		if(log_method == "file") {
 			string filename = Config::getConfig()["logger"]["filename"];
 
 			if(filename == "stderr") {
@@ -79,7 +88,7 @@ void log(int priority, const char* format, ...) {
 	}
 
 	// From experimentation I could have placed the va_list stuff outside
-	// of the loop - the man-pages however give many warnings, thus I 
+	// of the loop - the man-pages however give many warnings, thus I
 	// rather do it inside the loop.
 	LogFunctionList::iterator i;
 	for(i = log_listeners.begin(); i != log_listeners.end(); ++i) {

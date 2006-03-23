@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "message.h"
 #include "logger.h"
 #include "server.h"
@@ -35,7 +44,7 @@ bool Message::makeMessage() {
 	}
 
 	uint32_t size = storageRequired();
-	
+
 	if(size == ~0U) {
 		log(LOG_ERR, "Unable to determine size requirements for packing Message into a blob or overflow error!");
 		return false;
@@ -54,7 +63,7 @@ bool Message::makeMessage() {
 
 		_server_id = Server::getId();
 		_time = (uint32_t)::time(NULL);
-	
+
 		_data = buffer;
 		_data_size = size;
 
@@ -65,7 +74,7 @@ bool Message::makeMessage() {
 		}
 
 		makeBlob();
-		
+
 		std::vector<uint32_t> remote_servers = db->getRemoteServers();
 
 		std::vector<uint32_t>::iterator i;
@@ -115,7 +124,7 @@ bool Message::buildMessage(uint32_t server_id, uint32_t message_id,
 	uint32_t loadres = load(data, data_len);
 	if(loadres == ~0U)
 		return false;
-	
+
 	_server_id = server_id;
 	_message_id = message_id;
 	_time = time;
@@ -167,13 +176,13 @@ Message* Message::buildMessage(uint32_t server_id, uint32_t message_id,
 
 	return tmp;
 }
-	
+
 Message* Message::buildMessage(uint8_t* blob_p, uint32_t blob_len) {
 	if(blob_len < sizeof(struct st_blob))
 		return NULL;
 
 	struct st_blob *blob = (struct st_blob*)blob_p;
-	
+
 	MessageFunctor func = _functors[blob->message_type_id];
 
 	if(!func) {

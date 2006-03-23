@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include <openssl/rand.h>
 #include <openssl/ssl.h>
 
@@ -48,7 +57,7 @@ bool ClientConnection::initiate_ssl() {
 			goto err;
 		}
 	}
-	
+
 	switch(SSL_get_error(_ssl, SSL_accept(_ssl))) {
 		case SSL_ERROR_NONE:
 		case SSL_ERROR_WANT_READ:
@@ -65,9 +74,9 @@ err:
 		SSL_free(_ssl);
 		_ssl = NULL;
 	}
-	
+
 	return false;
-		
+
 }
 
 bool ClientConnection::process_data() {
@@ -114,7 +123,7 @@ bool ClientConnection::process() {
 		return initiate_ssl();
 	else
 		return process_data();
-	
+
 	return false;
 }
 
@@ -180,7 +189,7 @@ bool ClientConnection::init() {
 	}
 
 	SSL_CTX_set_options(_context, SSL_OP_NO_SSLv2 | SSL_OP_SINGLE_DH_USE);
-	
+
 	return true;
 err:
 	if(_context) {
@@ -191,7 +200,7 @@ err:
 		_method = NULL;
 	return false;
 }
-	
+
 uint32_t ClientConnection::setProperty(const std::string& prop, uint32_t val) {
 	uint32_t oldval = _props[prop];
 	_props[prop] = val;

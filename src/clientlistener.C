@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -20,7 +29,7 @@ ClientListener::~ClientListener() {
 bool ClientListener::init(SocketPool *pool) {
 	int sock = socket(PF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in addr;
-	
+
 	if(sock < 0) {
 		lerror("socket");
 		return false;

@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "message_createuser.h"
 #include "message_type_ids.h"
 #include "logger.h"
@@ -61,7 +70,7 @@ uint32_t Message_CreateUser::store(uint8_t *buffer, uint32_t size) {
 	*(uint32_t*)pos = _requestor_id; pos += sizeof(uint32_t);
 	strcpy(pos, _name.c_str()); pos += _name.length() + 1;
 	strcpy(pos, _password.c_str()); pos += _password.length() + 1;
-	
+
 	return (uint8_t*)pos - buffer;
 }
 
@@ -79,6 +88,6 @@ uint32_t Message_CreateUser::load(const uint8_t *buffer, uint32_t size) {
 	_requestor_id = *(uint32_t*)pos; pos += sizeof(uint32_t);
 	_name = std::string(pos); pos += _name.length() + 1;
 	_password = std::string(pos); pos += _password.length() + 1;
-	
+
 	return (uint8_t*)pos - buffer;
 }

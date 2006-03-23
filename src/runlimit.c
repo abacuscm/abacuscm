@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -136,7 +145,7 @@ void __attribute__((noreturn)) do_child(char **argv) {
 		if(to_uid)
 			setuid(to_uid);
 		else
-			setuid(getuid());	
+			setuid(getuid());
 	} else if(to_grp || to_uid)
 		errmsg("Cannot change user/group since effective user id of runlimit is not root\n");
 

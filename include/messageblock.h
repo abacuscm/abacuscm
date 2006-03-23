@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #ifndef __MESSAGEBLOCK_H__
 #define __MESSAGEBLOCK_H__
 
@@ -47,7 +56,7 @@ public:
 	int content_size() const { return _content_length; };
 	const char* content() const { return _content; };
 	char operator[] (int c) const { return _content[c]; };
-	
+
 	bool setContent(const char* data, int size);
 
 	/**
@@ -61,7 +70,7 @@ public:
 	 * break.
 	 */
 	int addBytes(const char* bytes, int count);
-	
+
 	/**
 	 * Writes the MessageBlock to an SSL connection.  The caller
 	 * is responsible for ensuring that we have a lock on the ssl

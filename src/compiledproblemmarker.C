@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "compiledproblemmarker.h"
 #include "userprog.h"
 #include "logger.h"
@@ -49,14 +58,14 @@ void CompiledProblemMarker::mark() {
 	};
 
 	fname = wdir + "/" + fname;
-	
+
 	log(LOG_INFO, "Using source file '%s'", fname.c_str());
 	ofstream source(fname.c_str());
 	source << code;
 	source.close();
 
 	string jaildir = wdir + "/jail";
-	
+
 	if(mkdir(jaildir.c_str(), 0711) < 0) {
 		lerror("mkdir");
     } else {
@@ -71,14 +80,14 @@ void CompiledProblemMarker::mark() {
 
 		uint32_t timelimit = strtoll(attrib("time_limit").c_str(), NULL, 0);
 		log(LOG_INFO, "Attribute time limit = %u", (unsigned)timelimit);
-		
+
 		if(!timelimit) {
 			timelimit = 120;
 			log(LOG_WARNING, "timelimit==0 is invalid, defaulting to %us.", (unsigned)timelimit);
 		}
 
 		timelimit *= 1000; // convert to milli-seconds.
-		
+
 		log(LOG_INFO, "User program compiled, preparing execution environment.");
 		_uprog->setMemLimit(64 * 1024 * 1024);
 		_uprog->setRootDir(jaildir);
@@ -90,10 +99,10 @@ void CompiledProblemMarker::mark() {
 			_uprog->setRuntimeUser(config["marker"]["user"]);
 		if(config["marker"]["group"] != "")
 			_uprog->setRuntimeGroup(config["marker"]["group"]);
-		
+
 		mark_compiled();
 	}
-	
+
 	log(LOG_DEBUG, "All done with the marking process!");
 }
 
@@ -138,7 +147,7 @@ int CompiledProblemMarker::run(const char* infile, const char* outfile, const ch
 
 		while(waitpid(pid, &status, 0) < 0)
 			lerror("waitpid");
-	
+
 		log(LOG_DEBUG, "User program terminated with excode=%d", status);
 		return status;
 	}

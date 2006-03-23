@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "message_createserver.h"
 #include "logger.h"
 #include "dbcon.h"
@@ -57,11 +66,11 @@ uint32_t Message_CreateServer::load(const uint8_t *buffer, uint32_t size) {
 
 	_server_id = *(uint32_t*)pos;
 	pos += sizeof(uint32_t);
-	
+
 	_name = string(pos);
 	pos += _name.length() + 1;
 	numzeros--;
-	
+
 	while(numzeros > 1) {
 		string attrib_name = string(pos);
 		pos += attrib_name.length() + 1;
@@ -72,7 +81,7 @@ uint32_t Message_CreateServer::load(const uint8_t *buffer, uint32_t size) {
 
 		numzeros -= 2;
 	}
-	
+
 	return (uint8_t*)pos - buffer;
 }
 

@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "testcaseproblemmarker.h"
 #include "buffer.h"
 #include "logger.h"
@@ -14,7 +23,7 @@ void TestCaseProblemMarker::mark_compiled() {
 		log(LOG_ERR, "Error retrieving desired input file");
 		return;
 	}
-	
+
 	string infile = workdir() + "/stdin";
 	string outfile = workdir() + "/stdout";
 	string errfile = workdir() + "/stderr";
@@ -26,7 +35,7 @@ void TestCaseProblemMarker::mark_compiled() {
 	file_stdin << *in;
 	file_stdin.close();
 	delete in;
-	
+
 	if(run(infile.c_str(),
 			outfile.c_str(),
 			errfile.c_str(),

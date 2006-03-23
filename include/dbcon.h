@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #ifndef __DBCON_H__
 #define __DBCON_H__
 
@@ -100,7 +109,7 @@ public:
 	 * Used to add a new user to the system.
 	 */
 	virtual bool addUser(const std::string& name, const std::string& pass, uint32_t id, uint32_t type) = 0;
-	
+
 	/**
 	 * Used to retrieve the current maximum server_id.
 	 */
@@ -145,7 +154,7 @@ public:
 	 * this should not ever be a problem.
 	 */
 	virtual bool setPassword(uint32_t user_id, const std::string& newpass) = 0;
-	
+
 	/**
 	 * Used to retrieve all unprocessed messages.
 	 */
@@ -171,7 +180,7 @@ public:
 	 * committed to DB.
 	 */
 	virtual bool hasMessage(uint32_t server_id, uint32_t message_id) = 0;
-	
+
 	/**
 	 * Retrieve a list of problem Ids.
 	 */
@@ -181,7 +190,7 @@ public:
 	 * Determine when last a problem got "updated".
 	 */
 	virtual time_t getProblemUpdateTime(uint32_t problem_id) = 0;
-	
+
 	/**
 	 * Set the time of last problem update.  This can almost be considered
 	 * a type of "version" number.
@@ -218,7 +227,7 @@ public:
 	 */
 	virtual bool getProblemFileData(uint32_t problem_id, std::string attr,
 			uint8_t **dataptr, uint32_t *lenptr) = 0;
-	
+
 	/**
 	 * Commit a submitted solution to the database before initiating the
 	 * marking process.
@@ -267,7 +276,7 @@ public:
 	 * Retrieve Submission content (and language).
 	 */
 	virtual bool retrieveSubmission(uint32_t submission_id, char** buffer, int *length, std::string& language, uint32_t* prob_id) = 0;
-	
+
 	virtual IdList getUnmarked(uint32_t server_id = 0) = 0;
 
 	virtual bool putMark(uint32_t submission_id, uint32_t marker_id,
@@ -279,7 +288,7 @@ public:
 	virtual uint32_t countMarkFiles(uint32_t submission_id) = 0;
 
 	virtual bool getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length) = 0;
-	
+
 	virtual bool getSubmissionState(uint32_t submission_id, RunResult& state, uint32_t& utype, std::string& comment) = 0;
 	virtual uint32_t submission2user_id(uint32_t submission_id) = 0;
 	virtual uint32_t submission2server_id(uint32_t submission_id) = 0;

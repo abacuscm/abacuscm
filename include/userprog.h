@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #ifndef __USERPROG_H__
 #define __USERPROG_H__
 
@@ -17,7 +26,7 @@ private:
 	std::list<std::string> _runlimit_args;
 protected:
 	/**
-	 * should give the argv[] vector, argv[0] has to be 
+	 * should give the argv[] vector, argv[0] has to be
 	 * the program name, relative to root dir.  If you
 	 * override setRootDir() this may be a path to an
 	 * interpreter.
@@ -42,7 +51,7 @@ public:
 	 * example.
 	 */
     virtual bool compile(std::string infile, std::string compiler_log, std::string outdir) = 0;
-	
+
 	/**
 	 * Since some compilers might require specific filenames this
 	 * function provides the ability to specify a custom filename,
@@ -58,7 +67,7 @@ public:
 	virtual void setRuntimeUser(std::string uname);
 	virtual void setRuntimeGroup(std::string gname);
 	virtual void setMaxProcs(unsigned nproc);
-	
+
 	/**
 	 * fd_{in,out,err} == The fds to use as stdin, stdout and stderr.
 	 *

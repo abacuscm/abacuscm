@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "eventregister.h"
 #include "clientconnection.h"
 #include "messageblock.h"
@@ -39,7 +48,7 @@ bool EventRegister::registerClient(string eventname, ClientConnection *cc) {
 	i->second->registerClient(cc);
 	return true;
 }
-				
+
 void EventRegister::deregisterClient(ClientConnection *cc) {
 	uint32_t user_id = cc->getProperty("user_id");
 	pthread_mutex_lock(&_lock);
@@ -47,7 +56,7 @@ void EventRegister::deregisterClient(ClientConnection *cc) {
 	EventMap::iterator e;
 	for(e = _eventmap.begin(); e != _eventmap.end(); ++e)
 		e->second->deregisterClient(cc);
-	
+
 	ClientMap::iterator c = _clients.find(user_id);
 	if(c != _clients.end())
 		_clients.erase(c);

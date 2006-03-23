@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "clientaction.h"
 #include "clientconnection.h"
 #include "logger.h"
@@ -55,7 +64,7 @@ public:
 	SubmissionMessage();
 	SubmissionMessage(uint32_t sub_id, uint32_t prob_id, uint32_t user_id, const char* content, uint32_t content_size, std::string language);
 	virtual ~SubmissionMessage();
-	
+
 	virtual bool process() const;
 
 	virtual uint16_t message_type_id() const;
@@ -84,18 +93,18 @@ bool ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
 		db->release();db=NULL;
 		return cc->sendError("Invalid prob_id - no such id");
 	}
-	
+
 	bool solved = db->hasSolved(user_id, prob_id);
 	db->release();db=NULL;
 	if(solved)
 		return cc->sendError("You have already solved this problem, you may no longer submit solutions for it");
-	
+
 	std::string lang = (*mb)["lang"];
 
 	// TODO:  Proper check - this will do for now:
 	if(lang != "C" && lang != "C++" && lang != "Java")
 		return cc->sendError("You have not specified the language");
-	
+
 	uint32_t sub_id = Server::nextSubmissionId();
 	if(sub_id == ~0U)
 		return cc->sendError("Internal server error. Error obtaining new submission id");
@@ -125,15 +134,15 @@ bool ActGetProblems::int_process(ClientConnection *cc, MessageBlock *) {
 		std::string cstr = ostrstrm.str();
 		ostrstrm.str("");
 		ostrstrm << *p;
-		
+
 		mb["id" + cstr] = ostrstrm.str();
-		
+
 		AttributeList lst = db->getProblemAttributes(*p);
 		mb["code" + cstr] = lst["shortname"];
 		mb["name" + cstr] = lst["longname"];
 	}
 	db->release();db=NULL;
-	
+
 	return cc->sendMessageBlock(&mb);
 }
 
@@ -146,14 +155,14 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 	uint32_t utype = cc->getProperty("user_type");
 
 	SubmissionList lst;
-	
+
 	if(utype == USER_TYPE_CONTESTANT)
 		lst = db->getSubmissions(uid);
 	else
 		lst = db->getSubmissions();
 
 	MessageBlock mb("ok");
-	
+
 	SubmissionList::iterator s;
 	int c = 0;
 	for(s = lst.begin(); s != lst.end(); ++s, ++c) {
@@ -169,13 +178,13 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 		tmp.str("");
 		tmp << db->contestTime(db->submission2server_id(submission_id),
 				strtoll((*s)["time"].c_str(), NULL, 0));
-		
+
 		mb["contesttime" + cntr] = tmp.str();
 
 		RunResult resinfo;
 		uint32_t type;
 		std::string comment;
-		
+
 		if(db->getSubmissionState(
 					submission_id,
 					resinfo,
@@ -193,7 +202,7 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 		}
 	}
 	db->release();db=NULL;
-	
+
 	return cc->sendMessageBlock(&mb);
 }
 
@@ -229,14 +238,14 @@ bool SubmissionMessage::process() const {
 	DbCon* db = DbCon::getInstance();
 	if(!db)
 		return false;
-	
+
 	bool result = db->putSubmission(_submission_id, _user_id, _prob_id, _time, _server_id,
 			_content, _content_size, _language);
 
 
 	AttributeList lst = db->getProblemAttributes(_prob_id);
 	std::string problem = lst["shortname"];
-	
+
 	MessageBlock mb("submission");
 	if(result)
 		mb["msg"] = "Your submission for '" + problem + "' has been queued for marking";
@@ -252,7 +261,7 @@ bool SubmissionMessage::process() const {
 		Markers::getInstance().enqueueSubmission(_submission_id);
 
 	db->release();db=NULL;
-	
+
 	return result;
 }
 
@@ -298,7 +307,7 @@ uint32_t SubmissionMessage::load(const uint8_t* buffer, uint32_t size) {
 	_server_id = *(uint32_t*)pos; pos += sizeof(uint32_t);
 	_content_size = *(uint32_t*)pos; pos += sizeof(uint32_t);
 	size -= 5 * sizeof(uint32_t);
-	
+
 	if(size < _content_size) {
 		log(LOG_ERR, "Insufficient buffer data to load in SubmissionMessage::load()");
 		return ~0U;
@@ -394,7 +403,7 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
     }
 
 	db->release();db=NULL;
-	
+
 	return cc->sendMessageBlock(&result_mb);
 }
 

@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #ifndef __SERVERCONNECTION_H__
 #define __SERVERCONNECTION_H__
 
@@ -45,7 +54,7 @@ private:
 	pthread_mutex_t _lock_sender;
 	pthread_cond_t _cond_read_count;
 
-	int _reader_count; // -1 indicates that a write lock is in effect.	
+	int _reader_count; // -1 indicates that a write lock is in effect.
 	int _sock;
 	SSL *_ssl;
 	SSL_CTX *_ctx;
@@ -81,7 +90,7 @@ private:
 
 	std::vector<std::string> vectorFromMB(MessageBlock &mb, std::string prefix);
 	MultiValuedList multiListFromMB(MessageBlock &mb, std::list<std::string> attrlst);
-	
+
 	static void* thread_spawner(void*);
 public:
 	ServerConnection();

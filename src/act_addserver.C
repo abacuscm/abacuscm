@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "clientaction.h"
 #include "clientconnection.h"
 #include "messageblock.h"
@@ -29,7 +38,7 @@ bool ActAddServer::int_process(ClientConnection* cc, MessageBlock* mb) {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return cc->sendError("Error connecting to database.");
-	
+
 	uint32_t server_id = db->name2server_id(servername);
 	db->release();db=NULL;
 
@@ -39,7 +48,7 @@ bool ActAddServer::int_process(ClientConnection* cc, MessageBlock* mb) {
 	server_id = Server::nextServerId();
 	if(server_id == ~0U)
 		return cc->sendError("Unable to determine next server_id");
-	
+
 	Message_CreateServer *msg = new Message_CreateServer(servername, server_id);
 
 	MessageHeaders::const_iterator i;
@@ -47,7 +56,7 @@ bool ActAddServer::int_process(ClientConnection* cc, MessageBlock* mb) {
 		if(i->first != "servername" && i->first != "content-length")
 			msg->addAttribute(i->first, i->second);
 	}
-		
+
 	return triggerMessage(cc, msg);
 }
 

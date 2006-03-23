@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <iostream>
@@ -117,10 +126,10 @@ err:
  */
 static bool load_modules() {
 	Config &config = Config::getConfig();
-	
+
 	if(!ModuleLoader::loadModule(config["modules"]["peermessenger"]))
 		return false;
-	
+
 	if(!ModuleLoader::loadModule(config["modules"]["dbconnector"]))
 		return false;
 
@@ -167,10 +176,10 @@ static bool initialise() {
 	// insist on segfaulting there.
 	Message::registerMessageFunctor(TYPE_ID_CREATESERVER, create_msg_createserver);
 	Message::registerMessageFunctor(TYPE_ID_CREATEUSER, create_msg_createuser);
-	
+
 	log(LOG_INFO, "Local node name: %s", localname.c_str());
 
-	DbCon *db = DbCon::getInstance();	
+	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return false;
 
@@ -190,7 +199,7 @@ static bool initialise() {
 			init->addAttribute(i->first, i->second);
 
 		Message_CreateUser *admin = new Message_CreateUser("admin", "changeit!", 1, USER_ADMIN);
-		
+
 		if(init->makeMessage() && admin->makeMessage()) {
 			message_queue.enqueue(init);
 			message_queue.enqueue(admin);
@@ -211,7 +220,7 @@ static bool initialise() {
 		delete cl;
 		return false;
 	}
-	
+
 	socket_pool.insert(cl);
 
 	ClientAction::setMessageQueue(&message_queue);
@@ -304,7 +313,7 @@ void* worker_thread(void *) {
 			break;
 		++num_idle_workers;
 		pthread_mutex_unlock(&lock_numworkers);
-		
+
 		Socket *s = wait_queue.dequeue();
 		pthread_mutex_lock(&lock_numworkers);
 		if(--num_idle_workers < min_idle_workers)
@@ -318,7 +327,7 @@ void* worker_thread(void *) {
 			pthread_kill(thread_socket_selector, SIGUSR1);
 		} else
 			delete s;
-		pthread_mutex_lock(&lock_numworkers);			
+		pthread_mutex_lock(&lock_numworkers);
 	}
 
 	total_num_workers--;
@@ -355,7 +364,7 @@ void* worker_spawner(void*) {
 	}
 
 	if(max_idle_workers <= min_idle_workers) {
-		max_idle_workers = min_idle_workers + 
+		max_idle_workers = min_idle_workers +
 			(DEFAULT_MAX_IDLE_WORKERS - DEFAULT_MIN_IDLE_WORKERS);
 		log(LOG_NOTICE, "Defaulting to %u maximum number of idle workers.",
 				max_idle_workers);
@@ -377,7 +386,7 @@ void* worker_spawner(void*) {
 
 	pthread_mutex_init(&lock_numworkers, NULL);
 	pthread_cond_init(&cond_numworkers, NULL);
-	
+
 	while(initial_workers--) {
 		pthread_t tmp;
 		if(pthread_create(&tmp, NULL, worker_thread, NULL) == 0)
@@ -397,7 +406,7 @@ void* worker_spawner(void*) {
 
 		if(!abacusd_running)
 			break;
-		
+
 		uint32_t tospawn = min_idle_workers - num_idle_workers;
 		uint32_t max_create = max_num_workers - total_num_workers;
 		pthread_mutex_unlock(&lock_numworkers);
@@ -467,7 +476,7 @@ void resend_message(uint32_t server_id) {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return;
-	
+
 	MessageList msg = db->getUnacked(server_id, TYPE_ID_CREATESERVER);
 	if(msg.empty())
 		msg = db->getUnacked(server_id, 0, 1);
@@ -519,7 +528,7 @@ bool TimedActionPtrLessThan(const TimedAction* v1, const TimedAction* v2) {
 void* timed_actions(void*) {
 	vector<TimedAction*> heap;
 	TimedAction *next = NULL;
-	
+
 	while(abacusd_running) {
 		time_t now = time(NULL);
 		while(next && next->processingTime() <= now) {
@@ -557,10 +566,10 @@ void* timed_actions(void*) {
 int main(int argc, char ** argv) {
 	const char * config_file = DEFAULT_SERVER_CONFIG;
 	Config &config = Config::getConfig();
-	
+
 	if(argc > 1)
 		config_file = argv[1];
-	
+
 	if(!config.load(config_file))
 		return -1;
 
@@ -576,7 +585,7 @@ int main(int argc, char ** argv) {
 
 	if(!load_modules())
 		return -1;
-	
+
 	if(!PeerMessenger::getMessenger())
 		return -1;
 
@@ -584,7 +593,7 @@ int main(int argc, char ** argv) {
 
 	if(!initialise())
 		return -1;
-	
+
 	pthread_create(&thread_peer_listener, NULL, peer_listener, NULL);
 	pthread_create(&thread_message_handler, NULL, message_handler, NULL);
 	pthread_create(&thread_worker_spawner, NULL, worker_spawner, NULL);
@@ -605,7 +614,7 @@ int main(int argc, char ** argv) {
 	message_queue.enqueue(NULL);
 	ack_queue.enqueue(0);
 	timed_queue.enqueue(NULL);
-	
+
 	pthread_mutex_lock(&lock_numworkers);
 	pthread_cond_signal(&cond_numworkers);
 	pthread_mutex_unlock(&lock_numworkers);
@@ -620,7 +629,7 @@ int main(int argc, char ** argv) {
 	SocketPool::iterator i;
 	for(i = socket_pool.begin(); i != socket_pool.end(); ++i)
 		delete (*i);
-	
+
 	DbCon::cleanup();
 
 	log(LOG_INFO, "abacusd is shut down.");

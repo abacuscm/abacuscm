@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
@@ -19,17 +28,17 @@ private:
 	static Config _config;
 
 	ConfigMap _sections;
-	
+
 	Config();
 	~Config();
 public:
 	bool load(const std::string& fname);
-	void dumpConfig(std::ostream& os) const;	
+	void dumpConfig(std::ostream& os) const;
 
 	ConfigSection& operator[] (const std::string& sect) {
 		return _sections[sect];
 	}
-	
+
 	static Config& getConfig();
 };
 

@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "clientaction.h"
 #include "clientconnection.h"
 #include "messageblock.h"
@@ -39,7 +48,7 @@ private:
 		uint32_t len;
 		uint8_t *data;
 	};
-	
+
 	uint32_t _submission_id;
 	uint32_t _result;
 	uint32_t _time;
@@ -103,7 +112,7 @@ bool MarkMessage::process() const {
 		db->release();db=NULL;
 		return false;
 	}
-	
+
 	list<File>::const_iterator i;
 	for(i = _files.begin(); i != _files.end(); ++i) {
 		if(!db->putMarkFile(_submission_id, _marker, i->name, i->data, i->len))
@@ -143,7 +152,7 @@ bool MarkMessage::process() const {
 uint16_t MarkMessage::message_type_id() const {
 		return TYPE_ID_SUBMISSION_MARK;
 }
-	
+
 uint32_t MarkMessage::storageRequired() {
 	uint32_t required = 0;
 
@@ -166,17 +175,17 @@ uint32_t MarkMessage::store(uint8_t *buffer, uint32_t size) {
 	*(uint32_t*)pos = _time; pos += sizeof(uint32_t);
 	*(uint32_t*)pos = _server_id; pos += sizeof(uint32_t);
 	strcpy((char*)pos, _comment.c_str()); pos += strlen((char*)pos) + 1;
-	
+
 	list<File>::iterator i;
 	for(i = _files.begin(); i != _files.end(); ++i) {
 		strcpy((char*)pos, i->name.c_str()); pos += strlen((char*)pos) + 1;
 		*(uint32_t*)pos = i->len; pos += sizeof(uint32_t);
 		memcpy(pos, i->data, i->len); pos += i->len;
 	}
-	
+
 	if((uint32_t)(pos - buffer) > size)
 		log(LOG_ERR, "Buffer overflow detected - expect SEGFAULTS");
-	
+
 	return pos - buffer;
 }
 
@@ -318,7 +327,7 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 		ostrstrm << "file" << c++;
 		if(!mb->hasAttribute(ostrstrm.str()))
 			break;
-	
+
 		string fdesc = (*mb)[ostrstrm.str()];
 		regmatch_t m[4];
 		if(regexec(&file_reg, fdesc.c_str(), 4, m, 0)) {

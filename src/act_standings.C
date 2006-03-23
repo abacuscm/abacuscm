@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "clientaction.h"
 #include "messageblock.h"
 #include "clientconnection.h"
@@ -56,11 +65,11 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 	SubmissionList::iterator s;
 	for(s = submissions.begin(); s != submissions.end(); ++s) {
 		uint32_t sub_id = strtoll((*s)["submission_id"].c_str(), NULL, 0);
-		
+
 		RunResult state;
 		uint32_t utype;
 		string comment;
-		
+
 		if(db->getSubmissionState(sub_id, state, utype, comment)) {
 			if(state != COMPILE_FAILED) { // we ignore compile failures.
                 uint32_t server_id = db->submission2server_id(sub_id);
@@ -123,18 +132,18 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 	mb["row_0_0"] = "Team";
 
 	int ncols = 1;
-	
+
 	ProblemList probs = db->getProblems();
 	map<uint32_t, uint32_t> prob2col;
 	ProblemList::iterator pi;
-	
+
 	for(pi = probs.begin(); pi != probs.end(); ++pi) {
 		AttributeList al = db->getProblemAttributes(*pi);
-		
+
 		ostringstream col;
 		col << ncols;
 		prob2col[*pi] = ncols++;
-		
+
 		mb["row_0_" + col.str()] = al["shortname"];
 	}
 
@@ -153,7 +162,7 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 	}
 
 	int r = 1;
-	
+
 	vector<TeamData>::iterator i;
 	for(i = standings.begin(); i != standings.end(); ++i, ++r) {
 		ostringstream headername;
@@ -200,7 +209,7 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 	}
 
 	db->release();db=NULL;
-	
+
 	return cc->sendMessageBlock(&mb);
 }
 

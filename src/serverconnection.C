@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "serverconnection.h"
 #include "logger.h"
 #include "config.h"
@@ -204,7 +213,7 @@ bool ServerConnection::disconnect() {
 	if(_has_thread)
 		pthread_cond_wait(&_cond_thread, &_lock_thread);
 	pthread_mutex_unlock(&_lock_thread);
-	
+
 	return true;
 }
 
@@ -331,7 +340,7 @@ Grid ServerConnection::gridAction(MessageBlock &mb) {
 		}
 		grid.push_back(row);
 	}
-	
+
 	return grid;
 }
 
@@ -615,7 +624,7 @@ vector<ProblemInfo> ServerConnection::getProblems() {
 		delete res;
 		return response;
 	}
-	
+
 	unsigned i = 0;
 	while(true) {
 		ostringstream strstrm;

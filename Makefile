@@ -1,3 +1,6 @@
+# Abacus Makefile (Copyright 2005 - 2006 Kroon Information Systems)
+# $Id$
+
 libdir=$(CURDIR)/lib
 cc=g++
 cflags=-g -ggdb -O0 -Iinclude -W -Wall -fpic

@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ *  with contributions from various authors.
+ *
+ * This file is distributed under GPLv2, please see
+ * COPYING for more details.
+ *
+ * $Id$
+ */
 #include "clientaction.h"
 #include "clientconnection.h"
 #include "messageblock.h"
@@ -21,7 +30,7 @@ bool ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
 	uint32_t user_type;
 	int result = db->authenticate((*mb)["user"], (*mb)["pass"], &user_id, &user_type);
 	db->release();db=NULL;
-	
+
 	if(result < 0)
 		return cc->sendError("Database error.");
 	else if(result == 0)
