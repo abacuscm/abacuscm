@@ -1,13 +1,15 @@
--- MySQL dump 10.9
+-- MySQL dump 10.10
 --
 -- Host: localhost    Database: abacus
 -- ------------------------------------------------------
--- Server version	4.1.14-log
+-- Server version	5.0.22-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES latin1 */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
@@ -28,7 +30,7 @@ CREATE TABLE `Clarification` (
   PRIMARY KEY  (`clarification_id`),
   KEY `clarification_req_id` (`clarification_req_id`),
   KEY `user_id` (`user_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `ClarificationRequest`
@@ -44,7 +46,7 @@ CREATE TABLE `ClarificationRequest` (
   PRIMARY KEY  (`clarification_req_id`),
   KEY `user_id` (`user_id`),
   KEY `problem_id` (`problem_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `ContestStartStop`
@@ -56,7 +58,7 @@ CREATE TABLE `ContestStartStop` (
   `action` enum('START','STOP') NOT NULL default 'START',
   `time` int(10) unsigned NOT NULL default '0',
   PRIMARY KEY  (`server_id`,`action`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `PeerMessage`
@@ -74,7 +76,7 @@ CREATE TABLE `PeerMessage` (
   PRIMARY KEY  (`server_id`,`message_id`),
   KEY `processed` (`processed`),
   KEY `time` (`time`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `PeerMessageNoAck`
@@ -88,7 +90,7 @@ CREATE TABLE `PeerMessageNoAck` (
   `lastsent` int(10) unsigned default NULL,
   PRIMARY KEY  (`server_id`,`message_id`,`ack_server_id`),
   KEY `lastsent` (`lastsent`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `Problem`
@@ -100,7 +102,7 @@ CREATE TABLE `Problem` (
   `updated` int(11) NOT NULL default '0',
   `type` varchar(16) default NULL,
   PRIMARY KEY  (`problem_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `ProblemAttributes`
@@ -112,7 +114,7 @@ CREATE TABLE `ProblemAttributes` (
   `attribute` varchar(128) NOT NULL default '',
   `value` varchar(255) default NULL,
   PRIMARY KEY  (`problem_id`,`attribute`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `ProblemFileData`
@@ -124,7 +126,7 @@ CREATE TABLE `ProblemFileData` (
   `attribute` varchar(128) NOT NULL default '',
   `data` mediumblob,
   PRIMARY KEY  (`problem_id`,`attribute`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `Server`
@@ -136,7 +138,7 @@ CREATE TABLE `Server` (
   `server_name` varchar(64) NOT NULL default '',
   PRIMARY KEY  (`server_id`),
   KEY `server_name` (`server_name`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `ServerAttributes`
@@ -148,7 +150,7 @@ CREATE TABLE `ServerAttributes` (
   `attribute` varchar(16) NOT NULL default '',
   `value` varchar(64) default NULL,
   PRIMARY KEY  (`server_id`,`attribute`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `Submission`
@@ -166,7 +168,7 @@ CREATE TABLE `Submission` (
   PRIMARY KEY  (`submission_id`),
   KEY `user_id` (`user_id`),
   KEY `prob_id` (`prob_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `SubmissionMark`
@@ -181,7 +183,7 @@ CREATE TABLE `SubmissionMark` (
   `remark` varchar(255) default NULL,
   `server_id` int(11) default NULL,
   PRIMARY KEY  (`submission_id`,`marker_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `SubmissionMarkFile`
@@ -195,7 +197,7 @@ CREATE TABLE `SubmissionMarkFile` (
   `content` mediumblob,
   PRIMARY KEY  (`submission_id`,`marker_id`,`name`),
   KEY `marker_id` (`marker_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `User`
@@ -210,7 +212,8 @@ CREATE TABLE `User` (
   PRIMARY KEY  (`user_id`),
   UNIQUE KEY `user_id` (`user_id`),
   UNIQUE KEY `username` (`username`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
