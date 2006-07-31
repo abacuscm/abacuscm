@@ -3,6 +3,8 @@
 
 libdir=$(CURDIR)/lib
 cc=g++
+uic=$(QTDIR)/bin/uic
+moc=$(QTDIR)/bin/moc
 cflags=-g -ggdb -O0 -Iinclude -W -Wall -fpic
 dflags=-Iinclude
 ldflags=-rdynamic -g -ggdb -O0 -Llib -Wl,-rpath,$(libdir)
@@ -207,15 +209,15 @@ obj/%.o : src/%.c Makefile
 
 .PRECIOUS: include/ui_%.h
 include/ui_%.h : ui/%.ui
-	uic $< -o $@
+	$(uic) $< -o $@
 
 .PRECIOUS: src/moc_%.C
 src/moc_%.C : include/%.h
-	moc $< -o $@
+	$(moc) $< -o $@
 
 .PRECIOUS: src/ui_%.C
 src/ui_%.C : ui/%.ui
-	uic -impl ui_$*.h $< -o $@
+	$(uic) -impl ui_$*.h $< -o $@
 
 .PHONY: clean
 clean :
@@ -225,7 +227,7 @@ clean :
 	rm -f src/moc_*.C
 	rm -f src/ui_*.C
 	rm -f ui/*~
-	find doc -maxdepth 1 -type f ! -iname "*.tex" ! -iname "*.pdf" -exec rm {} \;
+	find doc -maxdepth 1 -type f ! -iname "*.tex" ! -iname "*.pdf"  ! -iname "*.txt" -exec rm {} \;
 	
 .PHONY: distclean
 distclean : clean
