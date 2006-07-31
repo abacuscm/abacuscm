@@ -1,0 +1,26 @@
+Compiling AbacusCM
+******************
+
+AbacusCM does not make use of the autoconf tools like most other OSS projects.
+This is (was) due to both lack of knowledge and time.  AbacusCM builds directly
+using GNU Make and all tweaking needs to happen by either editing the Makefile,
+or by overriding the variables from the command line.
+
+Before you can compile AbacusCM you need the following pieces of software
+installed:
+
+* g++ (3.3.x and 3.4.x works, 4.x.x should also work).
+* Qt3 (QTDIR variable needs to be correctly exported).
+* OpenSSL (Any version should work).
+* MySQL 4.1.x (Whilst in theory any RDB could work currently only MySQL is
+    supported).
+
+If everything is correctly installed and configured then typing "make" in the
+top directory will compile AbacusCM, including the server, client, markers, and
+support libraries and modules.
+
+Binaries will be places in bin/, libraries in lib/ and modules in modules/.
+
+Once everything compiles you will most probably want to proceed with setting up
+a test (or as well call it, a mock) contest.  See "Creating_a_Contest.txt" for
+more information.
