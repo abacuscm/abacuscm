@@ -80,8 +80,8 @@ CREATE TABLE `PeerMessage` (
   `processed` tinyint(1) default NULL,
   PRIMARY KEY  (`server_id`,`message_id`),
   KEY `processed` (`processed`),
-  KEY `time` (`time`),
-  CONSTRAINT `PeerMessage_ibfk_1` FOREIGN KEY (`server_id`) REFERENCES `Server` (`server_id`) ON UPDATE CASCADE
+  KEY `time` (`time`)
+--  CONSTRAINT `PeerMessage_ibfk_1` FOREIGN KEY (`server_id`) REFERENCES `Server` (`server_id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
