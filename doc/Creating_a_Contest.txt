@@ -1,0 +1,113 @@
+Creating a Contest
+******************
+
+How to configure an AbacusCM server with a contest.
+
+1. Creating the CA
+******************
+
+The first step is to create a CA for the required PKI infrastructure.  This is
+needed because AbacusCM relies rather heavily upon SSL for verification of
+servers.
+
+To create the CA go into the certs/ directory and run the command:
+
+./makeca.sh
+
+This will run for a while and then prompt for some details, you can mostly just
+fill in here whatever you want.  Be warned though that "Server Name" isn't
+exactly what you expect it to be, this is CN field, and should probably be
+something like "AbacusCM CA".
+
+2. Creating a certificate
+*************************
+
+Each server needs a certificate.  Theoretically this could be done using
+certificate requests but we haven't bothered with that yet.  We've been
+distributing the private keys using ssh so far and is pretty confident that
+they haven't yet been compromised.  If you feel that you would prefer to use
+requests and then signing those requests, please feel free to implement that
+and please submit the patches.
+
+To create a key for a server you should use the ./addserver.sh script.  This
+script takes a single parameter, the name of the certificate (Usually the
+server name).  Example:
+
+./addserver pug
+
+This will create a key and a certificate request for pug and then proceed to
+sign that request with the previously generated CA.  Again you can enter just
+about any details when prompted, you should however, entre the fully qualified
+domain name when asked for "Server name" (the name that users of the AbacusCM
+client will enter when connecting to the server).
+
+When the script is done it will symlink the keys and certificates into certs/
+as servername.{crt,key}.
+
+3. Creating the database
+************************
+
+The next step is to create a database for the abacus server to store it's data
+in.  One also needs to provide the server with the appropriate privileges to
+manipulate this data.  We haven't yet determined a minimal set of privileges
+and have been working with all privileges mostly so far (assuming the MySQL
+server is running on localhost):
+
+# mysql -u root -p -h localhost
+> create database abacus;
+> grant all privileges on abacus.* to abacus@localhost identified by 'counting beeds';
+> bye
+#
+
+Once the database has been created you need to load the base structure from
+db/structure.sql:
+
+# mysql -u abacus -p -h localhost abacus < db/structure.sql
+Password:
+#
+
+If everything went well you now have a blank database from where the contest
+can be run.
+
+4. Configuring the server
+*************************
+
+You should use the default config as a starting point.  You should change the
+following details in the config file (conf/server.conf):
+
+1. MySQL details.
+2. In the [clientlistener] section you should change the X509 and private options.
+3. In the initialisation section you want to make sure the type is set to master
+    (for the first server) and the name is what you passed to the
+    ./addserver.sh script.
+4. You should update the init_attribs section.  There is unfortunately not much
+    info about this yet, so just fix up the IP and leave it at that.
+
+5. rijndael KEY + IV
+********************
+
+You will most likely want your own dedicated rijndael KEY and IV values, these
+has to contain the same values on all servers (these values are used for
+inter-server encryption).
+
+# dd if=/dev/random of=conf/rijndael.key bs=32 count=1
+# dd if=/dev/random of=conf/rijndael.iv bs=16 count=1
+
+6. Starting up your first server instance
+*****************************************
+
+Everything should now be ready to fire up your first server instance:
+
+# bin/abacusd conf/server.conf
+
+If stuff breaks.  Recheck everything, file a bug.  Even a problem with this
+document is considered a bug.
+
+If everything worked ok you should see lots of INFO (and some DEBUG) messages
+and then two NOTICE messages:
+
+Mon Jul 31 14:08:02 2006 [NOTICE]: Added server 'pug'
+Mon Jul 31 14:08:02 2006 [NOTICE]: Added user 'admin'
+
+If you see this (Where pug is replaced with your server name), you have
+successfully started up the abacusd server.
