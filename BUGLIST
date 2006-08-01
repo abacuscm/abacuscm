@@ -60,12 +60,6 @@ This file contains a list of BUGS and or nice to havs (wishlist).
 
 	PRIORITY: medium
 
-* Invalid or missing CA certificate crashes the server
-	If the client program does not supply a valid CA certificate the server
-	crashes.  This should not happen!
-
-	PRIORITY: high
-
 * Sort order for standings
 	Should be numeric and the leading 0 hack really should not be needed.
 
