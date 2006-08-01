@@ -127,6 +127,7 @@ modules_d = $(foreach mod,$(modules),modules/mod_$(mod).so)
 $(modules_d) : ldflags += -shared -labacus-server
 
 modules/mod_dbmysql.so : ldflags += -lmysqlclient
+obj/sigsegv.o : cflags += -DCPP_DEMANGLE
 
 ###############################################################
 depfiles=$(foreach m,$(libabacus_objects) $(libabacus_s_objects) $(libabacus_c_objects) $(abacusd_objects) $(abacus_objects) $(modules) $(balloon_objects) $(createuser_objects) $(runlimit_objects) $(markerd_objects),deps/$(m).d)

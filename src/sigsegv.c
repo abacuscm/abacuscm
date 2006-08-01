@@ -14,6 +14,9 @@
 #include <signal.h>
 #include <ucontext.h>
 #include <dlfcn.h>
+#ifdef CPP_DEMANGLE
+#include <cxxabi.h>
+#endif
 
 #include "logger.h"
 
@@ -58,12 +61,27 @@ static void signal_segv(int signum, siginfo_t* info, void*ptr) {
 		if(!dladdr(ip, &dlinfo))
 			break;
 
+		const char * symname = dlinfo.dli_sname;
+#ifdef CPP_DEMANGLE
+		int status;
+		char * tmp = __cxa_demangle(symname, NULL, 0, &status);
+
+		if (status == 0 && tmp) {
+			symname = tmp;
+		}
+#endif
+
 		logc(LOG_CRIT, "% 2d: %p <%s+%u> (%s)",
 				++f,
 				ip,
-				dlinfo.dli_sname,
+				symname,
 				(unsigned)(ip - dlinfo.dli_saddr),
 				dlinfo.dli_fname);
+
+#ifdef CPP_DEMANGLE
+		if (tmp)
+			free(tmp);
+#endif
 
 		if(dlinfo.dli_sname && !strcmp(dlinfo.dli_sname, "main"))
 			break;
