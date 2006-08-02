@@ -34,7 +34,11 @@ bool ActWhatAmI::int_process(ClientConnection *cc, MessageBlock *) {
 	uint32_t user_type = cc->getProperty("user_type");
 
 	MessageBlock resp("ok");
-	resp["type"] = _typemap[user_type];
+	std::map<uint32_t, std::string>::const_iterator i = _typemap.find(user_type);
+	if (i != _typemap.end())
+		resp["type"] = i->second;
+	else
+		resp["type"] = "none";
 	return cc->sendMessageBlock(&resp);
 }
 
