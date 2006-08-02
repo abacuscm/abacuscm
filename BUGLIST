@@ -105,7 +105,7 @@ This file contains a list of BUGS and or nice to havs (wishlist).
 * Reverse time sorting
 	It would make sence to reverse-sort the clarifications, as well as reponses
 	and submissions in reverse according to time instead of forward.  This is
-	because the list boxes goes back to the op on every refresh.
+	because the list boxes goes back to the top on every refresh.
 
 	PRIORITY: low
 
