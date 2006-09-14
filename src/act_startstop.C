@@ -199,6 +199,12 @@ uint16_t MsgStartStop::message_type_id() const {
 
 static void initialise_startstop_events() {
 	DbCon *db = DbCon::getInstance();
+
+	if(!db) {
+		log(LOG_CRIT, "Unable to initialize start/stop times");
+		return;
+	}
+
 	time_t start = db->contestStartStopTime(Server::getId(), true);
 	time_t stop = db->contestStartStopTime(Server::getId(), false);
 	db->release();
