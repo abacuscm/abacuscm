@@ -127,6 +127,9 @@ err:
 static bool load_modules() {
 	Config &config = Config::getConfig();
 
+	if(!ModuleLoader::loadModuleSet("support", config["modules"]["support"]))
+		return false;
+
 	if(!ModuleLoader::loadModule(config["modules"]["peermessenger"]))
 		return false;
 
