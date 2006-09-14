@@ -20,6 +20,7 @@ $(libabacus_name) : ldflags += -shared -lssl
 
 libabacus_s_name = lib/libabacus-server.so
 libabacus_s_objects = moduleloader \
+	supportmodule \
 	peermessenger \
 	message \
 	dbcon \
