@@ -19,6 +19,18 @@ typedef map<string, SupportModule*> SupportModuleMap;
 
 static SupportModuleMap smm;
 
+SupportModule::SupportModule()
+{
+}
+
+SupportModule::~SupportModule()
+{
+}
+
+void SupportModule::init()
+{
+}
+
 void SupportModule::registerSupportModule(string name, SupportModule* sm)
 {
 	SupportModuleMap::iterator i = smm.find(name);
