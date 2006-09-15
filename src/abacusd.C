@@ -130,7 +130,15 @@ static bool load_modules() {
 	if(!ModuleLoader::loadModule(config["modules"]["dbconnector"]))
 		return false;
 
-	if(!ModuleLoader::loadModuleSet("support", config["modules"]["support"]))
+	DbCon *dbtest = DbCon::getInstance();
+	if(!dbtest) {
+		log(LOG_ERR, "Unable to obtain database instance, bailing initialization.");
+		return false;
+	}
+
+	dbtest->release();
+
+	if(!ModuleLoader::loadModuleSet("support", config["modules"]["support"], true))
 		return false;
 
 	if(!ModuleLoader::loadModule(config["modules"]["peermessenger"]))
