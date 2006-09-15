@@ -17,6 +17,7 @@
 #include "dbcon.h"
 #include "timedaction.h"
 #include "eventregister.h"
+#include "timersupportmodule.h"
 
 #include <string>
 
@@ -164,15 +165,20 @@ uint32_t MsgStartStop::load(const uint8_t *buffer, uint32_t size) {
 }
 
 bool MsgStartStop::process() const {
+	TimerSupportModule *timer = getTimerSupportModule();
+	if(!timer)
+		return false;
+
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return false;
 
 	uint32_t now = ::time(NULL);
-	bool oldRunning = db->contestRunning(Server::getId(), now);
+
+	bool oldRunning = timer->contestStatus(Server::getId(), now) == TIMER_STATUS_STARTED;
 	uint32_t oldTime = db->contestStartStopTime(Server::getId(), _action == ACT_START);
 	bool dbres = db->startStopContest(_server_id, _time, _action == ACT_START);
-	bool newRunning = db->contestRunning(Server::getId(), now);
+	bool newRunning = timer->contestStatus(Server::getId(), now) == TIMER_STATUS_STARTED;
 	uint32_t newTime = db->contestStartStopTime(Server::getId(), _action == ACT_START);
 	db->release();db=NULL;
         if (!dbres) return false;

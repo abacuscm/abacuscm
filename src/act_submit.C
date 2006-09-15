@@ -17,6 +17,7 @@
 #include "server.h"
 #include "eventregister.h"
 #include "markers.h"
+#include "timersupportmodule.h"
 
 #include <sstream>
 #include <time.h>
@@ -71,7 +72,7 @@ public:
 };
 
 bool ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
-	if(!Server::isContestRunning())
+	if(getTimerSupportModule()->contestStatus(Server::getId()) != TIMER_STATUS_STARTED)
 		return cc->sendError("You cannot submit solutions unless the contest is running");
 
 	uint32_t user_id = cc->getProperty("user_id");
@@ -147,6 +148,10 @@ bool ActGetProblems::int_process(ClientConnection *cc, MessageBlock *) {
 }
 
 bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
+	TimerSupportModule *timer = getTimerSupportModule();
+	if(!timer)
+		return cc->sendError("Error getting timer info.");
+
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return cc->sendError("Error connecting to database");
@@ -176,7 +181,7 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 			mb[a->first + cntr] = a->second;
 
 		tmp.str("");
-		tmp << db->contestTime(db->submission2server_id(submission_id),
+		tmp << timer->contestTime(db->submission2server_id(submission_id),
 				strtoll((*s)["time"].c_str(), NULL, 0));
 
 		mb["contesttime" + cntr] = tmp.str();

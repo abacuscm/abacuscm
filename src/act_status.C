@@ -11,6 +11,7 @@
 #include "clientconnection.h"
 #include "messageblock.h"
 #include "server.h"
+#include "timersupportmodule.h"
 
 class ActRunning : public ClientAction {
 protected:
@@ -19,7 +20,7 @@ protected:
 
 bool ActRunning::int_process(ClientConnection *cc, MessageBlock*) {
 	MessageBlock mb("ok");
-	if(Server::isContestRunning())
+	if(getTimerSupportModule()->contestStatus(Server::getId()) == TIMER_STATUS_STARTED)
 		mb["status"] = "running";
 	else
 		mb["status"] = "stopped";
