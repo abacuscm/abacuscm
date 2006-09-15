@@ -272,36 +272,3 @@ void Server::putTimedAction(TimedAction* ta) {
 	else
 		timed_queue->enqueue(ta);
 }
-
-bool Server::isContestRunning() {
-	bool running = false;
-	DbCon *db = DbCon::getInstance();
-	if(!db)
-		return false;
-
-	running = db->contestRunning(getId());
-	db->release();db=NULL;
-	return running;
-}
-
-uint32_t Server::contestTime() {
-	uint32_t tm = 0;
-	DbCon *db = DbCon::getInstance();
-	if(!db)
-		return 0;
-
-	tm = db->contestTime(getId());
-	db->release();db=NULL;
-	return tm;
-}
-
-uint32_t Server::contestRemaining() {
-	uint32_t tm = 0;
-	DbCon *db = DbCon::getInstance();
-	if(!db)
-		return 0;
-
-	tm = db->contestRemaining(getId());
-	db->release();db=NULL;
-	return tm;
-}

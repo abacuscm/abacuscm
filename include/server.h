@@ -39,9 +39,6 @@ public:
 	static void putAck(uint32_t server_id, uint32_t message_id,
 			uint32_t ack_server);
 	static void setAckQueue(Queue<uint32_t> *ack_queue);
-	static bool isContestRunning();
-	static uint32_t contestTime();
-	static uint32_t contestRemaining();
 	static void putTimedAction(TimedAction *action);
 	static void setTimedQueue(Queue<TimedAction*> *queue);
 };
