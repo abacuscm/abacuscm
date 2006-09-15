@@ -123,7 +123,9 @@ modules = udpmessenger \
 	act_startstop \
 	act_contesttime \
 	act_problem_subscription \
-	prob_testcasedriventype
+	prob_testcasedriventype \
+	support_timer
+
 modules_d = $(foreach mod,$(modules),modules/mod_$(mod).so)
 $(modules_d) : ldflags += -shared -labacus-server
 
@@ -145,6 +147,8 @@ createuser_objects_d = $(foreach m,$(createuser_objects),obj/$(m).o)
 $(foreach m,$(abacus_objects),deps/$(m).d) : dflags += -I$(QTDIR)/include
 $(foreach m,$(abacus_objects),obj/$(m).o) : cflags += -I$(QTDIR)/include
 
+.DELETE_ON_ERROR:
+
 .PHONY: all
 all : client server modules marker
 #$(libabacus_name) $(libabacus_s_name) $(libabacus_c_name) $(abacusd_name) $(abacus_name) $(modules_d)
@@ -161,52 +165,40 @@ marker: $(runlimit_name) $(markerd_name)
 .PHONY: modules
 modules: $(modules_d)
 
-$(abacusd_name) : $(abacusd_objects_d)
-	@[ -d $(@D) ] || mkdir $(@D)
+$(abacusd_name) : $(abacusd_objects_d) | $(dir $(abacusd_name)).d
 	$(cc) $(ldflags) -o $@ $(abacusd_objects_d)
 
-$(abacus_name) : $(abacus_objects_d)
-	@[ -d $(@D) ] || mkdir $(@D)
+$(abacus_name) : $(abacus_objects_d) | $(dir $(abacus_name)).d
 	$(cc) $(ldflags) -o $@ $(abacus_objects_d)
 
-$(libabacus_name) : $(libabacus_objects_d)
-	@[ -d $(@D) ] || mkdir $(@D)
+$(libabacus_name) : $(libabacus_objects_d) | $(dir $(libabacus_name)).d
 	$(cc) $(ldflags) -o $@ $(libabacus_objects_d)
 
-$(libabacus_c_name) : $(libabacus_c_objects_d)
-	@[ -d $(@D) ] || mkdir $(@D)
+$(libabacus_c_name) : $(libabacus_c_objects_d) | $(dir $(libabacus_c_name)).d
 	$(cc) $(ldflags) -o $@ $(libabacus_c_objects_d)
 
-$(libabacus_s_name) : $(libabacus_s_objects_d)
-	@[ -d $(@D) ] || mkdir $(@D)
+$(libabacus_s_name) : $(libabacus_s_objects_d) | $(dir $(libabacus_s_name)).d
 	$(cc) $(ldflags) -o $@ $(libabacus_s_objects_d)
 
-$(runlimit_name) : $(runlimit_objects_d)
-	@[ -d $(@D) ] || mkdir $(@D)
+$(runlimit_name) : $(runlimit_objects_d) | $(dir $(runlimit_name)).d
 	$(cc) $(ldflags) -o $@ $(runlimit_objects_d)
 
-$(markerd_name) : $(markerd_objects_d)
-	@[ -d $(@D) ] || mkdir $(@D)
+$(markerd_name) : $(markerd_objects_d) | $(dir $(markerd_name)).d
 	$(cc) $(ldflags) -o $@ $(markerd_objects_d)
 
-$(balloon_name) : $(balloon_objects_d)
-	@[ -d $(@D) ] || mkdir $(@D)
+$(balloon_name) : $(balloon_objects_d) | $(dir $(balloon_name)).d
 	$(cc) $(ldflags) -o $@ $(balloon_objects_d)
 
-$(createuser_name) : $(createuser_objects_d)
-	@[ -d $(@D) ] || mkdir $(@D)
+$(createuser_name) : $(createuser_objects_d) | $(dir $(createuser_name)).d
 	$(cc) $(ldflags) -o $@ $(createuser_objects_d)
 
-modules/mod_%.so : obj/%.o
-	@[ -d $(@D) ] || mkdir $(@D)
+modules/mod_%.so : obj/%.o | modules/.d
 	$(cc) $(ldflags) -o $@ $<
 
-obj/%.o : src/%.C Makefile
-	@[ -d $(@D) ] || mkdir $(@D)
+obj/%.o : src/%.C Makefile | $(dir obj/%).d
 	$(cc) $(cflags) -o $@ -c $<
 
-obj/%.o : src/%.c Makefile
-	@[ -d $(@D) ] || mkdir $(@D)
+obj/%.o : src/%.c Makefile | $(dir obj/%).d
 	$(cc) -x c $(cflags) -o $@ -c $<
 
 .PRECIOUS: include/ui_%.h
@@ -238,13 +230,16 @@ distclean : clean
 	rm -rf modules
 	rm -f doc/*.pdf
 
-deps/%.d : src/%.C
-	@[ -d $(@D) ] || mkdir $(@D)
-	$(cc) $(dflags) -MM $< | sed -e 's:$*.o:obj/$*.o $@:' > $@ || rm $@
+deps/%.d : src/%.C | deps/.d
+	$(cc) $(dflags) -MM $< | sed -e 's:$*.o:obj/$*.o $@:' > $@
 
-deps/%.d : src/%.c
-	@[ -d $(@D) ] || mkdir $(@D)
-	$(cc) -x c $(dflags) -MM $< | sed -e 's:$*.o:obj/$*.o $@:' > $@ || rm $@
+deps/%.d : src/%.c | deps/.d
+	$(cc) -x c $(dflags) -MM $< | sed -e 's:$*.o:obj/$*.o $@:' > $@
+
+.PRECIOUS: %/.d
+%/.d :
+	mkdir -p $(dir $@)
+	@touch $@
 
 depinc := 1
 ifneq (,$(filter clean distclean,$(MAKECMDGOALS)))
