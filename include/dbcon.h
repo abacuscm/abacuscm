@@ -31,6 +31,11 @@ typedef std::list<AttributeList> ClarificationList;
 typedef std::list<AttributeList> ClarificationRequestList;
 typedef std::list<AttributeList> UserList;
 
+typedef std::vector<std::string> QueryResultRow;
+typedef std::list<QueryResultRow> QueryResult;
+
+typedef bool (*QueryCallback)(void* ctx, QueryResultRow&);
+
 class DbCon {
 public:
 	DbCon();
@@ -40,6 +45,31 @@ public:
 	 * Checks that the connection is ok.  IE: in a working condition.
 	 */
 	virtual bool ok() = 0;
+
+	/**
+	 * Executes a SQL query that returns multiple rows as a list of string vectors.
+	 * Any conversion needs to other datatypes should be made by the caller.
+	 */
+	virtual QueryResult multiRowQuery(std::string query) = 0;
+
+	/**
+	 * Specify a query which will call a callback function for every row in the
+	 * result.  the function takes a void*, which is the parameter ctx as
+	 * passed to queryCallback(), and a QueryResultRow, which is a vector of
+	 * strings.  The return value of the callback is a bool, indicating whether
+	 * the callback is interrested in further results.
+	 */
+//	virtual void queryCallback(std::string query, QueryCallback cb, void* ctx = NULL) = 0;
+
+	/**
+	 * From here downwards should be eliminated as time goes by.  Having all the
+	 * SQL in (almost) one place seemed a good idea at the time.  The reality is
+	 * that it's not.  No matter what they teach you at varsity, it's better to
+	 * create modules with SQL code in them rather than have all the SQL in one
+	 * place.  Also, seperate modules for DB connectivity should _only_ contain
+	 * semantics for different database engines (DAO is not such a bad idea after
+	 * all).
+	 */
 
 	/**
 	 * maps a servername to a server_id
@@ -298,17 +328,11 @@ public:
 	/**
 	 * Functions for determining the contest state - they really don't
 	 * belong here but making SQL calculate this is so much easier ...
-	 * The top two do belong here, the other three REALLY belong at
-	 * a higher level - Bruce
 	 */
 	// Action is "START" or "STOP"
 	virtual time_t contestStartStopTime(uint32_t server_id, bool start) = 0;
 	// Sets either a start or a stop time
 	virtual bool startStopContest(uint32_t server_id, uint32_t unix_time, bool start) = 0;
-
-	virtual bool contestRunning(uint32_t server_id, uint32_t unix_time = 0) = 0;
-	virtual uint32_t contestTime(uint32_t server_id, uint32_t unix_time = 0) = 0;
-	virtual uint32_t contestRemaining(uint32_t server_id, uint32_t unix_time = 0) = 0;
 
 	/**
 	 * Functions to register a DbCon functor (function to create DbCons),

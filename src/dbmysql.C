@@ -35,6 +35,8 @@ public:
 	virtual ~MySQL();
 
 	virtual bool ok();
+	virtual QueryResult multiRowQuery(std::string query);
+
 	virtual uint32_t name2server_id(const string& name);
 	virtual std::string server_id2name(uint32_t user_id);
 	virtual uint32_t name2user_id(const string& name);
@@ -111,9 +113,6 @@ public:
 	virtual std::string submission2problem(uint32_t submission_id);
 	virtual bool hasSolved(uint32_t user_id, uint32_t prob_id);
 	virtual time_t contestStartStopTime(uint32_t server_id, bool start);
-	virtual bool contestRunning(uint32_t server_id, uint32_t unix_time);
-	virtual uint32_t contestTime(uint32_t server_id, uint32_t unix_time);
-	virtual uint32_t contestRemaining(uint32_t server_id, uint32_t unix_time);
 	virtual bool startStopContest(uint32_t server_id, uint32_t unix_time, bool start);
 	bool init();
 };
@@ -153,6 +152,38 @@ bool MySQL::ok() {
 		return false;
 	} else
 		return true;
+}
+
+QueryResult MySQL::multiRowQuery(std::string query) {
+	if(mysql_query(&_mysql, query.c_str())) {
+		log_mysql_error();
+		return QueryResult();
+	}
+
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if(!res) {
+		log_mysql_error();
+		return QueryResult();
+	}
+
+	unsigned int fieldcount = mysql_field_count(&_mysql);
+	if(!fieldcount)
+		return QueryResult();
+
+	MYSQL_ROW row = mysql_fetch_row(res);
+
+	QueryResult queryresult;
+	while(row) {
+		QueryResultRow resrow;
+		resrow.reserve(fieldcount);
+		for(unsigned int i = 0; i < fieldcount; ++i)
+			resrow.push_back(row[i]);
+		queryresult.push_back(resrow);
+
+		row = mysql_fetch_row(res);
+	}
+
+	return queryresult;
 }
 
 uint32_t MySQL::name2server_id(const string& name) {
@@ -1446,32 +1477,6 @@ time_t MySQL::contestStartStopTime(uint32_t server_id, bool start) {
 		mysql_free_result(res);
 	}
 	return t;
-}
-
-bool MySQL::contestRunning(uint32_t server_id, uint32_t unix_time) {
-	uint32_t start, stop;
-
-	start = contestStartStopTime(server_id, true);
-	stop = contestStartStopTime(server_id, false);
-	if (!unix_time) unix_time = time(NULL);
-
-	return unix_time >= start && unix_time < stop;
-}
-
-uint32_t MySQL::contestTime(uint32_t server_id, uint32_t unix_time) {
-	uint32_t start = contestStartStopTime(server_id, true);
-
-	if (!unix_time) unix_time = time(NULL);
-        if (unix_time < start) return 0;
-        return unix_time - start;
-}
-
-uint32_t MySQL::contestRemaining(uint32_t server_id, uint32_t unix_time) {
-	uint32_t stop = contestStartStopTime(server_id, false);
-
-	if (!unix_time) unix_time = time(NULL);
-	if (stop < unix_time) return 0;
-	return stop - unix_time;
 }
 
 bool MySQL::startStopContest(uint32_t server_id, uint32_t unix_time, bool start) {
