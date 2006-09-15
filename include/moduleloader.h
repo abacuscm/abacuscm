@@ -17,8 +17,8 @@ private:
 	ModuleLoader();
 	~ModuleLoader();
 public:
-	static bool loadModule(std::string module_name);
-	static bool loadModuleSet(std::string prefix, std::string set);
+	static bool loadModule(std::string module_name, bool global = false);
+	static bool loadModuleSet(std::string prefix, std::string set, bool global = false);
 };
 
 #endif
