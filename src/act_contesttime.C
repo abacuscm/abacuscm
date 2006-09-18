@@ -25,7 +25,7 @@ bool ActContesttime::int_process(ClientConnection* cc, MessageBlock*) {
 	uint32_t server_id = Server::getId();
 	uint32_t contesttime = timer->contestTime(server_id);
 	uint32_t contestremain = timer->contestDuration() - contesttime;
-	bool running = timer->contestStatus(server_id);
+	bool running = timer->contestStatus(server_id) == TIMER_STATUS_STARTED;
 
 	std::ostringstream os;
 
