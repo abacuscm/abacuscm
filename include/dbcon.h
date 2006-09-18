@@ -47,10 +47,25 @@ public:
 	virtual bool ok() = 0;
 
 	/**
-	 * Executes a SQL query that returns multiple rows as a list of string vectors.
-	 * Any conversion needs to other datatypes should be made by the caller.
+	 * Executes a SQL query that returns multiple rows as a list of string
+	 * vectors.  Any conversion needs to other datatypes should be made by the
+	 * caller.
 	 */
 	virtual QueryResult multiRowQuery(std::string query) = 0;
+
+	/**
+	 * Executes a SQL query and returns the first row of the result from that
+	 * query.  Please note that most database engines needs to go through the
+	 * entire result anyway, so you should probably try to make sure that the
+	 * query only returns a single row.
+	 */
+	virtual QueryResultRow singleRowQuery(std::string query) = 0;
+
+	/**
+	 * Execute a query that does _not_ generate a result.  This is typically
+	 * used to insert now data into the database.
+	 */
+	virtual bool executeQuery(std::string query) = 0;
 
 	/**
 	 * Specify a query which will call a callback function for every row in the
@@ -324,15 +339,6 @@ public:
 	virtual uint32_t submission2server_id(uint32_t submission_id) = 0;
 	virtual std::string submission2problem(uint32_t submission_id) = 0;
 	virtual bool hasSolved(uint32_t user_id, uint32_t prob_id) = 0;
-
-	/**
-	 * Functions for determining the contest state - they really don't
-	 * belong here but making SQL calculate this is so much easier ...
-	 */
-	// Action is "START" or "STOP"
-	virtual time_t contestStartStopTime(uint32_t server_id, bool start) = 0;
-	// Sets either a start or a stop time
-	virtual bool startStopContest(uint32_t server_id, uint32_t unix_time, bool start) = 0;
 
 	/**
 	 * Functions to register a DbCon functor (function to create DbCons),

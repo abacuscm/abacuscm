@@ -29,13 +29,14 @@ private:
 	string escape_buffer(const uint8_t* bfr, uint32_t size);
 
 	list<Message*> getMessages(std::string query);
-
 public:
 	MySQL();
 	virtual ~MySQL();
 
 	virtual bool ok();
 	virtual QueryResult multiRowQuery(std::string query);
+	virtual QueryResultRow singleRowQuery(std::string query);
+	virtual bool executeQuery(std::string query);
 
 	virtual uint32_t name2server_id(const string& name);
 	virtual std::string server_id2name(uint32_t user_id);
@@ -112,8 +113,6 @@ public:
 	virtual uint32_t submission2server_id(uint32_t submission_id);
 	virtual std::string submission2problem(uint32_t submission_id);
 	virtual bool hasSolved(uint32_t user_id, uint32_t prob_id);
-	virtual time_t contestStartStopTime(uint32_t server_id, bool start);
-	virtual bool startStopContest(uint32_t server_id, uint32_t unix_time, bool start);
 	bool init();
 };
 
@@ -155,10 +154,8 @@ bool MySQL::ok() {
 }
 
 QueryResult MySQL::multiRowQuery(std::string query) {
-	if(mysql_query(&_mysql, query.c_str())) {
-		log_mysql_error();
+	if(!executeQuery(query))
 		return QueryResult();
-	}
 
 	MYSQL_RES *res = mysql_use_result(&_mysql);
 	if(!res) {
@@ -183,7 +180,49 @@ QueryResult MySQL::multiRowQuery(std::string query) {
 		row = mysql_fetch_row(res);
 	}
 
+	mysql_free_result(res);
+
 	return queryresult;
+}
+
+QueryResultRow MySQL::singleRowQuery(std::string query) {
+	if(!executeQuery(query))
+		return QueryResultRow();
+
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if(!res) {
+		log_mysql_error();
+		return QueryResultRow();
+	}
+
+	unsigned int fieldcount = mysql_field_count(&_mysql);
+	if(!fieldcount)
+		return QueryResultRow();
+
+	MYSQL_ROW row = mysql_fetch_row(res);
+
+	QueryResultRow resrow;
+
+	if(row) {
+		resrow.reserve(fieldcount);
+		for(unsigned int i = 0; i < fieldcount; ++i)
+			resrow.push_back(row[i]);
+
+		// have to flush the entire result.
+		while(mysql_fetch_row(res));
+	}
+
+	mysql_free_result(res);
+
+	return resrow;
+}
+
+bool MySQL::executeQuery(std::string query) {
+	if(mysql_query(&_mysql, query.c_str())) {
+		log_mysql_error();
+		return false;
+	}
+	return true;
 }
 
 uint32_t MySQL::name2server_id(const string& name) {
@@ -1455,52 +1494,6 @@ bool MySQL::getProblemFileData(uint32_t problem_id, std::string attr, uint8_t **
 		}
 	}
 	return *dataptr != NULL;
-}
-
-time_t MySQL::contestStartStopTime(uint32_t server_id, bool start) {
-	ostringstream query;
-	time_t t = 0;
-
-	query << "SELECT time FROM ContestStartStop WHERE server_id IN (0, " << server_id << ") AND action='" << (start ? "START" : "STOP") << "' ORDER BY server_id DESC LIMIT 1";
-	if (mysql_query(&_mysql, query.str().c_str())) {
-		log_mysql_error();
-	} else {
-        MYSQL_RES *res = mysql_use_result(&_mysql);
-        if (!res) {
-            log_mysql_error();
-            return 0;
-        }
-		MYSQL_ROW row = mysql_fetch_row(res);
-		if(row) {
-			t = atol(row[0]);
-		}
-		mysql_free_result(res);
-	}
-	return t;
-}
-
-bool MySQL::startStopContest(uint32_t server_id, uint32_t unix_time, bool start) {
-	ostringstream query;
-	query << "REPLACE INTO ContestStartStop(server_id, action, time) VALUES("
-		<< server_id << ", '" << (start ? "START" : "STOP") << "', " << unix_time << ")";
-
-	if(mysql_query(&_mysql, query.str().c_str())) {
-		log_mysql_error();
-		return false;
-	}
-
-	if (server_id == 0)
-	{
-		/* Remove per-server start/stop */
-		query.str("");
-		query << "DELETE FROM ContestStartStop WHERE server_id != 0";
-		if(mysql_query(&_mysql, query.str().c_str())) {
-			log_mysql_error();
-			return false;
-		}
-	}
-
-	return true;
 }
 
 bool MySQL::init() {

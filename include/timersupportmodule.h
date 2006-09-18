@@ -12,7 +12,7 @@
 
 #include "supportmodule.h"
 
-#include <list>
+#include <pthread.h>
 
 #define TIMER_STATUS_STARTED	1
 #define TIMER_STATUS_STOPPED	2
@@ -22,15 +22,15 @@
 
 class TimerSupportModule : public SupportModule {
 private:
-	typedef struct {
+	struct startstop_event {
 		time_t time;
 		uint32_t server_id;
 		int action;
-	} startstop_event;
+		struct startstop_event *next;
+	};
 
-	typedef std::list<startstop_event> startstop_event_list;
-
-	startstop_event_list _evlist;
+	struct startstop_event *_evlist;
+	pthread_mutex_t _writelock;
 public:
 	TimerSupportModule();
 	virtual ~TimerSupportModule();
@@ -40,6 +40,9 @@ public:
 	uint32_t contestDuration();
 	uint32_t contestTime(uint32_t server_id, time_t real_time = 0);
 	uint32_t contestRemaining(uint32_t server_id, time_t real_time = 0) { return contestDuration() - contestTime(server_id, real_time); }
+
+	bool nextScheduledStartStopAfter(uint32_t server_id, time_t after_time, time_t *next_time, int *next_action);
+	bool scheduleStartStop(uint32_t server_id, time_t time, int action);
 
 	int contestStatus(uint32_t server_id, time_t real_time = 0);
 };

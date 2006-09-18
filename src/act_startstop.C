@@ -33,9 +33,6 @@ protected:
 	virtual bool int_process(ClientConnection*, MessageBlock*);
 };
 
-#define ACT_STOP	1
-#define ACT_START	2
-
 class MsgStartStop : public Message {
 private:
 	uint32_t _server_id;
@@ -56,32 +53,47 @@ public:
 
 class StartStopAction : public TimedAction {
 private:
-	uint32_t _action;
+	static StartStopAction *_current;
+
+	int _action;
 	/* This field is used to check that the DB hasn't changed in the
 	 * meantime.
-         */
-        uint32_t _time;
+	 */
+	time_t _time;
 public:
 	StartStopAction(uint32_t time, uint32_t action);
 
 	virtual void perform();
 };
 
+StartStopAction* StartStopAction::_current = NULL;
+
 StartStopAction::StartStopAction(uint32_t time, uint32_t action)
-	: TimedAction(time)
+: TimedAction(time)
 {
-        _time = time;
+	_time = time;
 	_action = action;
+	_current = this;
 }
 
 void StartStopAction::perform() {
-	DbCon *db = DbCon::getInstance();
-	uint32_t time = db->contestStartStopTime(Server::getId(), _action == ACT_START);
-        db->release(); db = NULL;
-	if (time == _time) {
-		MessageBlock mb("startstop");
-		mb["action"] = _action == ACT_START ? "start" : "stop";
-		EventRegister::getInstance().triggerEvent("startstop", &mb);
+	if(this != _current)
+		return;
+
+	time_t time;
+	int act;
+	TimerSupportModule *timer = getTimerSupportModule();
+
+	if(timer->nextScheduledStartStopAfter(Server::getId(), _time - 1, &time, &act)) {
+		if(time == _time && act == _action) {
+			MessageBlock mb("startstop");
+			mb["action"] = _action == TIMER_START ? "start" : "stop";
+			EventRegister::getInstance().triggerEvent("startstop", &mb);
+		}
+	}
+
+	if(timer->nextScheduledStartStopAfter(Server::getId(), _time, &time, &act)) {
+		Server::putTimedAction(new StartStopAction(time, act));
 	}
 }
 
@@ -94,9 +106,9 @@ bool ActStartStop::int_process(ClientConnection* cc, MessageBlock *mb) {
 
 	string t_action = (*mb)["action"];
 	if(t_action == "start") {
-		action = ACT_START;
+		action = TIMER_START;
 	} else if(t_action == "stop") {
-		action = ACT_STOP;
+		action = TIMER_STOP;
 	} else
 		return cc->sendError("Invalid 'action', must be either 'start' or 'stop'");
 
@@ -105,23 +117,23 @@ bool ActStartStop::int_process(ClientConnection* cc, MessageBlock *mb) {
 		return cc->sendError("Invalid start/stop time specified");
 
 	// note that an omitted or blank server_id translates to 0, meaning
-        // "all" servers.
-        string server_id_str = (*mb)["server_id"];
-        if (server_id_str == "all" || server_id_str == "") server_id = 0;
-        else if (server_id_str == "self") server_id = Server::getId();
-        else
-        {
-                server_id = strtoll((*mb)["server_id"].c_str(), &errpnt, 0);
-                if(*errpnt)
-                        return cc->sendError("Invalid server_id specified");
-        }
+	// "all" servers.
+	string server_id_str = (*mb)["server_id"];
+	if (server_id_str == "all" || server_id_str == "") server_id = 0;
+	else if (server_id_str == "self") server_id = Server::getId();
+	else
+	{
+		server_id = strtoll((*mb)["server_id"].c_str(), &errpnt, 0);
+		if(*errpnt)
+			return cc->sendError("Invalid server_id specified");
+	}
 
 	return triggerMessage(cc, new MsgStartStop(server_id, time, action));
 }
 
 bool ActSubscribeTime::int_process(ClientConnection* cc, MessageBlock*) {
 	if(EventRegister::getInstance().registerClient("startstop", cc)
-	   && EventRegister::getInstance().registerClient("updateclock", cc))
+			&& EventRegister::getInstance().registerClient("updateclock", cc))
 		return cc->reportSuccess();
 	else
 		return cc->sendError("Unable to subscribe to the 'startstop' event");
@@ -173,15 +185,19 @@ bool MsgStartStop::process() const {
 	if(!db)
 		return false;
 
-	uint32_t now = ::time(NULL);
+	time_t now = ::time(NULL);
+
+	time_t old_next_time, new_next_time;
+	int old_next_action, new_next_action;
 
 	bool oldRunning = timer->contestStatus(Server::getId(), now) == TIMER_STATUS_STARTED;
-	uint32_t oldTime = db->contestStartStopTime(Server::getId(), _action == ACT_START);
-	bool dbres = db->startStopContest(_server_id, _time, _action == ACT_START);
+	bool old_valid = timer->nextScheduledStartStopAfter(Server::getId(), now, &old_next_time, &old_next_action);
+	bool dbres = timer->scheduleStartStop(_server_id, _time, _action);
 	bool newRunning = timer->contestStatus(Server::getId(), now) == TIMER_STATUS_STARTED;
-	uint32_t newTime = db->contestStartStopTime(Server::getId(), _action == ACT_START);
+	bool new_valid = timer->nextScheduledStartStopAfter(Server::getId(), now, &new_next_time, &new_next_action);
+
 	db->release();db=NULL;
-        if (!dbres) return false;
+	if (!dbres) return false;
 
 	if (oldRunning != newRunning)
 	{
@@ -189,9 +205,9 @@ bool MsgStartStop::process() const {
 		mb["action"] = newRunning ? "start" : "stop";
 		EventRegister::getInstance().triggerEvent("startstop", &mb);
 	}
-	if (oldTime != newTime && newTime >= now)
-	{
-		Server::putTimedAction(new StartStopAction(newTime, _action));
+
+	if (new_valid && !old_valid || new_valid && new_next_time < old_next_time) {
+		Server::putTimedAction(new StartStopAction(new_next_time, new_next_action));
 		MessageBlock mb("updateclock");
 		EventRegister::getInstance().triggerEvent("updateclock", &mb);
 	}
@@ -204,27 +220,19 @@ uint16_t MsgStartStop::message_type_id() const {
 }
 
 static void initialise_startstop_events() {
-	DbCon *db = DbCon::getInstance();
-
-	if(!db) {
+	TimerSupportModule *timer = getTimerSupportModule();
+	if(!timer) {
 		log(LOG_CRIT, "Unable to initialize start/stop times");
 		return;
 	}
 
-	time_t start = db->contestStartStopTime(Server::getId(), true);
-	time_t stop = db->contestStartStopTime(Server::getId(), false);
-	db->release();
-	time_t now = time(NULL);
+	time_t time;
+	int act;
 
-	if (start > now)
-	{
-		Server::putTimedAction(new StartStopAction(start, ACT_START));
-		log(LOG_INFO, "Setting start alarm for %u", (unsigned) start);
-	}
-	if (stop > now)
-	{
-		Server::putTimedAction(new StartStopAction(stop, ACT_STOP));
-		log(LOG_INFO, "Setting stop alarm for %u", (unsigned) stop);
+	if(!timer->nextScheduledStartStopAfter(Server::getId(), 0, &time, &act)) {
+		log(LOG_WARNING, "No scheduled starts/stops.  Contest expired or not yet configured?");
+	} else {
+		Server::putTimedAction(new StartStopAction(time, act));
 	}
 }
 
