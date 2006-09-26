@@ -18,6 +18,7 @@
 #include "eventregister.h"
 #include "markers.h"
 #include "timersupportmodule.h"
+#include "submissionsupportmodule.h"
 
 #include <sstream>
 #include <time.h>
@@ -244,7 +245,11 @@ bool SubmissionMessage::process() const {
 	if(!db)
 		return false;
 
-	bool result = db->putSubmission(_submission_id, _user_id, _prob_id, _time, _server_id,
+	SubmissionSupportModule *submission = getSubmissionSupportModule();
+	if(!submission)
+		return false;
+
+	bool result = submission->putSubmission(_submission_id, _user_id, _prob_id, _time, _server_id,
 			_content, _content_size, _language);
 
 

@@ -12,7 +12,7 @@
 #include "clientconnection.h"
 #include "dbcon.h"
 #include "logger.h"
-#include "timersupportmodule.h"
+#include "standingssupportmodule.h"
 
 #include <vector>
 #include <map>
@@ -22,130 +22,32 @@
 
 using namespace std;
 
-typedef struct {
-	uint32_t time;
-	bool correct;
-} SubData;
-
-bool SubDataLessThan(const SubData& s1, const SubData& s2) {
-	return s1.time < s2.time;
-}
-
-typedef struct {
-	uint32_t user_id;
-	uint32_t correct;
-	uint32_t time;
-    map<uint32_t, int32_t> tries;
-} TeamData;
-
-bool TeamDataLessThan(const TeamData& td1, const TeamData& td2) {
-	if(td1.correct > td2.correct)
-		return true;
-	if(td1.correct == td2.correct)
-		return td1.time < td2.time;
-	return false;
-}
-
 class ActStandings : public ClientAction {
 protected:
 	virtual bool int_process(ClientConnection*, MessageBlock*mb);
 };
 
 bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
-	TimerSupportModule *timer = getTimerSupportModule();
-
-	if(!timer)
-		return cc->sendError("Unable to get timer.");
-
-	DbCon *db = DbCon::getInstance();
-	if(!db)
-		return cc->sendError("Unable to connect to the database");
-
-	SubmissionList submissions = db->getSubmissions();
+	StandingsSupportModule *standings = getStandingsSupportModule();
+	if (!standings)
+		return cc->sendError("Misconfigured Server - unable to calculate standings.");
 
     uint32_t uType = cc->getProperty("user_type");
 
-	uint32_t duration = timer->contestDuration();
-	if(!duration) {
-		db->release();
-		return cc->sendError("Contest duration not set - unable to calculate standings.");
-	}
+	StandingsSupportModule::StandingsPtr s = standings->getStandings(uType);
 
-    map<uint32_t, map<uint32_t, vector<SubData> > > problemdata;
-	vector<TeamData> standings;
-
-	SubmissionList::iterator s;
-	for(s = submissions.begin(); s != submissions.end(); ++s) {
-		uint32_t sub_id = strtoll((*s)["submission_id"].c_str(), NULL, 0);
-
-		RunResult state;
-		uint32_t utype;
-		string comment;
-
-		if(db->getSubmissionState(sub_id, state, utype, comment)) {
-			if(state != COMPILE_FAILED) { // we ignore compile failures.
-				SubData tmp;
-
-				uint32_t server_id = db->submission2server_id(sub_id);
-                tmp.correct = state == CORRECT;
-				tmp.time = timer->contestTime(server_id, strtoull((*s)["time"].c_str(), NULL, 0));
-
-                uint32_t timeRemaining = duration - timer->contestTime(server_id);
-                uint32_t tRemain = duration - tmp.time;
-                if ((timeRemaining < 3600) && (tRemain < 3600) && (uType == USER_TYPE_CONTESTANT))
-                    continue;
-
-				uint32_t prob_id = strtoll((*s)["prob_id"].c_str(), NULL, 0);
-				uint32_t team_id = db->submission2user_id(sub_id);
-
-				problemdata[team_id][prob_id].push_back(tmp);
-			}
-		}
-	}
-
-	map<uint32_t, map<uint32_t, vector<SubData> > >::iterator t;
-	for(t = problemdata.begin(); t != problemdata.end(); ++t) {
-		TeamData teamdata;
-		teamdata.correct = 0;
-		teamdata.time = 0;
-		teamdata.user_id = t->first;
-
-		map<uint32_t, vector<SubData> >::iterator p;
-		for(p = t->second.begin(); p != t->second.end(); ++p) {
-			int tries = 0;
-			bool correct = false;
-			uint32_t correct_time;
-
-			vector<SubData> &subs = p->second;
-			sort(subs.begin(), subs.end(), SubDataLessThan);
-
-			vector<SubData>::iterator s;
-			for(s = subs.begin(); s != subs.end() && !correct; ++s) {
-				tries++;
-				correct = s->correct;
-				correct_time = s->time;
-			}
-
-			if(correct) {
-				teamdata.correct++;
-				teamdata.time += (tries - 1) * 20 * 60;
-				teamdata.time += correct_time;
-                teamdata.tries[p->first] = tries;
-            }
-            else
-                teamdata.tries[p->first] = -tries;
-		}
-
-		standings.push_back(teamdata);
-	}
-
-	sort(standings.begin(), standings.end(), TeamDataLessThan);
+	if (!s)
+		return cc->sendError("Error retrieving standings.");
 
 	MessageBlock mb("ok");
 
 	mb["row_0_0"] = "Team";
 
 	int ncols = 1;
+
+	DbCon *db = DbCon::getInstance();
+	if(!db)
+		return cc->sendError("Error connecting to database.");
 
 	ProblemList probs = db->getProblems();
 	map<uint32_t, uint32_t> prob2col;
@@ -177,8 +79,8 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 
 	int r = 1;
 
-	vector<TeamData>::iterator i;
-	for(i = standings.begin(); i != standings.end(); ++i, ++r) {
+	StandingsSupportModule::Standings::iterator i;
+	for(i = s->begin(); i != s->end(); ++i, ++r) {
 		ostringstream headername;
 		ostringstream val;
 		char time_buffer[64];
@@ -216,13 +118,13 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 		}
 	}
 
+	db->release(); db = NULL;
+
 	{
 		ostringstream row;
 		row << r;
 		mb["nrows"] = row.str();
 	}
-
-	db->release();db=NULL;
 
 	return cc->sendMessageBlock(&mb);
 }

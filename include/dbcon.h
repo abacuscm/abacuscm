@@ -68,6 +68,16 @@ public:
 	virtual bool executeQuery(std::string query) = 0;
 
 	/**
+	 * Escape a string.
+	 */
+	virtual std::string escape_string(const std::string& str) = 0;
+
+	/**
+	 * Escape a buffer.
+	 */
+	virtual std::string escape_buffer(const uint8_t* bfr, uint32_t size) = 0;
+
+	/**
 	 * Specify a query which will call a callback function for every row in the
 	 * result.  the function takes a void*, which is the parameter ctx as
 	 * passed to queryCallback(), and a QueryResultRow, which is a vector of
@@ -272,14 +282,6 @@ public:
 	 */
 	virtual bool getProblemFileData(uint32_t problem_id, std::string attr,
 			uint8_t **dataptr, uint32_t *lenptr) = 0;
-
-	/**
-	 * Commit a submitted solution to the database before initiating the
-	 * marking process.
-	 */
-	virtual bool putSubmission(uint32_t sub_id, uint32_t user_id, uint32_t prob_id,
-			uint32_t time, uint32_t server_id, char* content,
-			uint32_t content_size, std::string language) = 0;
 
 	/**
 	 * Retrieve all submissions for a specific user.

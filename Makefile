@@ -106,25 +106,28 @@ $(markerd_name) : ldflags += -labacus -lpthread
 
 modules = udpmessenger \
 	dbmysql \
-	act_clarify \
-	act_passwd \
-	act_adduser \
 	act_addserver \
+	act_adduser \
 	act_auth \
-	act_whatami \
-	act_problemtypes \
-	act_problemmanip \
-	act_status \
-	act_serverlist \
-	act_submit \
-	act_standings \
+	act_clarify \
+	act_contesttime \
 	act_events \
 	act_mark \
-	act_startstop \
-	act_contesttime \
+	act_passwd \
 	act_problem_subscription \
+	act_problemmanip \
+	act_problemtypes \
+	act_serverlist \
+	act_standings \
+	act_startstop \
+	act_status \
+	act_submit \
+	act_whatami \
 	prob_testcasedriventype \
+	support_standings \
+	support_submission \
 	support_timer
+
 
 modules_d = $(foreach mod,$(modules),modules/mod_$(mod).so)
 $(modules_d) : ldflags += -shared -labacus-server

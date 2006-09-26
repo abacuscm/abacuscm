@@ -17,6 +17,7 @@
 #include "server.h"
 #include "dbcon.h"
 #include "eventregister.h"
+#include "standingssupportmodule.h"
 
 #include <string>
 #include <list>
@@ -130,11 +131,11 @@ bool MarkMessage::process() const {
     MessageBlock mb("submission");
     EventRegister::getInstance().triggerEvent("judgesubmission", &mb);
 
+	StandingsSupportModule *standings = getStandingsSupportModule();
+	if(standings)
+		standings->notifySolution(0); // TODO: problem time here.
+
 	if(_result == CORRECT) {
-		MessageBlock st("standings");
-
-		EventRegister::getInstance().broadcastEvent(&st);
-
 		MessageBlock bl("balloon");
 		bl["server"] = db->server_id2name(db->submission2server_id(_submission_id));
 		bl["contestant"] = db->user_id2name(db->submission2user_id(_submission_id));

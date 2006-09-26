@@ -25,9 +25,6 @@ class MySQL : public DbCon {
 private:
 	MYSQL _mysql;
 
-	string escape_string(const string& str);
-	string escape_buffer(const uint8_t* bfr, uint32_t size);
-
 	list<Message*> getMessages(std::string query);
 public:
 	MySQL();
@@ -37,7 +34,10 @@ public:
 	virtual QueryResult multiRowQuery(std::string query);
 	virtual QueryResultRow singleRowQuery(std::string query);
 	virtual bool executeQuery(std::string query);
+	virtual string escape_string(const string& str);
+	virtual string escape_buffer(const uint8_t* bfr, uint32_t size);
 
+	// from here will eventually go bye bye.
 	virtual uint32_t name2server_id(const string& name);
 	virtual std::string server_id2name(uint32_t user_id);
 	virtual uint32_t name2user_id(const string& name);
