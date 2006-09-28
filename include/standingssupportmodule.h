@@ -16,6 +16,7 @@
 
 #include "supportmodule.h"
 
+#include <stdint.h>
 #include <pthread.h>
 #include <boost/shared_ptr.hpp>
 #include <map>
