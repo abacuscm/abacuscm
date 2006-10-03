@@ -10,12 +10,6 @@ This file contains a list of BUGS and or nice to havs (wishlist).
 
 	PRIORITY: low
 
-* Start/Stop invalid events
-	If the start/stop time change then the server will still generate the
-	previous start/stop signals as set up unless the server gets restarted.
-
-	PRIORITY: medium
-
 * Java classname handling.
 	Need a better heuristic.  Quite probably force the classname to equal
 	the JavaCase of the problem code (shortname).
@@ -89,13 +83,6 @@ This file contains a list of BUGS and or nice to havs (wishlist).
 	with regard to that submission is probably a good idea.
 
 	PRIORITY: very low
-
-* Server-side cache of standings
-	Will tremendously improve responsiveness.  When 50 clients simultaniously
-	requests standings the server currently grinds to a halt.  That should
-	not be happening.
-
-	PRIORITY: high
 
 * Auto-reconnect
 	It would be nice if the server could automatically attempt to reconnect.
