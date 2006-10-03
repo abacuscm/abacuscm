@@ -42,12 +42,14 @@ static void signal_segv(int signum, siginfo_t* info, void*ptr) {
 	logc(LOG_CRIT, "info.si_errno = %d", info->si_errno);
 	logc(LOG_CRIT, "info.si_code  = %d (%s)", info->si_code, si_codes[info->si_code]);
 	logc(LOG_CRIT, "info.si_addr  = %p", info->si_addr);
+#if defined(REG_RIP)
 	for(i = 0; i < NGREG; i++)
 		logc(LOG_CRIT, "reg[%02d]       = 0x" REGFORMAT, i, ucontext->uc_mcontext.gregs[i]);
-#if defined(REG_RIP)
 	ip = (void*)ucontext->uc_mcontext.gregs[REG_RIP];
 	bp = (void**)ucontext->uc_mcontext.gregs[REG_RBP];
 #elif defined(REG_EIP)
+	for(i = 0; i < NGREG; i++)
+		logc(LOG_CRIT, "reg[%02d]       = 0x" REGFORMAT, i, ucontext->uc_mcontext.gregs[i]);
 	ip = (void*)ucontext->uc_mcontext.gregs[REG_EIP];
 	bp = (void**)ucontext->uc_mcontext.gregs[REG_EBP];
 #else
