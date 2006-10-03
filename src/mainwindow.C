@@ -300,9 +300,9 @@ void MainWindow::doTimer() {
 
 		char buffer[30];
 		sprintf(buffer, "%02ld:%02ld:%02ld",
-			remain / 3600,
-			(remain / 60) % 60,
-			remain % 60);
+			(long) remain / 3600,
+			(long) (remain / 60) % 60,
+			(long) remain % 60);
 		clock->setText(buffer);
 	}
 }
