@@ -133,7 +133,11 @@ modules_d = $(foreach mod,$(modules),modules/mod_$(mod).so)
 $(modules_d) : ldflags += -shared -labacus-server
 
 modules/mod_dbmysql.so : ldflags += -lmysqlclient
-obj/sigsegv.o : cflags += -DCPP_DEMANGLE
+
+# Due to a bug in GCC >= 4.0.x CPP_DEMANGLE doesn't work out of the box.
+# See http://gcc.gnu.org/bugzilla/show_bug.cgi?id=29095 for more details.
+# In the meantime you can use c++filt to demangle those "ugly" C++ type names.
+# #obj/sigsegv.o : cflags += -DCPP_DEMANGLE
 
 ###############################################################
 depfiles=$(foreach m,$(libabacus_objects) $(libabacus_s_objects) $(libabacus_c_objects) $(abacusd_objects) $(abacus_objects) $(modules) $(balloon_objects) $(createuser_objects) $(runlimit_objects) $(markerd_objects),deps/$(m).d)
