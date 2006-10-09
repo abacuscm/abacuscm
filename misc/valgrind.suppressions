@@ -1,0 +1,186 @@
+{
+OpenSSL (crypto) Value1
+Memcheck:Value1
+obj:*/libcrypto.so*
+}
+{
+OpenSSL (crypto) Value2
+Memcheck:Value2
+obj:*/libcrypto.so*
+}
+{
+OpenSSL (crypto) Value4
+Memcheck:Value4
+obj:*/libcrypto.so*
+}
+{
+OpenSSL (crypto) Value8
+Memcheck:Value8
+obj:*/libcrypto.so*
+}
+{
+OpenSSL (crypto) Value16
+Memcheck:Value16
+obj:*/libcrypto.so*
+}
+{
+OpenSSL (crypto) Free
+Memcheck:Free
+obj:*/libcrypto.so*
+}
+{
+OpenSSL (crypto) Addr1
+Memcheck:Addr1
+obj:*/libcrypto.so*
+}
+{
+OpenSSL (crypto) Addr2
+Memcheck:Addr2
+obj:*/libcrypto.so*
+}
+{
+OpenSSL (crypto) Addr4
+Memcheck:Addr4
+obj:*/libcrypto.so*
+}
+{
+OpenSSL (crypto) Addr8
+Memcheck:Addr8
+obj:*/libcrypto.so*
+}
+{
+OpenSSL (crypto) Addr16
+Memcheck:Addr16
+obj:*/libcrypto.so*
+}
+{
+OpenSSL (crypto) Cond
+Memcheck:Cond
+obj:*/libcrypto.so*
+}
+
+
+
+{
+OpenSSL (ssl) Value1
+Memcheck:Value1
+obj:*/libssl.so*
+}
+{
+OpenSSL (ssl) Value2
+Memcheck:Value2
+obj:*/libssl.so*
+}
+{
+OpenSSL (ssl) Value4
+Memcheck:Value4
+obj:*/libssl.so*
+}
+{
+OpenSSL (ssl) Value8
+Memcheck:Value8
+obj:*/libssl.so*
+}
+{
+OpenSSL (ssl) Value16
+Memcheck:Value16
+obj:*/libssl.so*
+}
+{
+OpenSSL (ssl) Free
+Memcheck:Free
+obj:*/libssl.so*
+}
+{
+OpenSSL (ssl) Addr1
+Memcheck:Addr1
+obj:*/libssl.so*
+}
+{
+OpenSSL (ssl) Addr2
+Memcheck:Addr2
+obj:*/libssl.so*
+}
+{
+OpenSSL (ssl) Addr4
+Memcheck:Addr4
+obj:*/libssl.so*
+}
+{
+OpenSSL (ssl) Addr8
+Memcheck:Addr8
+obj:*/libssl.so*
+}
+{
+OpenSSL (ssl) Addr16
+Memcheck:Addr16
+obj:*/libssl.so*
+}
+{
+OpenSSL (ssl) Cond
+Memcheck:Cond
+obj:*/libssl.so*
+}
+
+
+
+{
+libz Value1
+Memcheck:Value1
+obj:*/libz.so*
+}
+{
+libz Value2
+Memcheck:Value2
+obj:*/libz.so*
+}
+{
+libz Value4
+Memcheck:Value4
+obj:*/libz.so*
+}
+{
+libz Value8
+Memcheck:Value8
+obj:*/libz.so*
+}
+{
+libz Value16
+Memcheck:Value16
+obj:*/libz.so*
+}
+{
+libz Free
+Memcheck:Free
+obj:*/libz.so*
+}
+{
+libz Addr1
+Memcheck:Addr1
+obj:*/libz.so*
+}
+{
+libz Addr2
+Memcheck:Addr2
+obj:*/libz.so*
+}
+{
+libz Addr4
+Memcheck:Addr4
+obj:*/libz.so*
+}
+{
+libz Addr8
+Memcheck:Addr8
+obj:*/libz.so*
+}
+{
+libz Addr16
+Memcheck:Addr16
+obj:*/libz.so*
+}
+{
+libz Cond
+Memcheck:Cond
+obj:*/libz.so*
+}
