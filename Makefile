@@ -150,7 +150,7 @@ modules = udpmessenger \
 modules_d = $(foreach mod,$(modules),modules/mod_$(mod).so)
 $(modules_d) : ldflags += -shared -labacus-server
 
-modules/mod_dbmysql.so : ldflags += -lmysqlclient
+modules/mod_dbmysql.so : ldflags += -lmysqlclient_r
 
 # Due to a bug in GCC >= 4.0.x CPP_DEMANGLE doesn't work out of the box.
 # See http://gcc.gnu.org/bugzilla/show_bug.cgi?id=29095 for more details.
