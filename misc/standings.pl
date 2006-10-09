@@ -27,6 +27,6 @@ while (<IN>)
 	print Tr(td([split /\t|\n/]));
 }
 print(end_table,
-	p(small("Generated at " . escapeHTML(localtime()) . ".")),
+	p(small("Generated at " . escapeHTML(scalar(localtime())) . ".")),
 	end_html);
 close(IN);
