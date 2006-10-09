@@ -9,6 +9,8 @@ cflags=-g -ggdb -O0 -Iinclude -W -Wall -fpic
 dflags=-Iinclude
 ldflags=-rdynamic -g -ggdb -O0 -Llib -Wl,-rpath,$(libdir)
 
+NOQT := $(if $(QTDIR),,1)
+
 .PHONY: default
 default: all
 
@@ -48,6 +50,7 @@ $(abacusd_name) : ldflags += -labacus-server -lpthread
 $(abacusd_name) : $(libabacus_s_name)
 $(abacusd_name) : $(libabacus_name)
 
+ifndef NOQT
 abacus_name = bin/abacus
 abacus_objects = abacus \
 	sigsegv \
@@ -74,6 +77,7 @@ abacus_objects = abacus \
 $(abacus_name) : ldflags += -L$(QTDIR)/lib -lqt -labacus-client
 $(abacus_name) : $(libabacus_c_name)
 $(abacus_name) : $(libabacus_name)
+endif
 
 balloon_name = bin/balloon
 balloon_objects = balloon \
@@ -128,7 +132,6 @@ modules = udpmessenger \
 	support_submission \
 	support_timer
 
-
 modules_d = $(foreach mod,$(modules),modules/mod_$(mod).so)
 $(modules_d) : ldflags += -shared -labacus-server
 
@@ -175,8 +178,10 @@ modules: $(modules_d)
 $(abacusd_name) : $(abacusd_objects_d) | $(dir $(abacusd_name)).d
 	$(cc) $(ldflags) -o $@ $(abacusd_objects_d)
 
+ifndef NOQT
 $(abacus_name) : $(abacus_objects_d) | $(dir $(abacus_name)).d
 	$(cc) $(ldflags) -o $@ $(abacus_objects_d)
+endif
 
 $(libabacus_name) : $(libabacus_objects_d) | $(dir $(libabacus_name)).d
 	$(cc) $(ldflags) -o $@ $(libabacus_objects_d)
