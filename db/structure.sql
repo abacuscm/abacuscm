@@ -48,7 +48,6 @@ CREATE TABLE `ClarificationRequest` (
   PRIMARY KEY  (`clarification_req_id`),
   KEY `user_id` (`user_id`),
   KEY `problem_id` (`problem_id`),
-  CONSTRAINT `ClarificationRequest_ibfk_2` FOREIGN KEY (`problem_id`) REFERENCES `Problem` (`problem_id`) ON UPDATE CASCADE,
   CONSTRAINT `ClarificationRequest_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `User` (`user_id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
