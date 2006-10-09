@@ -248,8 +248,7 @@ static bool initialise() {
 			EventRegister::getInstance().registerEvent("judge_" + prob["shortname"]);
         }
         EventRegister::getInstance().registerEvent("judgesubmission");
-		if (db)
-			db->release();db=NULL;
+		db->release();db=NULL;
 	} else
 		log(LOG_ERR, "Error obtaining DbCon to load existing problems");
 
