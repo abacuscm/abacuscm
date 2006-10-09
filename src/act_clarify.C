@@ -83,8 +83,8 @@ bool ActGetClarifications::int_process(ClientConnection *cc, MessageBlock *) {
 	if(utype == USER_TYPE_CONTESTANT)
 		lst = db->getClarifications(uid);
 	else
-                lst = db->getClarifications();
-        db->release();db=NULL;
+		lst = db->getClarifications();
+	db->release();db=NULL;
 
 	MessageBlock mb("ok");
 
@@ -121,8 +121,8 @@ bool ActGetClarificationRequests::int_process(ClientConnection *cc, MessageBlock
 	if(utype == USER_TYPE_CONTESTANT)
 		lst = db->getClarificationRequests(uid);
 	else
-                lst = db->getClarificationRequests();
-        db->release();db=NULL;
+		lst = db->getClarificationRequests();
+	db->release();db=NULL;
 
 	MessageBlock mb("ok");
 
@@ -327,7 +327,7 @@ bool ActClarification::int_process(ClientConnection *cc, MessageBlock *mb) {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return cc->sendError("Unable to connect to database");
-        AttributeList cr = db->getClarificationRequest(cr_id);
+	AttributeList cr = db->getClarificationRequest(cr_id);
 	db->release();db=NULL;
 
 	if(cr.empty())
