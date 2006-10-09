@@ -22,7 +22,7 @@ using namespace std;
 
 int main(int argc, char **argv) {
 	if(argc < 7) {
-		cerr << "USAGE: createusers config username password newaccount newpassword type\n";
+		cerr << "USAGE: " << *argv << " config username password newaccount newpassword type\n";
 		return -1;
 	}
 
