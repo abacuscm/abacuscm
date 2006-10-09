@@ -140,12 +140,11 @@ bool MarkMessage::process() const {
 		bl["server"] = db->server_id2name(db->submission2server_id(_submission_id));
 		bl["contestant"] = db->user_id2name(db->submission2user_id(_submission_id));
 		bl["problem"] = db->submission2problem(_submission_id);
-        db->release();db=NULL;
 
 		EventRegister::getInstance().triggerEvent("balloon", &bl);
 	}
-    else
-        db->release();
+
+	db->release();db=NULL;
 
 	return true;
 }
@@ -268,21 +267,17 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 
         // POSSIBLE RACE BETWEEN DOING THIS CHECK AND ASSIGNING THE MARK
         // but it's very small & unlikely :-)
-        if(db->getSubmissionState(
-                                  submission_id,
-                                  resinfo,
-                                  utype,
-                                  comment)) {
-            db->release();db=NULL;
-            if (utype == USER_TYPE_JUDGE) {
-                return cc->sendError("A judge has already beat you to it and marked this submission, sorry!");
-            }
-            if (resinfo != WRONG) {
-                return cc->sendError("You cannot change the status of this submission: the decision was black and white; no human required ;-)");
-            }
+		bool res = db->getSubmissionState( submission_id, resinfo, utype, comment);
+		db->release();db=NULL;
+		if (res) {
+			if (utype == USER_TYPE_JUDGE) {
+				return cc->sendError("A judge has already beat you to it and marked this submission, sorry!");
+			}
+			if (resinfo != WRONG) {
+				return cc->sendError("You cannot change the status of this submission: the decision was black and white; no human required ;-)");
+			}
         }
         else {
-            db->release();db=NULL;
             return cc->sendError("This hasn't been compiled or even run: you really think I'm going to let you fiddle with the marks?");
         }
     }
@@ -296,19 +291,16 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
         if(!db)
             return cc->sendError("Error connecting to database");
 
-        if(db->getSubmissionState(
-                                  submission_id,
-                                  resinfo,
-                                  utype,
-                                  comment)) {
-            db->release();
-            if (utype == USER_TYPE_MARKER && resinfo == CORRECT)
-                return cc->sendError("An automatic marker has already marked this submission as being correct, you can't change that. Sorry!");
-        }
-        else {
-            db->release();db=NULL;
-            return cc->sendError("This hasn't been compiled or even run: you really think I'm going to let you fiddle with the marks?");
-        }
+		bool res = db->getSubmissionState( submission_id, resinfo, utype, comment);
+		db->release();db=NULL;
+
+		if (res) {
+			if (utype == USER_TYPE_MARKER && resinfo == CORRECT)
+				return cc->sendError("An automatic marker has already marked this submission as being correct, you can't change that. Sorry!");
+		}
+		else {
+			return cc->sendError("This hasn't been compiled or even run: you really think I'm going to let you fiddle with the marks?");
+		}
     }
 
 	uint32_t result = strtoll((*mb)["result"].c_str(), &errpnt, 0);
