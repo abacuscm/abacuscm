@@ -69,6 +69,8 @@ bool ActIdPasswd::int_process(ClientConnection *cc, MessageBlock *mb) {
 		return cc->sendError("user_id isn't a valid integer");
 
 	DbCon *db = DbCon::getInstance();
+	if (!db)
+		return cc->sendError("Unable to obtain database connection");
 	string username = db->user_id2name(user_id);
 	db->release();db=NULL;
 	if (username == "")
@@ -85,7 +87,7 @@ bool ActGetUsers::int_process(ClientConnection *cc, MessageBlock *) {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return cc->sendError("Error connecting to database");
-        UserList lst = db->getUsers();
+	UserList lst = db->getUsers();
 	db->release();db=NULL;
 
 	MessageBlock res("ok");
