@@ -155,3 +155,9 @@ This file contains a list of BUGS and or nice to havs (wishlist).
 	during valgrinding.  Needs to be fixed though.
 
 	PRIORITY: low
+
+* ModuleLoader leaks memory
+	These are once-off leaks during load.  Not too worried about these,
+	however, as with all things broken it should be fixed.
+
+	PRIORITY: low
