@@ -14,6 +14,8 @@
 #include "messageblock.h"
 
 #include <iostream>
+#include <sstream>
+#include <queue>
 #include <string>
 #include <pthread.h>
 #include <time.h>
@@ -24,16 +26,24 @@ using namespace std;
 static pthread_mutex_t _runlock;
 static pthread_cond_t _runcond;
 
+static queue<string> notify;  // queue of unprinted notifications
+static bool closed = false;   // set to true by the close notification
+
 static void balloon_notification(const MessageBlock* mb, void*) {
 	time_t now = time(NULL);
 	char time_buffer[64];
 	struct tm time_tm;
+	ostringstream msg;
 
 	localtime_r(&now, &time_tm);
 	strftime(time_buffer, sizeof(time_buffer), "%X", &time_tm);
 
-	printf("%s: %s solved %s (server: %s)\n", time_buffer, (*mb)["contestant"].c_str(),
-			(*mb)["problem"].c_str(), (*mb)["server"].c_str());
+	msg << time_buffer << " " << (*mb)["contestant"] << " solved "
+	    << (*mb)["problem"] << " (server: " << (*mb)["server"] << ")";
+	pthread_mutex_lock(&_runlock);
+	notify.push(msg.str());
+	pthread_cond_signal(&_runcond);
+	pthread_mutex_unlock(&_runlock);
 }
 
 static void log_function(int priority, const char* format, va_list ap) {
@@ -45,6 +55,7 @@ static void log_function(int priority, const char* format, va_list ap) {
 
 static void server_close(const MessageBlock*, void*) {
 	pthread_mutex_lock(&_runlock);
+	closed = true;
 	pthread_cond_signal(&_runcond);
 	pthread_mutex_unlock(&_runlock);
 }
@@ -68,6 +79,7 @@ int main(int argc, char **argv) {
 
 	pthread_mutex_init(&_runlock, NULL);
 	pthread_cond_init(&_runcond, NULL);
+	pthread_mutex_lock(&_runlock);
 
 	if(!_server_con.connect(conf["server"]["address"], conf["server"]["service"]))
 		return -1;
@@ -85,15 +97,28 @@ int main(int argc, char **argv) {
 
 	cout << "All started up, waiting for balloon events ...\n";
 
-	pthread_mutex_lock(&_runlock);
-	pthread_cond_wait(&_runcond, &_runlock);
+	while (!closed || !notify.empty())
+	{
+		if (!notify.empty())
+		{
+			cout << notify.front() << "\n";
+			cout << "Press enter to acknowledge" << flush;
+			notify.pop();
+			pthread_mutex_unlock(&_runlock);
+			getline(cin, password);  // read any old string
+			pthread_mutex_lock(&_runlock);
+			cout << "Waiting for balloon events ...\n";
+		}
+		else
+			pthread_cond_wait(&_runcond, &_runlock);
+	}
 	pthread_mutex_unlock(&_runlock);
 
 	cout << "Server has disconnected - quitting.\n";
 
+	_server_con.disconnect();
 	pthread_mutex_destroy(&_runlock);
 	pthread_cond_destroy(&_runcond);
 
-	_server_con.disconnect();
 	return 0;
 }
