@@ -79,7 +79,7 @@ int TimerSupportModule::contestStatus(uint32_t server_id, time_t real_time)
 		real_time = time(NULL);
 
 	struct startstop_event* i;
-	for(i = _evlist; i && i->time <= real_time; ++i) {
+	for(i = _evlist; i && i->time <= real_time; i = i->next) {
 		if(!i->server_id || i->server_id == server_id)
 			status = i->action;
 	}
