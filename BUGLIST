@@ -148,3 +148,10 @@ This file contains a list of BUGS and or nice to havs (wishlist).
 	but would make live a lot easier.
 
 	PRIORITY: medium
+
+* Segfault if kill'ed too soon.
+	If the server received SIGKILL at the wrong time (during startup) then
+	things go really belly up.  Classified as low since this only happened once
+	during valgrinding.  Needs to be fixed though.
+
+	PRIORITY: low
