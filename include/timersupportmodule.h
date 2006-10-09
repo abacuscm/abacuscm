@@ -13,6 +13,7 @@
 #include "supportmodule.h"
 
 #include <pthread.h>
+#include <stdint.h>
 
 #define TIMER_STATUS_STARTED	1
 #define TIMER_STATUS_STOPPED	2

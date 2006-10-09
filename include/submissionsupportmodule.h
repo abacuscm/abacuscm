@@ -12,6 +12,8 @@
 
 #include "supportmodule.h"
 
+#include <stdint.h>
+
 class SubmissionSupportModule : public SupportModule {
 public:
 /*	class Submission {

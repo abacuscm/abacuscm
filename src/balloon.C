@@ -17,6 +17,7 @@
 #include <string>
 #include <pthread.h>
 #include <time.h>
+#include <unistd.h>
 
 using namespace std;
 
