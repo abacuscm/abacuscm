@@ -161,3 +161,10 @@ This file contains a list of BUGS and or nice to havs (wishlist).
 	however, as with all things broken it should be fixed.
 
 	PRIORITY: low
+
+* Better balloon notifications
+	GUI should not pop up multiple notifications (in general, in fact).
+	Possibly also some DB state to indicate whether a balloon has been
+	handed out.
+
+	PRIORITY: low
