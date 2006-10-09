@@ -1,0 +1,15 @@
+To generate online standings
+----------------------------
+Run bin/standings client.conf /path/to/standings.txt
+
+You will be prompted for username and password. It will work with judge
+or contestant, but it should be used with a dummy contestant to prevent
+standings from leaking during the last hour.
+
+It will write to the file specified on the command line (defaulting to
+./standings.txt) every time there is an update.
+
+
+The second part is the Perl script misc/standings.pl. Copy it to a
+cgi-bin directory, changing the hard-coded path to the standings.txt
+file. No modules beyond CGI::Pretty (quite standard) are required.
