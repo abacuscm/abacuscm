@@ -566,6 +566,12 @@ void* timed_actions(void*) {
 			next = timed_queue.dequeue();
 	}
 
+	timed_queue.enqueue(NULL);
+	while(next) {
+		delete next;
+		next = timed_queue.dequeue();
+	}
+
 	return NULL;
 }
 
