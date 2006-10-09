@@ -3,13 +3,28 @@
 
 libdir=$(CURDIR)/lib
 cc=g++
+
+ifndef NOQT
+ifneq ($(shell pkg-config --silence-errors --exists qt-mt || echo "no"), no)
+uic=uic
+moc=moc
+qtcflags:=$(shell pkg-config --cflags qt-mt)
+qtlibs:=$(shell pkg-config --libs qt-mt)
+else
+ifdef QTDIR
 uic=$(QTDIR)/bin/uic
 moc=$(QTDIR)/bin/moc
+qtcflags=-I$(QTDIR)/include
+qtlibs=-L$(QTDIR)/lib -lqt
+else
+NOQT=1
+endif
+endif
+endif
+
 cflags=-g -ggdb -O0 -Iinclude -W -Wall -fpic
 dflags=-Iinclude
 ldflags=-rdynamic -g -ggdb -O0 -Llib -Wl,-rpath,$(libdir)
-
-NOQT := $(if $(QTDIR),,1)
 
 .PHONY: default
 default: all
@@ -74,7 +89,7 @@ abacus_objects = abacus \
 	ui_problemsubscription moc_ui_problemsubscription \
 	ui_startstopdialog moc_ui_startstopdialog \
 	ui_compileroutputdialog moc_ui_compileroutputdialog
-$(abacus_name) : ldflags += -L$(QTDIR)/lib -lqt -labacus-client
+$(abacus_name) : ldflags += $(qtlibs) -labacus-client
 $(abacus_name) : $(libabacus_c_name)
 $(abacus_name) : $(libabacus_name)
 endif
@@ -154,8 +169,8 @@ markerd_objects_d = $(foreach m,$(markerd_objects),obj/$(m).o)
 balloon_objects_d = $(foreach m,$(balloon_objects),obj/$(m).o)
 createuser_objects_d = $(foreach m,$(createuser_objects),obj/$(m).o)
 
-$(foreach m,$(abacus_objects),deps/$(m).d) : dflags += -I$(QTDIR)/include
-$(foreach m,$(abacus_objects),obj/$(m).o) : cflags += -I$(QTDIR)/include
+$(foreach m,$(abacus_objects),deps/$(m).d) : dflags += $(qtcflags)
+$(foreach m,$(abacus_objects),obj/$(m).o) : cflags += $(qtcflags)
 
 .DELETE_ON_ERROR:
 
