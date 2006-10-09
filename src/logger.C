@@ -76,6 +76,7 @@ void log(int priority, const char* format, ...) {
 					fp = stderr;
 					log(LOG_ERR, "Unable to open %s, using stderr instead", filename.c_str());
 				}
+				setlinebuf(fp);
 				flog = fp;
 			}
 			register_log_listener(log_file);
