@@ -3,11 +3,6 @@ BUGLIST
 
 This file contains a list of BUGS and or nice to havs (wishlist).
 
-* Standings cache bug
-	Changing the status from WRONG to CORRECT does not update standings.
-
-        PRIORITY: very high
-
 * username vs realname
 	A user should have both a username and a real-name.  The username can be
 	used to log in whilst the real-name can be used for display in standings
