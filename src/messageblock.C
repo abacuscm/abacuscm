@@ -113,7 +113,11 @@ int MessageBlock::addBytes(const char* bytes, int count) {
 					_message = line;
 				else if(line == "") {
 //					log(LOG_DEBUG, "Empty line, end of headers");
-					_content_length = atol(_headers["content-length"].c_str());
+					MessageHeaders::iterator i = _headers.find("content-length");
+					if (i != _headers.end())
+						_content_length = atol(i->second.c_str());
+					else
+						_content_length = 0;
 					if(_content_length > 0) {
 						_content = new char[_content_length];
 						_content_pos = _content;
