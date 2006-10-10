@@ -333,6 +333,7 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 			markmsg->addFile(desc, size, mb->content() + start);
 		}
 	}
+	regfree(&file_reg);
 
 	Markers::getInstance().notifyMarked(cc, submission_id);
 	return triggerMessage(cc, markmsg);
