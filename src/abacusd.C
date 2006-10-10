@@ -494,8 +494,6 @@ void resend_message(uint32_t server_id) {
 
 	MessageList::iterator i;
 	for(i = msg.begin(); i != msg.end(); ++i) {
-		log(LOG_DEBUG, "Resending (%u,%u) to %u",
-				(*i)->server_id(), (*i)->message_id(), server_id);
 		messenger->sendMessage(server_id, *i);
 		delete *i;
 	}
