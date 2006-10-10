@@ -1528,5 +1528,11 @@ static DbCon* MySQLFunctor() {
 
 static void init() __attribute__((constructor));
 static void init() {
+	mysql_server_init(0, NULL, NULL);
 	DbCon::registerFunctor(MySQLFunctor);
+}
+
+static void deinit() __attribute__((destructor));
+static void deinit() {
+	mysql_server_end();
 }
