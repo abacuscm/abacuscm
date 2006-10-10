@@ -5,17 +5,17 @@ libdir=$(CURDIR)/lib
 cc=g++
 
 ifndef NOQT
-ifneq ($(shell pkg-config --silence-errors --exists qt-mt || echo "no"), no)
-uic=uic
-moc=moc
-qtcflags:=$(shell pkg-config --cflags qt-mt)
-qtlibs:=$(shell pkg-config --libs qt-mt)
-else
 ifdef QTDIR
 uic=$(QTDIR)/bin/uic
 moc=$(QTDIR)/bin/moc
 qtcflags=-I$(QTDIR)/include
 qtlibs=-L$(QTDIR)/lib -lqt
+else
+ifneq ($(shell pkg-config --silence-errors --exists qt-mt || echo "no"),no)
+uic=uic
+moc=moc
+qtcflags:=$(shell pkg-config --cflags qt-mt)
+qtlibs:=$(shell pkg-config --libs qt-mt)
 else
 NOQT=1
 endif
