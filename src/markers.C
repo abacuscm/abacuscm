@@ -126,6 +126,7 @@ void Markers::issue(ClientConnection* cc, uint32_t sd) {
 	mb["prob_id"] = tmp.str();
 	mb["language"] = language;
 	mb.setContent(content, length);
+	delete []content;
 
 	if(cc->sendMessageBlock(&mb)) {
 		_issued[cc] = sd;
