@@ -10,15 +10,17 @@ Before you can compile AbacusCM you need the following pieces of software
 installed:
 
 * g++ (3.3.x and 3.4.x works, 4.x.x should also work).
-* Qt3 (QTDIR variable needs to be correctly exported).
-* boost (specifically shared_ptr).
+* Qt3
+* boost (specifically shared_ptr - only required for server).
 * OpenSSL (Any version should work).
 * MySQL 4.1.x (Whilst in theory any RDB could work currently only MySQL is
-    supported).
+    supported - only required for server).
 
 If everything is correctly installed and configured then typing "make" in the
-top directory will compile AbacusCM, including the server, client, markers, and
-support libraries and modules.
+top directory will compile AbacusCM, including the server, client, markers,
+and support libraries and modules. Running 'make client' will built just the
+client software. If pkg-config picks up the wrong version of Qt (e.g. Qt4)
+then set QTDIR to the root of the Qt3 installation.
 
 Binaries will be places in bin/, libraries in lib/ and modules in modules/.
 

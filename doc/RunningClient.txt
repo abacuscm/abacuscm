@@ -4,8 +4,8 @@ Running an AbacusCM Client
 Abacus tries to read it's config from three locations:
 
 1.  /etc/abacus/client.conf
-2.  ~/.abacusrc
-3.  abacus.conf
+2.  ~/.abacus
+3.  abacus.conf (current directory)
 
 In that order.  It always tries to read all three, thus settings in later files
 can override settings in earlier files.  Mostly you shouldn't need to change
@@ -18,10 +18,11 @@ specifically the server section to contain the absolute path to to cacert.crt
 point to your server.
 
 Once that is done you should simply be able to fire up abacus and it should
-just work (Tm).
+just work (Tm). Note that you need to put libabacus-client.so and libabacus.so
+from the lib/ directory together with abacus from the bin directory.
 
 The way I run my development copies is to run everything from the base of the
 source.  In other words, the same location where you would run make.  For the
-client I then symlink ~/.abacusrc -> conf/client.conf (obviously with a more
-complete path) and then if you type bin/abacus then it just so happens that
-certs/cacert.crt is in the correct location.
+client I then symlink ~/.abacus -> conf/client.conf (obviously with a
+more complete path) and then if you type bin/abacus then it just so
+happens that certs/cacert.crt is in the correct location.
