@@ -114,13 +114,6 @@ This file contains a list of BUGS and or nice to havs (wishlist).
 
 	PRIORITY: low
 	
-* Web standings
-	There should be some mechanism to view standings from the web.  This
-	may potentially be done using a PHP-based library that only knows
-	how to fetch the standings.
-
-	PRIORITY: medium
-
 * Select all problems for judge by default
 	By default the filter for a judge should be all problems.  Not none.
 
