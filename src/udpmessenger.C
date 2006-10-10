@@ -130,6 +130,7 @@ UDPPeerMessenger::UDPPeerMessenger() {
 	_cipher_ivsize = -1;
 	_cipher_keysize = -1;
 	pthread_mutex_init(&_lock_addrmap, NULL);
+	pthread_mutex_init(&_lock_backoffmap, NULL);
 }
 
 UDPPeerMessenger::~UDPPeerMessenger() {
@@ -140,8 +141,6 @@ UDPPeerMessenger::~UDPPeerMessenger() {
 bool UDPPeerMessenger::initialise() {
 	_checksum_seed = atoll(Config::getConfig()["udpmessenger"]["checksumseed"].c_str());
 	log(LOG_DEBUG, "Using %u as checksum seed", _checksum_seed);
-	if(_sock < 0)
-		return startup();
 
 	_init_delay = atoll(Config::getConfig()["udpmessenger"]["init_delay"].c_str());
 	_min_delay = atoll(Config::getConfig()["udpmessenger"]["min_delay"].c_str());
@@ -161,6 +160,11 @@ bool UDPPeerMessenger::initialise() {
 		_init_delay = _min_delay / 2 + _max_delay / 2;
 		log(LOG_NOTICE, "init_delay out of range, using average of min_delay and max_delay (%uus).", _init_delay);
 	}
+
+	log(LOG_INFO, "Using backoff values (%u, %u, %u).", _min_delay, _init_delay, _max_delay);
+	
+	if(_sock < 0)
+		return startup();
 
 	return true;
 }
