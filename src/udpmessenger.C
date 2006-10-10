@@ -376,6 +376,7 @@ uint32_t UDPPeerMessenger::getBackoff(uint32_t server_id)
 	i = _backoffmap.find(server_id);
 	if(i == _backoffmap.end()) {
 		result = _backoffmap[server_id] = _init_delay;
+		log(LOG_DEBUG, "Initialised backoff for server_id=%u to %uus.", server_id, result);
 	} else {
 		result = i->second;
 		if ((i->second *= 2) > _max_delay)
