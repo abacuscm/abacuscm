@@ -395,7 +395,7 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
     else if (request == "data") {
         uint32_t index = strtoll((*mb)["index"].c_str(), NULL, 0);
         std::string name;
-        void *data;
+        char *data;
         uint32_t length;
         bool result = db->getMarkFile(submission_id, index, name, &data, length);
 
@@ -410,6 +410,7 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
         str << length;
         result_mb["length"] = str.str();
         result_mb.setContent((char *) data, length);
+		delete []data;
     }
 
 	db->release();db=NULL;

@@ -107,7 +107,7 @@ public:
 	virtual bool putMarkFile(uint32_t submission_id, uint32_t marker_id,
 			std::string name, const void* data, uint32_t len);
 	virtual uint32_t countMarkFiles(uint32_t submission_id);
-	virtual bool getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length);
+	virtual bool getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, char **data, uint32_t &length);
 	virtual bool getSubmissionState(uint32_t submission_id, RunResult& state, uint32_t& utype, string& comment);
 	virtual uint32_t submission2user_id(uint32_t submission_id);
 	virtual uint32_t submission2server_id(uint32_t submission_id);
@@ -1168,7 +1168,7 @@ uint32_t MySQL::countMarkFiles(uint32_t submission_id) {
     }
 }
 
-bool MySQL::getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length) {
+bool MySQL::getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, char **data, uint32_t &length) {
     ostringstream query;
     query << "SELECT name, content FROM SubmissionMarkFile where submission_id=" << submission_id;
 
@@ -1195,7 +1195,7 @@ bool MySQL::getMarkFile(uint32_t submission_id, uint32_t file_index, std::string
 
         name = row[0];
         unsigned long *lengths = mysql_fetch_lengths(res);
-        *data = (void *) (new char[lengths[1]]);
+        *data = new char[lengths[1]];
         memcpy(*data, row[1], lengths[1]);
         length = lengths[1];
 
