@@ -68,7 +68,7 @@ void ProblemMarker::addResultFile(std::string fileType, std::string filename, of
 	if (max_size)
 	{
 		struct stat info;
-		if (stat(filename.c_str(), &info) && info.st_size > max_size)
+		if (stat(filename.c_str(), &info) == 0 && info.st_size > max_size)
 			truncate(filename.c_str(), max_size);
 	}
 }
