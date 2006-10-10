@@ -219,6 +219,8 @@ static void updateClarificationsFunctor(const MessageBlock*, void*) {
 static void newClarificationFunctor(const MessageBlock* mb, void*) {
 	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateClarifications);
 	ev->post();
+	ev = new MainWindowCaller(&MainWindow::updateClarificationRequests);
+	ev->post();
 
 	NewClarificationEvent *nce = new NewClarificationEvent((*mb)["problem"], (*mb)["question"], (*mb)["answer"]);
 	nce->post();
