@@ -26,6 +26,7 @@
 #include "message.h"
 #include "dbcon.h"
 #include "server.h"
+#include "scoped_lock.h"
 
 #include <map>
 
@@ -82,12 +83,21 @@ private:
 	int _cipher_ivsize;
 	int _cipher_keysize;
 
+	uint32_t _min_delay;
+	uint32_t _max_delay;
+	uint32_t _init_delay;
+
 	FragmentMap _fragments;
 
 	map<uint32_t, struct sockaddr_in> _addrmap;
 	pthread_mutex_t _lock_addrmap;
 
+	map<uint32_t, uint32_t> _backoffmap;
+	pthread_mutex_t _lock_backoffmap;
+
 	const sockaddr_in* getSockAddr(uint32_t server_id);
+	uint32_t getBackoff(uint32_t server_id); // also ups the backoff.
+	void downBackoff(uint32_t server_id);
 
 	uint32_t checksum(const uint8_t *data, uint16_t len);
 
@@ -132,6 +142,26 @@ bool UDPPeerMessenger::initialise() {
 	log(LOG_DEBUG, "Using %u as checksum seed", _checksum_seed);
 	if(_sock < 0)
 		return startup();
+
+	_init_delay = atoll(Config::getConfig()["udpmessenger"]["init_delay"].c_str());
+	_min_delay = atoll(Config::getConfig()["udpmessenger"]["min_delay"].c_str());
+	_max_delay = atoll(Config::getConfig()["udpmessenger"]["max_delay"].c_str());
+
+	if (_min_delay < 100) {
+		_min_delay = 100;
+		log(LOG_NOTICE, "Increasing min_delay to 100us.");
+	}
+
+	if (_max_delay < 1000 * _min_delay) {
+		_max_delay = 1000 * _min_delay;
+		log(LOG_NOTICE, "Increasing max_delay to %uus.", _max_delay);
+	}
+
+	if (_init_delay < _min_delay || _init_delay > _max_delay) {
+		_init_delay = _min_delay / 2 + _max_delay / 2;
+		log(LOG_NOTICE, "init_delay out of range, using average of min_delay and max_delay (%uus).", _init_delay);
+	}
+
 	return true;
 }
 
@@ -337,12 +367,39 @@ const sockaddr_in* UDPPeerMessenger::getSockAddr(uint32_t server_id) {
 	return result;
 }
 
+uint32_t UDPPeerMessenger::getBackoff(uint32_t server_id)
+{
+	ScopedLock _(&_lock_backoffmap);
+
+	uint32_t result;
+	map<uint32_t, uint32_t>::iterator i;
+	i = _backoffmap.find(server_id);
+	if(i == _backoffmap.end()) {
+		result = _backoffmap[server_id] = _init_delay;
+	} else {
+		result = i->second;
+		if ((i->second *= 2) > _max_delay)
+			i->second = _max_delay;
+	}
+
+	return result;
+}
+
+void UDPPeerMessenger::downBackoff(uint32_t server_id)
+{
+	ScopedLock _(&_lock_backoffmap);
+
+	map<uint32_t, uint32_t>::iterator i;
+	i = _backoffmap.find(server_id);
+	if(i != _backoffmap.end())
+		if((i->second /= 2) < _min_delay)
+			i->second = _min_delay;
+}
+
 bool UDPPeerMessenger::sendFrame(uint8_t *buffer, int packetsize,
 		const struct sockaddr_in* dest) {
 	int sendlen;
 	int tlen;
-
-	usleep(100);
 
 	// See ENV_EncryptUpdate(3) for an explanation of why this needs
 	// to be larger.
@@ -449,6 +506,8 @@ bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) 
 		return false;
 	}
 
+	uint32_t backoff = getBackoff(server_id);
+
 	for(uint16_t i = 1; i <= numfrags; i++) {
 		frame.fragment_num = i;
 		if(i == numfrags)
@@ -468,6 +527,9 @@ bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) 
 			log(LOG_WARNING, "Frame %u for (%u,%u) destined for %u failed "
 					"to transmit", frame.fragment_num, frame.server_id,
 					frame.message_id, server_id);
+
+		if (i < numfrags)
+			usleep(backoff);
 	}
 
 	return true;
@@ -517,6 +579,7 @@ Message* UDPPeerMessenger::getMessage() {
 						frame.server_id, frame.message_id, frame.acking_server);
 				Server::putAck(frame.server_id, frame.message_id,
 						frame.acking_server);
+				downBackoff(frame.acking_server);
 			} else if((size_t)(packet_size + tlen) !=
 					frame.fragment_len + sizeof(st_frame) - 1) {
 				log(LOG_WARNING, "Discarding frame due to invalid fragment_length field");
