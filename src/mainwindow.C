@@ -250,9 +250,9 @@ MainWindow::MainWindow() {
 	_login_dialog.serverName->setText(config["server"]["address"]);
 	_login_dialog.service->setText(config["server"]["service"]);
 
-	clarifications->setSorting(1);
-	clarificationRequests->setSorting(1);
-	submissions->setSorting(1);
+	clarifications->setSorting(1, FALSE);
+	clarificationRequests->setSorting(1, FALSE);
+	submissions->setSorting(1, FALSE);
 
 	GUIEvent::setReceiver(this);
 	register_log_listener(window_log);
