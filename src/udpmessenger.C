@@ -380,6 +380,8 @@ uint32_t UDPPeerMessenger::getBackoff(uint32_t server_id)
 		result = i->second;
 		if ((i->second *= 2) > _max_delay)
 			i->second = _max_delay;
+		if (i->second != result)
+			log(LOG_DEBUG, "Increased backoff for server_id=%u to %uus.", server_id, i->second);
 	}
 
 	return result;
@@ -391,9 +393,13 @@ void UDPPeerMessenger::downBackoff(uint32_t server_id)
 
 	map<uint32_t, uint32_t>::iterator i;
 	i = _backoffmap.find(server_id);
-	if(i != _backoffmap.end())
+	if(i != _backoffmap.end()) {
+		uint32_t otime = i->second;
 		if((i->second /= 2) < _min_delay)
 			i->second = _min_delay;
+		if (otime != i->second)
+			log(LOG_DEBUG, "Decreased backoff for server_id=%u to %uus.", server_id, i->second);
+	}
 }
 
 bool UDPPeerMessenger::sendFrame(uint8_t *buffer, int packetsize,
@@ -575,8 +581,8 @@ Message* UDPPeerMessenger::getMessage() {
 				log(LOG_WARNING, "Discarding frame due to short packet (%d bytes)",
 						packet_size + tlen);
 			} else if(frame.fragment_num == 0) {
-				log(LOG_INFO, "Received ACK for (%u,%u) from %u",
-						frame.server_id, frame.message_id, frame.acking_server);
+//				log(LOG_INFO, "Received ACK for (%u,%u) from %u",
+//						frame.server_id, frame.message_id, frame.acking_server);
 				Server::putAck(frame.server_id, frame.message_id,
 						frame.acking_server);
 				downBackoff(frame.acking_server);
@@ -586,13 +592,13 @@ Message* UDPPeerMessenger::getMessage() {
 			} else if(frame.data_checksum != checksum(frame.data, frame.fragment_len)) {
 				log(LOG_WARNING, "Discarding frame with invalid checksum");
 			} else if(Server::hasMessage(frame.server_id, frame.message_id)) {
-				log(LOG_INFO, "Received fragment for (%u,%u) which we already have.", frame.server_id, frame.message_id);
+//				log(LOG_INFO, "Received fragment for (%u,%u) which we already have.", frame.server_id, frame.message_id);
 				sendAck(frame.server_id, frame.message_id);
 			} else {
 				bool lastfragment = (frame.fragment_num & (1 << (sizeof(frame.fragment_num) * 8 - 1))) != 0;
 				frame.fragment_num &= (1 << (sizeof(frame.fragment_num) * 8 - 1)) - 1;
 
-				log(LOG_DEBUG, "Received fragment %u for (%u,%u)%s.", frame.fragment_num, frame.server_id, frame.message_id, lastfragment ? " - last fragment" : "");
+//				log(LOG_DEBUG, "Received fragment %u for (%u,%u)%s.", frame.fragment_num, frame.server_id, frame.message_id, lastfragment ? " - last fragment" : "");
 
 				ServerFragmentMap::iterator i = _fragments[frame.server_id].find(frame.message_id);
 
