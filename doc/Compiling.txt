@@ -11,6 +11,7 @@ installed:
 
 * g++ (3.3.x and 3.4.x works, 4.x.x should also work).
 * Qt3 (QTDIR variable needs to be correctly exported).
+* boost (specifically shared_ptr).
 * OpenSSL (Any version should work).
 * MySQL 4.1.x (Whilst in theory any RDB could work currently only MySQL is
     supported).
