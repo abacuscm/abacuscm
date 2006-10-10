@@ -12,4 +12,8 @@ It will write to the file specified on the command line (defaulting to
 
 The second part is the Perl script misc/standings.pl. Copy it to a
 cgi-bin directory, changing the hard-coded path to the standings.txt
-file. No modules beyond CGI::Pretty (quite standard) are required.
+file. No modules beyond CGI (quite standard) are required. There is
+also a CSS file in misc/abacuscm.css.
+
+You can also supply a file to make team IDs to team names; just modify
+the hard-coded path in standings.pl.
