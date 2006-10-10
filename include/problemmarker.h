@@ -13,6 +13,7 @@
 #include <string>
 #include <map>
 #include <stdint.h>
+#include <sys/types.h>
 
 #include "serverconnection.h"
 #include "buffer.h"
@@ -56,7 +57,7 @@ protected:
     std::map<std::string, std::string> _result_files;
 
     void setResult(RunResult result);
-    void addResultFile(std::string filetype, std::string filename);
+    void addResultFile(std::string filetype, std::string filename, off_t max_size = 0);
 
 public:
 	ProblemMarker();

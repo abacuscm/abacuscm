@@ -73,7 +73,7 @@ void CompiledProblemMarker::mark() {
 		log(LOG_INFO, "Compiling user program ...");
 		if(!_uprog->compile(fname, compiler_log, jaildir)) {
             setResult(COMPILE_FAILED);
-            addResultFile("Compilation log",  compiler_log);
+            addResultFile("Compilation log",  compiler_log, 16384);
 			log(LOG_ERR, "User program failed to compile.");
 			return;
 		}

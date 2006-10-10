@@ -13,6 +13,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -60,8 +61,16 @@ void ProblemMarker::setResult(RunResult result) {
     _have_result = true;
 }
 
-void ProblemMarker::addResultFile(std::string fileType, std::string filename) {
-    _result_files[fileType] = filename;
+// The final argument may be non-zero to specify a size to truncate the
+// file to.
+void ProblemMarker::addResultFile(std::string fileType, std::string filename, off_t max_size) {
+	_result_files[fileType] = filename;
+	if (max_size)
+	{
+		struct stat info;
+		if (stat(filename.c_str(), &info) && info.st_size > max_size)
+			truncate(filename.c_str(), max_size);
+	}
 }
 
 const Buffer& ProblemMarker::submission() {
