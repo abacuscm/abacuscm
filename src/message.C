@@ -102,8 +102,6 @@ void Message::setMessageId(uint32_t id) {
 	_message_id = id;
 	_signature = new uint8_t[MESSAGE_SIGNATURE_SIZE];
 	memset(_signature, 0, MESSAGE_SIGNATURE_SIZE);
-
-	makeBlob();
 }
 
 bool Message::getBlob(const uint8_t ** buffer, uint32_t *size) const {
