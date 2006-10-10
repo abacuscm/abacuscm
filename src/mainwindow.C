@@ -46,6 +46,7 @@
 #include <qlabel.h>
 #include <qtextbrowser.h>
 #include <qtimer.h>
+#include <qtabwidget.h>
 
 #include <time.h>
 
@@ -754,6 +755,9 @@ void MainWindow::updateStatus() {
 }
 
 void MainWindow::updateStandings() {
+	if (maintabs->currentPage() != tabStandings)
+		return;
+
 	Grid data = _server_con.getStandings();
 
 	standings->clear();
@@ -785,6 +789,9 @@ void MainWindow::updateStandings() {
 }
 
 void MainWindow::updateSubmissions() {
+	if (maintabs->currentPage() != tabSubmissions)
+		return;
+
 	SubmissionList list = _server_con.getSubmissions();
 
 	submissions->clear();
@@ -803,18 +810,18 @@ void MainWindow::updateSubmissions() {
 
 	SubmissionList::iterator l;
 	for(l = list.begin(); l != list.end(); ++l) {
-        //log(LOG_DEBUG, "submission:");
-        if (filter) {
-            if (is_subscribed.find((*l)["problem"]) == is_subscribed.end())
-                log(LOG_DEBUG, "Couldn't find %s in subscription map", (*l)["problem"].c_str());
-            else
-                if (!is_subscribed[(*l)["problem"]])
-                    // not subscribed to this problem
-                    continue;
-            if ((*l)["comment"] != "Awaiting Judge")
-                // not in the awaiting judge state
-                continue;
-        }
+		//log(LOG_DEBUG, "submission:");
+		if (filter) {
+			if (is_subscribed.find((*l)["problem"]) == is_subscribed.end())
+				log(LOG_DEBUG, "Couldn't find %s in subscription map", (*l)["problem"].c_str());
+			else
+				if (!is_subscribed[(*l)["problem"]])
+					// not subscribed to this problem
+					continue;
+			if ((*l)["comment"] != "Awaiting Judge")
+				// not in the awaiting judge state
+				continue;
+		}
 
 		AttributeMap::iterator a;
 		QListViewItem *item = new QListViewItem(submissions);
@@ -831,11 +838,11 @@ void MainWindow::updateSubmissions() {
 		contesttime = atoll((*l)["contesttime"].c_str());
 		sprintf(contesttime_buffer, "%02d:%02d:%02d", contesttime / 3600, contesttime / 60 % 60, contesttime % 60);
 
-        item->setText(0, (*l)["submission_id"]);
+		item->setText(0, (*l)["submission_id"]);
 		item->setText(1, contesttime_buffer);
 		item->setText(2, time_buffer);
 		item->setText(3, (*l)["problem"]);
-        item->setText(4, (*l)["comment"]);
+		item->setText(4, (*l)["comment"]);
 	}
 }
 
@@ -947,6 +954,9 @@ void MainWindow::toggleBalloonPopups(bool activate) {
 }
 
 void MainWindow::updateClarifications() {
+	if (maintabs->currentPage() != tabClarifications)
+		return;
+
 	ClarificationList list = _server_con.getClarifications();
 
 	clarifications->clear();
@@ -976,6 +986,9 @@ void MainWindow::updateClarifications() {
 }
 
 void MainWindow::updateClarificationRequests() {
+	if (maintabs->currentPage() != tabClarificationRequests)
+		return;
+
 	ClarificationRequestList list = _server_con.getClarificationRequests();
 
 	clarificationRequests->clear();
