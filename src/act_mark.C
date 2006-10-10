@@ -91,7 +91,7 @@ MarkMessage::MarkMessage(uint32_t submission_id, uint32_t marker, uint32_t type,
 MarkMessage::~MarkMessage() {
 	list<File>::iterator i;
 	for(i = _files.begin(); i != _files.end(); ++i)
-		delete i->data;
+		delete []i->data;
 }
 
 void MarkMessage::addFile(std::string name, uint32_t len, const void *data) {
