@@ -16,4 +16,10 @@ file. No modules beyond CGI (quite standard) are required. There is
 also a CSS file in misc/abacuscm.css.
 
 You can also supply a file to make team IDs to team names; just modify
-the hard-coded path in standings.pl.
+the hard-coded path in standings.pl. The file format is
+
+teamid<tab>team name
+teamid<tab>team name
+.
+.
+.
