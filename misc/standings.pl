@@ -35,18 +35,37 @@ print(header,
 		-head => meta({-http_equiv => 'Refresh', -content => '30' })
 	),
 	h1("ACM ICPC standings"),
-	start_table({-border => undef}),
-        thead(Tr(th([map { escapeHTML($_) } split(/\t|\n/, <IN>)]))),
+	start_table({-border => undef}));
+$_ = <IN>;
+chomp;
+my @fields = split(/\t/);
+unshift @fields, 'Team name';
+unshift @fields, 'Place';
+print(
+        thead(Tr(th([map { escapeHTML($_) } @fields]))),
 	start_tbody);
+my $place = 0;
+my $tie_place = 1;
+my $last_solved = -1;
+my $last_time = '';
 while (<IN>)
 {
 	chomp;
 	my @fields = split(/\t/);
 	next unless scalar(@fields);
-	if (exists($name_map{$fields[0]}))
+	$place++;
+	my $name = exists($name_map{$fields[0]}) ? $name_map{$fields[0]} : $fields[0];
+	my $solved = $fields[$#fields - 1];
+	my $time = $fields[$#fields];
+	if ($solved ne $last_solved || $time ne $last_time)
 	{
-		$fields[0] = "$name_map{$fields[0]} ($fields[0])";
+		$tie_place = $place;
+		$last_solved = $solved;
+		$last_time = $time;
 	}
+
+	unshift @fields, $name;
+	unshift @fields, $tie_place;
 	@fields = map { escapeHTML($_) } @fields;
 	for (@fields[1..$#fields-2])
 	{
