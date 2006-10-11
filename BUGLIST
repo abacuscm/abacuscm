@@ -16,27 +16,25 @@ This file contains a list of BUGS and or nice to havs (wishlist).
 
 	PRIORITY: medium
 
-* Better handling of large PeerMessages is udpmessenger.
-	Transmitting 4MB of udp packets at full speed onto a 10MB/s network is
-	easy, getting those same packets over a lower-speed link causes problems,
-	udppeermessenger should find a better method of deciding how fast to send
-	packets etc.
+* udpmessenger improvements.
+	The main problem with udpmessenger is congestion control.  Listed are a
+	couple of possibilities to help solve this:
+
+	1.  A queued ticketing system where we only have x number of packets "on
+		the wire" and then ack individual fragments.
+	2.  Or we could create a "data avail" message and then have the recipient
+		request the fragments it needs.  This would still need to be combined
+		with some kind of throttling mechanism.  Possibly only allow a
+		recipient to request x number of fragments per round?
+
+	The congestion problem can especially be seen where we try to transmit
+	large (4MB has been seen before) PeerMessages.
+
+	In all the schemes transmission of fragments related to a specific
+	PeerMessage should immediately be terminated once that Message has been
+	acked by the receiving server.
 
 	PRIORITY: high
-
-* udpmessenger should stop re-transmit of a Message upon receiving and ACK.
-	If udppeermessenger is re-sending a message and an ACK for such a message
-	is received there is no point in re-transmitting the remainder of such
-	a message.  A mechanism for stopping such a re-transmit would be a good idea.
-
-	PRIORITY: medium
-
-* udpmessenger sends too many fragments.
-	udpmessenger only needs to send fragments that has not yet been received.
-	A mechanism should be put in place to only resend required fragments if
-	a PeerMessage is larger than a certain size.
-
-	PRIORITY: low
 
 * No problem names to contestants before contest start
 	Problem names should not be available to contestants before the start
