@@ -1,0 +1,111 @@
+\documentclass[a4paper]{article}
+\usepackage{a4wide}
+\title{Abacus contestant manual}
+\author{Bruce Merry}
+\date{11 October 2006}
+\begin{document}
+\maketitle
+\section{Introduction}
+Abacus is the competition software used for the Southern African
+Regional of the ACM International Collegiate Programming Challenge. You
+will use it to submit your solutions and get feedback from the judges.
+
+\section{Starting abacus}
+The command to start abacus will depend on your local installation. In
+most cases you should just be able to type \texttt{abacus} in a
+terminal window.
+
+After starting abacus, you should select \texttt{Connect} from the
+\texttt{Abacus} menu. This will open a dialog box. The server and port
+should have already been set for you. Fill in the username and password
+that you can been given. If you do this correctly, you should receive
+the message \texttt{You are now connected to the server.}
+
+When the contest is running, you will see a clock in the bottom-right
+corner counting down the remaining time.
+
+\section{Clarifications}
+If you are uncertain about some details in a task or the contest in
+general, you may submit a clarification request. On the
+\texttt{Clarification requests} tab, click the \texttt{Request
+Clarification} button. Select the problem your query pertains to and
+type in your query.
+
+When a judge responds to your query, the response will pop up on your
+screen. It will also be available on the clarifications tab (you can
+double-click on clarification requests and clarifications to see the
+full text).
+
+Some things to take note of:
+\begin{enumerate}
+\item The newest information appears at the top.
+\item The judges are located at the primary site. If you have questions
+specifically about the installation at your site (e.g., your web
+browser won't open) then speak to somebody at the site.
+\item The judges do not know who is submitting queries. This means
+that if you want to refer to a previous query you made, you should
+include the request ID that appears in the list box. Similarly, if your
+query is about a particular submission, you should include the
+submission ID from the submissions tab.
+\item You may receive clarifications for questions your never asked.
+These are broadcast replies and indicate important information for all
+contestants.
+\end{enumerate}
+
+\section{Writing your solution}
+If you are using Java, you can call your main class whatever you
+like, but it must be the \emph{first} class in the file. You can
+include support classes after it, but they should not be
+\texttt{public}.
+
+Your solution will read from standard input
+(\texttt{stdin}/\texttt{cin}/\texttt{System.in}) and write to standard
+output (\texttt{stdout}/\texttt{cout}/\texttt{System.out}). Your
+solution is tested by an automated marker, so you must be careful to
+input only what is asked for, and output only what is asked for. In
+particular, do not print prompts or messages like ``The answer is:''
+unless you are asked to.
+
+\section{Submitting}
+When you are ready to submit a solution, go to the submissions page and
+click \texttt{Make Submission}. Be very careful to select the right
+problem, source file and language in the dialog box, as there are
+penalty points for incorrect submissions and there is no way to reverse
+an accidentally submitted solution.
+
+Once you make a submission, it will appear in the list box, with newest
+submissions at the top. The status field will let you keep track of the
+submission status. The possible options are:
+\begin{description}
+\item[Pending] The submission is still in the automatic marker.
+\item[Compilation failure] Your submission did not compile. This can
+happen with C++ in particular, because the marker might not
+be using the same version of the compiler. To assist you, you can
+double-click on the submission to get the compiler output. In many
+cases you just need to add a \verb"#include" statement. There is no
+time penalty for compilation failures.
+\item[Time limit exceeded] Your program exceeding the maximum time
+limit. This could mean that it is too slow or has an infinite loop.
+\item[Abnormal termination of program] Your program has crashed for
+some reason. Possible reasons include using too much memory, writing an
+excessive amount of output, throwing an uncaught Java exception, using
+illegal memory in C/C++, and not returning zero as the exit code from
+C/C++.
+\item[Awaiting judge] The program produced an output file that was
+judged wrong by the automatic marker. A judge will look at it, and
+if the only error is in formatting it may be judged correct. You should
+not rely on this.
+\item[Wrong answer] A judge has confirmed that the answer is wrong.
+\item[Correct answer] Well done!
+\end{description}
+
+When the status changes, you will be informed by a popup, so you do not
+need to keep the submissions tab open.
+
+\section{Standings}
+You can see the standings at any time (from the standings tab), but
+they will not be updated during the last hour of the contest. Only
+teams that have made at least one submission will appear on the
+standings.
+
+\end{document}
