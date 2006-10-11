@@ -152,3 +152,102 @@ This file contains a list of BUGS and or nice to havs (wishlist).
 	handed out.
 
 	PRIORITY: low
+
+Known leaks:
+
+(trunk-r395)
+==32465== 232 bytes in 2 blocks are definitely lost in loss record 9 of 19
+==32465==    at 0x40209CE: calloc (in /usr/lib/valgrind/x86-linux/vgpreload_memcheck.so)
+==32465==    by 0x459B855: my_thread_init (in /usr/lib/mysql/libmysqlclient_r.so.15.0.0)
+==32465==    by 0x4565D5F: MySQLFunctor() (dbmysql.C:1522)
+==32465==    by 0x4056004: DbCon::getInstance() (dbcon.C:33)
+==32465==    by 0x478E94C: PasswdMessage::process() const (act_passwd.C:150)
+==32465==    by 0x805B7ED: message_handler(void*) (abacusd.C:292)
+==32465==    by 0x4080293: start_thread (in /lib/libpthread-2.4.so)
+==32465==    by 0x425AC9D: clone (in /lib/libc-2.4.so)
+
+Initial thoughts was that this is an instance of MySQL leaking, however,
+sizeof(MySQL) is 1256.  This is possibly a leak in the MySQL C API.
+mysql_init() in MySQL::init() is balanced with a mysql_close() in
+MySQL::~MySQL() so that should be fine.  This may or may not be fixed by the
+added call to mysql_server_init();
+
+Other valgrind reported problems:
+
+Most of these seem bogus ... but somebody else might spot something I don't
+(And the fact that valgrind tends to be right about these kinds of things):
+
+==865== Conditional jump or move depends on uninitialised value(s)
+==865==    at 0x480571B: MarkMessage::process() const (act_mark.C:123)
+==865==    by 0x805B7ED: message_handler(void*) (abacusd.C:292)
+==865==    by 0x4080293: start_thread (in /lib/libpthread-2.4.so)
+==865==    by 0x425AC9D: clone (in /lib/libc-2.4.so)
+
+==865== Conditional jump or move depends on uninitialised value(s)
+==865==    at 0x405C4C4: ClientConnection::process_data() (clientconnection.C:85)
+==865==    by 0x405C706: ClientConnection::process() (clientconnection.C:125)
+==865==    by 0x805BA08: worker_thread(void*) (abacusd.C:335)
+==865==    by 0x4080293: start_thread (in /lib/libpthread-2.4.so)
+==865==    by 0x425AC9D: clone (in /lib/libc-2.4.so)
+
+==865== Conditional jump or move depends on uninitialised value(s)
+==865==    at 0x405C492: ClientConnection::process_data() (clientconnection.C:87)
+==865==    by 0x405C706: ClientConnection::process() (clientconnection.C:125)
+==865==    by 0x805BA08: worker_thread(void*) (abacusd.C:335)
+==865==    by 0x4080293: start_thread (in /lib/libpthread-2.4.so)
+==865==    by 0x425AC9D: clone (in /lib/libc-2.4.so)
+
+==865== Conditional jump or move depends on uninitialised value(s)
+==865==    at 0x405C3F6: ClientConnection::process_data() (clientconnection.C:92)
+==865==    by 0x405C706: ClientConnection::process() (clientconnection.C:125)
+==865==    by 0x805BA08: worker_thread(void*) (abacusd.C:335)
+==865==    by 0x4080293: start_thread (in /lib/libpthread-2.4.so)
+==865==    by 0x425AC9D: clone (in /lib/libc-2.4.so)
+
+==865== Conditional jump or move depends on uninitialised value(s)
+==865==    at 0x405C40B: ClientConnection::process_data() (clientconnection.C:94)
+==865==    by 0x405C706: ClientConnection::process() (clientconnection.C:125)
+==865==    by 0x805BA08: worker_thread(void*) (abacusd.C:335)
+==865==    by 0x4080293: start_thread (in /lib/libpthread-2.4.so)
+==865==    by 0x425AC9D: clone (in /lib/libc-2.4.so)
+
+==865== Conditional jump or move depends on uninitialised value(s)
+==865==    at 0x42CE4BF: MessageBlock::addBytes(char const*, int) (messageblock.C:73)
+==865==    by 0x405C3EE: ClientConnection::process_data() (clientconnection.C:91)
+==865==    by 0x405C706: ClientConnection::process() (clientconnection.C:125)
+==865==    by 0x805BA08: worker_thread(void*) (abacusd.C:335)
+==865==    by 0x4080293: start_thread (in /lib/libpthread-2.4.so)
+==865==    by 0x425AC9D: clone (in /lib/libc-2.4.so)
+
+==865== Conditional jump or move depends on uninitialised value(s)
+==865==    at 0x42CE4E6: MessageBlock::addBytes(char const*, int) (messageblock.C:74)
+==865==    by 0x405C3EE: ClientConnection::process_data() (clientconnection.C:91)
+==865==    by 0x405C706: ClientConnection::process() (clientconnection.C:125)
+==865==    by 0x805BA08: worker_thread(void*) (abacusd.C:335)
+==865==    by 0x4080293: start_thread (in /lib/libpthread-2.4.so)
+==865==    by 0x425AC9D: clone (in /lib/libc-2.4.so)
+
+==865== Conditional jump or move depends on uninitialised value(s)
+==865==    at 0x42CE4FF: MessageBlock::addBytes(char const*, int) (messageblock.C:76)
+==865==    by 0x405C3EE: ClientConnection::process_data() (clientconnection.C:91)
+==865==    by 0x405C706: ClientConnection::process() (clientconnection.C:125)
+==865==    by 0x805BA08: worker_thread(void*) (abacusd.C:335)
+==865==    by 0x4080293: start_thread (in /lib/libpthread-2.4.so)
+==865==    by 0x425AC9D: clone (in /lib/libc-2.4.so)
+
+==865== Conditional jump or move depends on uninitialised value(s)
+==865==    at 0x42CE490: MessageBlock::addBytes(char const*, int) (messageblock.C:71)
+==865==    by 0x405C3EE: ClientConnection::process_data() (clientconnection.C:91)
+==865==    by 0x405C706: ClientConnection::process() (clientconnection.C:125)
+==865==    by 0x805BA08: worker_thread(void*) (abacusd.C:335)
+==865==    by 0x4080293: start_thread (in /lib/libpthread-2.4.so)
+==865==    by 0x425AC9D: clone (in /lib/libc-2.4.so)
+
+==865== Use of uninitialised value of size 4
+==865==    at 0x42CE4E6: MessageBlock::addBytes(char const*, int) (messageblock.C:74)
+==865==    by 0x405C3EE: ClientConnection::process_data() (clientconnection.C:91)
+==865==    by 0x405C706: ClientConnection::process() (clientconnection.C:125)
+==865==    by 0x805BA08: worker_thread(void*) (abacusd.C:335)
+==865==    by 0x4080293: start_thread (in /lib/libpthread-2.4.so)
+==865==    by 0x425AC9D: clone (in /lib/libc-2.4.so)
+
