@@ -63,33 +63,36 @@ int UserProg::execcompiler(list<string> p_argv, string compiler_log) {
 	}
 }
 
+static string uint2str(unsigned value)
+{
+	ostringstream tmpstrm;
+	tmpstrm << value;
+	return tmpstrm.str();
+}
+
 void UserProg::setRootDir(string root) {
 	_runlimit_args.push_back("-r");
 	_runlimit_args.push_back(root);
 }
 
 void UserProg::setCPUTime(unsigned cputime) {
-	ostringstream tmpstrm;
-	tmpstrm << cputime;
-
 	_runlimit_args.push_back("-c");
-	_runlimit_args.push_back(tmpstrm.str());
+	_runlimit_args.push_back(uint2str(cputime));
 }
 
 void UserProg::setRealTime(unsigned realtime) {
-	ostringstream tmpstrm;
-	tmpstrm << realtime;
-
 	_runlimit_args.push_back("-t");
-	_runlimit_args.push_back(tmpstrm.str());
+	_runlimit_args.push_back(uint2str(realtime));
 }
 
 void UserProg::setMemLimit(unsigned bytes) {
-	ostringstream tmpstrm;
-	tmpstrm << bytes;
-
 	_runlimit_args.push_back("-m");
-	_runlimit_args.push_back(tmpstrm.str());
+	_runlimit_args.push_back(uint2str(bytes));
+}
+
+void UserProg::setFileLimit(unsigned bytes) {
+	_runlimit_args.push_back("-f");
+	_runlimit_args.push_back(uint2str(bytes));
 }
 
 void UserProg::setRuntimeUser(std::string uname) {
@@ -103,11 +106,8 @@ void UserProg::setRuntimeGroup(std::string gname) {
 }
 
 void UserProg::setMaxProcs(unsigned nproc) {
-	ostringstream tmpstrm;
-	tmpstrm << nproc;
-
 	_runlimit_args.push_back("-n");
-	_runlimit_args.push_back(tmpstrm.str());
+	_runlimit_args.push_back(uint2str(nproc));
 }
 
 void UserProg::registerLanguage(string lang, UserProgFunctor func) {

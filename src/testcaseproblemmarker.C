@@ -37,38 +37,38 @@ void TestCaseProblemMarker::mark_compiled() {
 	delete in;
 
 	if(run(infile.c_str(),
-			outfile.c_str(),
-			errfile.c_str(),
-           runfile.c_str()) == 0) {
+				outfile.c_str(),
+				errfile.c_str(),
+				runfile.c_str()) == 0) {
 
-        // parse the runinfo output
-        if (_run_info)
-            delete _run_info;
-        _run_info = new RunInfo(runfile.c_str());
+		// parse the runinfo output
+		if (_run_info)
+			delete _run_info;
+		_run_info = new RunInfo(runfile.c_str());
 
-        if (_run_info->timeExceeded) {
-            // exceeded time limit
-            // set some appropriate stuff, and return
-            // includes adding files to send to judges
-            log(LOG_DEBUG, "Program exceeded time limit (time was %u; %s time limit was exceeded)", _run_info->time, _run_info->cpuExceeded ? "cpu" : _run_info->realTimeExceeded ? "real" : "unknown");
-            setResult(TIME_EXCEEDED);
-            return;
-        }
-        if (!_run_info->normalTerm || _run_info->exitCode != 0) {
-            // bad exit code
-            // set some appropriate stuff, and return
-            // includes adding files to send to judges
-            if (_run_info->signalTerm)
-                log(LOG_DEBUG, "Abnormal termination of program (caught signal %d -- %s)", _run_info->signal, _run_info->signalName);
-            else
-                log(LOG_DEBUG, "Abnormal termination of program (non-zero exit code of %d)", _run_info->exitCode);
-            setResult(ABNORMAL);
-            return;
-        }
+		if (_run_info->timeExceeded) {
+			// exceeded time limit
+			// set some appropriate stuff, and return
+			// includes adding files to send to judges
+			log(LOG_DEBUG, "Program exceeded time limit (time was %u; %s time limit was exceeded)", _run_info->time, _run_info->cpuExceeded ? "cpu" : _run_info->realTimeExceeded ? "real" : "unknown");
+			setResult(TIME_EXCEEDED);
+			return;
+		}
+		if (!_run_info->normalTerm || _run_info->exitCode != 0) {
+			// bad exit code
+			// set some appropriate stuff, and return
+			// includes adding files to send to judges
+			if (_run_info->signalTerm)
+				log(LOG_DEBUG, "Abnormal termination of program (caught signal %d -- %s)", _run_info->signal, _run_info->signalName);
+			else
+				log(LOG_DEBUG, "Abnormal termination of program (non-zero exit code of %d)", _run_info->exitCode);
+			setResult(ABNORMAL);
+			return;
+		}
 
-        // if we get here, then we have a solution that completed in time,
-        // exited normally and had an exit code of 0 == good :-)
-        log(LOG_DEBUG, "Normal termination of program (finished in time of %u)", _run_info->time);
+		// if we get here, then we have a solution that completed in time,
+		// exited normally and had an exit code of 0 == good :-)
+		log(LOG_DEBUG, "Normal termination of program (finished in time of %u)", _run_info->time);
 
 		Buffer *out = getProblemFile("testcase.output");
 
@@ -90,12 +90,12 @@ void TestCaseProblemMarker::mark_compiled() {
 
 		int excode = system(diff_cmd.c_str());
 		if(excode == 0) {
-            setResult(CORRECT);
+			setResult(CORRECT);
 			log(LOG_DEBUG, "Correct!");
 		} else {
-            setResult(WRONG);
-            addResultFile("Team's output", outfile);
-            addResultFile("Diff of team's output versus expected output", difffile);
+			setResult(WRONG);
+			addResultFile("Team's output", outfile, 128 * 1024);
+			addResultFile("Diff of team's output versus expected output", difffile, 128 * 1024);
 			log(LOG_DEBUG, "Incorrect!");
 		}
 	} else {

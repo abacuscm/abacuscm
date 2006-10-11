@@ -62,6 +62,7 @@ public:
 
 	virtual void setRootDir(std::string root); // will always be the same as outdir.
 	virtual void setMemLimit(unsigned bytes);
+	virtual void setFileLimit(unsigned bytes);
 	virtual void setCPUTime(unsigned msecs);
 	virtual void setRealTime(unsigned msecs);
 	virtual void setRuntimeUser(std::string uname);
