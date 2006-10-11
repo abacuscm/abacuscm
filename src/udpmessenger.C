@@ -162,7 +162,7 @@ bool UDPPeerMessenger::initialise() {
 	}
 
 	log(LOG_INFO, "Using backoff values (%u, %u, %u).", _min_delay, _init_delay, _max_delay);
-	
+
 	if(_sock < 0)
 		return startup();
 
@@ -254,7 +254,7 @@ bool UDPPeerMessenger::startup() {
 
 	fd = open(cipher_key.c_str(), O_RDONLY);
 	if(fd < 0) {
-		lerror("open");
+		lerror("open (cipher_key)");
 		goto err;
 	}
 
@@ -268,7 +268,7 @@ bool UDPPeerMessenger::startup() {
 
 	fd = open(cipher_iv.c_str(), O_RDONLY);
 	if(fd < 0) {
-		lerror("open");
+		lerror("open (cipher_iv)");
 		goto err;
 	}
 
