@@ -16,15 +16,17 @@
 #include <mysql/mysql.h>
 #include <sstream>
 #include <time.h>
+#include <pthread.h>
 
 #define log_mysql_error()	log(LOG_ERR,"%s line %d: %s", __PRETTY_FUNCTION__, __LINE__, mysql_error(&_mysql))
 
 using namespace std;
 
+static pthread_key_t _called_thread_init;
+
 class MySQL : public DbCon {
 private:
 	MYSQL _mysql;
-
 	list<Message*> getMessages(std::string query);
 public:
 	MySQL();
@@ -146,6 +148,11 @@ string MySQL::escape_buffer(const uint8_t* bfr, uint32_t size) {
 }
 
 bool MySQL::ok() {
+	if (!pthread_getspecific(_called_thread_init)) {
+		mysql_thread_init();
+		pthread_setspecific(_called_thread_init, (void*)1);
+	}
+
 	if(mysql_ping(&_mysql)) {
 		log(LOG_INFO, "MySQL: %s", mysql_error(&_mysql));
 		return false;
@@ -1527,10 +1534,18 @@ static DbCon* MySQLFunctor() {
 	return db;
 }
 
+static void thread_deinit(void* initialised)
+{
+	if ((int)initialised == 1)
+		mysql_thread_end();
+}
+
 static void init() __attribute__((constructor));
 static void init() {
 	mysql_server_init(0, NULL, NULL);
 	DbCon::registerFunctor(MySQLFunctor);
+	pthread_key_create(&_called_thread_init, thread_deinit);
+	pthread_setspecific(_called_thread_init, (void*)2);
 }
 
 static void deinit() __attribute__((destructor));
