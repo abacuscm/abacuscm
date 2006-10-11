@@ -219,7 +219,8 @@ QueryResultRow MySQL::singleRowQuery(std::string query) {
 
 bool MySQL::executeQuery(std::string query) {
 	if(mysql_query(&_mysql, query.c_str())) {
-		log_mysql_error();
+		log(LOG_ERR, "MySQL query failed: %s", mysql_error(&_mysql));
+		log(LOG_ERR, "MySQL query was: %s", query.c_str());
 		return false;
 	}
 	return true;
