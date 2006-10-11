@@ -166,16 +166,19 @@ bool StandingsSupportModule::updateStandings()
 					correct_time = s->time;
 				}
 
-				if(correct) {
-					teamdata.correct++;
-					teamdata.time += (tries - 1) * 20 * 60;
-					teamdata.time += correct_time;
-					teamdata.tries[p->first] = tries;
-				} else
-					teamdata.tries[p->first] = -tries;
+				if (tries) {
+					if(correct) {
+						teamdata.correct++;
+						teamdata.time += (tries - 1) * 20 * 60;
+						teamdata.time += correct_time;
+						teamdata.tries[p->first] = tries;
+					} else
+						teamdata.tries[p->first] = -tries;
+				}
 			}
 
-			standings->push_back(teamdata);
+			if (!teamdata.tries.empty())
+				standings->push_back(teamdata);
 		}
 
 		sort(standings->begin(), standings->end(), StandingsDataLessThan);
