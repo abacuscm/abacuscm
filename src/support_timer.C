@@ -96,7 +96,7 @@ bool TimerSupportModule::nextScheduledStartStopAfter(uint32_t server_id, time_t 
 		after_time = time(NULL);
 
 	struct startstop_event* i = _evlist;
-	while (i && i->time < after_time)
+	while (i && i->time <= after_time)
 		i = i->next;
 
 	while (i && i->server_id && i->server_id != server_id)
