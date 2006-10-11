@@ -129,8 +129,8 @@ bool TimerSupportModule::scheduleStartStop(uint32_t server_id, time_t time, int 
 	bool res = false;
 	ostringstream query;
 
-	query << "INSERT INTO ContestStartStop(server_id, action, time) VALUES(" << server_id << ", "
-		<< time << ", '" << (action == TIMER_START ? "START" : "STOP") << "')";
+	query << "INSERT INTO ContestStartStop(server_id, action, time) VALUES(" << server_id << ", '"
+		<< (action == TIMER_START ? "START" : "STOP") << "', " << time << ")";
 
 	pthread_mutex_lock(&_writelock);
 
