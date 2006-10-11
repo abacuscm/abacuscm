@@ -20,6 +20,10 @@
 
 #define log_mysql_error()	log(LOG_ERR,"%s line %d: %s", __PRETTY_FUNCTION__, __LINE__, mysql_error(&_mysql))
 
+#define MYSQL_THREAD_STATE_UNINITIALIZED		((void*)NULL)
+#define MYSQL_THREAD_STATE_THREAD_INIT			((void*)1)
+#define MYSQL_THREAD_STATE_SERVER_INIT			((void*)2)
+
 using namespace std;
 
 static pthread_key_t _called_thread_init;
@@ -148,9 +152,9 @@ string MySQL::escape_buffer(const uint8_t* bfr, uint32_t size) {
 }
 
 bool MySQL::ok() {
-	if (!pthread_getspecific(_called_thread_init)) {
+	if (pthread_getspecific(_called_thread_init) == MYSQL_THREAD_STATE_UNINITIALIZED) {
 		mysql_thread_init();
-		pthread_setspecific(_called_thread_init, (void*)1);
+		pthread_setspecific(_called_thread_init, MYSQL_THREAD_STATE_THREAD_INIT);
 	}
 
 	if(mysql_ping(&_mysql)) {
@@ -1536,7 +1540,7 @@ static DbCon* MySQLFunctor() {
 
 static void thread_deinit(void* initialised)
 {
-	if ((int)initialised == 1)
+	if (initialised == MYSQL_THREAD_STATE_THREAD_INIT)
 		mysql_thread_end();
 }
 
@@ -1545,7 +1549,7 @@ static void init() {
 	mysql_server_init(0, NULL, NULL);
 	DbCon::registerFunctor(MySQLFunctor);
 	pthread_key_create(&_called_thread_init, thread_deinit);
-	pthread_setspecific(_called_thread_init, (void*)2);
+	pthread_setspecific(_called_thread_init, MYSQL_THREAD_STATE_SERVER_INIT);
 }
 
 static void deinit() __attribute__((destructor));
