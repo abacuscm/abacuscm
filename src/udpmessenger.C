@@ -526,7 +526,7 @@ bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) 
 		fragnums.push_back(i);
 	random_shuffle(fragnums.begin(), fragnums.end());
 
-	for(uint16_t c = 1; c <= numfrags; c++) {
+	for(uint16_t c = 0; c < numfrags; ++c) {
 		uint16_t i = fragnums[c];
 
 		frame.fragment_num = i;
@@ -544,13 +544,13 @@ bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) 
 
 		int packetsize = frame.fragment_len + ST_FRAME_SIZE - 1;
 
+		if (c)
+			usleep(backoff);
+
 		if(!sendFrame(buffer, packetsize, dest))
 			log(LOG_WARNING, "Frame %u for (%u,%u) destined for %u failed "
 					"to transmit", frame.fragment_num, frame.server_id,
 					frame.message_id, server_id);
-
-		if (c < numfrags)
-			usleep(backoff);
 	}
 
 	return true;
