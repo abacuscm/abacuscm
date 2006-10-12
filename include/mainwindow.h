@@ -15,6 +15,10 @@
 
 #include "serverconnection.h"
 
+#include <map>
+#include <string>
+#include <utility>
+
 class QCheckBox;
 class QListViewItem;
 class QTimer;
@@ -39,6 +43,12 @@ private:
 	/* Clock-related stuff */
 	QTimer *timer;
 	time_t projected_stop;
+
+	/* Clarification stuff. The list box holds just the summary, so
+	 * we need to map the ID to the full text in each case.
+	 */
+	std::map<std::string, std::string> fullClarificationRequests;
+	std::map<std::string, std::pair<std::string, std::string> > fullClarifications;
 
 	void triggerType(std::string type, bool status);
 	void switchType(std::string type);

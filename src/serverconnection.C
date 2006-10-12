@@ -28,6 +28,9 @@
 // optimal in terms of speed, but memory intensive.
 #define BFR_SIZE		(16 * 1024)
 
+// Character used to escape newlines
+#define NEWLINE_ESCAPE_CHAR ('\001')
+
 using namespace std;
 
 ServerConnection::ServerConnection() {
@@ -228,6 +231,9 @@ void ServerConnection::processMB(MessageBlock *mb) {
 		pthread_mutex_unlock(&_lock_response);
 	} else {
 		log(LOG_DEBUG, "Received event '%s'", mb->action().c_str());
+		// Handle clarification reply events that encode newlines
+		for (MessageHeaders::iterator i = mb->begin(); i != mb->end(); i++)
+			replace(i->second.begin(), i->second.end(), NEWLINE_ESCAPE_CHAR, '\n');
 		pthread_mutex_lock(&_lock_eventmap);
 		EventMap::iterator emi = _eventmap.find(mb->action());
 		if(emi != _eventmap.end()) {
@@ -751,7 +757,7 @@ bool ServerConnection::clarificationRequest(uint32_t prob_id, const string& ques
 	str_prob_id << prob_id;
 
 	string flatquestion = question;
-	replace(flatquestion.begin(), flatquestion.end(), '\n', ' ');
+	replace(flatquestion.begin(), flatquestion.end(), '\n', NEWLINE_ESCAPE_CHAR);
 
 	MessageBlock mb("clarificationrequest");
 	mb["prob_id"] = str_prob_id.str();
@@ -770,7 +776,7 @@ bool ServerConnection::clarificationReply(uint32_t clarification_req_id,
 	str_cr_id << clarification_req_id;
 
 	string flatanswer = answer;
-	replace(flatanswer.begin(), flatanswer.end(), '\n', ' ');
+	replace(flatanswer.begin(), flatanswer.end(), '\n', NEWLINE_ESCAPE_CHAR);
 
 	MessageBlock mb("clarification");
 	mb["clarification_request_id"] = str_cr_id.str();
@@ -809,7 +815,11 @@ ClarificationList ServerConnection::getClarifications() {
 	attrs.push_back("question");
 	attrs.push_back("answer");
 
-	return multiVectorAction(mb, attrs);
+	ClarificationList l = multiVectorAction(mb, attrs);
+	for (ClarificationList::iterator i = l.begin(); i != l.end(); i++)
+		for (AttributeMap::iterator j = i->begin(); j != i->end(); j++)
+			replace(j->second.begin(), j->second.end(), NEWLINE_ESCAPE_CHAR, '\n');
+	return l;
 }
 
 ClarificationRequestList ServerConnection::getClarificationRequests() {
@@ -824,7 +834,11 @@ ClarificationRequestList ServerConnection::getClarificationRequests() {
 	attrs.push_back("question");
 	attrs.push_back("status");
 
-	return multiVectorAction(mb, attrs);
+	ClarificationRequestList l = multiVectorAction(mb, attrs);
+	for (ClarificationRequestList::iterator i = l.begin(); i != l.end(); i++)
+		for (AttributeMap::iterator j = i->begin(); j != i->end(); j++)
+			replace(j->second.begin(), j->second.end(), NEWLINE_ESCAPE_CHAR, '\n');
+	return l;
 }
 
 Grid ServerConnection::getStandings() {

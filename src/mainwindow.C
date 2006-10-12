@@ -644,7 +644,7 @@ void MainWindow::doShowClarificationRequest(QListViewItem *item) {
 	if (_active_type == "contestant")
 	    vcr.reply->setEnabled(false);
 	vcr.problem->setText(item->text(2));
-	vcr.question->setText(item->text(4));
+	vcr.question->setText(fullClarificationRequests[item->text(0)]);
 	vcr.exec();
 }
 
@@ -652,8 +652,8 @@ void MainWindow::doShowClarificationReply(QListViewItem *item) {
 	ViewClarificationReply vcr;
 
 	vcr.problem->setText(item->text(2));
-	vcr.question->setText(item->text(3));
-	vcr.answer->setText(item->text(4));
+	vcr.question->setText(fullClarifications[item->text(0)].first);
+	vcr.answer->setText(fullClarifications[item->text(0)].second);
 	vcr.exec();
 }
 
@@ -953,6 +953,29 @@ void MainWindow::toggleBalloonPopups(bool activate) {
 	}
 }
 
+// Returns at most one line and at most 50 characters of string, appending
+// "..." if anything was cut off.
+static string summary_string(const string &s)
+{
+	string ans = s;
+	bool clipped = false;
+	string::size_type nl;
+
+	nl = ans.find('\n');
+	if (nl != string::npos)
+	{
+		ans.erase(nl);
+		clipped = true;
+	}
+	if (ans.size() > 50)
+	{
+		ans.erase(50);
+		clipped = true;
+	}
+	if (clipped) ans += "...";
+	return ans;
+}
+
 void MainWindow::updateClarifications() {
 	if (maintabs->currentPage() != tabClarifications)
 		return;
@@ -960,6 +983,7 @@ void MainWindow::updateClarifications() {
 	ClarificationList list = _server_con.getClarifications();
 
 	clarifications->clear();
+	fullClarifications.clear();
 
 	ClarificationList::iterator l;
 	for(l = list.begin(); l != list.end(); ++l) {
@@ -977,8 +1001,9 @@ void MainWindow::updateClarifications() {
 		item->setText(0, (*l)["id"]);
 		item->setText(1, time_buffer);
 		item->setText(2, (*l)["problem"]);
-		item->setText(3, (*l)["question"]);
-		item->setText(4, (*l)["answer"]);
+		item->setText(3, summary_string((*l)["question"]));
+		item->setText(4, summary_string((*l)["answer"]));
+		fullClarifications[(*l)["id"]] = make_pair((*l)["question"], (*l)["answer"]);
 
 		for(a = l->begin(); a != l->end(); ++a)
 			log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());
@@ -992,6 +1017,7 @@ void MainWindow::updateClarificationRequests() {
 	ClarificationRequestList list = _server_con.getClarificationRequests();
 
 	clarificationRequests->clear();
+	fullClarificationRequests.clear();
 
 	ClarificationRequestList::iterator l;
 	for(l = list.begin(); l != list.end(); ++l) {
@@ -1010,7 +1036,8 @@ void MainWindow::updateClarificationRequests() {
 		item->setText(1, time_buffer);
 		item->setText(2, (*l)["problem"]);
 		item->setText(3, (*l)["status"]);
-		item->setText(4, (*l)["question"]);
+		item->setText(4, summary_string((*l)["question"]));
+		fullClarificationRequests[(*l)["id"]] = (*l)["question"];
 
 		for(a = l->begin(); a != l->end(); ++a)
 			log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());
