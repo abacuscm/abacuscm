@@ -93,7 +93,6 @@ static void update_standings(ServerConnection &_server_con, const string &fname)
 int main(int argc, char **argv) {
 	string username;
 	string password;
-	ServerConnection _server_con;
 	const char *fname = "standings.txt";
 
 	register_log_listener(log_function);
@@ -101,6 +100,11 @@ int main(int argc, char **argv) {
 	setup_sigsegv();
 	Config &conf = Config::getConfig();
 	conf.load(DEFAULT_CLIENT_CONFIG);
+	char *home = getenv("HOME");
+	if(home)
+		conf.load(string(home) + "/.abacus");
+	conf.load("abacus.conf");
+
 	if(argc > 1)
 		conf.load(argv[1]);
 	if (argc > 2)
@@ -114,27 +118,41 @@ int main(int argc, char **argv) {
 	pthread_cond_init(&_runcond, NULL);
 	pthread_mutex_lock(&_runlock);
 
-	if(!_server_con.connect(conf["server"]["address"], conf["server"]["service"]))
-		return -1;
-
-	if(!_server_con.auth(username, password))
-		return -1;
-
-	_server_con.registerEventCallback("close", server_close, NULL);
-	_server_con.registerEventCallback("standings", standings_update, NULL);
-
-	update_standings(_server_con, fname);
-        for (;;)
+	for (;;)
 	{
-		pthread_cond_wait(&_runcond, &_runlock);
-		if (closed) break;
+		ServerConnection _server_con;
+		if(!_server_con.connect(conf["server"]["address"], conf["server"]["service"]))
+		{
+			cout << "Could not connect to server; sleeping for 10 seconds\n";
+			sleep(10);
+			continue;
+		}
+
+		if(!_server_con.auth(username, password))
+		{
+			cout << "Authentication failed! Sleeping for 10 seconds\n";
+			_server_con.disconnect();
+			sleep(10);
+			return -1;
+		}
+
+		_server_con.registerEventCallback("close", server_close, NULL);
+		_server_con.registerEventCallback("standings", standings_update, NULL);
+
 		update_standings(_server_con, fname);
+		for (;;)
+		{
+			pthread_cond_wait(&_runcond, &_runlock);
+			if (closed) break;
+			update_standings(_server_con, fname);
+		}
+		pthread_mutex_unlock(&_runlock);
+
+		cout << "Server has disconnected. Sleeping for 10 seconds.\n";
+
+		_server_con.disconnect();
+		sleep(10);
 	}
-	pthread_mutex_unlock(&_runlock);
-
-	cout << "Server has disconnected - quitting.\n";
-
-	_server_con.disconnect();
 	pthread_mutex_destroy(&_runlock);
 	pthread_cond_destroy(&_runcond);
 

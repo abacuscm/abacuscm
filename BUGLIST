@@ -74,6 +74,10 @@ This file contains a list of BUGS and or nice to havs (wishlist).
 * Port to Qt4.
 	To allow for Windows ...
 
+	Or use GTK+, which has a decent list view with user sort functions,
+	separation between model and view, per-cell attributes, nicer
+	integration with autoconf...
+
 	PRIORITY: low
 
 * Request for clarification on submissions page
