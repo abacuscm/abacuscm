@@ -3,8 +3,10 @@ use strict;
 use warnings;
 use CGI::Pretty qw/:standard *table *tbody/;
 
-my $standings_path = "/home/bmerry/devel/abacuscm/standings.txt";
-my $names_path = "/home/bmerry/names.txt";
+# User-configurable stuff
+my $standings_path = '/home/bmerry/devel/abacuscm/standings.txt';
+my $names_path = '/home/bmerry/names.txt';
+my $css_path = 'abacuscm.css';  # From web server point of view
 
 my %name_map = ();
 if (open(NAMES, '<', $names_path))
@@ -27,11 +29,11 @@ if (!open(IN, '<', $standings_path))
 	exit 0;
 }
 
-
+my @stat = stat(IN);
 print(header,
 	start_html(
 		-title => "ACM ICPC South Africa",
-		-style => {-src => "abacuscm.css"},
+		-style => {-src => $css_path},
 		-head => meta({-http_equiv => 'Refresh', -content => '30' })
 	),
 	h1("ACM ICPC standings"),
@@ -42,7 +44,10 @@ my @fields = split(/\t/);
 unshift @fields, 'Team name';
 unshift @fields, 'Place';
 print(
-        thead(Tr(th([map { escapeHTML($_) } @fields]))),
+	colgroup({-span => 3}),
+	colgroup({-class => 'score', -span => scalar(@fields) - 5}),
+	colgroup({-span => 2}),
+	thead(Tr(th([map { escapeHTML($_) } @fields]))),
 	start_tbody);
 my $place = 0;
 my $tie_place = 1;
@@ -71,11 +76,11 @@ while (<IN>)
 	{
 		s/Yes/span({-class => 'correct'}, 'Yes')/e;
 	}
-	print Tr({-class => ($. & 1 ? "odd" : "even")},
-		td([@fields]));
+	print Tr({-class => ($. & 1 ? "odd" : "even")}, td([@fields]));
 }
 print(end_tbody,
 	end_table,
-	p(small("Generated at " . escapeHTML(scalar(localtime())) . ".")),
+	p(small("Generated at " . escapeHTML(scalar(localtime())) . ". " .
+		"Standings last changed at " . escapeHTML(scalar(localtime($stat[9]))) . ".")),
 	end_html);
 close(IN);
