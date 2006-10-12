@@ -29,6 +29,7 @@
 #include "scoped_lock.h"
 
 #include <map>
+#include <algorithm>
 
 using namespace std;
 
@@ -519,18 +520,27 @@ bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) 
 
 	uint32_t backoff = getBackoff(server_id);
 
-	for(uint16_t i = 1; i <= numfrags; i++) {
+	vector<uint16_t> fragnums;
+	fragnums.reserve(numfrags);
+	for(uint16_t i = 1; i <= numfrags; ++i)
+		fragnums.push_back(i);
+	random_shuffle(fragnums.begin(), fragnums.end());
+
+	for(uint16_t c = 1; c <= numfrags; c++) {
+		uint16_t i = fragnums[c];
+
 		frame.fragment_num = i;
 		if(i == numfrags)
 			frame.fragment_num |= 1 << (sizeof(frame.fragment_num) * 8 - 1);
+
+		const uint8_t* frag_data = message_data + base_frag_size * (i - 1U) + min((uint16_t)(i - 1U), num_large_frags);
 
 		frame.fragment_len = base_frag_size;
 		if(i <= num_large_frags)
 			frame.fragment_len++;
 
-		frame.data_checksum = checksum(message_data, frame.fragment_len);
-		memcpy(frame.data, message_data, frame.fragment_len);
-		message_data += frame.fragment_len;
+		frame.data_checksum = checksum(frag_data, frame.fragment_len);
+		memcpy(frame.data, frag_data, frame.fragment_len);
 
 		int packetsize = frame.fragment_len + ST_FRAME_SIZE - 1;
 
@@ -539,7 +549,7 @@ bool UDPPeerMessenger::sendMessage(uint32_t server_id, const Message * message) 
 					"to transmit", frame.fragment_num, frame.server_id,
 					frame.message_id, server_id);
 
-		if (i < numfrags)
+		if (c < numfrags)
 			usleep(backoff);
 	}
 
