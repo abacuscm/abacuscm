@@ -17,6 +17,7 @@
 #include <sstream>
 #include <queue>
 #include <string>
+#include <cstring>
 #include <pthread.h>
 #include <time.h>
 #include <unistd.h>
@@ -28,12 +29,16 @@ static pthread_cond_t _runcond;
 
 static queue<string> notify;  // queue of unprinted notifications
 static bool closed = false;   // set to true by the close notification
+static string server;
 
 static void balloon_notification(const MessageBlock* mb, void*) {
 	time_t now = time(NULL);
 	char time_buffer[64];
 	struct tm time_tm;
-	ostringstream msg;
+        ostringstream msg;
+
+	if (!server.empty() && (*mb)["server"] != server)
+		return;  /* Wrong server, don't do anything */
 
 	localtime_r(&now, &time_tm);
 	strftime(time_buffer, sizeof(time_buffer), "%X", &time_tm);
@@ -70,6 +75,17 @@ int main(int argc, char **argv) {
 	setup_sigsegv();
 	Config &conf = Config::getConfig();
 	conf.load(DEFAULT_CLIENT_CONFIG);
+	char *home = getenv("HOME");
+	if(home)
+		conf.load(string(home) + "/.abacus");
+	conf.load("abacus.conf");
+
+	if(argc >= 3 && strcmp(argv[1], "-s") == 0)
+	{
+		server = argv[2];
+		argc -= 2;
+		argv += 2;
+	}
 	if(argc > 1)
 		conf.load(argv[1]);
 
