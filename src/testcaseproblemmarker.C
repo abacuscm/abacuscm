@@ -94,8 +94,8 @@ void TestCaseProblemMarker::mark_compiled() {
 			log(LOG_DEBUG, "Correct!");
 		} else {
 			setResult(WRONG);
-			addResultFile("Team's output", outfile, 128 * 1024);
-			addResultFile("Diff of team's output versus expected output", difffile, 128 * 1024);
+			addResultFile("Team's output", outfile, 64 * 1024);
+			addResultFile("Diff of team's output versus expected output", difffile, 64 * 1024);
 			log(LOG_DEBUG, "Incorrect!");
 		}
 	} else {
