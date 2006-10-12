@@ -352,7 +352,7 @@ void MainWindow::doFileConnect() {
 					_server_con.watchJudgeSubmissions();
 				}
 
-                                _server_con.registerEventCallback("updateclock", updateStatusFunctor, NULL);
+				_server_con.registerEventCallback("updateclock", updateStatusFunctor, NULL);
 				_server_con.subscribeTime();
 				updateStatus();
 				updateClarificationRequests();
@@ -810,15 +810,15 @@ void MainWindow::updateSubmissions() {
 
 	SubmissionList::iterator l;
 	for(l = list.begin(); l != list.end(); ++l) {
-		//log(LOG_DEBUG, "submission:");
 		if (filter) {
-			if (is_subscribed.find((*l)["problem"]) == is_subscribed.end())
-				log(LOG_DEBUG, "Couldn't find %s in subscription map", (*l)["problem"].c_str());
+			std::map<string, bool>::iterator s = is_subscribed.find((*l)["problem"]);
+			if(s == is_subscribed.end())
+				log(LOG_WARNING, "Couldn't find %s in subscription map", (*l)["problem"].c_str());
 			else
-				if (!is_subscribed[(*l)["problem"]])
+				if (!s->second)
 					// not subscribed to this problem
 					continue;
-			if ((*l)["comment"] != "Awaiting Judge")
+			if ((*l)["comment"] != "Awaiting judge")
 				// not in the awaiting judge state
 				continue;
 		}
