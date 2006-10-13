@@ -60,7 +60,7 @@ CREATE TABLE `ContestStartStop` (
   `server_id` int(10) unsigned NOT NULL default '0',
   `action` enum('START','STOP') NOT NULL default 'START',
   `time` int(10) unsigned NOT NULL default '0',
-  PRIMARY KEY  (`server_id`,`action`)
+  PRIMARY KEY  (`server_id`,`action`,`time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
