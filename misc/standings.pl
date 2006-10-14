@@ -4,9 +4,11 @@ use warnings;
 use CGI::Pretty qw/:standard *table *tbody/;
 
 # User-configurable stuff
-my $standings_path = '/home/bmerry/devel/abacuscm/standings.txt';
-my $names_path = '/home/bmerry/names.txt';
-my $css_path = 'abacuscm.css';  # From web server point of view
+my $standings_path = '/home/bmerry/abacuscm/standings.txt';
+my $names_path = '/home/bmerry/abacuscm/names.txt';
+my $css_path = '/abacuscm.css';  # From web server point of view
+my $exclude_regex = qr/^j_/;
+my $local_regex = qr/^(?:uct|sun|uwc)/;
 
 my %name_map = ();
 if (open(NAMES, '<', $names_path))
@@ -37,6 +39,8 @@ print(header,
 		-head => meta({-http_equiv => 'Refresh', -content => '30' })
 	),
 	h1("ACM ICPC standings"),
+	p(small("Generated at " . escapeHTML(scalar(localtime())) . ". " .
+			"Standings last changed at " . escapeHTML(scalar(localtime($stat[9]))) . ".")),
 	start_table({-border => undef}));
 $_ = <IN>;
 chomp;
@@ -58,6 +62,9 @@ while (<IN>)
 	chomp;
 	my @fields = split(/\t/);
 	next unless scalar(@fields);
+	next if $fields[0] =~ $exclude_regex;
+	my $atlocal = ($fields[0] =~ $local_regex);
+
 	$place++;
 	my $name = exists($name_map{$fields[0]}) ? $name_map{$fields[0]} : $fields[0];
 	my $solved = $fields[$#fields - 1];
@@ -76,11 +83,11 @@ while (<IN>)
 	{
 		s/Yes/span({-class => 'correct'}, 'Yes')/e;
 	}
-	print Tr({-class => ($. & 1 ? "odd" : "even")}, td([@fields]));
+	my $class = ($place & 1 ? "odd" : "even");
+	if ($atlocal) { $class = "local"; }
+	print Tr({-class => $class}, td([@fields]));
 }
 print(end_tbody,
 	end_table,
-	p(small("Generated at " . escapeHTML(scalar(localtime())) . ". " .
-		"Standings last changed at " . escapeHTML(scalar(localtime($stat[9]))) . ".")),
 	end_html);
 close(IN);
