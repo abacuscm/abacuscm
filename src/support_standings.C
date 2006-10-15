@@ -154,7 +154,7 @@ bool StandingsSupportModule::updateStandings()
 			for(p = t->second.begin(); p != t->second.end(); ++p) {
 				int tries = 0;
 				bool correct = false;
-				uint32_t correct_time;
+				uint32_t correct_time = 0;
 
 				vector<SubData> &subs = p->second;
 				sort(subs.begin(), subs.end(), SubDataLessThan);
