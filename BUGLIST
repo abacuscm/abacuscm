@@ -3,6 +3,9 @@ BUGLIST
 
 This file contains a list of BUGS and or nice to havs (wishlist).
 
+* database handles leak
+	PRIORITY: very high
+
 * username vs realname
 	A user should have both a username and a real-name.  The username can be
 	used to log in whilst the real-name can be used for display in standings
@@ -51,6 +54,12 @@ This file contains a list of BUGS and or nice to havs (wishlist).
 	these in turn are required to efficiently implement sqrt() and the like.
 
 	PRIORITY: medium
+
+* Failure to link -lm with C
+	The code is there for it, but some contestants got link errors for
+	sqrt and ceil during ICPC 2006. Compiling as C++ fixed it.
+
+	PRIORITY: low
 
 * Sort order for standings
 	Should be numeric and the leading 0 hack really should not be needed.
@@ -154,6 +163,12 @@ This file contains a list of BUGS and or nice to havs (wishlist).
 	GUI should not pop up multiple notifications (in general, in fact).
 	Possibly also some DB state to indicate whether a balloon has been
 	handed out.
+
+	PRIORITY: low
+
+* Cleaner messages on authentication error
+	The GUI currently displays about 4 dialogs if the wrong password is
+	used.
 
 	PRIORITY: low
 
