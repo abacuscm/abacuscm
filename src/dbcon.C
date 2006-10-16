@@ -24,7 +24,7 @@ struct dbcon_bt_info {
 
 typedef map<DbCon*, struct dbcon_bt_info> dbcon_bt_map;
 
-static vector<DbCon*> _con_stack;
+static queue<DbCon*> _con_queue;
 static DbCon * (*_functor)() = 0;
 static pthread_mutex_t _lock = PTHREAD_MUTEX_INITIALIZER;
 static dbcon_bt_map _dbcon_bt;
@@ -38,14 +38,14 @@ DbCon::~DbCon() {
 DbCon* DbCon::getInstance() {
 	DbCon *tmp = 0;
 	pthread_mutex_lock(&_lock);
-	if(_con_stack.empty()) {
+	if(_con_queue.empty()) {
 		if(_functor)
 			tmp = _functor();
 		else
 			log(LOG_ERR, "No functor specified to create DB Connections!");
 	} else {
-		tmp = _con_stack.back();
-		_con_stack.pop_back();
+		tmp = _con_queue.front();
+		_con_queue.pop();
 	}
 	pthread_mutex_unlock(&_lock);
 	if(tmp && !tmp->ok()) {
@@ -75,7 +75,7 @@ void DbCon::release() {
 		ok = false;
 	}
     if (ok)
-        _con_stack.push_back(this);
+        _con_queue.push(this);
 	pthread_mutex_unlock(&_lock);
 }
 
@@ -86,12 +86,12 @@ bool DbCon::registerFunctor(DbCon* (*functor)()) {
 
 void DbCon::cleanup() {
 	pthread_mutex_lock(&_lock);
-	while(!_con_stack.empty()) {
-		delete _con_stack.back();
-		_con_stack.pop_back();
+	while(!_con_queue.empty()) {
+		delete _con_queue.front();
+		_con_queue.pop();
 	}
 	if (!_dbcon_bt.empty()) {
-		log(LOG_ERR, "Leaked %lu database connections, showing stack traces:", _dbcon_bt.size());
+		log(LOG_ERR, "Leaked %u database connections, showing stack traces:", _dbcon_bt.size());
 		dbcon_bt_map::iterator i;
 		int tn = 0;
 		for(i = _dbcon_bt.begin(); i != _dbcon_bt.end(); ++i) {
