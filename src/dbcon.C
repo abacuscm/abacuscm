@@ -91,7 +91,7 @@ void DbCon::cleanup() {
 		_con_queue.pop();
 	}
 	if (!_dbcon_bt.empty()) {
-		log(LOG_ERR, "Leaked %u database connections, showing stack traces:", _dbcon_bt.size());
+		log(LOG_ERR, "Leaked %lu database connections, showing stack traces:", _dbcon_bt.size());
 		dbcon_bt_map::iterator i;
 		int tn = 0;
 		for(i = _dbcon_bt.begin(); i != _dbcon_bt.end(); ++i) {
