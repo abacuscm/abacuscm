@@ -12,9 +12,7 @@ installed:
   supported - only required for server).
 
 If you are compiling from an SVN checkout for the first time, you should run
-
-libtoolize --ltdl --copy
-autoreconf -i
+misc/bootstrap.sh
 
 which will create some files needed for the built process. If you are
 using a distributed tarball, then these files should already be in
@@ -46,5 +44,5 @@ of the modules that you wish to use. You can just specify the modules
 directory i.e. you don't have to specify modules/.libs/
 
 Once everything compiles you will most probably want to proceed with
-setting up a test (or as well call it, a mock) contest.  See
+setting up a test (or as we call it, a mock) contest.  See
 "Creating_a_Contest.txt" for more information.
