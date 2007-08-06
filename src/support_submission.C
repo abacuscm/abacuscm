@@ -40,7 +40,10 @@ bool SubmissionSupportModule::putSubmission(uint32_t sub_id, uint32_t user_id, u
 	ostringstream query;
 	query << "INSERT INTO Submission (submission_id, user_id, prob_id, time, server_id, content, language) VALUES(" << sub_id << ", " << user_id << ", " << prob_id << ", " << time << ", " << server_id << ", '" << db->escape_buffer((uint8_t*)content, content_size) << "', '" << db->escape_string(language) << "')";
 
-	return db->executeQuery(query.str());
+	bool res = db->executeQuery(query.str());
+	db->release();
+
+	return res;
 }
 
 DEFINE_SUPPORT_MODULE_REGISTRAR(SubmissionSupportModule);
