@@ -10,7 +10,12 @@
 #if HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include <ltdl.h>
+
+#ifdef HAVE_DLOPEN
+# include <dlfcn.h>
+#else
+# include <ltdl.h>
+#endif
 
 #include "moduleloader.h"
 #include "logger.h"
@@ -22,19 +27,28 @@ ModuleLoader::ModuleLoader() {
 	string moddir = Config::getConfig()["modules"]["moddir"];
 	if(moddir == "")
 		moddir = DEFAULT_MODULE_DIR;
+#ifndef HAVE_DLOPEN
 	lt_dlinit();
 	lt_dladdsearchdir(moddir.c_str());
+#endif /* !HAVE_DLOPEN */
 }
 
 ModuleLoader::~ModuleLoader() {
+#ifndef HAVE_DLOPEN
 	lt_dlexit();
+#endif /* !HAVE_DLOPEN */
 }
 
-bool ModuleLoader::loadModule(string modname, bool global) {
+bool ModuleLoader::loadModule(string modname, bool global __attribute__((unused))) {
 	string fname = string("mod_") + modname;
 
 	log(LOG_INFO, "Loading module %s from %s.so", modname.c_str(), fname.c_str());
 
+#ifdef HAVE_DLOPEN
+	void* mod = dlopen(fname.c_str(), RTLD_NOW | (global ? RTLD_GLOBAL : RTLD_LOCAL));
+	if(!mod)
+		log(LOG_ERR, "Failed to load module %s: %s", modname.c_str(), dlerror());
+#else /* HAVE_DLOPEN */
 	lt_dlhandle mod = lt_dlopenext(fname.c_str());
 	if(!mod)
 	{
@@ -43,6 +57,7 @@ bool ModuleLoader::loadModule(string modname, bool global) {
 		log(LOG_ERR, "Failed to load module %s: %s", modname.c_str(), error ? error : "unknown error");
 		return false;
 	}
+#endif /* HAVE_DLOPEN */
 
 	return true;
 }

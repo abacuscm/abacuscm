@@ -9,6 +9,9 @@ AC_PROG_CXX
 AM_PROG_CC_C_O
 AC_PROG_CPP
 
+# High up due to bug in autoconf, see http://osdir.com/ml/network.net-snmp.devel/2004-02/msg00193.html
+AC_CHECK_LIB([dl], [dlopen])
+
 AC_LIBLTDL_INSTALLABLE
 AC_LIBTOOL_DLOPEN
 AC_PROG_LIBTOOL
@@ -24,6 +27,7 @@ dnl Checks for libraries
 AC_CHECK_LIB([pthread], [pthread_create],, [AC_MSG_ERROR([cannot find pthread])])
 AC_CHECK_LIB([ssl], [SSL_connect],, [AC_MSG_ERROR([cannot find OpenSSL])])
 AC_CHECK_LIB([mysqlclient_r], [mysql_real_connect], [have_mysql=yes], [have_mysql=no])
+AC_CHECK_FUNCS([dlopen])
 PKG_CHECK_MODULES([QT], [qt-mt >= 3.0], [have_qt=yes], [have_qt=no])
 
 dnl Checks for header files
