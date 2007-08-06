@@ -7,8 +7,11 @@
  *
  * $Id$
  */
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+# define _GNU_SOURCE
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,6 +25,7 @@
 #include <sys/wait.h>
 #include <pwd.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #ifndef VERSION
 #define VERSION "trunk"
@@ -125,7 +129,7 @@ void __attribute__((noreturn)) do_child(char **argv) {
 			if(chdir("/") < 0) {
 				errmsg("chdir(\"/\") - non-critical: %s\n", strerror(errno));
 			}
-		} else { // we are not root!
+		} else { /* we are not root! */
 			errmsg("Need suid root in order chroot!  chdir()ing instead.\n");
 			if(chdir(chrootdir) < 0) {
 				errmsg("chdir: %s\n", strerror(errno));
@@ -134,7 +138,7 @@ void __attribute__((noreturn)) do_child(char **argv) {
 		}
 	}
 
-	if(geteuid() == 0) { // we are root - we need to drop...
+	if(geteuid() == 0) { /* we are root - we need to drop... */
 		if(to_grp)
 			setgid(to_grp);
 		else
@@ -360,7 +364,7 @@ int main(int argc, char** argv) {
 			if(errno == EINTR && realtime_fired) {
 				if(kill(-pid, SIGKILL) < 0)
 					errmsg("kill(SIGKILL): %s\n", strerror(errno));
-				if(kill(-pid, SIGCONT) < 0) // in case of STOPed child.
+				if(kill(-pid, SIGCONT) < 0) /* in case of STOPed child. */
 					errmsg("kill(SIGKILL): %s\n", strerror(errno));
 				term_reason = "realtime";
 			} else
@@ -369,14 +373,14 @@ int main(int argc, char** argv) {
 		if(realtime)
 			alarm(0);
 
-		// Nuke any other processes that may have been spawned.
+		/* Nuke any other processes that may have been spawned. */
 		if(kill(-pid, SIGKILL) < 0 && errno != ESRCH)
 			errmsg("kill(SIGKILL): %s\n", strerror(errno));
 		if(kill(-pid, SIGCONT) < 0 && errno != ESRCH)
 			errmsg("kill(SIGKILL): %s\n", strerror(errno));
 
-		// determine _what_ caused the process to die.
-		// yes, I know all these asprintf's causes a memory leak.
+		/* determine _what_ caused the process to die.
+		 * yes, I know all these asprintf's causes a memory leak. */
 		if(WIFEXITED(status)) {
 			asprintf(&term_reason, "normal excode=%d", WEXITSTATUS(status));
 		} else if(WIFSIGNALED(status)) {
@@ -395,7 +399,7 @@ int main(int argc, char** argv) {
 			totaltime += cpu_usage.ru_stime.tv_sec * 1000000;
 			totaltime += cpu_usage.ru_utime.tv_usec;
 			totaltime += cpu_usage.ru_stime.tv_usec;
-			totaltime = (totaltime + 500) / 1000; // round to closest millisec.
+			totaltime = (totaltime + 500) / 1000; /* round to closest millisec. */
 
 			const char *time_reason = "ok";
 			if(cputime && totaltime > cputime)

@@ -1,7 +1,7 @@
 BUGLIST
 #######
 
-This file contains a list of BUGS and or nice to havs (wishlist).
+This file contains a list of BUGS and or nice to haves (wishlist).
 
 * database handles leak
 	PRIORITY: very high
@@ -169,6 +169,15 @@ This file contains a list of BUGS and or nice to havs (wishlist).
 * Cleaner messages on authentication error
 	The GUI currently displays about 4 dialogs if the wrong password is
 	used.
+
+	PRIORITY: low
+
+* If --enable-client etc are passed to configure, abort if they are not
+	possible.
+
+	PRIORITY: low
+
+* Prevent module loader for looking into LD_LIBRARY_PATH
 
 	PRIORITY: low
 

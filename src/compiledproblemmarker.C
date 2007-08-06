@@ -7,11 +7,14 @@
  *
  * $Id$
  */
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include "compiledproblemmarker.h"
 #include "userprog.h"
 #include "logger.h"
 #include "buffer.h"
-#include "config.h"
+#include "acmconfig.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>

@@ -10,6 +10,9 @@
 #ifndef __SERVERCONNECTION_H__
 #define __SERVERCONNECTION_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include "misc.h"
 
 #include <vector>

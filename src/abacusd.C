@@ -1,12 +1,15 @@
 /**
  * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
- *  with contributions from various authors.
+ *	with contributions from various authors.
  *
  * This file is distributed under GPLv2, please see
  * COPYING for more details.
  *
  * $Id$
  */
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <iostream>
@@ -15,7 +18,7 @@
 #include <errno.h>
 #include <algorithm>
 
-#include "config.h"
+#include "acmconfig.h"
 #include "logger.h"
 #include "moduleloader.h"
 #include "peermessenger.h"
@@ -124,10 +127,10 @@ err:
 /**
  * Load all the required modules...
  */
-static bool load_modules() {
+static bool load_modules(ModuleLoader &module_loader) {
 	Config &config = Config::getConfig();
 
-	if(!ModuleLoader::loadModule(config["modules"]["dbconnector"]))
+	if(!module_loader.loadModule(config["modules"]["dbconnector"]))
 		return false;
 
 	DbCon *dbtest = DbCon::getInstance();
@@ -138,16 +141,16 @@ static bool load_modules() {
 
 	dbtest->release();
 
-	if(!ModuleLoader::loadModuleSet("support", config["modules"]["support"], true))
+	if(!module_loader.loadModuleSet("support", config["modules"]["support"], true))
 		return false;
 
-	if(!ModuleLoader::loadModule(config["modules"]["peermessenger"]))
+	if(!module_loader.loadModule(config["modules"]["peermessenger"]))
 		return false;
 
-	if(!ModuleLoader::loadModuleSet("act", config["modules"]["actions"]))
+	if(!module_loader.loadModuleSet("act", config["modules"]["actions"]))
 		return false;
 
-	if(!ModuleLoader::loadModuleSet("prob", config["modules"]["problemtypes"]))
+	if(!module_loader.loadModuleSet("prob", config["modules"]["problemtypes"]))
 		return false;
 
 	return true;
@@ -246,8 +249,8 @@ static bool initialise() {
 		for(ProblemList::iterator j = problst.begin(); j != problst.end(); ++j) {
 			AttributeList prob = db->getProblemAttributes(*j);
 			EventRegister::getInstance().registerEvent("judge_" + prob["shortname"]);
-        }
-        EventRegister::getInstance().registerEvent("judgesubmission");
+		}
+		EventRegister::getInstance().registerEvent("judgesubmission");
 		db->release();db=NULL;
 	} else
 		log(LOG_ERR, "Error obtaining DbCon to load existing problems");
@@ -283,7 +286,7 @@ static void* peer_listener(void *) {
 
 /**
  * This thread is responsible for handling messages that goes
- * onto the queue.  It will receive a quit message when it needs
+ * onto the queue.	It will receive a quit message when it needs
  * to terminate, which will call thread_quit() for us.
  */
 static void* message_handler(void *) {
@@ -300,7 +303,7 @@ static void* message_handler(void *) {
 			}
 		} else {
 			log(LOG_CRIT, "Failure to process message (%d, %d)!!!  "
-					"This is A HUGE PROBLEM!!!  Fix it and restart abacusd!!!",
+					"This is A HUGE PROBLEM!!!	Fix it and restart abacusd!!!",
 					m->server_id(), m->message_id());
 		}
 		delete m;
@@ -349,7 +352,7 @@ void* worker_thread(void *) {
 }
 
 /**
- * Worker spawner.  This thread spawns more workers as required.
+ * Worker spawner.	This thread spawns more workers as required.
  * It expects to get sent a SIGUSR1 whenever the number of idle
  * workers reaches the minimum, at which point it will spawn a
  * few.
@@ -465,7 +468,7 @@ void* socket_selector(void*) {
 			} else
 				++i;
 			/*
-			 * Note that the above loop is very messy.  This is due to the
+			 * Note that the above loop is very messy.	This is due to the
 			 * erase operation invalidating the iterator, so essentially we
 			 * now increment the iterator before nuking what it pointed to.
 			 * this gets extremely nasty and probably took the better part
@@ -590,14 +593,19 @@ int main(int argc, char ** argv) {
 	if(!setup_signals())
 		return -1;
 
-        /* Moved this ahead of load_modules because act_startstop needs
-         * to enqueue something. Let's pray that it doesn't break anything
-         * - Bruce
-         */
+	/* Moved this ahead of load_modules because act_startstop needs
+	 * to enqueue something. Let's pray that it doesn't break anything
+	 * - Bruce
+	 */
 	Server::setAckQueue(&ack_queue);
 	Server::setTimedQueue(&timed_queue);
 
-	if(!load_modules())
+	ModuleLoader module_loader;
+	/* The ModuleLoader object uses scope to clean up on destruction. It
+	 * also grabs config during initialisation, so the above line should not
+	 * be moved above the configuration loading.
+	 */
+	if(!load_modules(module_loader))
 		return -1;
 
 	if(!PeerMessenger::getMessenger())

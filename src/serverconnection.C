@@ -7,9 +7,12 @@
  *
  * $Id$
  */
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include "serverconnection.h"
 #include "logger.h"
-#include "config.h"
+#include "acmconfig.h"
 #include "messageblock.h"
 
 #include <sys/types.h>

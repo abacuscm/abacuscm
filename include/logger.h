@@ -10,6 +10,10 @@
 #ifndef __LOGGER_H__
 #define __LOGGER_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <syslog.h>
 #include <stdarg.h>
 
@@ -27,7 +31,7 @@ void register_log_listener(LogFunction log_function);
 
 #define NOT_IMPLEMENTED() log(LOG_DEBUG, "%s (%s:%d) not implemented.", __PRETTY_FUNCTION__, __FILE__, __LINE__)
 #else
-// this is needed because of the builtin log() function wich is arithmetic in nature.
+/* this is needed because of the builtin log() function wich is arithmetic in nature. */
 extern void (*logc)(int priority, const char* format, ...);
 #endif
 

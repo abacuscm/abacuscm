@@ -10,6 +10,9 @@
 #ifndef __COMPILEDPROBLEMMARKER_H__
 #define __COMPILEDPROBLEMMARKER_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include "problemmarker.h"
 
 #include <string>

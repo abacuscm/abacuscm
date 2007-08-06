@@ -10,6 +10,9 @@
 #ifndef __VIEW_CLARIFICATION_REQUEST_SUB__
 #define __VIEW_CLARIFICATION_REQUEST_SUB__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include "ui_viewclarificationrequest.h"
 #include "serverconnection.h"
 

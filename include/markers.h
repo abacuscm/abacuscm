@@ -10,6 +10,9 @@
 #ifndef __MARKERS_H__
 #define __MARKERS_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include <stdint.h>
 #include <pthread.h>
 #include <map>

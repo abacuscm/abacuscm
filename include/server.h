@@ -10,6 +10,9 @@
 #ifndef __SERVER_H__
 #define __SERVER_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include <stdint.h>
 
 #define USER_NONE		0

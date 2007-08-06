@@ -7,10 +7,13 @@
  *
  * $Id$
  */
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include "mainwindow.h"
 
 #include "serverconnection.h"
-#include "config.h"
+#include "acmconfig.h"
 #include "sigsegv.h"
 #include "logger.h"
 #include "guievent.h"

@@ -7,6 +7,9 @@
  *
  * $Id$
  */
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include "standingssupportmodule.h"
 #include "scoped_lock.h"
 #include "usersupportmodule.h"

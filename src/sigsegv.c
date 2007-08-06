@@ -7,7 +7,12 @@
  *
  * $Id$
  */
-#define _GNU_SOURCE
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE
+#endif
 #include <memory.h>
 #include <stdlib.h>
 #include <stdio.h>

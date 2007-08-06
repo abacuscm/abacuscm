@@ -10,6 +10,9 @@
 #ifndef __SOCKET_H__
 #define __SOCKET_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include <sys/types.h>
 
 class Socket {

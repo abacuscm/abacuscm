@@ -10,6 +10,10 @@
 #ifndef __DBCON_H__
 #define __DBCON_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <string>
 #include <vector>
 #include <list>

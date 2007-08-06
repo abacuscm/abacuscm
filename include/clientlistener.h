@@ -10,6 +10,9 @@
 #ifndef __CLIENTLISTENER_H__
 #define __CLIENTLISTENER_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include "socket.h"
 
 #include <set>

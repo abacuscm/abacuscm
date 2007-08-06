@@ -7,6 +7,9 @@
  *
  * $Id$
  */
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include "message_createuser.h"
 #include "message_type_ids.h"
 #include "logger.h"

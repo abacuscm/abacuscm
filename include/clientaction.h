@@ -10,6 +10,10 @@
 #ifndef __CLIENTACTION_H__
 #define __CLIENTACTION_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <map>
 #include <string>
 

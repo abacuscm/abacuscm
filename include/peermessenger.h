@@ -10,6 +10,10 @@
 #ifndef __NETLIB_H__
 #define __NETLIB_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <stdint.h>
 
 class Message;

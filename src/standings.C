@@ -7,8 +7,11 @@
  *
  * $Id: balloon.C 368 2006-10-09 21:18:36Z bmerry $
  */
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include "logger.h"
-#include "config.h"
+#include "acmconfig.h"
 #include "sigsegv.h"
 #include "serverconnection.h"
 #include "messageblock.h"

@@ -10,6 +10,10 @@
 #ifndef __BUFFER_H__
 #define __BUFFER_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <iostream>
 
 class Buffer {

@@ -14,6 +14,9 @@
 #ifndef __STANDINGSSUPPORTMODULE_H__
 #define __STANDINGSSUPPORTMODULE_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include "supportmodule.h"
 
 #include <stdint.h>

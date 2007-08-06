@@ -10,6 +10,9 @@
 #ifndef __TIMEDACTION_H__
 #define __TIMEDACTION_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include <time.h>
 
 class TimedAction {

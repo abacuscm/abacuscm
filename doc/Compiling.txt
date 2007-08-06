@@ -1,29 +1,50 @@
 Compiling AbacusCM
 ******************
 
-AbacusCM does not make use of the autoconf tools like most other OSS projects.
-This is (was) due to both lack of knowledge and time.  AbacusCM builds directly
-using GNU Make and all tweaking needs to happen by either editing the Makefile,
-or by overriding the variables from the command line.
-
 Before you can compile AbacusCM you need the following pieces of software
 installed:
 
 * g++ (3.3.x and 3.4.x works, 4.x.x should also work).
-* Qt3
+* Qt3 (only required for client)
 * boost (specifically shared_ptr - only required for server).
 * OpenSSL (Any version should work).
 * MySQL 4.1.x (Whilst in theory any RDB could work currently only MySQL is
-    supported - only required for server).
+  supported - only required for server).
 
-If everything is correctly installed and configured then typing "make" in the
-top directory will compile AbacusCM, including the server, client, markers,
-and support libraries and modules. Running 'make client' will built just the
-client software. If pkg-config picks up the wrong version of Qt (e.g. Qt4)
-then set QTDIR to the root of the Qt3 installation.
+If you are compiling from an SVN checkout for the first time, you should run
 
-Binaries will be places in bin/, libraries in lib/ and modules in modules/.
+libtoolize --ltdl --copy
+autoreconf -i
 
-Once everything compiles you will most probably want to proceed with setting up
-a test (or as well call it, a mock) contest.  See "Creating_a_Contest.txt" for
-more information.
+which will create some files needed for the built process. If you are
+using a distributed tarball, then these files should already be in
+place.
+
+The configuration process is the usual ./configure, which will detect
+your installed packages (you can also run it from a separate directory
+to keep built files separate from the source). It will automatically
+exclude the client and server if you do not have the necessary
+libraries. You can also explicitly exclude them by passing
+--disable-client or --disable-server to configure.
+
+Once you have run configure, run 'make' to build AbacusCM, then 'make
+install' to install it. You can also run abacus without installing it,
+but there are a few things to note:
+
+1. AbacusCM uses libtool for compilation. That means that actual
+binaries are installed in bin/.libs, lib/.libs and modules/.libs, and
+the versions in the upper-level directory are libtool wrappers that
+take care of setting LD_LIBRARY_PATH to use the locally-compiled rather
+than the installed versions of libraries. If you want to debug abacus
+in-place, run it as
+
+libtool --mode=execute gdb bin/abacus
+
+2. The server uses a number of modules. You should set 'moddir' in the
+'modules' section of the server configuration to point to the versions
+of the modules that you wish to use. You can just specify the modules
+directory i.e. you don't have to specify modules/.libs/
+
+Once everything compiles you will most probably want to proceed with
+setting up a test (or as well call it, a mock) contest.  See
+"Creating_a_Contest.txt" for more information.

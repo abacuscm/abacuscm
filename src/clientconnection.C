@@ -7,12 +7,15 @@
  *
  * $Id$
  */
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include <openssl/rand.h>
 #include <openssl/ssl.h>
 
 #include "clientconnection.h"
 #include "logger.h"
-#include "config.h"
+#include "acmconfig.h"
 #include "messageblock.h"
 #include "clientaction.h"
 #include "eventregister.h"

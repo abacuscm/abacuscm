@@ -7,6 +7,9 @@
  *
  * $Id$
  */
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include "eventregister.h"
 #include "clientconnection.h"
 #include "messageblock.h"

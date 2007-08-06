@@ -10,6 +10,9 @@
 #ifndef __MAINWINDOW_H__
 #define __MAINWINDOW_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include "ui_mainwindowbase.h"
 #include "ui_logindialog.h"
 

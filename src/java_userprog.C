@@ -7,8 +7,11 @@
  *
  * $Id$
  */
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include "userprog.h"
-#include "config.h"
+#include "acmconfig.h"
 #include "logger.h"
 #include "buffer.h"
 
@@ -85,6 +88,22 @@ void Java_UserProg::setMaxProcs(unsigned) {
 	// TODO - ?!?
 }
 
+#ifndef HAVE_STRNDUP
+static char *strndup(const char *s, size_t n)
+{
+	char *ans;
+	size_t len;
+
+	len = strlen(s);
+	if (n > len) n = len;
+	ans = (char *) malloc(n + 1);
+	if (!ans) return NULL;
+	memcpy(ans, s, n);
+	ans[n] = '\0';
+	return ans;
+}
+#endif
+
 string Java_UserProg::sourceFilename(const Buffer& src) {
 	_classname = "";
 
@@ -108,6 +127,7 @@ string Java_UserProg::sourceFilename(const Buffer& src) {
 
 	regmatch_t pkg_match[2];
 	regmatch_t cls_match[2];
+
 
 	char* source = strndup((char*)src.data(), src.size());
 	if(regexec(&reg_pkg, source, 2, pkg_match, 0) == 0) {

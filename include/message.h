@@ -10,6 +10,9 @@
 #ifndef __MESSAGE_H__
 #define __MESSAGE_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include <stdint.h>
 #include <map>
 

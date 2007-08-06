@@ -10,6 +10,9 @@
 #ifndef __MESSAGEBLOCK_H__
 #define __MESSAGEBLOCK_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include <string>
 #include <map>
 #include <openssl/ssl.h>

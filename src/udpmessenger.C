@@ -7,6 +7,9 @@
  *
  * $Id$
  */
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -22,7 +25,7 @@
 
 #include "peermessenger.h"
 #include "logger.h"
-#include "config.h"
+#include "acmconfig.h"
 #include "message.h"
 #include "dbcon.h"
 #include "server.h"

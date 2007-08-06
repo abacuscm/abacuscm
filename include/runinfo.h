@@ -10,6 +10,10 @@
 #ifndef RUN_INFO_H
 #define RUN_INFO_H
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 class RunInfo {
 public:
     RunInfo(const char *filename);

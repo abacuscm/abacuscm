@@ -10,6 +10,9 @@
 #ifndef __SCOPED_LOCK_H__
 #define __SCOPED_LOCK_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include <pthread.h>
 
 class ScopedLock {

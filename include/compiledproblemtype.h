@@ -10,6 +10,9 @@
 #ifndef __COMPILEDPROBLEMTYPE_H__
 #define __COMPILEDPROBLEMTYPE_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include "problemtype.h"
 
 class CompiledProblemType : public ProblemType {

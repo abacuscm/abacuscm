@@ -10,6 +10,10 @@
 #ifndef __MESSAGE_CREATEUSER_H__
 #define __MESSAGE_CREATEUSER_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include "message.h"
 
 #include <string>

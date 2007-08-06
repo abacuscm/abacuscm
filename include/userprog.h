@@ -10,6 +10,9 @@
 #ifndef __USERPROG_H__
 #define __USERPROG_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include <string>
 #include <list>
 #include <map>

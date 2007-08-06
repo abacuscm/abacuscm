@@ -10,6 +10,9 @@
 #ifndef __USERSUPPORTMODULE_H__
 #define __USERSUPPORTMODULE_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include "supportmodule.h"
 #include "scoped_lock.h"
 

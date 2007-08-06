@@ -7,6 +7,9 @@
  *
  * $Id$
  */
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include <syslog.h>
 #include <stdio.h>
 #include <time.h>
@@ -17,7 +20,7 @@
 
 #include <list>
 
-#include "config.h"
+#include "acmconfig.h"
 #include "logger.h"
 
 #define MAX_BUFFER_SIZE		1024

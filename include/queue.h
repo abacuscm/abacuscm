@@ -10,6 +10,9 @@
 #ifndef __QUEUE_H__
 #define __QUEUE_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include <queue>
 #include <list>
 #include <sys/time.h>

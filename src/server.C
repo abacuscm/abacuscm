@@ -7,9 +7,12 @@
  *
  * $Id$
  */
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include "server.h"
 #include "dbcon.h"
-#include "config.h"
+#include "acmconfig.h"
 #include "logger.h"
 #include "peermessenger.h"
 #include "message.h"

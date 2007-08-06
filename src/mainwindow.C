@@ -7,10 +7,13 @@
  *
  * $Id$
  */
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include "mainwindow.h"
 #include "ui_aboutdialog.h"
 
-#include "config.h"
+#include "acmconfig.h"
 #include "logger.h"
 #include "ui_adduser.h"
 #include "ui_submit.h"

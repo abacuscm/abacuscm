@@ -1,39 +1,50 @@
 /**
  * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
- *  with contributions from various authors.
+ *	with contributions from various authors.
  *
  * This file is distributed under GPLv2, please see
  * COPYING for more details.
  *
  * $Id$
  */
-#include <dlfcn.h>
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
+#include <ltdl.h>
 
 #include "moduleloader.h"
 #include "logger.h"
-#include "config.h"
+#include "acmconfig.h"
 
 using namespace std;
 
 ModuleLoader::ModuleLoader() {
-}
-
-ModuleLoader::~ModuleLoader() {
-}
-
-bool ModuleLoader::loadModule(string modname, bool global) {
 	string moddir = Config::getConfig()["modules"]["moddir"];
 	if(moddir == "")
 		moddir = DEFAULT_MODULE_DIR;
-	string fname = moddir + "/mod_" + modname + ".so";
+	lt_dlinit();
+	lt_dladdsearchdir(moddir.c_str());
+}
 
-	log(LOG_INFO, "Loading module %s from %s.", modname.c_str(), fname.c_str());
+ModuleLoader::~ModuleLoader() {
+	lt_dlexit();
+}
 
-	void* mod = dlopen(fname.c_str(), RTLD_NOW | (global ? RTLD_GLOBAL : RTLD_LOCAL));
+bool ModuleLoader::loadModule(string modname, bool global) {
+	string fname = string("mod_") + modname;
+
+	log(LOG_INFO, "Loading module %s from %s.so", modname.c_str(), fname.c_str());
+
+	lt_dlhandle mod = lt_dlopenext(fname.c_str());
 	if(!mod)
-		log(LOG_ERR, "Failed to load module %s: %s", modname.c_str(), dlerror());
+	{
+		const char *error;
+		error = lt_dlerror();
+		log(LOG_ERR, "Failed to load module %s: %s", modname.c_str(), error ? error : "unknown error");
+		return false;
+	}
 
-	return mod != 0;
+	return true;
 }
 
 bool ModuleLoader::loadModuleSet(string prefix, string set, bool global) {

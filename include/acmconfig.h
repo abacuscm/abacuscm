@@ -7,18 +7,21 @@
  *
  * $Id$
  */
-#ifndef __CONFIG_H__
-#define __CONFIG_H__
+#ifndef __ACMCONFIG_H__
+#define __ACMCONFIG_H__
 
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include <map>
 #include <string>
 #include <iostream>
 
-#define DEFAULT_SERVER_CONFIG		"/etc/abacus/server.conf"
-#define DEFAULT_CLIENT_CONFIG		"/etc/abacus/client.conf"
-#define DEFAULT_MARKER_CONFIG		"/etc/abacus/marker.conf"
+#define DEFAULT_SERVER_CONFIG		SYSCONFDIR "/abacus/server.conf"
+#define DEFAULT_CLIENT_CONFIG		SYSCONFDIR "/abacus/client.conf"
+#define DEFAULT_MARKER_CONFIG		SYSCONFDIR "/abacus/marker.conf"
 #define DEFAULT_UDPRECEIVER_PORT	7368
-#define DEFAULT_MODULE_DIR			"/usr/lib/abacus"
+#define DEFAULT_MODULE_DIR			PKGLIBDIR
 
 typedef std::map<std::string, std::string> ConfigSection;
 typedef std::map<std::string, ConfigSection> ConfigMap;
