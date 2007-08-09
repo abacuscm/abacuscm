@@ -593,10 +593,6 @@ int main(int argc, char ** argv) {
 	if(!setup_signals())
 		return -1;
 
-	/* Moved this ahead of load_modules because act_startstop needs
-	 * to enqueue something. Let's pray that it doesn't break anything
-	 * - Bruce
-	 */
 	Server::setAckQueue(&ack_queue);
 	Server::setTimedQueue(&timed_queue);
 
