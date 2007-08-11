@@ -37,6 +37,7 @@
 #include "timedaction.h"
 #include "markers.h"
 #include "eventregister.h"
+#include "usersupportmodule.h"
 
 #define DEFAULT_MIN_IDLE_WORKERS		5
 #define DEFAULT_MAX_IDLE_WORKERS		10
@@ -212,7 +213,7 @@ static bool initialise() {
 		for(i = config["init_attribs"].begin(); i != config["init_attribs"].end(); ++i)
 			init->addAttribute(i->first, i->second);
 
-		Message_CreateUser *admin = new Message_CreateUser("admin", "Administrator", "f6fdffe48c908deb0f4c3bd36c032e72", 1, USER_ADMIN);
+		Message_CreateUser *admin = new Message_CreateUser("admin", "Administrator", "f6fdffe48c908deb0f4c3bd36c032e72", 1, USER_TYPE_ADMIN);
 
 		if(init->makeMessage() && admin->makeMessage()) {
 			message_queue.enqueue(init);

@@ -16,11 +16,6 @@
 #include <stdint.h>
 #include <string>
 
-#define USER_NONE		0
-#define USER_ADMIN		1
-#define USER_JUDGE		2
-#define USER_CONTESTANT	3
-
 // The maximum number of servers which can be allocated.
 #define MAX_SERVERS		16
 
