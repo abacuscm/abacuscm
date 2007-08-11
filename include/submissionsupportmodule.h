@@ -18,6 +18,11 @@
 #include <stdint.h>
 
 class SubmissionSupportModule : public SupportModule {
+	DECLARE_SUPPORT_MODULE(SubmissionSupportModule);
+private:
+	SubmissionSupportModule();
+	virtual ~SubmissionSupportModule();
+
 public:
 /*	class Submission {
 	private:
@@ -26,9 +31,6 @@ public:
 		uint32_t server_id();
 		uint32_t user_id();
 	};*/
-
-	SubmissionSupportModule();
-	virtual ~SubmissionSupportModule();
 
 	virtual void init();
 

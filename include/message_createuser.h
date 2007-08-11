@@ -21,7 +21,8 @@
 
 class Message_CreateUser : public Message {
 private:
-	std::string _name;
+	std::string _username;
+	std::string _friendlyname;
 	std::string _password;
 	uint32_t _user_id;
 	uint32_t _type;
@@ -32,7 +33,7 @@ protected:
 	virtual uint32_t load(const uint8_t *buffer, uint32_t size);
 public:
 	Message_CreateUser();
-	Message_CreateUser(const std::string& name, const std::string& pass, uint32_t id, uint32_t type, uint32_t requester_id = 0);
+	Message_CreateUser(const std::string& username, const std::string& friendlyname, const std::string& pass, uint32_t id, uint32_t type, uint32_t requester_id = 0);
 	virtual ~Message_CreateUser();
 
 	virtual bool process() const;

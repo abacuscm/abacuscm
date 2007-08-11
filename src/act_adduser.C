@@ -43,6 +43,7 @@ bool ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
 	UserSupportModule *usm = getUserSupportModule();
 	uint32_t user_id = cc->getProperty("user_id");
 	string new_username = (*mb)["username"];
+	string new_friendlyname = (*mb)["friendlyname"];
 	string new_passwd = (*mb)["passwd"];
 	uint32_t new_type = _typemap[(*mb)["type"]];
 
@@ -52,11 +53,17 @@ bool ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
 	if(!new_type)
 		return cc->sendError("Invalid user type " + (*mb)["type"]);
 
+	if(new_username == "")
+		return cc->sendError("Cannot have a blank username");
+
 	if(new_passwd == "")
 		return cc->sendError("Cannot set a blank password");
 
-	if(new_username == "")
-		return cc->sendError("Cannot have a blank username");
+	if ((new_passwd = usm->hashpw(new_username, new_passwd)) == "")
+		return cc->sendError("Password hashing error");
+
+	if (new_friendlyname == "")
+		new_friendlyname = new_username;
 
 	uint32_t tmp_user_id = usm->user_id(new_username);
 
@@ -67,7 +74,7 @@ bool ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
 	if(new_id == ~0U)
 		return cc->sendError("Unable to determine next usable user_id");
 
-	return triggerMessage(cc, new Message_CreateUser(new_username,
+	return triggerMessage(cc, new Message_CreateUser(new_username, new_friendlyname,
 				new_passwd, new_id, new_type, user_id));
 }
 

@@ -19,6 +19,8 @@
 
 using namespace std;
 
+DEFINE_SUPPORT_MODULE(UserSupportModule);
+
 UserSupportModule::UserSupportModule()
 {
 }
@@ -166,6 +168,21 @@ string UserSupportModule::hashpw(const string& uname, const string& pw)
 	if (res.size())
 		return *res.begin();
 	return "";
+}
+
+bool UserSupportModule::addUser(uint32_t user_id, const std::string& username, const std::string& friendlyname, const std::string& password, uint32_t type)
+{
+	DbCon *db = DbCon::getInstance();
+	if (!db)
+		return false;
+
+	ostringstream query;
+	query << "INSERT INTO User (user_id, username, password, type) VALUES (" << user_id << ", '" << db->escape_string(username) << "', '" << db->escape_string(password) << "', " << type << ")";
+
+	bool r = db->executeQuery(query.str());
+	db->release();
+
+	return r;
 }
 
 UserSupportModule::UserList UserSupportModule::list() {

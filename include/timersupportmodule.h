@@ -25,6 +25,7 @@
 #define TIMER_STOP				TIMER_STATUS_STOPPED
 
 class TimerSupportModule : public SupportModule {
+	DECLARE_SUPPORT_MODULE(TimerSupportModule);
 private:
 	struct startstop_event {
 		time_t time;
@@ -33,12 +34,12 @@ private:
 		struct startstop_event *next;
 	};
 
-	struct startstop_event *_evlist;
-	pthread_mutex_t _writelock;
-public:
 	TimerSupportModule();
 	virtual ~TimerSupportModule();
 
+	struct startstop_event *_evlist;
+	pthread_mutex_t _writelock;
+public:
 	virtual void init();
 
 	uint32_t contestDuration();

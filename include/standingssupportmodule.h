@@ -26,6 +26,7 @@
 #include <vector>
 
 class StandingsSupportModule : public SupportModule {
+	DECLARE_SUPPORT_MODULE(StandingsSupportModule);
 public:
 	typedef struct
 	{
@@ -44,13 +45,14 @@ private:
 	StandingsPtr _contestant_standings;
 	bool dirty;
 
-	bool updateStandings();
-
-	bool checkStandings();
-public:
 	StandingsSupportModule();
 	virtual ~StandingsSupportModule();
 
+	bool updateStandings();
+
+	bool checkStandings();
+
+public:
 	const StandingsPtr getStandings(uint32_t user_type);
 	void notifySolution(time_t submit_time);
 	void timedUpdate();

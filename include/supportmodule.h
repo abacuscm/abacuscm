@@ -23,11 +23,23 @@ protected:
 public:
 	virtual void init();
 
-	static void registerSupportModule(std::string name, SupportModule* sm);
-	static SupportModule* get(std::string);
+	static void registerSupportModule(const std::string& name, SupportModule* sm);
+	static SupportModule* get(const std::string& name);
 };
 
-#define DEFINE_SUPPORT_MODULE_GETTER(c) inline c* get##c() { return dynamic_cast<c*>(SupportModule::get(#c)); }
-#define DEFINE_SUPPORT_MODULE_REGISTRAR(c) static c __singleton_##c; static void __attribute__((constructor)) __init_##c() { __singleton_##c.init(); SupportModule::registerSupportModule(#c, &__singleton_##c); }
+class SupportModuleRegistrar {
+public:
+	SupportModuleRegistrar(const std::string &name, SupportModule* sm);
+};
+
+#define DEFINE_SUPPORT_MODULE_GETTER(c) inline c* get##c() { return /*dynamic_cast<c*>*/(c*)(SupportModule::get(#c)); }
+#define DECLARE_SUPPORT_MODULE(c)                                       \
+	private:                                                            \
+		static c __singleton_instance;                                  \
+		static SupportModuleRegistrar __registrar;                      \
+
+#define DEFINE_SUPPORT_MODULE(c)                                        \
+	c c::__singleton_instance;                                           \
+    SupportModuleRegistrar c::__registrar(#c, &c::__singleton_instance); \
 
 #endif

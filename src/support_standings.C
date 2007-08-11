@@ -26,6 +26,8 @@
 
 using namespace std;
 
+DEFINE_SUPPORT_MODULE(StandingsSupportModule);
+
 class TimedStandingsUpdater : public TimedAction
 {
 private:
@@ -229,5 +231,3 @@ const StandingsSupportModule::StandingsPtr StandingsSupportModule::getStandings(
 
 	return StandingsPtr();
 }
-
-DEFINE_SUPPORT_MODULE_REGISTRAR(StandingsSupportModule);

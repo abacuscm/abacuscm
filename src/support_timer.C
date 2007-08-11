@@ -19,6 +19,8 @@
 
 using std::ostringstream;
 
+DEFINE_SUPPORT_MODULE(TimerSupportModule);
+
 TimerSupportModule::TimerSupportModule()
 {
 	_evlist = NULL;
@@ -189,5 +191,3 @@ void TimerSupportModule::init()
 		log(LOG_DEBUG, "Initial timer event: server_id=%d, time=%lu, action=%d", ev->server_id, ev->time, ev->action);
 	}
 }
-
-DEFINE_SUPPORT_MODULE_REGISTRAR(TimerSupportModule);

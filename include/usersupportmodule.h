@@ -27,6 +27,7 @@
 #define USER_TYPE_CONTESTANT	3
 
 class UserSupportModule : public SupportModule {
+	DECLARE_SUPPORT_MODULE(UserSupportModule);
 public:
 	struct User {
 		uint32_t user_id;
@@ -37,6 +38,9 @@ public:
 
 	typedef std::vector<User> UserList;
 private:
+	UserSupportModule();
+	virtual ~UserSupportModule();
+
 /*	typedef std::map<uint32_t, struct User> UserMap;
 	UserMap _users;
 	pthread_mutex_t _id_lock;
@@ -44,11 +48,9 @@ private:
 
 	UserMap::const_iterator getUser(uint32_t user_id); */
 public:
-	UserSupportModule();
-	virtual ~UserSupportModule();
-
 	virtual void init();
 
+	virtual bool addUser(uint32_t user_id, const std::string& username, const std::string& friendlyname, const std::string& password, uint32_t type);
 	UserList list();
 	uint32_t __attribute__((pure)) user_id(const std::string& username);
 	std::string __attribute__((pure)) username(uint32_t user_id);

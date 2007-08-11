@@ -153,11 +153,6 @@ public:
 	virtual std::vector<uint32_t> getRemoteServers() = 0;
 
 	/**
-	 * Used to add a new user to the system.
-	 */
-	virtual bool addUser(const std::string& name, const std::string& pass, uint32_t id, uint32_t type) = 0;
-
-	/**
 	 * Used to retrieve the current maximum server_id.
 	 */
 	virtual uint32_t maxServerId() = 0;

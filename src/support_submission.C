@@ -17,6 +17,8 @@
 
 using std::ostringstream;
 
+DEFINE_SUPPORT_MODULE(SubmissionSupportModule);
+
 SubmissionSupportModule::SubmissionSupportModule()
 {
 }
@@ -45,5 +47,3 @@ bool SubmissionSupportModule::putSubmission(uint32_t sub_id, uint32_t user_id, u
 
 	return res;
 }
-
-DEFINE_SUPPORT_MODULE_REGISTRAR(SubmissionSupportModule);
