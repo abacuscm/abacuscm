@@ -14,6 +14,7 @@
 # include <config.h>
 #endif
 #include <stdint.h>
+#include <string>
 
 #define USER_NONE		0
 #define USER_ADMIN		1
@@ -31,6 +32,9 @@ class TimedAction;
 
 class Server {
 public:
+	static uint32_t server_id(const std::string& name);
+	static std::string servername(uint32_t user_id);
+
 	static uint32_t getId();
 	static uint32_t nextServerId();
 	static uint32_t nextSubmissionId();

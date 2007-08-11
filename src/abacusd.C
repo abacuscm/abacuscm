@@ -197,7 +197,7 @@ static bool initialise() {
 	if(!db)
 		return false;
 
-	uint32_t local_id = db->name2server_id(localname);
+	uint32_t local_id = Server::server_id(localname);
 	MessageList msglist = db->getUnprocessedMessages();
 	IdList sublist;
 	if(local_id && db->getServerAttribute(local_id, "marker") == "yes")

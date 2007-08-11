@@ -99,11 +99,6 @@ public:
 	 * all).
 	 */
 
-	/**
-	 * maps a servername to a server_id
-	 */
-	virtual uint32_t name2server_id(const std::string& name) = 0;
-	virtual std::string server_id2name(uint32_t user_id) = 0;
 
 	/**
 	 * Retrieves a list of all servers, mapped with id -> name

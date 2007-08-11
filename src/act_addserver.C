@@ -16,7 +16,6 @@
 #include "logger.h"
 #include "message_createserver.h"
 #include "server.h"
-#include "dbcon.h"
 
 using namespace std;
 
@@ -38,12 +37,7 @@ bool ActAddServer::int_process(ClientConnection* cc, MessageBlock* mb) {
 	log(LOG_NOTICE, "User %u requested addition of server '%s'", user_id,
 			servername.c_str());
 
-	DbCon *db = DbCon::getInstance();
-	if(!db)
-		return cc->sendError("Error connecting to database.");
-
-	uint32_t server_id = db->name2server_id(servername);
-	db->release();db=NULL;
+	uint32_t server_id = Server::server_id(servername);
 
 	if(server_id)
 		return cc->sendError("Servername is already in use!");

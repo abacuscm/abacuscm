@@ -145,7 +145,7 @@ bool MarkMessage::process() const {
 
 	if(_result == CORRECT) {
 		MessageBlock bl("balloon");
-		bl["server"] = db->server_id2name(db->submission2server_id(_submission_id));
+		bl["server"] = Server::servername(db->submission2server_id(_submission_id));
 		bl["contestant"] = usm->username(db->submission2user_id(_submission_id));
 		bl["problem"] = db->submission2problem(_submission_id);
 

@@ -47,8 +47,6 @@ public:
 	virtual string escape_buffer(const uint8_t* bfr, uint32_t size);
 
 	// from here will eventually go bye bye.
-	virtual uint32_t name2server_id(const string& name);
-	virtual std::string server_id2name(uint32_t user_id);
 	virtual ServerList getServers();
 	virtual string getServerAttribute(uint32_t server_id,
 			const string& attribute);
@@ -233,56 +231,6 @@ bool MySQL::executeQuery(const std::string& query) {
 	return true;
 }
 
-uint32_t MySQL::name2server_id(const string& name) {
-	uint32_t server_id = 0;
-	ostringstream query;
-	query << "SELECT server_id FROM Server WHERE server_name='" << escape_string(name) << "'";
-
-	if(mysql_query(&_mysql, query.str().c_str())) {
-		log_mysql_error();
-		return ~0U;
-	}
-
-	MYSQL_RES *res = mysql_use_result(&_mysql);
-	if(!res) {
-		log_mysql_error();
-		return ~0U;
-	}
-
-	MYSQL_ROW row = mysql_fetch_row(res);
-
-	if(row)
-		server_id = atol(row[0]);
-
-	mysql_free_result(res);
-
-	return server_id;
-}
-
-std::string MySQL::server_id2name(uint32_t server_id) {
-	string servername;
-	ostringstream query;
-	query << "SELECT server_name FROM Server WHERE server_id=" << server_id;
-
-	if(mysql_query(&_mysql, query.str().c_str())) {
-		log_mysql_error();
-		return "";
-	}
-
-	MYSQL_RES *res = mysql_use_result(&_mysql);
-	if(!res) {
-		log_mysql_error();
-		return "";
-	}
-
-	MYSQL_ROW row = mysql_fetch_row(res);
-	if(row)
-		servername = row[0];
-
-	mysql_free_result(res);
-
-	return servername;
-}
 
 ServerList MySQL::getServers() {
 	ServerList list;

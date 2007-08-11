@@ -19,11 +19,44 @@
 #include "queue.h"
 
 #include <pthread.h>
+#include <sstream>
+
+using namespace std;
 
 #define ID_GRANULARITY		MAX_SERVERS
 
 static Queue<uint32_t> *ack_queue;
 static Queue<TimedAction*> *timed_queue;
+
+uint32_t Server::server_id(const string& name)
+{
+	DbCon *db = DbCon::getInstance();
+	if (!db)
+		return ~0U;
+
+	ostringstream query;
+	query << "SELECT server_id FROM Server WHERE server_name='" << db->escape_string(name) << "'";
+
+	QueryResultRow r = db->singleRowQuery(query.str());
+	db->release();
+
+	return r.size() ? strtoul(r.begin()->c_str(), NULL, 0) : 0;
+}
+
+string Server::servername(uint32_t server_id)
+{
+	DbCon *db = DbCon::getInstance();
+	if (!db)
+		return "";
+
+	ostringstream query;
+	query << "SELECT server_name FROM Server WHERE server_id=" << server_id;
+
+	QueryResultRow r = db->singleRowQuery(query.str());
+	db->release();
+
+	return r.size() ? *r.begin() : "";
+}
 
 uint32_t Server::getId() {
 	Config &config = Config::getConfig();
@@ -33,7 +66,7 @@ uint32_t Server::getId() {
 		DbCon *db = DbCon::getInstance();
 		if(!db)
 			return ~0U;
-		local_id = db->name2server_id(config["initialisation"]["name"]);
+		local_id = server_id(config["initialisation"]["name"]);
 		db->release();db=NULL;
 		if(local_id == 0 && config["initialisation"]["type"] == "master")
 			local_id = 1;
