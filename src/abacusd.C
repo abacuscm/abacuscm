@@ -279,7 +279,7 @@ static void* peer_listener(void *) {
 				db->release(); db = NULL;
 			} else
 				delete message;
-		} else
+		} else if(abacusd_running)
 			log(LOG_WARNING, "Failed to get message!");
 	}
 	return NULL;
