@@ -862,8 +862,11 @@ void MainWindow::submissionHandler(QListViewItem *item) {
 		for (uint32_t index = 0; index < fileCount; index++) {
 			string name;
 			uint32_t length;
-			char *fdata;
-			bool result = _server_con.getMarkFile(submission_id, index, name, (void **) &fdata, length);
+			union {
+				char *fdata;
+				void *vdata;
+			};
+			bool result = _server_con.getMarkFile(submission_id, index, name, &vdata, length);
 			if (!result)
 				log(LOG_DEBUG, "Uh-oh, something went wrong when getting file from server");
 			judgeDecisionDialog.data[name] = string(fdata, length);
@@ -931,9 +934,12 @@ void MainWindow::submissionHandler(QListViewItem *item) {
 			CompilerOutputDialog compilerOutputDialog;
 			string name;
 			uint32_t length;
-			char *data;
+			union {
+				char *data;
+				void *vdata;
+			};
 			uint32_t submission_id = strtoll(item->text(0), NULL, 0);
-			bool result = _server_con.getMarkFile(submission_id, 0, name, (void **) &data, length);
+			bool result = _server_con.getMarkFile(submission_id, 0, name, &vdata, length);
 			if (!result) {
 				log(LOG_DEBUG, "Uh-oh, something went wrong when getting file from server");
 				QMessageBox("Failed to fetch compilation log", "There was a problem fetching your compilation log",
