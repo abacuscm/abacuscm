@@ -176,10 +176,12 @@ QueryResult MySQL::multiRowQuery(const std::string& query) {
 
 	QueryResult queryresult;
 	while(row) {
+		unsigned long* lens = mysql_fetch_lengths(res);
+
 		QueryResultRow resrow;
 		resrow.reserve(fieldcount);
 		for(unsigned int i = 0; i < fieldcount; ++i)
-			resrow.push_back(row[i]);
+			resrow.push_back(string(row[i], lens[i]));
 		queryresult.push_back(resrow);
 
 		row = mysql_fetch_row(res);
@@ -209,9 +211,11 @@ QueryResultRow MySQL::singleRowQuery(const std::string& query) {
 	QueryResultRow resrow;
 
 	if(row) {
+		unsigned long* lens = mysql_fetch_lengths(res);
+
 		resrow.reserve(fieldcount);
 		for(unsigned int i = 0; i < fieldcount; ++i)
-			resrow.push_back(row[i]);
+			resrow.push_back(string(row[i], lens[i]));
 
 		// have to flush the entire result.
 		while(mysql_fetch_row(res));
