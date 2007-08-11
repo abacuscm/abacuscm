@@ -81,6 +81,7 @@ bin_createuser_LDADD = lib/libabacus-client.la
 bin_abacusd_SOURCES = src/abacusd.C \
 		      src/sigsegv.c include/sigsegv.h
 bin_abacusd_LDADD = lib/libabacus-server.la $(LIBLTDL)
+bin_abacusd_LDFLAGS = -export-dynamic
 
 # Support libraries
 lib_libabacus_la_SOURCES = src/acmconfig.C include/acmconfig.h \
@@ -104,94 +105,98 @@ lib_libabacus_server_la_SOURCES = src/moduleloader.C include/moduleloader.h \
 				  src/timedaction.C include/timedaction.h \
 				  src/markers.C include/markers.h \
 				  src/problemtype.C include/problemtype.h
-lib_libabacus_server_la_LIBADD = lib/libabacus.la
+lib_libabacus_server_la_LIBADD = lib/libabacus.la $(LIBLTDL)
 
 lib_libabacus_client_la_SOURCES = src/serverconnection.C include/serverconnection.h
 lib_libabacus_client_la_LIBADD = lib/libabacus.la
 
 # Modules
+# Note: don't try this with LIBADD - automake isn't smart enough to expand
+# it at the time automake is run, so it doesn't do the right thing
+MODULES_LDFLAGS_COMMON = -thread-safe -module -export-dynamic -avoid-version
+
 modules_mod_act_addserver_la_SOURCES = src/act_addserver.C
 modules_mod_act_addserver_la_LIBADD = lib/libabacus-server.la
-modules_mod_act_addserver_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_act_addserver_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_act_adduser_la_SOURCES = src/act_adduser.C
 modules_mod_act_adduser_la_LIBADD = lib/libabacus-server.la
-modules_mod_act_adduser_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_act_adduser_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_act_auth_la_SOURCES = src/act_auth.C
 modules_mod_act_auth_la_LIBADD = lib/libabacus-server.la
-modules_mod_act_auth_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_act_auth_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_act_clarify_la_SOURCES = src/act_clarify.C
 modules_mod_act_clarify_la_LIBADD = lib/libabacus-server.la
-modules_mod_act_clarify_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_act_clarify_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_act_contesttime_la_SOURCES = src/act_contesttime.C include/timersupportmodule.h
 modules_mod_act_contesttime_la_LIBADD = lib/libabacus-server.la
-modules_mod_act_contesttime_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_act_contesttime_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_act_events_la_SOURCES = src/act_events.C
 modules_mod_act_events_la_LIBADD = lib/libabacus-server.la
-modules_mod_act_events_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_act_events_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_act_mark_la_SOURCES = src/act_mark.C \
 				  include/standingssupportmodule.h
 modules_mod_act_mark_la_LIBADD = lib/libabacus-server.la
-modules_mod_act_mark_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_act_mark_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_act_passwd_la_SOURCES = src/act_passwd.C
 modules_mod_act_passwd_la_LIBADD = lib/libabacus-server.la
-modules_mod_act_passwd_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_act_passwd_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_act_problem_subscription_la_SOURCES = src/act_problem_subscription.C
 modules_mod_act_problem_subscription_la_LIBADD = lib/libabacus-server.la
-modules_mod_act_problem_subscription_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_act_problem_subscription_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_act_problemmanip_la_SOURCES = src/act_problemmanip.C
 modules_mod_act_problemmanip_la_LIBADD = lib/libabacus-server.la
-modules_mod_act_problemmanip_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_act_problemmanip_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_act_problemtypes_la_SOURCES = src/act_problemtypes.C
 modules_mod_act_problemtypes_la_LIBADD = lib/libabacus-server.la
-modules_mod_act_problemtypes_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_act_problemtypes_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_act_serverlist_la_SOURCES = src/act_serverlist.C
 modules_mod_act_serverlist_la_LIBADD = lib/libabacus-server.la
-modules_mod_act_serverlist_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_act_serverlist_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_act_standings_la_SOURCES = src/act_standings.C \
 				       include/standingssupportmodule.h
 modules_mod_act_standings_la_LIBADD = lib/libabacus-server.la
-modules_mod_act_standings_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_act_standings_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_act_startstop_la_SOURCES = src/act_startstop.C \
 				       include/timersupportmodule.h
 modules_mod_act_startstop_la_LIBADD = lib/libabacus-server.la
-modules_mod_act_startstop_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_act_startstop_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_act_status_la_SOURCES = src/act_status.C \
 				    include/timersupportmodule.h
 modules_mod_act_status_la_LIBADD = lib/libabacus-server.la
-modules_mod_act_status_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_act_status_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_act_submit_la_SOURCES = src/act_submit.C \
 				    include/timersupportmodule.h \
 				    include/submissionsupportmodule.h
 modules_mod_act_submit_la_LIBADD = lib/libabacus-server.la
-modules_mod_act_submit_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_act_submit_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_act_whatami_la_SOURCES = src/act_whatami.C
 modules_mod_act_whatami_la_LIBADD = lib/libabacus-server.la
-modules_mod_act_whatami_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_act_whatami_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_dbmysql_la_SOURCES = src/dbmysql.C
 modules_mod_dbmysql_la_LIBADD = lib/libabacus-server.la -lmysqlclient_r
-modules_mod_dbmysql_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_dbmysql_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_prob_testcasedriventype_la_SOURCES = src/prob_testcasedriventype.C \
 						 include/compiledproblemtype.h
 modules_mod_prob_testcasedriventype_la_LIBADD = lib/libabacus-server.la
-modules_mod_prob_testcasedriventype_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_prob_testcasedriventype_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_support_standings_la_SOURCES = src/support_standings.C \
 					   include/timersupportmodule.h \
@@ -199,25 +204,25 @@ modules_mod_support_standings_la_SOURCES = src/support_standings.C \
 					   include/standingssupportmodule.h \
 					   include/scoped_lock.h
 modules_mod_support_standings_la_LIBADD = lib/libabacus-server.la
-modules_mod_support_standings_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_support_standings_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_support_submission_la_SOURCES = src/support_submission.C \
 					    include/submissionsupportmodule.h
 modules_mod_support_submission_la_LIBADD = lib/libabacus-server.la
-modules_mod_support_submission_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_support_submission_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_support_timer_la_SOURCES = src/support_timer.C include/timersupportmodule.h
 modules_mod_support_timer_la_LIBADD = lib/libabacus-server.la
-modules_mod_support_timer_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_support_timer_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_support_user_la_SOURCES = src/support_user.C include/usersupportmodule.h
 modules_mod_support_user_la_LIBADD = lib/libabacus-server.la
-modules_mod_support_user_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_support_user_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 modules_mod_udpmessenger_la_SOURCES = src/udpmessenger.C \
 				      include/scoped_lock.h
 modules_mod_udpmessenger_la_LIBADD = lib/libabacus-server.la
-modules_mod_udpmessenger_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+modules_mod_udpmessenger_la_LDFLAGS = $(MODULES_LDFLAGS_COMMON) -version 0:0:0
 
 # Other
 libtool: @LIBTOOL_DEPS@
