@@ -33,7 +33,6 @@ typedef std::map<uint32_t, std::string> ServerList;
 typedef std::list<AttributeList> SubmissionList;
 typedef std::list<AttributeList> ClarificationList;
 typedef std::list<AttributeList> ClarificationRequestList;
-typedef std::list<AttributeList> UserList;
 
 typedef std::vector<std::string> QueryResultRow;
 typedef std::list<QueryResultRow> QueryResult;
@@ -55,7 +54,7 @@ public:
 	 * vectors.  Any conversion needs to other datatypes should be made by the
 	 * caller.
 	 */
-	virtual QueryResult multiRowQuery(std::string query) = 0;
+	virtual QueryResult multiRowQuery(const std::string& query) = 0;
 
 	/**
 	 * Executes a SQL query and returns the first row of the result from that
@@ -63,13 +62,13 @@ public:
 	 * entire result anyway, so you should probably try to make sure that the
 	 * query only returns a single row.
 	 */
-	virtual QueryResultRow singleRowQuery(std::string query) = 0;
+	virtual QueryResultRow singleRowQuery(const std::string& query) = 0;
 
 	/**
 	 * Execute a query that does _not_ generate a result.  This is typically
 	 * used to insert now data into the database.
 	 */
-	virtual bool executeQuery(std::string query) = 0;
+	virtual bool executeQuery(const std::string& query) = 0;
 
 	/**
 	 * Escape a string.
@@ -110,17 +109,6 @@ public:
 	 * Retrieves a list of all servers, mapped with id -> name
 	 */
 	virtual ServerList getServers() = 0;
-
-	/**
-	 * maps a username to a user_id
-	 */
-	virtual uint32_t name2user_id(const std::string& name) = 0;
-        virtual std::string user_id2name(uint32_t user_id) = 0;
-
-	/**
-	 * gets a list of all users
-	 */
-	virtual UserList getUsers() = 0;
 
 	/**
 	 * Retrieves an attribute value for a server.
@@ -206,13 +194,6 @@ public:
 	 */
 	virtual int authenticate(const std::string& uname, const std::string& pass,
 			uint32_t *user_id, uint32_t *user_type) = 0;
-
-	/**
-	 * Used to update a users password.  There may be sequence problems with
-	 * this - but considering that a user will only ever connect to oen server
-	 * this should not ever be a problem.
-	 */
-	virtual bool setPassword(uint32_t user_id, const std::string& newpass) = 0;
 
 	/**
 	 * Used to retrieve all unprocessed messages.

@@ -1,6 +1,6 @@
 # Set up directories
 SUBDIRS = libltdl doc
-AM_CPPFLAGS = -I$(srcdir)/include -I./include $(LTDLINC) -DSYSCONFDIR=\"$(sysconfdir)\" -DPKGLIBDIR=\"$(pkglibdir)\"
+AM_CPPFLAGS = -I$(srcdir)/include -I./include $(LTDLINC) -DSYSCONFDIR=\"$(sysconfdir)\" -DPKGLIBDIR=\"$(pkglibdir)\" -W -Wall
 
 # Figure out what to compile
 bin_PROGRAMS =
@@ -33,6 +33,7 @@ pkglib_LTLIBRARIES += modules/mod_act_addserver.la \
 		      modules/mod_support_standings.la \
 		      modules/mod_support_submission.la \
 		      modules/mod_support_timer.la \
+		      modules/mod_support_user.la \
 		      modules/mod_udpmessenger.la
 endif
 if DO_MARKER
@@ -208,6 +209,10 @@ modules_mod_support_submission_la_LDFLAGS = -thread-safe -module -export-dynamic
 modules_mod_support_timer_la_SOURCES = src/support_timer.C include/timersupportmodule.h
 modules_mod_support_timer_la_LIBADD = lib/libabacus-server.la
 modules_mod_support_timer_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
+
+modules_mod_support_user_la_SOURCES = src/support_user.C include/usersupportmodule.h
+modules_mod_support_user_la_LIBADD = lib/libabacus-server.la
+modules_mod_support_user_la_LDFLAGS = -thread-safe -module -export-dynamic -version 0:0:0
 
 modules_mod_udpmessenger_la_SOURCES = src/udpmessenger.C \
 				      include/scoped_lock.h

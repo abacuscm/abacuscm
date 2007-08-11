@@ -40,19 +40,15 @@ public:
 	virtual ~MySQL();
 
 	virtual bool ok();
-	virtual QueryResult multiRowQuery(std::string query);
-	virtual QueryResultRow singleRowQuery(std::string query);
-	virtual bool executeQuery(std::string query);
+	virtual QueryResult multiRowQuery(const std::string& query);
+	virtual QueryResultRow singleRowQuery(const std::string& query);
+	virtual bool executeQuery(const std::string& query);
 	virtual string escape_string(const string& str);
 	virtual string escape_buffer(const uint8_t* bfr, uint32_t size);
 
 	// from here will eventually go bye bye.
 	virtual uint32_t name2server_id(const string& name);
 	virtual std::string server_id2name(uint32_t user_id);
-	virtual uint32_t name2user_id(const string& name);
-	virtual std::string user_id2name(uint32_t user_id);
-	//virtual uint32_t user_id2type(uint32_t user_id);
-	virtual UserList getUsers();
 	virtual ServerList getServers();
 	virtual string getServerAttribute(uint32_t server_id,
 			const string& attribute);
@@ -67,7 +63,6 @@ public:
 			uint32_t id, uint32_t type);
 	virtual int authenticate(const std::string& uname, const std::string& pass,
 			uint32_t *user_id, uint32_t *user_type);
-	virtual bool setPassword(uint32_t user_id, const std::string& newpass);
 	virtual MessageList getUnprocessedMessages();
 	virtual MessageList getUnacked(uint32_t server_id, uint32_t message_type_id,
 			uint32_t limit = 0);
@@ -167,7 +162,7 @@ bool MySQL::ok() {
 		return true;
 }
 
-QueryResult MySQL::multiRowQuery(std::string query) {
+QueryResult MySQL::multiRowQuery(const std::string& query) {
 	if(!executeQuery(query))
 		return QueryResult();
 
@@ -199,7 +194,7 @@ QueryResult MySQL::multiRowQuery(std::string query) {
 	return queryresult;
 }
 
-QueryResultRow MySQL::singleRowQuery(std::string query) {
+QueryResultRow MySQL::singleRowQuery(const std::string& query) {
 	if(!executeQuery(query))
 		return QueryResultRow();
 
@@ -231,7 +226,7 @@ QueryResultRow MySQL::singleRowQuery(std::string query) {
 	return resrow;
 }
 
-bool MySQL::executeQuery(std::string query) {
+bool MySQL::executeQuery(const std::string& query) {
 	if(mysql_query(&_mysql, query.c_str())) {
 		log(LOG_ERR, "MySQL query failed: %s", mysql_error(&_mysql));
 		log(LOG_ERR, "MySQL query was: %s", query.c_str());
@@ -289,84 +284,6 @@ std::string MySQL::server_id2name(uint32_t server_id) {
 	mysql_free_result(res);
 
 	return servername;
-}
-
-uint32_t MySQL::name2user_id(const string& name) {
-	uint32_t user_id = 0;
-	ostringstream query;
-	query << "SELECT user_id FROM User WHERE username='" << escape_string(name) << "'";
-
-	if(mysql_query(&_mysql, query.str().c_str())) {
-		log_mysql_error();
-		return ~0U;
-	}
-
-	MYSQL_RES *res = mysql_use_result(&_mysql);
-	if(!res) {
-		log_mysql_error();
-		return ~0U;
-	}
-
-	MYSQL_ROW row = mysql_fetch_row(res);
-	if(row)
-		user_id = atol(row[0]);
-
-	mysql_free_result(res);
-
-	return user_id;
-}
-
-std::string MySQL::user_id2name(uint32_t user_id) {
-	string username;
-	ostringstream query;
-	query << "SELECT username FROM User WHERE user_id=" << user_id;
-
-	if(mysql_query(&_mysql, query.str().c_str())) {
-		log_mysql_error();
-		return "";
-	}
-
-	MYSQL_RES *res = mysql_use_result(&_mysql);
-	if(!res) {
-		log_mysql_error();
-		return "";
-	}
-
-	MYSQL_ROW row = mysql_fetch_row(res);
-	if(row)
-		username = row[0];
-
-	mysql_free_result(res);
-
-	return username;
-}
-
-UserList MySQL::getUsers() {
-	ostringstream query;
-	query << "SELECT user_id, username FROM User";
-
-	if(mysql_query(&_mysql, query.str().c_str())) {
-		log_mysql_error();
-		return ClarificationList();
-	}
-
-	UserList lst;
-	MYSQL_RES *res = mysql_use_result(&_mysql);
-	if (!res) {
-		log_mysql_error();
-		return UserList();
-	}
-	MYSQL_ROW row;
-	while ((row = mysql_fetch_row(res)) != 0) {
-		AttributeList attrs;
-		attrs["id"] = row[0];
-		attrs["username"] = row[1];
-
-		lst.push_back(attrs);
-	}
-	mysql_free_result(res);
-
-	return lst;
 }
 
 ServerList MySQL::getServers() {
@@ -629,17 +546,6 @@ int MySQL::authenticate(const std::string& uname, const std::string& pass, uint3
 		mysql_free_result(res);
 	}
 	return ret;
-}
-
-bool MySQL::setPassword(uint32_t user_id, const std::string& newpass) {
-	ostringstream query;
-	query << "UPDATE User SET password=MD5(CONCAT(username, '" <<
-		escape_string(newpass) << "')) WHERE user_id=" << user_id;
-	if(mysql_query(&_mysql, query.str().c_str())) {
-		log_mysql_error();
-		return false;
-	}
-	return true;
 }
 
 MessageList MySQL::getMessages(std::string query) {
@@ -1519,6 +1425,11 @@ bool MySQL::init() {
 	string pass = config["mysql"]["password"];
 	string db   = config["mysql"]["db"];
 	unsigned int port = atol(config["mysql"]["port"].c_str());
+
+	if (pthread_getspecific(_called_thread_init) == MYSQL_THREAD_STATE_UNINITIALIZED) {
+		mysql_thread_init();
+		pthread_setspecific(_called_thread_init, MYSQL_THREAD_STATE_THREAD_INIT);
+	}
 
 	mysql_init(&_mysql);
 

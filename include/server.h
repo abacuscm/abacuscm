@@ -32,7 +32,6 @@ class TimedAction;
 class Server {
 public:
 	static uint32_t getId();
-	static uint32_t nextUserId();
 	static uint32_t nextServerId();
 	static uint32_t nextSubmissionId();
 	static uint32_t nextClarificationRequestId();

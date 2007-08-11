@@ -16,6 +16,7 @@
 #include "dbcon.h"
 #include "logger.h"
 #include "standingssupportmodule.h"
+#include "usersupportmodule.h"
 
 #include <vector>
 #include <map>
@@ -32,7 +33,10 @@ protected:
 
 bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 	StandingsSupportModule *standings = getStandingsSupportModule();
+	UserSupportModule *usm = getUserSupportModule();
 	if (!standings)
+		return cc->sendError("Misconfigured Server - unable to calculate standings.");
+	if (!usm)
 		return cc->sendError("Misconfigured Server - unable to calculate standings.");
 
     uint32_t uType = cc->getProperty("user_type");
@@ -88,7 +92,7 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 		ostringstream val;
 		char time_buffer[64];
 		headername << "row_" << r << "_0";
-		mb[headername.str()] = db->user_id2name(i->user_id);
+		mb[headername.str()] = usm->username(i->user_id);
 
 		headername.str("");
 		headername << "row_" << r << "_" << (ncols - 1);

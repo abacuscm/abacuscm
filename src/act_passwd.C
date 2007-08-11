@@ -12,6 +12,7 @@
 #endif
 #include "clientaction.h"
 #include "clientconnection.h"
+#include "usersupportmodule.h"
 #include "messageblock.h"
 #include "logger.h"
 #include "dbcon.h"
@@ -56,55 +57,55 @@ public:
 };
 
 bool ActPasswd::int_process(ClientConnection *cc, MessageBlock *mb) {
+	UserSupportModule *usm = getUserSupportModule();
 	uint32_t user_id = cc->getProperty("user_id");
 	string newpass = (*mb)["newpass"];
 
-	if(newpass == "")
+	if (newpass == "")
 		return cc->sendError("Cannot have a blank password!");
+
+	if ((newpass = usm->hashpw(user_id, newpass)) == "")
+		return cc->sendError("Error hashing password.");
 
 	return triggerMessage(cc, new PasswdMessage(user_id, newpass));
 }
 
 bool ActIdPasswd::int_process(ClientConnection *cc, MessageBlock *mb) {
+	UserSupportModule *usm = getUserSupportModule();
 	char *errptr;
 	uint32_t user_id = strtol((*mb)["user_id"].c_str(), &errptr, 0);
 	if(*errptr || (*mb)["user_id"] == "")
 		return cc->sendError("user_id isn't a valid integer");
 
-	DbCon *db = DbCon::getInstance();
-	if (!db)
-		return cc->sendError("Unable to obtain database connection");
-	string username = db->user_id2name(user_id);
-	db->release();db=NULL;
-	if (username == "")
-		return cc->sendError("user_id does not identify a valid user");
-
 	string newpass = (*mb)["newpass"];
 	if (newpass == "")
 		return cc->sendError("Cannot have a blank password!");
+
+	if ((newpass = usm->hashpw(user_id, newpass)) == "")
+		return cc->sendError("Invalid user id or hashing error.");
 
 	return triggerMessage(cc, new PasswdMessage(user_id, newpass));
 }
 
 bool ActGetUsers::int_process(ClientConnection *cc, MessageBlock *) {
-	DbCon *db = DbCon::getInstance();
-	if(!db)
-		return cc->sendError("Error connecting to database");
-	UserList lst = db->getUsers();
-	db->release();db=NULL;
+	UserSupportModule *usm = getUserSupportModule();
+	if(!usm)
+		return cc->sendError("Misconfigured server, no UserSupportModule!");
+
+	UserSupportModule::UserList lst = usm->list();
 
 	MessageBlock res("ok");
 
-	UserList::iterator s;
+	UserSupportModule::UserList::iterator s;
 	int c = 0;
 	for (s = lst.begin(); s != lst.end(); ++s, ++c) {
 		std::ostringstream tmp;
 		tmp << c;
 		std::string cntr = tmp.str();
 
-		AttributeList::iterator a;
-		for(a = s->begin(); a != s->end(); ++a)
-			res[a->first + cntr] = a->second;
+		tmp.str(""); tmp << s->user_id;
+		res["id" + cntr] = tmp.str();
+		res["username" + cntr] = s->username;
 	}
 
 	return cc->sendMessageBlock(&res);
@@ -153,7 +154,10 @@ bool PasswdMessage::process() const {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return false;
-    bool result = db->setPassword(_user_id, _newpass);
+
+	stringstream query;
+	query << "UPDATE User SET password='" << db->escape_string(_newpass) << "' WHERE user_id=" << _user_id;
+	bool result = db->executeQuery(query.str());
     db->release();
     return result;
 }

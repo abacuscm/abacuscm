@@ -21,6 +21,7 @@
 #include "dbcon.h"
 #include "eventregister.h"
 #include "standingssupportmodule.h"
+#include "usersupportmodule.h"
 
 #include <string>
 #include <list>
@@ -108,6 +109,10 @@ void MarkMessage::addFile(std::string name, uint32_t len, const void *data) {
 }
 
 bool MarkMessage::process() const {
+	UserSupportModule* usm = getUserSupportModule();
+	if (!usm)
+		return false;
+
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return false;
@@ -141,7 +146,7 @@ bool MarkMessage::process() const {
 	if(_result == CORRECT) {
 		MessageBlock bl("balloon");
 		bl["server"] = db->server_id2name(db->submission2server_id(_submission_id));
-		bl["contestant"] = db->user_id2name(db->submission2user_id(_submission_id));
+		bl["contestant"] = usm->username(db->submission2user_id(_submission_id));
 		bl["problem"] = db->submission2problem(_submission_id);
 
 		EventRegister::getInstance().triggerEvent("balloon", &bl);
