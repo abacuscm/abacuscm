@@ -44,7 +44,7 @@
                 <cstring>textLabel5</cstring>
             </property>
             <property name="text">
-                <string>Copyright © 2005 Kroon Information Systems</string>
+                <string>Copyright © 2005-2007 Kroon Information Systems</string>
             </property>
             <property name="alignment">
                 <set>AlignCenter</set>
@@ -131,7 +131,8 @@ Carl Hultquist &lt;chultqui@cs.uct.ac.za&gt;</string>
                         <cstring>textLabel1</cstring>
                     </property>
                     <property name="text">
-                        <string>Leon Lynch &lt;llynch@cs.up.ac.za&gt;</string>
+                        <string>Leon Lynch &lt;llynch@cs.up.ac.za&gt;
+Edwin Peer &lt;edwin@peer.co.za&gt;</string>
                     </property>
                 </widget>
             </grid>
