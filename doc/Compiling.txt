@@ -25,12 +25,17 @@ exclude the client and server if you do not have the necessary
 libraries. You can also explicitly exclude them by passing
 --disable-client or --disable-server to configure.
 
+If you are planning to install abacus (as opposed to running it
+from the compilation directory), then you may want to pass
+--sysconfdir=/etc. This will cause it to look for files in /etc/abacus
+instead of in /usr/local/etc/abacus.
+
 Once you have run configure, run 'make' to build AbacusCM, then 'make
 install' to install it. You can also run abacus without installing it,
 but there are a few things to note:
 
 1. AbacusCM uses libtool for compilation. That means that actual
-binaries are installed in bin/.libs, lib/.libs and modules/.libs, and
+binaries are compiled in bin/.libs, lib/.libs and modules/.libs, and
 the versions in the upper-level directory are libtool wrappers that
 take care of setting LD_LIBRARY_PATH to use the locally-compiled rather
 than the installed versions of libraries. If you want to debug abacus

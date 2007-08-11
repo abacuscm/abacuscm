@@ -33,13 +33,14 @@ To create a key for a server you should use the ./addserver.sh script.  This
 script takes a single parameter, the name of the certificate (Usually the
 server name).  Example:
 
-./addserver pug
+./addserver.sh pug
 
 This will create a key and a certificate request for pug and then proceed to
 sign that request with the previously generated CA.  Again you can enter just
 about any details when prompted, you should however, entre the fully qualified
 domain name when asked for "Server name" (the name that users of the AbacusCM
-client will enter when connecting to the server).
+client will enter when connecting to the server). Also be sure to enter
+a "State or Province Name" or it will fail.
 
 When the script is done it will symlink the keys and certificates into certs/
 as servername.{crt,key}.
@@ -56,7 +57,7 @@ server is running on localhost):
 # mysql -u root -p -h localhost
 > create database abacus;
 > grant all privileges on abacus.* to abacus@localhost identified by 'counting beeds';
-> bye
+> quit
 #
 
 Once the database has been created you need to load the base structure from
