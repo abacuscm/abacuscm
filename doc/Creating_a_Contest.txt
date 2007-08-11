@@ -143,7 +143,7 @@ The client in itself is pretty much useless.  It can't really do anything withou
 9.1  Select "Connect" from the "Abacus" menu.
 9.2  If the server and service values need correction, fix them now.
 9.3  Enter the username 'admin'
-9.4  Enter the password 'changeit!'
+9.4  Enter the password 'admin'
 9.5  Click "OK"
 9.6  You should see a message "You are now connected to the server".
 
