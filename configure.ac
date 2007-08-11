@@ -12,6 +12,7 @@ AC_PROG_CPP
 # High up due to bug in autoconf, see http://osdir.com/ml/network.net-snmp.devel/2004-02/msg00193.html
 #AC_CHECK_LIB([dl], [dlopen])
 
+AM_DISABLE_STATIC
 AC_LIBLTDL_INSTALLABLE
 AC_LIBTOOL_DLOPEN
 AC_PROG_LIBTOOL
