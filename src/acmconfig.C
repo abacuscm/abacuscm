@@ -97,8 +97,15 @@ bool Config::load(const string& fname) {
 
 			if(cur_section == "")
 				cerr << "config option on line " << line_num << " not in a config section\n";
-			else
+			else {
+				if (opt_value.substr(0, 2) == "~/") {
+					const char *home = getenv("HOME");
+					if (home) {
+						opt_value = string(home) + opt_value.substr(1);
+					}
+				}
 				_sections[cur_section][opt_name] = opt_value;
+			}
 		}
 	}
 

@@ -130,8 +130,9 @@ bool ServerConnection::connect(string server, string service) {
 		SSL_CTX_set_mode(_ctx, SSL_MODE_AUTO_RETRY);
 	}
 
-	if(getaddrinfo(server.c_str(), service.c_str(), &hints, &adinf) < 0) {
-		lerror("getaddrinfo");
+	int error_code;
+	if((error_code = getaddrinfo(server.c_str(), service.c_str(), &hints, &adinf)) != 0) {
+		log(LOG_ERR, "getaddrinfo (%s:%d) %s", __FILE__, __LINE__, gai_strerror(error_code));
 		goto err;
 	}
 
