@@ -19,7 +19,7 @@
 #include "message_type_ids.h"
 #include "server.h"
 #include "dbcon.h"
-#include "eventregister.h"
+#include "clienteventregistry.h"
 
 #include <map>
 #include <string>
@@ -371,7 +371,7 @@ bool ProbMessage::process() const {
 	db->release();db=NULL;
 
 	if(ex_prob_type == "" && code != "")
-		EventRegister::getInstance().registerEvent("judge_" + code);
+		ClientEventRegistry::getInstance().registerEvent("judge_" + code);
 
 	return result;
 }

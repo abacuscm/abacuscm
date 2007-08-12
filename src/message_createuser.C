@@ -14,7 +14,7 @@
 #include "message_type_ids.h"
 #include "logger.h"
 #include "messageblock.h"
-#include "eventregister.h"
+#include "clienteventregistry.h"
 #include "usersupportmodule.h"
 
 Message_CreateUser::Message_CreateUser() {
@@ -49,7 +49,7 @@ bool Message_CreateUser::process() const {
 			mb["text"] = "User '" + _username + "' was successfully added.";
 		else
 			mb["text"] = "Addition of user '" + _username + "' failed!";
-		EventRegister::getInstance().sendMessage(_requestor_id, &mb);
+		ClientEventRegistry::getInstance().sendMessage(_requestor_id, &mb);
 	}
 
 	return added;

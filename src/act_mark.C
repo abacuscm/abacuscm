@@ -19,7 +19,7 @@
 #include "message_type_ids.h"
 #include "server.h"
 #include "dbcon.h"
-#include "eventregister.h"
+#include "clienteventregistry.h"
 #include "standingssupportmodule.h"
 #include "usersupportmodule.h"
 
@@ -133,11 +133,11 @@ bool MarkMessage::process() const {
         MessageBlock mb("submission");
         mb["msg"] = "You have newly marked information available under submissions";
 
-        EventRegister::getInstance().sendMessage(db->submission2user_id(_submission_id), &mb);
+        ClientEventRegistry::getInstance().sendMessage(db->submission2user_id(_submission_id), &mb);
     }
 
     MessageBlock mb("submission");
-    EventRegister::getInstance().triggerEvent("judgesubmission", &mb);
+    ClientEventRegistry::getInstance().triggerEvent("judgesubmission", &mb);
 
 	StandingsSupportModule *standings = getStandingsSupportModule();
 	if(standings)
@@ -149,7 +149,7 @@ bool MarkMessage::process() const {
 		bl["contestant"] = usm->username(db->submission2user_id(_submission_id));
 		bl["problem"] = db->submission2problem(_submission_id);
 
-		EventRegister::getInstance().triggerEvent("balloon", &bl);
+		ClientEventRegistry::getInstance().triggerEvent("balloon", &bl);
 	}
 
 	db->release();db=NULL;
@@ -349,10 +349,10 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 
 bool ActBalloon::int_process(ClientConnection* cc, MessageBlock* mb) {
 	if((*mb)["action"] == "subscribe") {
-		if(!EventRegister::getInstance().registerClient("balloon", cc))
+		if(!ClientEventRegistry::getInstance().registerClient("balloon", cc))
 			return cc->sendError("Error subscribing to balloon events.");
 	} else {
-		EventRegister::getInstance().deregisterClient("balloon", cc);
+		ClientEventRegistry::getInstance().deregisterClient("balloon", cc);
 	}
 	return cc->reportSuccess();
 }
@@ -373,5 +373,5 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "mark", &_act_place_mark);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "balloonnotify", &_act_balloon);
     Message::registerMessageFunctor(TYPE_ID_SUBMISSION_MARK, create_mark_message);
-	EventRegister::getInstance().registerEvent("balloon");
+	ClientEventRegistry::getInstance().registerEvent("balloon");
 }

@@ -19,7 +19,7 @@
 #include "messageblock.h"
 #include "dbcon.h"
 #include "timedaction.h"
-#include "eventregister.h"
+#include "clienteventregistry.h"
 #include "timersupportmodule.h"
 
 #include <string>
@@ -91,7 +91,7 @@ void StartStopAction::perform() {
 		if(time == _time && act == _action) {
 			MessageBlock mb("startstop");
 			mb["action"] = _action == TIMER_START ? "start" : "stop";
-			EventRegister::getInstance().triggerEvent("startstop", &mb);
+			ClientEventRegistry::getInstance().triggerEvent("startstop", &mb);
 		}
 	}
 
@@ -137,8 +137,8 @@ bool ActStartStop::int_process(ClientConnection* cc, MessageBlock *mb) {
 }
 
 bool ActSubscribeTime::int_process(ClientConnection* cc, MessageBlock*) {
-	if(EventRegister::getInstance().registerClient("startstop", cc)
-			&& EventRegister::getInstance().registerClient("updateclock", cc))
+	if(ClientEventRegistry::getInstance().registerClient("startstop", cc)
+			&& ClientEventRegistry::getInstance().registerClient("updateclock", cc))
 		return cc->reportSuccess();
 	else
 		return cc->sendError("Unable to subscribe to the 'startstop' event");
@@ -208,13 +208,13 @@ bool MsgStartStop::process() const {
 	{
 		MessageBlock mb("startstop");
 		mb["action"] = newRunning ? "start" : "stop";
-		EventRegister::getInstance().triggerEvent("startstop", &mb);
+		ClientEventRegistry::getInstance().triggerEvent("startstop", &mb);
 	}
 
 	if (new_valid && !old_valid || new_valid && new_next_time < old_next_time) {
 		Server::putTimedAction(new StartStopAction(new_next_time, new_next_action));
 		MessageBlock mb("updateclock");
-		EventRegister::getInstance().triggerEvent("updateclock", &mb);
+		ClientEventRegistry::getInstance().triggerEvent("updateclock", &mb);
 	}
 
 	return true;
@@ -255,8 +255,8 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_JUDGE, "subscribetime", &_act_subscribetime);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "subscribetime", &_act_subscribetime);
 	Message::registerMessageFunctor(TYPE_ID_STARTSTOP, StartStopFunctor);
-	EventRegister::getInstance().registerEvent("startstop");
-	EventRegister::getInstance().registerEvent("updateclock");
+	ClientEventRegistry::getInstance().registerEvent("startstop");
+	ClientEventRegistry::getInstance().registerEvent("updateclock");
 
 	initialise_startstop_events();
 }

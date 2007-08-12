@@ -15,7 +15,7 @@
 #include "messageblock.h"
 #include "logger.h"
 #include "dbcon.h"
-#include "eventregister.h"
+#include "clienteventregistry.h"
 
 class ActAuth : public ClientAction {
 protected:
@@ -42,7 +42,7 @@ bool ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
 		log(LOG_INFO, "User '%s' successfully logged in.", (*mb)["user"].c_str());
 		cc->setProperty("user_id", user_id);
 		cc->setProperty("user_type", user_type);
-		EventRegister::getInstance().registerClient(cc);
+		ClientEventRegistry::getInstance().registerClient(cc);
 		return cc->reportSuccess();
 	}
 }

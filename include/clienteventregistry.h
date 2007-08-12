@@ -7,8 +7,8 @@
  *
  * $Id$
  */
-#ifndef __EVENTREGISTER_H__
-#define __EVENTREGISTER_H__
+#ifndef __CLIENTEVENTREGISTRY_H__
+#define __CLIENTEVENTREGISTRY_H__
 
 #include <stdint.h>
 #include <pthread.h>
@@ -18,7 +18,7 @@
 class ClientConnection;
 class MessageBlock;
 
-class EventRegister {
+class ClientEventRegistry {
 private:
 	class Event {
 	private:
@@ -45,10 +45,10 @@ private:
 	ClientMap _clients;
 	pthread_mutex_t _lock;
 
-	EventRegister();
-	~EventRegister();
+	ClientEventRegistry();
+	~ClientEventRegistry();
 
-	static EventRegister _instance;
+	static ClientEventRegistry _instance;
 public:
 	void registerClient(ClientConnection *cc);
 	bool registerClient(std::string eventname, ClientConnection *cc);
@@ -62,7 +62,7 @@ public:
 //	void triggerOne(std::string eventname, const MessageBlock*mb, bool remove);
 	void sendMessage(uint32_t user_id, const MessageBlock *mb);
 
-	static EventRegister& getInstance();
+	static ClientEventRegistry& getInstance();
 };
 
 #endif

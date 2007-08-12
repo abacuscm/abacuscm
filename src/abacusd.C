@@ -36,7 +36,7 @@
 #include "message_type_ids.h"
 #include "timedaction.h"
 #include "markers.h"
-#include "eventregister.h"
+#include "clienteventregistry.h"
 #include "usersupportmodule.h"
 
 #define DEFAULT_MIN_IDLE_WORKERS		5
@@ -249,9 +249,9 @@ static bool initialise() {
 		ProblemList problst = db->getProblems();
 		for(ProblemList::iterator j = problst.begin(); j != problst.end(); ++j) {
 			AttributeList prob = db->getProblemAttributes(*j);
-			EventRegister::getInstance().registerEvent("judge_" + prob["shortname"]);
+			ClientEventRegistry::getInstance().registerEvent("judge_" + prob["shortname"]);
 		}
-		EventRegister::getInstance().registerEvent("judgesubmission");
+		ClientEventRegistry::getInstance().registerEvent("judgesubmission");
 		db->release();db=NULL;
 	} else
 		log(LOG_ERR, "Error obtaining DbCon to load existing problems");

@@ -18,7 +18,7 @@
 #include "message_type_ids.h"
 #include "dbcon.h"
 #include "server.h"
-#include "eventregister.h"
+#include "clienteventregistry.h"
 #include "markers.h"
 #include "timersupportmodule.h"
 #include "submissionsupportmodule.h"
@@ -265,10 +265,10 @@ bool SubmissionMessage::process() const {
 	else
 		mb["msg"] = "Your submission for '" + problem + "' has failed - please notify the contest administrator";
 
-	EventRegister::getInstance().sendMessage(_user_id, &mb);
+	ClientEventRegistry::getInstance().sendMessage(_user_id, &mb);
 
     mb = MessageBlock("submission");
-    EventRegister::getInstance().triggerEvent("judgesubmission", &mb);
+    ClientEventRegistry::getInstance().triggerEvent("judgesubmission", &mb);
 
 	if(db->getServerAttribute(Server::getId(), "marker") == "yes")
 		Markers::getInstance().enqueueSubmission(_submission_id);

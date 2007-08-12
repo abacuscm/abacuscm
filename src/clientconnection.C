@@ -18,7 +18,7 @@
 #include "acmconfig.h"
 #include "messageblock.h"
 #include "clientaction.h"
-#include "eventregister.h"
+#include "clienteventregistry.h"
 #include "markers.h"
 
 SSL_METHOD *ClientConnection::_method = NULL;
@@ -32,7 +32,7 @@ ClientConnection::ClientConnection(int sock) {
 }
 
 ClientConnection::~ClientConnection() {
-	EventRegister::getInstance().deregisterClient(this);
+	ClientEventRegistry::getInstance().deregisterClient(this);
 	Markers::getInstance().preemptMarker(this);
 
 	if(_message)

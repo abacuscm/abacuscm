@@ -16,7 +16,7 @@
 #include "timersupportmodule.h"
 #include "logger.h"
 #include "dbcon.h"
-#include "eventregister.h"
+#include "clienteventregistry.h"
 #include "messageblock.h"
 #include "timedaction.h"
 #include "server.h"
@@ -212,7 +212,7 @@ void StandingsSupportModule::notifySolution(time_t /* submit_time */)
 	}
 
 	MessageBlock st("standings");
-	EventRegister::getInstance().broadcastEvent(&st);
+	ClientEventRegistry::getInstance().broadcastEvent(&st);
 }
 
 void StandingsSupportModule::timedUpdate()

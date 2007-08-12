@@ -15,7 +15,7 @@
 #include "messageblock.h"
 #include "logger.h"
 #include "dbcon.h"
-#include "eventregister.h"
+#include "clienteventregistry.h"
 
 class ActWhatAmI : public ClientAction {
 private:

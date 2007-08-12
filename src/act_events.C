@@ -14,15 +14,15 @@
 #include "logger.h"
 #include "messageblock.h"
 #include "clientconnection.h"
-#include "eventregister.h"
+#include "clienteventregistry.h"
 
-class Act_EventRegister : public ClientAction {
+class Act_ClientEventRegistry : public ClientAction {
 protected:
 	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
-bool Act_EventRegister::int_process(ClientConnection* cc, MessageBlock* mb) {
-	EventRegister& evReg = EventRegister::getInstance();
+bool Act_ClientEventRegistry::int_process(ClientConnection* cc, MessageBlock* mb) {
+	ClientEventRegistry& evReg = ClientEventRegistry::getInstance();
 
 	std::string action = (*mb)["action"];
 	std::string event = (*mb)["event"];
@@ -39,7 +39,7 @@ bool Act_EventRegister::int_process(ClientConnection* cc, MessageBlock* mb) {
 		return cc->sendError("Unknown action");
 }
 
-static Act_EventRegister _act_eventreg;
+static Act_ClientEventRegistry _act_eventreg;
 
 static void init() __attribute__((constructor));
 static void init() {

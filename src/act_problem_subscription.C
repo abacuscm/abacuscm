@@ -14,7 +14,7 @@
 #include "logger.h"
 #include "messageblock.h"
 #include "clientconnection.h"
-#include "eventregister.h"
+#include "clienteventregistry.h"
 
 class Act_ProblemSubscription : public ClientAction {
 protected:
@@ -22,7 +22,7 @@ protected:
 };
 
 bool Act_ProblemSubscription::int_process(ClientConnection* cc, MessageBlock* mb) {
-	EventRegister& evReg = EventRegister::getInstance();
+	ClientEventRegistry& evReg = ClientEventRegistry::getInstance();
 
 	std::string action = (*mb)["action"];
 	std::string event = (*mb)["event"];

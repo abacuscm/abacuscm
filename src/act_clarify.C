@@ -18,7 +18,7 @@
 #include "message_type_ids.h"
 #include "dbcon.h"
 #include "server.h"
-#include "eventregister.h"
+#include "clienteventregistry.h"
 #include "markers.h"
 
 #include <sstream>
@@ -253,7 +253,7 @@ bool ClarificationMessage::process() const {
 						     _server_id,
 						     _text);
 		MessageBlock notify("updateclarificationrequests");
-		EventRegister::getInstance().broadcastEvent(&notify);
+		ClientEventRegistry::getInstance().broadcastEvent(&notify);
 	}
 	else
 	{
@@ -266,16 +266,16 @@ bool ClarificationMessage::process() const {
 					      _prob_id, /* Actually pub */
 					      _text);
 		MessageBlock update("updateclarifications");
-		EventRegister::getInstance().broadcastEvent(&update);
+		ClientEventRegistry::getInstance().broadcastEvent(&update);
 
 		MessageBlock notify("newclarification");
 		notify["problem"] = req["problem"];
 		notify["question"] = req["question"];
 		notify["answer"] = _text;
 		if (_prob_id) /* public */
-			EventRegister::getInstance().broadcastEvent(&notify);
+			ClientEventRegistry::getInstance().broadcastEvent(&notify);
 		else
-			EventRegister::getInstance().sendMessage(atol(req["user_id"].c_str()), &notify);
+			ClientEventRegistry::getInstance().sendMessage(atol(req["user_id"].c_str()), &notify);
 	}
 	db->release();db=NULL;
 	return result;
@@ -375,6 +375,6 @@ static void init() {
 
 	Message::registerMessageFunctor(TYPE_ID_CLARIFICATION, create_clarification_msg);
 
-	EventRegister::getInstance().registerEvent("updateclarifications");
-	EventRegister::getInstance().registerEvent("updateclarificationrequests");
+	ClientEventRegistry::getInstance().registerEvent("updateclarifications");
+	ClientEventRegistry::getInstance().registerEvent("updateclarificationrequests");
 }

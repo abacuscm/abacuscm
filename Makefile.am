@@ -101,7 +101,7 @@ lib_libabacus_server_la_SOURCES = src/moduleloader.C include/moduleloader.h \
 				  src/clientlistener.C include/clientlistener.h \
 				  src/clientconnection.C include/clientconnection.h \
 				  src/clientaction.C include/clientaction.h \
-				  src/eventregister.C include/eventregister.h \
+				  src/clienteventregistry.C include/clienteventregistry.h \
 				  src/timedaction.C include/timedaction.h \
 				  src/markers.C include/markers.h \
 				  src/problemtype.C include/problemtype.h
