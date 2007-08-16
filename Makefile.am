@@ -6,7 +6,10 @@ AM_CPPFLAGS = -I$(srcdir)/include -I./include $(LTDLINC) -DSYSCONFDIR=\"$(syscon
 bin_PROGRAMS =
 lib_LTLIBRARIES =
 pkglib_LTLIBRARIES =
-EXTRA_DIST = conf/marker.conf conf/client.conf conf/server.conf conf/java.policy
+EXTRA_DIST = conf/marker.conf conf/client.conf conf/server.conf conf/java.policy \
+	     misc/bootstrap.sh misc/qtdeps.sh misc/valgrind.suppressions \
+	     misc/standings.pl misc/abacuscm.css \
+	     misc/mitm/mitm.sh misc/mitm/mitm_serv.sh
 
 if DO_SERVER
 bin_PROGRAMS += bin/abacusd
