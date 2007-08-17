@@ -55,8 +55,8 @@ int UserProg::execcompiler(list<string> p_argv, string compiler_log) {
 			if(fd > 2)
 				close(fd);
 		}
-		execve(*argv, argv, NULL);
-		lerror("execve");
+		execv(*argv, argv);
+		lerror("execv");
 		exit(-1);
 	} else { // parent
 		int status;
@@ -167,8 +167,8 @@ int UserProg::exec(int fd_in, int fd_out, int fd_err, int fd_run) {
 		close(fd_run);
 	}
 
-	execve(*argv, argv, NULL);
+	execv(*argv, argv);
 
-	lerror("execve");
+	lerror("execv");
 	exit(-1);
 }
