@@ -88,7 +88,7 @@ void TestCaseProblemMarker::mark_compiled() {
 		string diff_cmd = "/usr/bin/diff -U 10000000 ";
 		if(attrib("ignore_whitespace") == "Yes")
 			diff_cmd += "-B -b ";
-		diff_cmd += outfile + " " + corrfile + " &>" + difffile;
+		diff_cmd += outfile + " " + corrfile + " >" + difffile + " 2>&1";
 		log(LOG_DEBUG, "Using diff command '%s'", diff_cmd.c_str());
 
 		int excode = system(diff_cmd.c_str());
