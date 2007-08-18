@@ -109,6 +109,12 @@ This file contains a list of BUGS and or nice to haves (wishlist).
 
 	PRIORITY: very low
 
+* Reason for wrong answer
+	Need to add a field indicating any additional reasons why the answer
+	is wrong (for e.g. format error).
+
+	PRIORITY: medium
+
 * Team name should be displayed.
 	On the 'submissions' tab judges should be able to see team-names after
 	submissions has been properly marked.
@@ -117,6 +123,10 @@ This file contains a list of BUGS and or nice to haves (wishlist).
 	
 * Select all problems for judge by default
 	By default the filter for a judge should be all problems.  Not none.
+
+	PRIORITY: low
+
+* Notify judges when new clarifications arrive
 
 	PRIORITY: low
 
