@@ -8,6 +8,11 @@ echo "gui_sources =" >> $output
 echo "gui_headers =" >> $output
 for f in ui/*.ui; do
     i=$(basename $f .ui)
+    extra="ui/$i.ui"
+    if [ -f ui/$i.ui.h ]
+    then
+        extra="$extra ui/$i.ui.h"
+    fi
     cat >>$output <<EOF
 include/ui_$i.h: \$(srcdir)/ui/$i.ui
 	\$(mkdir_p) include
@@ -18,7 +23,7 @@ src/ui_$i.C: \$(srcdir)/ui/$i.ui
 	\$(UIC) -impl ui_$i.h \$(srcdir)/ui/$i.ui -o src/ui_$i.C
 gui_sources += src/moc_ui_$i.C src/ui_$i.C
 gui_headers += include/ui_$i.h
-EXTRA_DIST += ui/$i.ui
+EXTRA_DIST += $extra
 
 EOF
 done
