@@ -72,7 +72,7 @@ uint32_t UserSupportModule::user_id(const string& username)
 
 	if (res.size())
 		return strtoul(res.begin()->c_str(), NULL, 10);
-	return ~0U;
+	return 0;
 }
 
 uint32_t __attribute__((pure)) usertype(uint32_t user_id)
