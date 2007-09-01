@@ -290,16 +290,16 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
         }
     }
 
-    if (cc->getProperty("user_type") == USER_TYPE_ADMIN) {
-        RunResult resinfo;
-        uint32_t utype;
-        std::string comment;
+	if (cc->getProperty("user_type") == USER_TYPE_ADMIN) {
+		RunResult resinfo;
+		uint32_t utype;
+		std::string comment;
 
-        DbCon *db = DbCon::getInstance();
-        if(!db)
-            return cc->sendError("Error connecting to database");
+		DbCon *db = DbCon::getInstance();
+		if (!db)
+			return cc->sendError("Error connecting to database");
 
-		bool res = db->getSubmissionState( submission_id, resinfo, utype, comment);
+		bool res = db->getSubmissionState(submission_id, resinfo, utype, comment);
 		db->release();db=NULL;
 
 		if (res) {
@@ -309,7 +309,7 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 		else {
 			return cc->sendError("This hasn't been compiled or even run: you really think I'm going to let you fiddle with the marks?");
 		}
-    }
+	}
 
 	uint32_t result = strtoll((*mb)["result"].c_str(), &errpnt, 0);
 	if(*errpnt || (*mb)["result"] == "") {
