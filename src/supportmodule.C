@@ -43,6 +43,7 @@ void SupportModule::registerSupportModule(const string& name, SupportModule* sm)
 	}
 
 	smm[name] = sm;
+	sm->init();
 }
 
 SupportModule* SupportModule::get(const string& name)
