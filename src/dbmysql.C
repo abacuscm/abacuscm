@@ -1166,9 +1166,9 @@ std::string MySQL::submission2problem(uint32_t submission_id) {
 
 bool MySQL::hasSolved(uint32_t user_id, uint32_t prob_id) {
 	ostringstream query;
-	query << "SELECT user_id, prob_id FROM Submission, SubmissionMark WHERE "
-		"Submission.submission_id = SubmissionMark.submission_id AND result = 0 AND user_id = "
-		<< user_id << " AND prob_id = " << prob_id;
+	query << "SELECT (SELECT result FROM SubmissionMark WHERE SubmissionMark.submission_id=Submission.submission_id"
+		" ORDER BY mark_time DESC LIMIT 1) AS res FROM Submission WHERE user_id=" << user_id << " AND prob_id=" << prob_id <<
+		" HAVING res=0 LIMIT 1";
 
 	bool solved = false;
 	if(mysql_query(&_mysql, query.str().c_str())) {
@@ -1179,8 +1179,8 @@ bool MySQL::hasSolved(uint32_t user_id, uint32_t prob_id) {
 			log_mysql_error();
 		else {
 			MYSQL_ROW row = mysql_fetch_row(res);
-			if(row)
-				solved = atoll(row[0]) != 0;
+			if (row)
+				solved = atoll(row[0]) == 0;
 			mysql_free_result(res);
 		}
 	}
