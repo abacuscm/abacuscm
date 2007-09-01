@@ -71,9 +71,13 @@ if test "x$qtdir_user" = "x"; then
 	fi
 	AC_PATH_PROG([MOC], [moc], [no])
 	AC_PATH_PROG([UIC], [uic], [no])
+	if test "x$MOC" != "x" && test "x$UIC" != "x"; then
+		have_qt=yes
+	fi
 else
 	MOC="$qtdir_user/bin/moc"
 	UIC="$qtdir_user/bin/uic"
+	have_qt=yes
 fi
 
 AC_PATH_PROG([PDFLATEX], [pdflatex], [no])
