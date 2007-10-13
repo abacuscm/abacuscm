@@ -128,8 +128,8 @@ bool MarkMessage::process() const {
 			log(LOG_WARNING, "An error occured placing a marker file into the database - continueing in any case");
 	}
 
-    if(_result != WRONG || _type != USER_TYPE_MARKER) {
-        // in a non awaiting judge state
+
+    if (_result != JUDGE) {
         MessageBlock mb("submission");
         mb["msg"] = "You have newly marked information available under submissions";
 
@@ -298,6 +298,14 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 	}
 
 	std::string comment = (*mb)["comment"];
+
+	// This should be based on whether we defer to judges on automated
+	// wrong answers, not hard coded.  In fact, this should be handled
+	// in the marker daemon entirely. TODO
+	if (result == WRONG && cc->getProperty("user_type") == USER_TYPE_MARKER) {
+		result = JUDGE;
+		comment = "Defered to judge";
+	}
 
 	MarkMessage *markmsg = new MarkMessage(submission_id, cc->getProperty("user_id"), cc->getProperty("user_type"), result, comment);
 	int c = 0;

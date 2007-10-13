@@ -199,14 +199,14 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 					resinfo,
 					type,
 					comment)) {
-			if(resinfo == WRONG && type == USER_TYPE_MARKER)
-				comment = "Awaiting judge";
 			tmp.str("");
 			tmp << (int)resinfo;
 			mb["result" + cntr] = tmp.str();
 			mb["comment" + cntr] = comment;
 		} else {
-			mb["result" + cntr] = OTHER;
+			tmp.str("");
+			tmp << PENDING;
+			mb["result" + cntr] = tmp.str();
 			mb["comment" + cntr] = "Pending";
 		}
 	}
