@@ -274,9 +274,10 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::triggerType(std::string type, bool status) {
-	if(type == "admin")
+	if(type == "admin") {
 		signalAdminControls(status);
-	else if(type == "judge")
+		signalJudgeControls(status);
+	} else if(type == "judge")
 		signalJudgeControls(status);
 	else if(type == "contestant")
 		signalContestantControls(status);
