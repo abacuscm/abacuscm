@@ -46,6 +46,12 @@
                         <verstretch>1</verstretch>
                     </sizepolicy>
                 </property>
+                <property name="font">
+                    <font>
+                        <family>Terminal</family>
+                        <pointsize>13</pointsize>
+                    </font>
+                </property>
                 <property name="textFormat">
                     <enum>PlainText</enum>
                 </property>
