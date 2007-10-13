@@ -621,6 +621,13 @@
     <item text="&amp;Judges" name="Judges">
         <action name="judgesSubscribeToProblemsAction"/>
         <action name="judgesShowOnlySubscribedSubmissionsAction"/>
+        <action name="Action"/>
+        <item text="Submission States" name="popupMenu_16" accel="">
+            <action name="PendingAction"/>
+            <action name="Pending_judgeAction"/>
+            <action name="WrongAction"/>
+            <action name="CorrectAction"/>
+        </item>
         <action name="judgesNotify_about_Correct_SubmissionsAction"/>
     </item>
     <item text="&amp;Help" name="Help">
@@ -855,6 +862,97 @@
             <string>Notify about Correct Submissions</string>
         </property>
     </action>
+    <action>
+        <property name="name">
+            <cstring>Action</cstring>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>Submission States</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>PendingAction</cstring>
+        </property>
+        <property name="toggleAction">
+            <bool>true</bool>
+        </property>
+        <property name="on">
+            <bool>true</bool>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>Pending (Unmarked)</string>
+        </property>
+        <property name="menuText">
+            <string>Pending (Unmarked)</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>Pending_judgeAction</cstring>
+        </property>
+        <property name="toggleAction">
+            <bool>true</bool>
+        </property>
+        <property name="on">
+            <bool>true</bool>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>Pending (judge)</string>
+        </property>
+        <property name="menuText">
+            <string>Pending (judge)</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>WrongAction</cstring>
+        </property>
+        <property name="toggleAction">
+            <bool>true</bool>
+        </property>
+        <property name="on">
+            <bool>true</bool>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>Wrong</string>
+        </property>
+        <property name="menuText">
+            <string>Wrong</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>CorrectAction</cstring>
+        </property>
+        <property name="toggleAction">
+            <bool>true</bool>
+        </property>
+        <property name="on">
+            <bool>true</bool>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>Correct</string>
+        </property>
+        <property name="menuText">
+            <string>Correct</string>
+        </property>
+    </action>
 </actions>
 <images>
     <image name="image0">
@@ -1023,6 +1121,54 @@
         <signal>activated()</signal>
         <receiver>MainWindowBase</receiver>
         <slot>doAdminStartStop()</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalJudgeControls(bool)</signal>
+        <receiver>PendingAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalJudgeControls(bool)</signal>
+        <receiver>Pending_judgeAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalJudgeControls(bool)</signal>
+        <receiver>WrongAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalJudgeControls(bool)</signal>
+        <receiver>CorrectAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalAdminControls(bool)</signal>
+        <receiver>PendingAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalAdminControls(bool)</signal>
+        <receiver>Pending_judgeAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalAdminControls(bool)</signal>
+        <receiver>WrongAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalAdminControls(bool)</signal>
+        <receiver>CorrectAction</receiver>
+        <slot>setEnabled(bool)</slot>
     </connection>
 </connections>
 <signals>
