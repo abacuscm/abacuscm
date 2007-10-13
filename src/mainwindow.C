@@ -29,6 +29,7 @@
 #include "messageblock.h"
 #include "ui_judgedecisiondialog.h"
 #include "ui_compileroutputdialog.h"
+#include "misc.h"
 
 #include <qlineedit.h>
 #include <qmessagebox.h>
@@ -52,6 +53,7 @@
 #include <qtabwidget.h>
 
 #include <time.h>
+#include <set>
 
 using namespace std;
 
@@ -799,17 +801,42 @@ void MainWindow::updateSubmissions() {
 	SubmissionList list = _server_con.getSubmissions();
 
 	submissions->clear();
+	set<int> wanted_states;
 
 	if(list.empty())
 		return;
 
 	std::vector<ProblemInfo> problems = _server_con.getProblems();
-	bool filter = (_active_type == "judge") && judgesShowOnlySubscribedSubmissionsAction->isOn();
+	bool filter = (_active_type == "judge" || _active_type == "admin") && judgesShowOnlySubscribedSubmissionsAction->isOn();
 	std::map<string, bool> is_subscribed;
 	if (filter) {
 		std::vector<bool> subscribed = _server_con.getSubscriptions(problems);
 		for (unsigned int p = 0; p < problems.size(); p++)
 			is_subscribed[problems[p].code] = subscribed[p];
+
+			if (stateFilterUnmarkedAction->isOn())
+				wanted_states.insert(PENDING);
+
+			if (stateFilterJudgeAction->isOn())
+				wanted_states.insert(JUDGE);
+
+			if (stateFilterWrongAction->isOn())
+				wanted_states.insert(WRONG);
+
+			if (stateFilterCorrectAction->isOn())
+				wanted_states.insert(CORRECT);
+
+			if (stateFilterTimeExceededAction->isOn())
+				wanted_states.insert(TIME_EXCEEDED);
+
+			if (stateFilterCompileAction->isOn())
+				wanted_states.insert(COMPILE_FAILED);
+
+			if (stateFilterAbnormalAction->isOn())
+				wanted_states.insert(ABNORMAL);
+
+			if (stateFilterOtherAction->isOn())
+				wanted_states.insert(OTHER);
 	}
 
 	SubmissionList::iterator l;

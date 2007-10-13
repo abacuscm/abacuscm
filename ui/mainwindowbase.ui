@@ -621,13 +621,14 @@
     <item text="&amp;Judges" name="Judges">
         <action name="judgesSubscribeToProblemsAction"/>
         <action name="Action"/>
-        <item text="Submission States" name="popupMenu_16" accel="">
+        <item text="Submission States" name="popupMenu_15" accel="">
             <action name="stateFilterUnmarkedAction"/>
             <action name="stateFilterJudgeAction"/>
             <action name="stateFilterWrongAction"/>
             <action name="stateFilterCorrectAction"/>
             <action name="stateFilterTimeExceededAction"/>
             <action name="stateFilterCompileAction"/>
+            <action name="stateFilterAbnormalAction"/>
             <action name="stateFilterOtherAction"/>
         </item>
         <action name="judgesShowOnlySubscribedSubmissionsAction"/>
@@ -1007,6 +1008,23 @@
             <string>Compile Failure</string>
         </property>
     </action>
+    <action>
+        <property name="name">
+            <cstring>stateFilterAbnormalAction</cstring>
+        </property>
+        <property name="toggleAction">
+            <bool>true</bool>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>Abnormal Termination</string>
+        </property>
+        <property name="menuText">
+            <string>Abnormal Termination</string>
+        </property>
+    </action>
 </actions>
 <images>
     <image name="image0">
@@ -1216,6 +1234,12 @@
         <sender>MainWindowBase</sender>
         <signal>signalJudgeControls(bool)</signal>
         <receiver>stateFilterOtherAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalJudgeControls(bool)</signal>
+        <receiver>stateFilterAbnormalAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
 </connections>
