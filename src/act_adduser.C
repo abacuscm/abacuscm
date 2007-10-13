@@ -67,8 +67,10 @@ bool ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
 
 	uint32_t tmp_user_id = usm->user_id(new_username);
 
-	if(tmp_user_id)
-		return cc->sendError("Username is already in use");
+	if(tmp_user_id == ~0U)
+		return cc->sendError("Unexpected error while trying to query availability of username '" + new_username + "'");
+	else if (tmp_user_id != 0)
+		return cc->sendError("Username '" + new_username + "' is already in use");
 
 	uint32_t new_id = usm->nextId();
 	if(new_id == ~0U)
