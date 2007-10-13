@@ -285,7 +285,7 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 			if (utype == USER_TYPE_JUDGE) {
 				return cc->sendError("Another judge has already this submission, sorry!");
 			}
-			if (resinfo != WRONG) {
+			if (resinfo != JUDGE) {
 				return cc->sendError("You cannot change the status of this submission: the decision was black and white; no human required ;-)");
 			}
 		}
