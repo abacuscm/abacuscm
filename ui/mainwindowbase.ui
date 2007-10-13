@@ -620,7 +620,6 @@
     </item>
     <item text="&amp;Judges" name="Judges">
         <action name="judgesSubscribeToProblemsAction"/>
-        <action name="judgesShowOnlySubscribedSubmissionsAction"/>
         <action name="Action"/>
         <item text="Submission States" name="popupMenu_16" accel="">
             <action name="stateFilterUnmarkedAction"/>
@@ -631,6 +630,7 @@
             <action name="stateFilterCompileAction"/>
             <action name="stateFilterOtherAction"/>
         </item>
+        <action name="judgesShowOnlySubscribedSubmissionsAction"/>
         <action name="judgesNotify_about_Correct_SubmissionsAction"/>
     </item>
     <item text="&amp;Help" name="Help">
