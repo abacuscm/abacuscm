@@ -255,15 +255,15 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 	char *errpnt;
 	uint32_t submission_id = strtoll(submission_id_str.c_str(), &errpnt, 0);
 
-	if(*errpnt || submission_id_str == "") {
+	if (*errpnt || submission_id_str == "") {
 		Markers::getInstance().preemptMarker(cc);
 		return cc->sendError("Invalid submission_id");
 	}
 
-	if(cc->getProperty("user_type") == USER_TYPE_MARKER && Markers::getInstance().hasIssued(cc) != submission_id)
+	if (cc->getProperty("user_type") == USER_TYPE_MARKER && Markers::getInstance().hasIssued(cc) != submission_id)
 		return cc->sendError("Markers may only mark submissions issued to them");
 
-    if (cc->getProperty("user_type") == USER_TYPE_JUDGE) {
+    if (cc->getProperty("user_type") == USER_TYPE_JUDGE || cc->getProperty("user_type") == USER_TYPE_ADMIN) {
         // extra code to avoid race conditions for judge marking
         RunResult resinfo;
         uint32_t utype;
@@ -274,42 +274,22 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
             return cc->sendError("Error connecting to database");
 
         // POSSIBLE RACE BETWEEN DOING THIS CHECK AND ASSIGNING THE MARK
-        // but it's very small & unlikely :-)
+        // but it's very small & unlikely ... and doesn't really affect anything.
 		bool res = db->getSubmissionState( submission_id, resinfo, utype, comment);
 		db->release();db=NULL;
-		if (res) {
+
+		if (!res)
+            return cc->sendError("This hasn't been compiled or even run: you really think I'm going to let you fiddle with the marks?");
+
+    	if (cc->getProperty("user_type") == USER_TYPE_JUDGE) {
 			if (utype == USER_TYPE_JUDGE) {
-				return cc->sendError("A judge has already beat you to it and marked this submission, sorry!");
+				return cc->sendError("Another judge has already this submission, sorry!");
 			}
 			if (resinfo != WRONG) {
 				return cc->sendError("You cannot change the status of this submission: the decision was black and white; no human required ;-)");
 			}
-        }
-        else {
-            return cc->sendError("This hasn't been compiled or even run: you really think I'm going to let you fiddle with the marks?");
-        }
+		}
     }
-
-	if (cc->getProperty("user_type") == USER_TYPE_ADMIN) {
-		RunResult resinfo;
-		uint32_t utype;
-		std::string comment;
-
-		DbCon *db = DbCon::getInstance();
-		if (!db)
-			return cc->sendError("Error connecting to database");
-
-		bool res = db->getSubmissionState(submission_id, resinfo, utype, comment);
-		db->release();db=NULL;
-
-		if (res) {
-			if (utype == USER_TYPE_MARKER && resinfo == CORRECT)
-				return cc->sendError("An automatic marker has already marked this submission as being correct, you can't change that. Sorry!");
-		}
-		else {
-			return cc->sendError("This hasn't been compiled or even run: you really think I'm going to let you fiddle with the marks?");
-		}
-	}
 
 	uint32_t result = strtoll((*mb)["result"].c_str(), &errpnt, 0);
 	if(*errpnt || (*mb)["result"] == "") {
@@ -331,7 +311,7 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 
 		string fdesc = (*mb)[ostrstrm.str()];
 		regmatch_t m[4];
-		if(regexec(&file_reg, fdesc.c_str(), 4, m, 0)) {
+		if (regexec(&file_reg, fdesc.c_str(), 4, m, 0)) {
 			log(LOG_ERR, "Invalid file description for '%s' for mark submission for submission_id = %u", fdesc.c_str(), submission_id);
 		} else {
 			int start = strtoll(fdesc.substr(m[1].rm_so, m[1].rm_eo - m[1].rm_so).c_str(), NULL, 0);
