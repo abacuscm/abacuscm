@@ -623,10 +623,13 @@
         <action name="judgesShowOnlySubscribedSubmissionsAction"/>
         <action name="Action"/>
         <item text="Submission States" name="popupMenu_16" accel="">
-            <action name="PendingAction"/>
-            <action name="Pending_judgeAction"/>
-            <action name="WrongAction"/>
-            <action name="CorrectAction"/>
+            <action name="stateFilterUnmarkedAction"/>
+            <action name="stateFilterJudgeAction"/>
+            <action name="stateFilterWrongAction"/>
+            <action name="stateFilterCorrectAction"/>
+            <action name="stateFilterTimeExceededAction"/>
+            <action name="stateFilterCompileAction"/>
+            <action name="stateFilterOtherAction"/>
         </item>
         <action name="judgesNotify_about_Correct_SubmissionsAction"/>
     </item>
@@ -833,7 +836,7 @@
             <bool>true</bool>
         </property>
         <property name="on">
-            <bool>true</bool>
+            <bool>false</bool>
         </property>
         <property name="enabled">
             <bool>false</bool>
@@ -875,7 +878,27 @@
     </action>
     <action>
         <property name="name">
-            <cstring>PendingAction</cstring>
+            <cstring>stateFilterUnmarkedAction</cstring>
+        </property>
+        <property name="toggleAction">
+            <bool>true</bool>
+        </property>
+        <property name="on">
+            <bool>false</bool>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>Unmarked</string>
+        </property>
+        <property name="menuText">
+            <string>Unmarked</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>stateFilterJudgeAction</cstring>
         </property>
         <property name="toggleAction">
             <bool>true</bool>
@@ -887,41 +910,21 @@
             <bool>false</bool>
         </property>
         <property name="text">
-            <string>Pending (Unmarked)</string>
+            <string>Awaiting Judge</string>
         </property>
         <property name="menuText">
-            <string>Pending (Unmarked)</string>
+            <string>Awaiting Judge</string>
         </property>
     </action>
     <action>
         <property name="name">
-            <cstring>Pending_judgeAction</cstring>
+            <cstring>stateFilterWrongAction</cstring>
         </property>
         <property name="toggleAction">
             <bool>true</bool>
         </property>
         <property name="on">
-            <bool>true</bool>
-        </property>
-        <property name="enabled">
             <bool>false</bool>
-        </property>
-        <property name="text">
-            <string>Pending (judge)</string>
-        </property>
-        <property name="menuText">
-            <string>Pending (judge)</string>
-        </property>
-    </action>
-    <action>
-        <property name="name">
-            <cstring>WrongAction</cstring>
-        </property>
-        <property name="toggleAction">
-            <bool>true</bool>
-        </property>
-        <property name="on">
-            <bool>true</bool>
         </property>
         <property name="enabled">
             <bool>false</bool>
@@ -935,7 +938,27 @@
     </action>
     <action>
         <property name="name">
-            <cstring>CorrectAction</cstring>
+            <cstring>stateFilterCorrectAction</cstring>
+        </property>
+        <property name="toggleAction">
+            <bool>true</bool>
+        </property>
+        <property name="on">
+            <bool>false</bool>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>Correct</string>
+        </property>
+        <property name="menuText">
+            <string>Correct</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>stateFilterOtherAction</cstring>
         </property>
         <property name="toggleAction">
             <bool>true</bool>
@@ -947,10 +970,41 @@
             <bool>false</bool>
         </property>
         <property name="text">
-            <string>Correct</string>
+            <string>Other</string>
         </property>
         <property name="menuText">
-            <string>Correct</string>
+            <string>Other</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>stateFilterTimeExceededAction</cstring>
+        </property>
+        <property name="toggleAction">
+            <bool>true</bool>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>Time Exceeded</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>stateFilterCompileAction</cstring>
+        </property>
+        <property name="toggleAction">
+            <bool>true</bool>
+        </property>
+        <property name="on">
+            <bool>false</bool>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>Compile Failure</string>
         </property>
     </action>
 </actions>
@@ -1125,49 +1179,43 @@
     <connection>
         <sender>MainWindowBase</sender>
         <signal>signalJudgeControls(bool)</signal>
-        <receiver>PendingAction</receiver>
+        <receiver>stateFilterUnmarkedAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
         <signal>signalJudgeControls(bool)</signal>
-        <receiver>Pending_judgeAction</receiver>
+        <receiver>stateFilterJudgeAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
         <signal>signalJudgeControls(bool)</signal>
-        <receiver>WrongAction</receiver>
+        <receiver>stateFilterWrongAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
         <signal>signalJudgeControls(bool)</signal>
-        <receiver>CorrectAction</receiver>
+        <receiver>stateFilterCorrectAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalAdminControls(bool)</signal>
-        <receiver>PendingAction</receiver>
+        <signal>signalJudgeControls(bool)</signal>
+        <receiver>stateFilterTimeExceededAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalAdminControls(bool)</signal>
-        <receiver>Pending_judgeAction</receiver>
+        <signal>signalJudgeControls(bool)</signal>
+        <receiver>stateFilterCompileAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalAdminControls(bool)</signal>
-        <receiver>WrongAction</receiver>
-        <slot>setEnabled(bool)</slot>
-    </connection>
-    <connection>
-        <sender>MainWindowBase</sender>
-        <signal>signalAdminControls(bool)</signal>
-        <receiver>CorrectAction</receiver>
+        <signal>signalJudgeControls(bool)</signal>
+        <receiver>stateFilterOtherAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
 </connections>
