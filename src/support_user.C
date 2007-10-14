@@ -75,7 +75,7 @@ uint32_t UserSupportModule::user_id(const string& username)
 	return 0;
 }
 
-uint32_t __attribute__((pure)) usertype(uint32_t user_id)
+uint32_t UserSupportModule::usertype(uint32_t user_id)
 {
 	DbCon *db = DbCon::getInstance();
 	if (!db)
