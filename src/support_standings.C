@@ -116,7 +116,7 @@ bool StandingsSupportModule::updateStandings()
 		string comment;
 
 		if(db->getSubmissionState(sub_id, state, utype, comment)) {
-			if(state != COMPILE_FAILED) { // we ignore compile failures.
+			if(state != COMPILE_FAILED && state != JUDGE) { // we ignore compile failures, and judge deferals.
 				SubData tmp;
 
 				uint32_t server_id = db->submission2server_id(sub_id);
