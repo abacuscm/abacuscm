@@ -31,7 +31,7 @@ protected:
 	virtual bool int_process(ClientConnection*, MessageBlock*mb);
 };
 
-bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
+bool ActStandings::int_process(ClientConnection *cc, MessageBlock *rmb) {
 	StandingsSupportModule *standings = getStandingsSupportModule();
 	UserSupportModule *usm = getUserSupportModule();
 	if (!standings)
@@ -40,6 +40,9 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 		return cc->sendError("Misconfigured Server - unable to calculate standings.");
 
     uint32_t uType = cc->getProperty("user_type");
+	bool include_judges = uType != USER_TYPE_CONTESTANT;
+
+	include_judges &= (*rmb)["include_judges"] == "yes";
 
 	StandingsSupportModule::StandingsPtr s = standings->getStandings(uType);
 
@@ -51,6 +54,11 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 	mb["row_0_0"] = "Team";
 
 	int ncols = 1;
+
+	if (include_judges) {
+		ncols = 2;
+		mb["row_0_1"] = "Type";
+	}
 
 	DbCon *db = DbCon::getInstance();
 	if(!db)
@@ -88,11 +96,20 @@ bool ActStandings::int_process(ClientConnection*cc, MessageBlock*) {
 
 	StandingsSupportModule::Standings::iterator i;
 	for(i = s->begin(); i != s->end(); ++i, ++r) {
+		if (i->user_type != USER_TYPE_CONTESTANT && !include_judges)
+			continue;
+
 		ostringstream headername;
 		ostringstream val;
 		char time_buffer[64];
 		headername << "row_" << r << "_0";
 		mb[headername.str()] = usm->username(i->user_id);
+
+		if (include_judges) {
+			headername.str("");
+			headername << "row_" << r << "_1";
+			mb[headername.str()] = i->user_type == USER_TYPE_CONTESTANT ? "Contestant" : "Judge";
+		}
 
 		headername.str("");
 		headername << "row_" << r << "_" << (ncols - 1);
