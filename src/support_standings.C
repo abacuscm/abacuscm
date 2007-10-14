@@ -82,9 +82,15 @@ bool StandingsSupportModule::updateStandings()
 		return true;
 
 	TimerSupportModule *timer = getTimerSupportModule();
+	UserSupportModule *usm = getUserSupportModule();
 
 	if(!timer) {
 		log(LOG_CRIT, "Error obtaining TimerSupportModule.");
+		return false;
+	}
+
+	if (!usm) {
+		log(LOG_CRIT, "Error obtaining UserSupportModule.");
 		return false;
 	}
 
@@ -154,6 +160,7 @@ bool StandingsSupportModule::updateStandings()
 			teamdata.correct = 0;
 			teamdata.time = 0;
 			teamdata.user_id = t->first;
+			teamdata.user_type = usm->usertype(teamdata.user_id);
 
 			map<uint32_t, vector<SubData> >::iterator p;
 			for(p = t->second.begin(); p != t->second.end(); ++p) {

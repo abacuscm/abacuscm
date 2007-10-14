@@ -31,6 +31,7 @@ public:
 	typedef struct
 	{
 		uint32_t user_id;
+		uint32_t user_type;
 		uint32_t correct;
 		uint32_t time;
 		std::map<uint32_t, int32_t> tries; // sign bit indicates whether correctness has been achieved or not.
