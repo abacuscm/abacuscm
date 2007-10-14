@@ -632,6 +632,7 @@
             <action name="stateFilterOtherAction"/>
         </item>
         <action name="judgesShowOnlySubscribedSubmissionsAction"/>
+        <action name="judgesInStandingsAction"/>
         <action name="judgesNotify_about_Correct_SubmissionsAction"/>
     </item>
     <item text="&amp;Help" name="Help">
@@ -1025,6 +1026,23 @@
             <string>Abnormal Termination</string>
         </property>
     </action>
+    <action>
+        <property name="name">
+            <cstring>judgesInStandingsAction</cstring>
+        </property>
+        <property name="toggleAction">
+            <bool>true</bool>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>Include Judges in Standings</string>
+        </property>
+        <property name="menuText">
+            <string>Include Judges in Standings</string>
+        </property>
+    </action>
 </actions>
 <images>
     <image name="image0">
@@ -1240,6 +1258,12 @@
         <sender>MainWindowBase</sender>
         <signal>signalJudgeControls(bool)</signal>
         <receiver>stateFilterAbnormalAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalJudgeControls(bool)</signal>
+        <receiver>judgesInStandingsAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
 </connections>

@@ -83,7 +83,7 @@ bool ActGetClarifications::int_process(ClientConnection *cc, MessageBlock *) {
 
 	ClarificationList lst;
 
-	if(utype == USER_TYPE_CONTESTANT)
+	if(utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_NONCONTEST)
 		lst = db->getClarifications(uid);
 	else
 		lst = db->getClarifications();
@@ -121,7 +121,7 @@ bool ActGetClarificationRequests::int_process(ClientConnection *cc, MessageBlock
 
 	ClarificationRequestList lst;
 
-	if(utype == USER_TYPE_CONTESTANT)
+	if(utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_NONCONTEST)
 		lst = db->getClarificationRequests(uid);
 	else
 		lst = db->getClarificationRequests();

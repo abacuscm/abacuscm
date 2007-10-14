@@ -230,7 +230,7 @@ void StandingsSupportModule::timedUpdate()
 const StandingsSupportModule::StandingsPtr StandingsSupportModule::getStandings(uint32_t user_type)
 {
 	if (checkStandings()) {
-		if(user_type == USER_TYPE_CONTESTANT)
+		if(user_type == USER_TYPE_CONTESTANT || user_type == USER_TYPE_NONCONTEST)
 			return _contestant_standings;
 		else
 			return _final_standings;

@@ -165,7 +165,7 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 
 	SubmissionList lst;
 
-	if(utype == USER_TYPE_CONTESTANT)
+	if(utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_NONCONTEST)
 		lst = db->getSubmissions(uid);
 	else
 		lst = db->getSubmissions();

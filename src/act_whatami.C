@@ -31,6 +31,7 @@ ActWhatAmI::ActWhatAmI() {
 	_typemap[USER_TYPE_ADMIN] = "admin";
 	_typemap[USER_TYPE_JUDGE] = "judge";
 	_typemap[USER_TYPE_CONTESTANT] = "contestant";
+	_typemap[USER_TYPE_NONCONTEST] = "contestant";
 }
 
 bool ActWhatAmI::int_process(ClientConnection *cc, MessageBlock *) {
