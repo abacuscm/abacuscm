@@ -180,6 +180,11 @@
                     <string>Marker</string>
                 </property>
             </item>
+            <item>
+                <property name="text">
+                    <string>Observer</string>
+                </property>
+            </item>
             <property name="name">
                 <cstring>type</cstring>
             </property>
