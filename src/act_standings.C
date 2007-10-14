@@ -105,12 +105,13 @@ bool ActStandings::int_process(ClientConnection *cc, MessageBlock *rmb) {
 		mb["ncols"] = col.str();
 	}
 
-	int r = 1;
+	int r = 0;
 
 	StandingsSupportModule::Standings::iterator i;
-	for(i = s->begin(); i != s->end(); ++i, ++r) {
+	for(i = s->begin(); i != s->end(); ++i) {
 		if (i->user_type != USER_TYPE_CONTESTANT && !include_non_contest)
 			continue;
+		++r;
 
 		ostringstream headername;
 		ostringstream val;
@@ -163,7 +164,7 @@ bool ActStandings::int_process(ClientConnection *cc, MessageBlock *rmb) {
 
 	{
 		ostringstream row;
-		row << r;
+		row << (r + 1);
 		mb["nrows"] = row.str();
 	}
 
