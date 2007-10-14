@@ -16,6 +16,7 @@
 #include "message.h"
 #include "logger.h"
 #include "server.h"
+#include "misc.h"
 
 std::map<int, std::map<std::string, ClientAction*> > ClientAction::actionmap;
 Queue<Message*> *ClientAction::_message_queue;
@@ -52,6 +53,9 @@ bool ClientAction::process(ClientConnection *cc, MessageBlock *mb) {
 
 	uint32_t user_type = cc->getProperty("user_type");
 	std::string action = mb->action();
+
+	if (user_type == USER_TYPE_NONCONTEST)
+		user_type = USER_TYPE_CONTESTANT;
 
 	ClientAction* ca = actionmap[user_type][action];
 	if(ca)
