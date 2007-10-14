@@ -82,7 +82,7 @@ uint32_t UserSupportModule::usertype(uint32_t user_id)
 		return ~0U;
 
 	ostringstream query;
-	query << "SELECT username FROM User WHERE user_id=" << user_id;
+	query << "SELECT type FROM User WHERE user_id=" << user_id;
 
 	QueryResultRow res = db->singleRowQuery(query.str());
 	db->release();
