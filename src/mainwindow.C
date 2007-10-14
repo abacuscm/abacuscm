@@ -764,7 +764,9 @@ void MainWindow::updateStandings() {
 	if (maintabs->currentPage() != tabStandings)
 		return;
 
-	Grid data = _server_con.getStandings();
+	// keep in mind that a real contestant can't get non-contestant standings,
+	// so passing true in those cases has no effect.
+	Grid data = _server_con.getStandings(_active_type == "contestant" || nonContestInStandingsAction->isOn());
 
 	standings->clear();
 	if(data.empty())
