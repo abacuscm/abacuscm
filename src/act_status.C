@@ -15,6 +15,7 @@
 #include "messageblock.h"
 #include "server.h"
 #include "timersupportmodule.h"
+#include "misc.h"
 
 class ActRunning : public ClientAction {
 protected:

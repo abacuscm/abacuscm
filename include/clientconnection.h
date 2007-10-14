@@ -18,12 +18,6 @@
 
 #include "socket.h"
 
-#define USER_TYPE_NONE			0
-#define USER_TYPE_ADMIN			1
-#define USER_TYPE_JUDGE			2
-#define USER_TYPE_CONTESTANT	3
-#define USER_TYPE_MARKER		4
-
 #define CLIENT_BFR_SIZE			512
 
 class MessageBlock;

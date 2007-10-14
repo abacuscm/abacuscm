@@ -29,8 +29,17 @@ typedef enum {
 	ABNORMAL = 3,
 	COMPILE_FAILED = 4,
 	JUDGE = 5,
-	OTHER = 6
+	OTHER = 6,
 } RunResult;
+
+typedef enum {
+	USER_TYPE_NONE = 0,
+	USER_TYPE_ADMIN = 1,
+	USER_TYPE_JUDGE = 2,
+	USER_TYPE_CONTESTANT = 3,
+	USER_TYPE_MARKER = 4,
+	USER_TYPE_NONCONTEST = 5,
+} UserType;
 
 extern char *runMessages[];
 extern char *shortRunMessages[];

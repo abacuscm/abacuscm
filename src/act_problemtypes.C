@@ -15,6 +15,7 @@
 #include "clientconnection.h"
 #include "logger.h"
 #include "messageblock.h"
+#include "misc.h"
 
 #include <sstream>
 

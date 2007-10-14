@@ -17,6 +17,7 @@
 #include "server.h"
 #include "message_createuser.h"
 #include "usersupportmodule.h"
+#include "misc.h"
 
 #include <map>
 

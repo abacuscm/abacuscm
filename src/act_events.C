@@ -15,6 +15,7 @@
 #include "messageblock.h"
 #include "clientconnection.h"
 #include "clienteventregistry.h"
+#include "misc.h"
 
 class Act_ClientEventRegistry : public ClientAction {
 protected:

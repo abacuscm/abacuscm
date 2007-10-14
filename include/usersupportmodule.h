@@ -21,11 +21,6 @@
 #include <map>
 #include <vector>
 
-#define USER_TYPE_NONE			0
-#define USER_TYPE_ADMIN			1
-#define USER_TYPE_JUDGE			2
-#define USER_TYPE_CONTESTANT	3
-
 class UserSupportModule : public SupportModule {
 	DECLARE_SUPPORT_MODULE(UserSupportModule);
 public:
