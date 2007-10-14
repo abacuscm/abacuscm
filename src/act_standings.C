@@ -27,9 +27,22 @@
 using namespace std;
 
 class ActStandings : public ClientAction {
+private:
+	typedef map<uint32_t, string> TypesMap;
+	TypesMap typenames;
 protected:
 	virtual bool int_process(ClientConnection*, MessageBlock*mb);
+public:
+	ActStandings();
 };
+
+ActStandings::ActStandings()
+{
+	typenames[USER_TYPE_ADMIN] = "Admin";
+	typenames[USER_TYPE_JUDGE] = "Judge";
+	typenames[USER_TYPE_CONTESTANT] = "Contestant";
+	typenames[USER_TYPE_NONCONTEST] = "Observer";
+}
 
 bool ActStandings::int_process(ClientConnection *cc, MessageBlock *rmb) {
 	StandingsSupportModule *standings = getStandingsSupportModule();
@@ -40,9 +53,9 @@ bool ActStandings::int_process(ClientConnection *cc, MessageBlock *rmb) {
 		return cc->sendError("Misconfigured Server - unable to calculate standings.");
 
     uint32_t uType = cc->getProperty("user_type");
-	bool include_judges = uType != USER_TYPE_CONTESTANT;
+	bool include_non_contest = uType != USER_TYPE_CONTESTANT;
 
-	include_judges &= (*rmb)["include_judges"] == "yes";
+	include_non_contest &= (*rmb)["include_non_contest"] != "no";
 
 	StandingsSupportModule::StandingsPtr s = standings->getStandings(uType);
 
@@ -55,7 +68,7 @@ bool ActStandings::int_process(ClientConnection *cc, MessageBlock *rmb) {
 
 	int ncols = 1;
 
-	if (include_judges) {
+	if (include_non_contest) {
 		ncols = 2;
 		mb["row_0_1"] = "Type";
 	}
@@ -96,7 +109,7 @@ bool ActStandings::int_process(ClientConnection *cc, MessageBlock *rmb) {
 
 	StandingsSupportModule::Standings::iterator i;
 	for(i = s->begin(); i != s->end(); ++i, ++r) {
-		if (i->user_type != USER_TYPE_CONTESTANT && !include_judges)
+		if (i->user_type != USER_TYPE_CONTESTANT && !include_non_contest)
 			continue;
 
 		ostringstream headername;
@@ -105,10 +118,14 @@ bool ActStandings::int_process(ClientConnection *cc, MessageBlock *rmb) {
 		headername << "row_" << r << "_0";
 		mb[headername.str()] = usm->username(i->user_id);
 
-		if (include_judges) {
+		if (include_non_contest) {
 			headername.str("");
 			headername << "row_" << r << "_1";
-			mb[headername.str()] = i->user_type == USER_TYPE_CONTESTANT ? "Contestant" : "Judge";
+			TypesMap::const_iterator tn = typenames.find(i->user_type);
+			if (tn != typenames.end())
+				mb[headername.str()] = tn->second;
+			else
+				mb[headername.str()] = "Unknown";
 		}
 
 		headername.str("");
