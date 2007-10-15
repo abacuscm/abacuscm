@@ -7,7 +7,6 @@ use CGI::Pretty qw/:standard *table *tbody/;
 my $standings_path = '/home/bmerry/abacuscm/standings.txt';
 my $names_path = '/home/bmerry/abacuscm/names.txt';
 my $css_path = '/abacuscm.css';  # From web server point of view
-my $exclude_regex = qr/^j_/;
 my $local_regex = qr/^(?:uct|sun|uwc)/;
 
 my %name_map = ();
@@ -62,7 +61,6 @@ while (<IN>)
 	chomp;
 	my @fields = split(/\t/);
 	next unless scalar(@fields);
-	next if $fields[0] =~ $exclude_regex;
 	my $atlocal = ($fields[0] =~ $local_regex);
 
 	$place++;
@@ -84,7 +82,7 @@ while (<IN>)
 		s/Yes/span({-class => 'correct'}, 'Yes')/e;
 	}
 	my $class = ($place & 1 ? "odd" : "even");
-	if ($atlocal) { $class = "local"; }
+	if ($atlocal) { $class .= " local"; }
 	print Tr({-class => $class}, td([@fields]));
 }
 print(end_tbody,

@@ -1,6 +1,6 @@
-body { background-color: white; }
+body { background-color: white; color: black; }
 tr.even { background-color: #dddddd; }
-tr.local { background-color: #afafff; }
-span.correct { font-weight: bold; color: green; }
+tr.local { font-weight: bold; }
+span.correct { color: green; }
 colgroup.score { width: 9ex; }
 td { padding-left: 5px; padding-right: 5px; }
