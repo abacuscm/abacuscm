@@ -1037,10 +1037,10 @@
             <bool>false</bool>
         </property>
         <property name="text">
-            <string>Include Judges in Standings</string>
+            <string>Include Non-Contestants in Standings</string>
         </property>
         <property name="menuText">
-            <string>Include Judges in Standings</string>
+            <string>Include Non-Contestants in Standings</string>
         </property>
     </action>
 </actions>
