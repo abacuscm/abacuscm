@@ -1266,6 +1266,12 @@
         <receiver>nonContestInStandingsAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
+    <connection>
+        <sender>nonContestInStandingsAction</sender>
+        <signal>toggled(bool)</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>updateStandings()</slot>
+    </connection>
 </connections>
 <signals>
     <signal>signalAdminControls(bool)</signal>
@@ -1287,6 +1293,7 @@
     <slot access="protected" specifier="pure virtual">doShowClarificationReply(QListViewItem *item)</slot>
     <slot access="protected" specifier="pure virtual">doClarificationRequest()</slot>
     <slot>updateSubmissions()</slot>
+    <slot>updateStandings()</slot>
     <slot access="protected" specifier="pure virtual">doAdminCreateUser()</slot>
     <slot access="protected" specifier="pure virtual">doAdminStartStop()</slot>
     <slot access="protected" specifier="pure virtual">doTimer()</slot>
