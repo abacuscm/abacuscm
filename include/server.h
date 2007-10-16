@@ -24,6 +24,7 @@
 
 template<class T> class Queue;
 class TimedAction;
+class Socket;
 
 class Server {
 public:
@@ -42,6 +43,8 @@ public:
 	static void setAckQueue(Queue<uint32_t> *ack_queue);
 	static void putTimedAction(TimedAction *action);
 	static void setTimedQueue(Queue<TimedAction*> *queue);
+	static void putSocket(Socket*);
+	static void setSocketQueue(Queue<Socket*> *queue);
 };
 
 #endif

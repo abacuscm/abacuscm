@@ -27,6 +27,7 @@ using namespace std;
 
 static Queue<uint32_t> *ack_queue;
 static Queue<TimedAction*> *timed_queue;
+static Queue<Socket*> *socket_queue;
 
 uint32_t Server::server_id(const string& name)
 {
@@ -271,4 +272,17 @@ void Server::putTimedAction(TimedAction* ta) {
 		log(LOG_ERR, "timed_queue is not set!");
 	else
 		timed_queue->enqueue(ta);
+}
+
+void Server::putSocket(Socket* s)
+{
+	if (!socket_queue)
+		log(LOG_ERR, "socket_queue is not set!");
+	else
+		socket_queue->enqueue(s);
+}
+
+void Server::setSocketQueue(Queue<Socket*> *queue)
+{
+	socket_queue = queue;
 }
