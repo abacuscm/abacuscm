@@ -236,7 +236,7 @@ static bool initialise() {
 		return false;
 	}
 
-	socket_pool.insert(cl);
+	socket_pool.locked_insert(cl);
 
 	ClientAction::setMessageQueue(&message_queue);
 
@@ -337,7 +337,7 @@ void* worker_thread(void *) {
 		pthread_mutex_unlock(&lock_numworkers);
 
 		if(s->process()) {
-			socket_pool.insert(s);
+			socket_pool.locked_insert(s);
 			pthread_kill(thread_socket_selector, SIGUSR1);
 		} else
 			delete s;
@@ -455,19 +455,24 @@ void* socket_selector(void*) {
 		FD_ZERO(&sockets);
 
 		SocketPool::iterator i;
+		socket_pool.lock();
 		for(i = socket_pool.begin(); i != socket_pool.end(); ++i)
 			(*i)->addToSet(&n, &sockets);
+		socket_pool.unlock();
 
 		if(select(n, &sockets, NULL, NULL, NULL) < 0) {
 			if(errno != EINTR)
 				lerror("select");
-		} else for(i = socket_pool.begin(); i != socket_pool.end();)
+		} else {
+			socket_pool.lock();
+			for(i = socket_pool.begin(); i != socket_pool.end();)
 			if((*i)->isInSet(&sockets)) {
 				Socket *s = *i;
 				socket_pool.erase(i++);
 				wait_queue.enqueue(s);
 			} else
 				++i;
+			socket_pool.unlock();
 			/*
 			 * Note that the above loop is very messy.	This is due to the
 			 * erase operation invalidating the iterator, so essentially we
@@ -475,6 +480,7 @@ void* socket_selector(void*) {
 			 * this gets extremely nasty and probably took the better part
 			 * of a day to figure out.
 			 */
+		}
 	}
 
 	return NULL;
@@ -646,8 +652,10 @@ int main(int argc, char ** argv) {
 	pthread_join(thread_timed_actions, NULL);
 
 	SocketPool::iterator i;
+	socket_pool.lock();
 	for(i = socket_pool.begin(); i != socket_pool.end(); ++i)
 		delete (*i);
+	socket_pool.unlock();
 
 	DbCon::cleanup();
 
