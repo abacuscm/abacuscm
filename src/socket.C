@@ -37,3 +37,23 @@ void Socket::addToSet(int *n, fd_set *set) {
 bool Socket::isInSet(fd_set *set) {
 	return FD_ISSET(sockfd(), set);
 }
+
+SocketPool::SocketPool()
+{
+	pthread_mutex_init(&_lock, NULL);
+}
+
+SocketPool::~SocketPool()
+{
+	pthread_mutex_destroy(&_lock);
+}
+
+void SocketPool::lock()
+{
+	pthread_mutex_lock(&_lock);
+}
+
+void SocketPool::unlock()
+{
+	pthread_mutex_unlock(&_lock);
+}

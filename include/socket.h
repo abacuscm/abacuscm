@@ -15,6 +15,23 @@
 #endif
 #include <sys/types.h>
 
+#include <set>
+
+class Socket;
+
+class SocketPool : public std::set<Socket*> {
+private:
+	pthread_mutex_t _lock;
+public:
+	SocketPool();
+	~SocketPool();
+
+	void lock();
+	void unlock();
+
+	void locked_insert(Socket* s) { lock(); insert(s); unlock(); }
+};
+
 class Socket {
 private:
 	int _sock;

@@ -15,10 +15,6 @@
 #endif
 #include "socket.h"
 
-#include <set>
-
-typedef std::set<Socket*> SocketPool;
-
 class ClientListener : public Socket {
 private:
 	SocketPool* _pool;
