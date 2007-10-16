@@ -377,7 +377,7 @@ bool ProbMessage::process() const {
 }
 
 ActSetProbAttrs::ActSetProbAttrs() {
-	regcomp(&_file_reg, "^([0-9]{1,7}) ([0-9]{1,7}) ([-[:alnum:] _.]+)$", REG_EXTENDED);
+	regcomp(&_file_reg, "^([0-9]+) ([0-9]+) ([-[:alnum:] _.]+)$", REG_EXTENDED);
 }
 
 ActSetProbAttrs::~ActSetProbAttrs() {
@@ -449,7 +449,6 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 				msg->addStringAttrib(attr, (*mb)[attr]);
 			} else if(attr_desc[pos] == 'I') {
 				const char* i = (*mb)[attr].c_str();
-				log(LOG_DEBUG, "Testing '%s' for being an int!", i);
 				char *eptr;
 				long val = strtol(i, &eptr, 0);
 				if(*eptr)
