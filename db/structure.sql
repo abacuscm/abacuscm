@@ -74,7 +74,7 @@ CREATE TABLE `PeerMessage` (
   `message_type_id` int(10) unsigned NOT NULL default '0',
   `time` int(10) unsigned NOT NULL default '0',
   `signature` varchar(128) character set latin1 collate latin1_bin default NULL,
-  `data` mediumblob,
+  `data` longblob,
   `processed` tinyint(1) default NULL,
   PRIMARY KEY  (`server_id`,`message_id`),
   KEY `processed` (`processed`),
@@ -133,7 +133,7 @@ DROP TABLE IF EXISTS `ProblemFileData`;
 CREATE TABLE `ProblemFileData` (
   `problem_id` int(11) NOT NULL default '0',
   `attribute` varchar(128) NOT NULL default '',
-  `data` mediumblob,
+  `data` longblob,
   PRIMARY KEY  (`problem_id`,`attribute`),
   CONSTRAINT `ProblemFileData_ibfk_1` FOREIGN KEY (`problem_id`) REFERENCES `Problem` (`problem_id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -174,7 +174,7 @@ CREATE TABLE `Submission` (
   `prob_id` int(11) NOT NULL default '0',
   `time` int(11) NOT NULL default '0',
   `server_id` int(11) NOT NULL default '0',
-  `content` mediumblob,
+  `content` longblob,
   `language` varchar(16) default NULL,
   PRIMARY KEY  (`submission_id`),
   KEY `user_id` (`user_id`),
@@ -210,7 +210,7 @@ CREATE TABLE `SubmissionMarkFile` (
   `submission_id` int(11) NOT NULL default '0',
   `marker_id` int(11) NOT NULL default '0',
   `name` varchar(255) NOT NULL default '',
-  `content` mediumblob,
+  `content` longblob,
   PRIMARY KEY  (`submission_id`,`marker_id`,`name`),
   KEY `marker_id` (`marker_id`),
   CONSTRAINT `SubmissionMarkFile_ibfk_2` FOREIGN KEY (`marker_id`) REFERENCES `User` (`user_id`) ON UPDATE CASCADE,
