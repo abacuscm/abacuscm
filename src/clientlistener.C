@@ -87,7 +87,7 @@ bool ClientListener::process() {
 	}
 
 	ClientConnection *client = new ClientConnection(res);
-	_pool->insert(client);
+	_pool->locked_insert(client);
 
 	log(LOG_INFO, "Accepted new connection from %s.", inet_ntoa(addr.sin_addr));
 	return true;
