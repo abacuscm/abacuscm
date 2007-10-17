@@ -24,6 +24,7 @@ private:
 	std::string _message;
 	MessageHeaders _headers;
 	int _content_length;
+	bool _content_private;
 	char *_content;
 	char *_content_pos;
 
@@ -60,7 +61,12 @@ public:
 	const char* content() const { return _content; };
 	char operator[] (int c) const { return _content[c]; };
 
-	bool setContent(const char* data, int size);
+	/**
+	 * Set the content of the MessageBlock.  Note that if you set make_private_copy
+	 * to false then you must ensure that the content stays consistent for the
+	 * duration of the existance of this MessageBlock.
+	 */
+	bool setContent(const char* data, int size, bool make_private_copy = true);
 
 	/**
 	 * used to construct a MB, return values are as follows:

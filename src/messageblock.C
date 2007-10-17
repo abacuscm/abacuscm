@@ -23,37 +23,42 @@ MessageBlock::MessageBlock(const string& message) {
 	_content_length = 0;
 	_content = NULL;
 	_content_pos = NULL;
+	_content_private = true;
 }
 
 MessageBlock::MessageBlock() {
 	_content_length = 0;
 	_content = NULL;
 	_content_pos = NULL;
+	_content_private = true;
 }
 
 MessageBlock::~MessageBlock() {
-	if(_content)
+	if(_content && _content_private)
 		delete []_content;
 }
 
-bool MessageBlock::setContent(const char* data, int size) {
-	if(!data || !size) {
-		if(_content)
+bool MessageBlock::setContent(const char* data, int size, bool make_private_copy) {
+	if (!data || !size) {
+		if (_content && _content_private)
 			delete []_content;
 		_content = NULL;
 		_content_pos = NULL;
 		_content_length = 0;
+		_content_private = true;
 		return true;
 	}
-	char *new_block = new char[size];
+	char *new_block = make_private_copy ? new char[size] : const_cast<char*>(data);
 	char bfr[21];
-	if(!new_block)
+	if (!new_block)
 		return false;
-	if(_content)
+	if (_content && _content_private)
 		delete []_content;
+	if (make_private_copy)
+		memcpy(new_block, data, size);
 	_content_length = size;
 	_content = new_block;
-	memcpy(_content, data, size);
+	_content_private = make_private_copy;
 	_content_pos = _content + size;
 	sprintf(bfr, "%d", size);
 	_headers["content-length"] = bfr;
