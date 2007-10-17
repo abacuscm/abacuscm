@@ -31,6 +31,7 @@
 #include "server.h"
 #include "scoped_lock.h"
 #include "queue.h"
+#include "socket.h"
 
 #include <map>
 #include <algorithm>
@@ -79,9 +80,22 @@ private:
 	bool sendFrame(st_frame *frame, int packetsize, const struct sockaddr_in* dest);
 
 	Queue<Message*> _received_messages;
+
+	class UDPReceiver : public Socket {
+	private:
+		UDTCPPeerMessenger* _messenger;
+	public:
+		UDPReceiver(int sock, UDTCPPeerMessenger* messenger);
+		bool process();
+	};
 public:
 	UDTCPPeerMessenger();
 	virtual ~UDTCPPeerMessenger();
+
+	const unsigned char* cipher_key() const { return _cipher_key; }
+	const unsigned char* cipher_iv() const { return _cipher_iv; }
+	const EVP_CIPHER* cipher() const { return _cipher; }
+	void deliver_message(Message* m) { _received_messages.enqueue(m); }
 
 	virtual bool initialise();
 	virtual void deinitialise();
@@ -93,6 +107,89 @@ public:
 };
 
 static void log_ciphers(const OBJ_NAME *name, void*);
+
+UDTCPPeerMessenger::UDPReceiver::UDPReceiver(int sock, UDTCPPeerMessenger *messenger)
+{
+	sockfd() = sock;
+	_messenger = messenger;
+}
+
+bool UDTCPPeerMessenger::UDPReceiver::process()
+{
+	ssize_t bytes_received;
+	int packet_size, tlen;
+	struct sockaddr_in from;
+	socklen_t fromlen = sizeof(from);
+	uint8_t inbuffer[BUFFER_SIZE + MAX_BLOCKSIZE];
+	union {
+		uint8_t buffer[BUFFER_SIZE];
+		struct st_frame frame;
+	};
+
+	bytes_received = recvfrom(sockfd(), inbuffer, BUFFER_SIZE + MAX_BLOCKSIZE,
+			MSG_TRUNC, (struct sockaddr*)&from, &fromlen);
+	if(bytes_received == -1) {
+		if(errno != EINTR)
+			lerror("recvfrom");
+		return errno != EBADF;
+	}
+
+	if(bytes_received > BUFFER_SIZE + MAX_BLOCKSIZE) {
+		log(LOG_WARNING, "Discarding frame of size %u since it is "
+				"bigger than the buffer (%d bytes)",
+				(unsigned)bytes_received, BUFFER_SIZE + MAX_BLOCKSIZE);
+		return true;
+	}
+
+	EVP_CIPHER_CTX dec_ctx;
+	EVP_CIPHER_CTX_init(&dec_ctx);
+	EVP_DecryptInit(&dec_ctx, _messenger->cipher(), _messenger->cipher_key(), _messenger->cipher_iv());
+
+	if (EVP_DecryptUpdate(&dec_ctx, buffer, &packet_size,
+				inbuffer, bytes_received) != 1) {
+		log_ssl_errors("EVP_DecryptUpdate");
+	} else if (EVP_DecryptFinal(&dec_ctx, buffer + packet_size, &tlen) != 1) {
+		log_ssl_errors("EVP_DecryptFinal");
+	} else if ((size_t)(packet_size += tlen) < sizeof(st_frame)) { /* HEADS UP: packet_size __+=__ tlen */
+		log (LOG_WARNING, "Discarding frame due to short packet (%d bytes)",
+				packet_size + tlen);
+	} else if ((unsigned)packet_size != sizeof(st_frame) + frame.message_size) {
+		log (LOG_WARNING, "Invalid sized packet => %d != sizeof(st_frame) + frame.message_size == %d + %d == %d",
+				packet_size, sizeof(st_frame), frame.message_size, sizeof(st_frame) + frame.message_size);
+	} else {
+		switch (frame.type) {
+		case TYPE_ACK:
+			{
+				Server::putAck(frame.server_id, frame.message_id, frame.sender_id);
+				// TODO: Remove from local listing.
+			}; break;
+		case TYPE_INLINE:
+			{
+				void *blob = malloc(frame.message_size);
+				if (!blob) {
+					log (LOG_CRIT, "Memory allocation error.");
+					break;
+				}
+				memcpy(blob, frame.data, frame.message_size);
+				Message *message = Message::buildMessage((uint8_t*)blob, frame.message_size);
+				if (message)
+					_messenger->deliver_message(message);
+				else
+					free(blob);
+			}; break;
+		case TYPE_NOTIFY:
+			{
+				// TODO: Create a TCPRetriever and go fetch the message.
+			}; break;
+		default:
+			log(LOG_WARNING, "Unknown UDP Message type for message (%d,%d) from %u.", frame.server_id, frame.message_id, frame.sender_id);
+		}
+	}
+
+	EVP_CIPHER_CTX_cleanup(&dec_ctx);
+
+	return true;
+}
 
 UDTCPPeerMessenger::UDTCPPeerMessenger() {
 	_sock = -1;
@@ -225,6 +322,8 @@ bool UDTCPPeerMessenger::startup() {
 		lerror("mmap");
 		goto err;
 	}
+
+	Server::putSocket(new UDPReceiver(_sock, this));
 
 	log(LOG_INFO, "UDTCPPeerMessenger started up");
 	return true;
@@ -447,127 +546,6 @@ bool UDTCPPeerMessenger::sendMessage(uint32_t server_id, const Message * message
 Message* UDTCPPeerMessenger::getMessage() {
 	return _received_messages.dequeue();
 }
-
-#if 0
-	ssize_t bytes_received;
-	struct sockaddr_in from;
-	socklen_t fromlen = sizeof(from);
-	uint8_t inbuffer[BUFFER_SIZE + MAX_BLOCKSIZE];
-	union {
-		uint8_t buffer[BUFFER_SIZE];
-		struct st_frame frame;
-	};
-
-	Message *message = NULL;
-
-	while(!message) {
-		bytes_received = recvfrom(_sock, inbuffer, BUFFER_SIZE + MAX_BLOCKSIZE,
-				MSG_TRUNC, (struct sockaddr*)&from, &fromlen);
-		int packet_size;
-		int tlen;
-		if(bytes_received == -1) {
-			if(errno != EINTR)
-				lerror("recvfrom");
-			return NULL;
-		} else if(bytes_received > BUFFER_SIZE + MAX_BLOCKSIZE) {
-			log(LOG_WARNING, "Discarding frame of size %u since it is "
-					"bigger than the buffer (%d bytes)",
-					(unsigned)bytes_received, BUFFER_SIZE + MAX_BLOCKSIZE);
-		} else {
-			EVP_CIPHER_CTX dec_ctx;
-			EVP_CIPHER_CTX_init(&dec_ctx);
-			EVP_DecryptInit(&dec_ctx, _cipher, _cipher_key, _cipher_iv);
-
-			if(EVP_DecryptUpdate(&dec_ctx, buffer, &packet_size,
-						inbuffer, bytes_received) != 1) {
-				log_ssl_errors("EVP_DecryptUpdate");
-			} else if(EVP_DecryptFinal(&dec_ctx, buffer + packet_size,
-						&tlen) != 1) {
-				log_ssl_errors("EVP_DecryptFinal");
-			} else if((size_t)(packet_size + tlen) < sizeof(st_frame)) {
-				log(LOG_WARNING, "Discarding frame due to short packet (%d bytes)",
-						packet_size + tlen);
-			} else if(frame.fragment_num == 0) {
-//				log(LOG_INFO, "Received ACK for (%u,%u) from %u",
-//						frame.server_id, frame.message_id, frame.acking_server);
-				Server::putAck(frame.server_id, frame.message_id,
-						frame.acking_server);
-				downBackoff(frame.acking_server);
-			} else if((size_t)(packet_size + tlen) !=
-					frame.fragment_len + sizeof(st_frame) - 1) {
-				log(LOG_WARNING, "Discarding frame due to invalid fragment_length field");
-			} else if(frame.data_checksum != checksum(frame.data, frame.fragment_len)) {
-				log(LOG_WARNING, "Discarding frame with invalid checksum");
-			} else if(Server::hasMessage(frame.server_id, frame.message_id)) {
-//				log(LOG_INFO, "Received fragment for (%u,%u) which we already have.", frame.server_id, frame.message_id);
-				sendAck(frame.server_id, frame.message_id);
-			} else {
-				bool lastfragment = (frame.fragment_num & (1 << (sizeof(frame.fragment_num) * 8 - 1))) != 0;
-				frame.fragment_num &= (1 << (sizeof(frame.fragment_num) * 8 - 1)) - 1;
-
-//				log(LOG_DEBUG, "Received fragment %u for (%u,%u)%s.", frame.fragment_num, frame.server_id, frame.message_id, lastfragment ? " - last fragment" : "");
-
-				ServerFragmentMap::iterator i = _fragments[frame.server_id].find(frame.message_id);
-
-				if(i == _fragments[frame.server_id].end()) {
-					_fragments[frame.server_id][frame.message_id].num_fragments = 0;
-					_fragments[frame.server_id][frame.message_id].fragments_received = 0;
-				}
-
-				st_fragment_collection *frags = &_fragments[frame.server_id][frame.message_id];
-
-				if(frags->num_fragments <= frame.fragment_num)
-					frags->num_fragments = frame.fragment_num + (lastfragment ? 0 : 1);
-
-				FragmentList::iterator fragpos = frags->fragments.find(frame.fragment_num);
-				if(fragpos != frags->fragments.end()) {
-					log(LOG_WARNING, "Duplicate fragment (%u,%u,%u)", frame.server_id, frame.message_id, frame.fragment_num);
-				} else {
-					st_fragment *fragment = (st_fragment*)malloc(frame.fragment_len + sizeof(st_fragment) - 1);
-
-					fragment->fragment_length = frame.fragment_len;
-					memcpy(fragment->data, frame.data, frame.fragment_len);
-
-					frags->fragments_received++;
-					frags->fragments[frame.fragment_num] = fragment;
-
-					if(frags->fragments_received == frags->num_fragments) {
-						log(LOG_DEBUG, "Received message (%u,%u)", frame.server_id, frame.message_id);
-
-						uint32_t total_len = 0;
-						FragmentList::iterator i = frags->fragments.begin();
-						while(i != frags->fragments.end()) {
-							total_len += i->second->fragment_length;
-							++i;
-						}
-
-						uint8_t *blob = (uint8_t*)malloc(total_len);
-						uint8_t *pos = blob;
-						for(i = frags->fragments.begin(); i != frags->fragments.end(); ++i) {
-							memcpy(pos, i->second->data, i->second->fragment_length);
-							pos += i->second->fragment_length;
-						}
-
-						message = Message::buildMessage(blob, total_len);
-						if(!message) {
-							log(LOG_CRIT, "Error reconstructing message (%u,%u)", frame.server_id, frame.message_id);
-							free(blob);
-						} else {
-							for(i = frags->fragments.begin(); i != frags->fragments.end(); ++i) {
-								free(i->second);
-							}
-							_fragments[frame.server_id].erase(frame.message_id);
-						}
-					}
-				}
-			}
-
-			EVP_CIPHER_CTX_cleanup(&dec_ctx);
-		}
-	}
-	return message;
-}
-#endif
 
 //////////////////////////////////////////////////////////////
 static void log_ciphers(const OBJ_NAME *name, void*) {
