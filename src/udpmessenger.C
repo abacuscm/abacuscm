@@ -265,12 +265,11 @@ bool UDPPeerMessenger::startup() {
 	}
 
 	_cipher_key = (unsigned char*)mmap(NULL, _cipher_keysize, PROT_READ, MAP_PRIVATE, fd, 0);
+	close(fd);
 	if(_cipher_key == MAP_FAILED) {
 		lerror("mmap");
 		goto err;
 	}
-
-	close(fd);
 
 	fd = open(cipher_iv.c_str(), O_RDONLY);
 	if(fd < 0) {
@@ -279,17 +278,11 @@ bool UDPPeerMessenger::startup() {
 	}
 
 	_cipher_iv = (unsigned char*)mmap(NULL, _cipher_ivsize, PROT_READ, MAP_PRIVATE, fd, 0);
+	close(fd);
 	if(_cipher_iv == MAP_FAILED) {
 		lerror("mmap");
 		goto err;
 	}
-
-	close(fd);
-
-	// There were used to debug the code above but can be a security risk
-	// if we are logging with syslog() and using remote logging.
-//	log_buffer(LOG_DEBUG, "cipher key", _cipher_key, _cipher_keysize);
-//	log_buffer(LOG_DEBUG, "cipher iv", _cipher_iv, _cipher_ivsize);
 
 	log(LOG_INFO, "UDPPeerMessenger started up");
 	return true;
