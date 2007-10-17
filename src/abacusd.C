@@ -601,6 +601,7 @@ int main(int argc, char ** argv) {
 	Server::setAckQueue(&ack_queue);
 	Server::setTimedQueue(&timed_queue);
 	Server::setSocketQueue(&wait_queue);
+	Server::setSocketPool(&socket_pool);
 
 	ModuleLoader module_loader;
 	/* The ModuleLoader object uses scope to clean up on destruction. It

@@ -17,6 +17,7 @@
 #include "peermessenger.h"
 #include "message.h"
 #include "queue.h"
+#include "socket.h"
 
 #include <pthread.h>
 #include <sstream>
@@ -28,6 +29,7 @@ using namespace std;
 static Queue<uint32_t> *ack_queue;
 static Queue<TimedAction*> *timed_queue;
 static Queue<Socket*> *socket_queue;
+static SocketPool *socket_pool;
 
 uint32_t Server::server_id(const string& name)
 {
@@ -274,15 +276,27 @@ void Server::putTimedAction(TimedAction* ta) {
 		timed_queue->enqueue(ta);
 }
 
-void Server::putSocket(Socket* s)
+void Server::putSocket(Socket* s, bool immediate)
 {
-	if (!socket_queue)
-		log(LOG_ERR, "socket_queue is not set!");
-	else
-		socket_queue->enqueue(s);
+	if (immediate) {
+		if (!socket_queue)
+			log(LOG_ERR, "socket_queue is not set!");
+		else
+			socket_queue->enqueue(s);
+	} else {
+		if (!socket_pool)
+			log(LOG_ERR, "socket_pool is not set!");
+		else
+			socket_pool->locked_insert(s);
+	}
 }
 
 void Server::setSocketQueue(Queue<Socket*> *queue)
 {
 	socket_queue = queue;
+}
+
+void Server::setSocketPool(SocketPool *pool)
+{
+	socket_pool = pool;
 }
