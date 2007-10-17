@@ -32,9 +32,13 @@
 #include "scoped_lock.h"
 #include "queue.h"
 #include "socket.h"
+#include "clientaction.h"
+#include "clientconnection.h"
+#include "messageblock.h"
 
 #include <map>
 #include <algorithm>
+#include <sstream>
 
 using namespace std;
 
@@ -254,7 +258,7 @@ bool UDTCPPeerMessenger::startup() {
 		goto err;
 	}
 
-	portnum = atol(config["udtcpmessenger"]["port"].c_str());
+	portnum = atol(config["udtcpmessenger"]["udpport"].c_str());
 	if(!portnum)
 		portnum = DEFAULT_UDPRECEIVER_PORT;
 
@@ -547,6 +551,142 @@ Message* UDTCPPeerMessenger::getMessage() {
 	return _received_messages.dequeue();
 }
 
+class TCPTransmitAction : public ClientAction {
+private:
+	struct MessageContainer {
+		uint8_t *message_blob;
+		uint32_t blob_size;
+		int rfcnt;
+
+		MessageContainer(const uint8_t *blob, uint32_t size) {
+			rfcnt = 1;
+			message_blob = new uint8_t[size];
+			blob_size = size;
+			memcpy(message_blob, blob, size);
+		}
+
+		~MessageContainer() {
+			delete []message_blob;
+		}
+	};
+	typedef map<uint32_t, MessageContainer*> MessageMap;
+	typedef map<uint32_t, MessageMap> ServerMessageMap;
+
+	ServerMessageMap _message_map;
+	pthread_mutex_t _lock_map;
+
+	uint32_t auth_cred;
+protected:
+	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+public:
+	TCPTransmitAction();
+	~TCPTransmitAction();
+};
+
+TCPTransmitAction::TCPTransmitAction()
+{
+	pthread_mutex_init(&_lock_map, NULL);
+}
+
+TCPTransmitAction::~TCPTransmitAction()
+{
+#if 1
+	ServerMessageMap::iterator i;
+	MessageMap::iterator j;
+	for (i = _message_map.begin(); i != _message_map.end(); ++i)
+		for (j = i->second.begin(); j != i->second.end(); ++j)
+			log (LOG_WARNING, "Non-destructed Message object in TCPTransmitAction ... this indicates a bug!!!!!!");
+#endif
+	pthread_mutex_destroy(&_lock_map);
+}
+
+bool TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
+{
+#if 0
+	// NOTE: This authentication is WEAK!! TODO
+	uint32_t remote_id = strtoull((*mb)["requester_id"].c_str(), NULL, 10);
+	uint32_t creds = strtoull((*mb)["cred"].c_str(), NULL, 10) ^ remote_id ^ auth_cred ^ Server::getId();
+	if (!remote_id || creds)
+		return false;
+#endif
+
+	uint32_t server_id = strtoull((*mb)["server_id"].c_str(), NULL, 10);
+	uint32_t message_id = strtoull((*mb)["message_id"].c_str(), NULL, 10);
+
+	if (!server_id || !message_id)
+		return false;
+
+	MessageContainer *mc = NULL;
+	{
+		ScopedLock _(&_lock_map);
+
+		ServerMessageMap::iterator s = _message_map.find(server_id);
+		if (s != _message_map.end()) {
+			MessageMap::iterator m = s->second.find(message_id);
+			if (m != s->second.end()) {
+				mc = m->second;
+				++mc->rfcnt;
+			}
+		}
+
+		if (!mc) {
+			DbCon *db = DbCon::getInstance();
+			if (!db)
+				return false;
+
+			ostringstream query;
+			query << "SELECT message_type_id, time, signature, data FROM PeerMessage WHERE message_id=" << server_id << " AND message_id=" << message_id;
+
+			QueryResultRow row = db->singleRowQuery(query.str());
+			db->release(); db = NULL;
+
+			if (row.empty())
+				return false;
+
+			uint8_t *signature = new uint8_t[row[2].length()];
+			uint8_t *data = new uint8_t[row[3].length()];
+
+			memcpy(signature, row[2].data(), row[2].length());
+			memcpy(data, row[3].data(), row[3].length());
+
+			Message* m = Message::buildMessage(server_id, message_id, atol(row[0].c_str()), atol(row[1].c_str()), signature, data, row[3].length());
+
+			if (m) {
+				const uint8_t *blob;
+				uint32_t size;
+				if (m->getBlob(&blob, &size))
+					_message_map[server_id][message_id] = mc = new MessageContainer(blob, size);
+				delete m;
+			} else {
+				delete []signature;
+				delete []data;
+			}
+		}
+	}
+
+	ostringstream str;
+
+	MessageBlock rt("udtcppeermessageput");
+	rt.setContent((char*)mc->message_blob, mc->blob_size, false); /* SHARED DATA COPY */
+	bool ret = cc->sendMessageBlock(&rt);
+
+	{
+		ScopedLock _(&_lock_map);
+		if (!--mc->rfcnt) {
+			delete mc;
+			ServerMessageMap::iterator s = _message_map.find(server_id);
+			MessageMap::iterator m = s->second.find(message_id);
+			s->second.erase(m);
+			if (s->second.empty())
+				_message_map.erase(s);
+		}
+	}
+
+	return ret;
+}
+
+static TCPTransmitAction _act_getmsg;
+
 //////////////////////////////////////////////////////////////
 static void log_ciphers(const OBJ_NAME *name, void*) {
 	if(islower(*name->name))
@@ -559,6 +699,7 @@ static UDTCPPeerMessenger _udtcpPeerMessenger;
 static void udtcp_peer_messenger_init() __attribute__ ((constructor));
 static void udtcp_peer_messenger_init()
 {
+	ClientAction::registerAction(USER_TYPE_NONE, "udtcppeermessageget", &_act_getmsg);
 	// double check that gcc actually did the right thing with the __attribute__ ((packed)).
 	// If we don't register the messenger abacusd will detect it and abort.
 	if(sizeof(st_frame) != ST_FRAME_SIZE)
