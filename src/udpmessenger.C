@@ -22,6 +22,8 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <pthread.h>
+#include <signal.h>
 
 #include "peermessenger.h"
 #include "logger.h"
@@ -92,6 +94,7 @@ private:
 	uint32_t _init_delay;
 
 	FragmentMap _fragments;
+	pthread_t _receiver_thread;
 
 	map<uint32_t, struct sockaddr_in> _addrmap;
 	pthread_mutex_t _lock_addrmap;
@@ -116,6 +119,7 @@ public:
 
 	virtual bool initialise();
 	virtual void deinitialise();
+	virtual void shutdown();
 	virtual bool sendMessage(uint32_t server_id, const Message * message);
 	void sendAck(uint32_t server_id, uint32_t message_id);
 	virtual Message* getMessage();
@@ -138,8 +142,7 @@ UDPPeerMessenger::UDPPeerMessenger() {
 }
 
 UDPPeerMessenger::~UDPPeerMessenger() {
-	if(_sock > 0)
-		deinitialise();
+	deinitialise();
 	pthread_mutex_destroy(&_lock_addrmap);
 	pthread_mutex_destroy(&_lock_backoffmap);
 }
@@ -188,6 +191,10 @@ void UDPPeerMessenger::deinitialise() {
 		munmap(_cipher_iv, _cipher_ivsize);
 		_cipher_iv = NULL;
 	}
+}
+
+void UDPPeerMessenger::shutdown() {
+	pthread_kill(_receiver_thread, SIGTERM);
 }
 
 bool UDPPeerMessenger::startup() {
@@ -565,8 +572,9 @@ Message* UDPPeerMessenger::getMessage() {
 	};
 
 	Message *message = NULL;
+	_receiver_thread = pthread_self();
 
-	while(!message) {
+	while (!message) {
 		bytes_received = recvfrom(_sock, inbuffer, BUFFER_SIZE + MAX_BLOCKSIZE,
 				MSG_TRUNC, (struct sockaddr*)&from, &fromlen);
 		int packet_size;

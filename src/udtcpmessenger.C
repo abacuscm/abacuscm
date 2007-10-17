@@ -85,6 +85,7 @@ public:
 
 	virtual bool initialise();
 	virtual void deinitialise();
+	virtual void shutdown();
 	virtual bool sendMessage(uint32_t server_id, const Message * message);
 	void sendAck(uint32_t server_id, uint32_t message_id);
 
@@ -134,6 +135,11 @@ void UDTCPPeerMessenger::deinitialise() {
 		munmap(_cipher_iv, _cipher_ivsize);
 		_cipher_iv = NULL;
 	}
+}
+
+void UDTCPPeerMessenger::shutdown()
+{
+	_received_messages.enqueue(NULL);
 }
 
 bool UDTCPPeerMessenger::startup() {

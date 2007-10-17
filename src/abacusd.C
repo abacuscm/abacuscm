@@ -82,10 +82,8 @@ static uint32_t max_idle_workers;
  * queue's empty out.
  */
 static void signal_die(int) {
-	if(abacusd_running) {
+	if(abacusd_running)
 		abacusd_running = false;
-		pthread_kill(thread_peer_listener, SIGTERM);
-	}
 }
 
 /**
@@ -629,13 +627,15 @@ int main(int argc, char ** argv) {
 
 	log(LOG_DEBUG, "abacusd is up and running.");
 
-	pthread_join(thread_peer_listener, NULL);
+	// TODO: This probably introduces a race condition,
+	// but frankly, having to hit ^C twice in this case
+	// is easier right now than figuring out sigprocmask and sigwait.
+	while (abacusd_running)
+		pause();
 
-	/*
-	 * peer_listener gets killed with SIGTERM, at which point we
-	 * drop through the join() above, and now some of the threads
-	 * need some encouraging to commit suicide.
-	 */
+	PeerMessenger::getMessenger()->shutdown();
+
+	pthread_join(thread_peer_listener, NULL);
 	pthread_kill(thread_socket_selector, SIGTERM);
 	message_queue.enqueue(NULL);
 	ack_queue.enqueue(0);
