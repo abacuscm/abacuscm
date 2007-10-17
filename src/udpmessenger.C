@@ -140,6 +140,8 @@ UDPPeerMessenger::UDPPeerMessenger() {
 UDPPeerMessenger::~UDPPeerMessenger() {
 	if(_sock > 0)
 		deinitialise();
+	pthread_mutex_destroy(&_lock_addrmap);
+	pthread_mutex_destroy(&_lock_backoffmap);
 }
 
 bool UDPPeerMessenger::initialise() {
