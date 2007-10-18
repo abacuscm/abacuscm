@@ -628,6 +628,7 @@ bool TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
 
 	uint32_t server_id = strtoull((*mb)["server_id"].c_str(), NULL, 10);
 	uint32_t message_id = strtoull((*mb)["message_id"].c_str(), NULL, 10);
+	uint32_t skip = strtoull((*mb)["skip"].c_str(), NULL, 10);
 
 	if (!server_id || !message_id)
 		return false;
@@ -682,9 +683,13 @@ bool TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
 
 	ostringstream str;
 
-	MessageBlock rt("udtcppeermessageput");
-	rt.setContent((char*)mc->message_blob, mc->blob_size, false); /* SHARED DATA COPY */
-	bool ret = cc->sendMessageBlock(&rt);
+	bool ret;
+	if (skip < mc->blob_size) {
+		MessageBlock rt("udtcppeermessageput");
+		rt.setContent((char*)mc->message_blob + skip, mc->blob_size - skip, false); /* SHARED DATA COPY */
+		ret = cc->sendMessageBlock(&rt);
+	} else
+		ret = false;
 
 	{
 		ScopedLock _(&_lock_map);
