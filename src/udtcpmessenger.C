@@ -474,6 +474,9 @@ void UDTCPPeerMessenger::makeACK(st_frame* frame, uint32_t server_id, uint32_t m
 }
 
 void UDTCPPeerMessenger::sendAck(uint32_t server_id, uint32_t message_id) {
+	if (!Server::getId())
+		return;
+
 	st_frame frame;
 	DbCon *db = DbCon::getInstance();
 	if(!db) {
@@ -496,6 +499,9 @@ void UDTCPPeerMessenger::sendAck(uint32_t server_id, uint32_t message_id) {
 }
 
 void UDTCPPeerMessenger::sendAck(uint32_t server_id, uint32_t message_id, uint32_t to_server) {
+	if (!Server::getId())
+		return;
+
 	st_frame frame;
 	const sockaddr_in * dest = getSockAddr(to_server);
 
