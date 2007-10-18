@@ -514,13 +514,13 @@ bool UDTCPPeerMessenger::sendMessage(uint32_t server_id, const Message * message
 	if(!dest)
 		return false;
 
+	if(!message->getBlob(&message_data, &frame.message_size))
+		return false;
+
 	if(!frame.message_size) {
 		log(LOG_CRIT, "Message length cannot be 0 in %s", __PRETTY_FUNCTION__);
 		return false;
 	}
-
-	if(!message->getBlob(&message_data, &frame.message_size))
-		return false;
 
 	frame.sender_id = Server::getId();
 	frame.server_id = message->server_id();
