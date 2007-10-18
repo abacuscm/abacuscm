@@ -635,7 +635,7 @@ bool TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
 				return false;
 
 			ostringstream query;
-			query << "SELECT message_type_id, time, signature, data FROM PeerMessage WHERE message_id=" << server_id << " AND message_id=" << message_id;
+			query << "SELECT message_type_id, time, signature, data FROM PeerMessage WHERE server_id=" << server_id << " AND message_id=" << message_id;
 
 			QueryResultRow row = db->singleRowQuery(query.str());
 			db->release(); db = NULL;
