@@ -159,7 +159,7 @@ bool UDTCPPeerMessenger::UDPReceiver::process()
 				packet_size + tlen);
 	} else if ((unsigned)packet_size != sizeof(st_frame) + frame.message_size) {
 		log (LOG_WARNING, "Invalid sized packet => %d != sizeof(st_frame) + frame.message_size == %d + %d == %d",
-				packet_size, sizeof(st_frame), frame.message_size, sizeof(st_frame) + frame.message_size);
+				packet_size, (uint32_t)sizeof(st_frame), frame.message_size, (uint32_t)sizeof(st_frame) + frame.message_size);
 	} else {
 		switch (frame.type) {
 		case TYPE_ACK:
