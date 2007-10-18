@@ -169,6 +169,10 @@ bool UDTCPPeerMessenger::UDPReceiver::process()
 			}; break;
 		case TYPE_INLINE:
 			{
+				if (Server::hasMessage(frame.server_id, frame.message_id)) {
+					_messenger->sendAck(frame.server_id, frame.message_id, frame.sender_id);
+					break;
+				}
 				void *blob = malloc(frame.message_size);
 				if (!blob) {
 					log (LOG_CRIT, "Memory allocation error.");
@@ -183,6 +187,10 @@ bool UDTCPPeerMessenger::UDPReceiver::process()
 			}; break;
 		case TYPE_NOTIFY:
 			{
+				if (Server::hasMessage(frame.server_id, frame.message_id)) {
+					_messenger->sendAck(frame.server_id, frame.message_id, frame.sender_id);
+					break;
+				}
 				// TODO: Create a TCPRetriever and go fetch the message.
 			}; break;
 		default:
