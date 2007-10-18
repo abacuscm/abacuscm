@@ -1,4 +1,4 @@
-AC_INIT(abacuscm, 1.0, jaco@kroon.co.za)
+AC_INIT(abacuscm, 1.0.2-rc1, jaco@kroon.co.za)
 AC_CONFIG_SRCDIR([src/mainwindow.C])
 AM_INIT_AUTOMAKE([1.7 dist-bzip2 subdir-objects foreign])
 AM_CONFIG_HEADER(config.h)
