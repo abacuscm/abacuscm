@@ -76,7 +76,6 @@ private:
 	map<uint32_t, struct sockaddr_in> _addrmap;
 	pthread_mutex_t _lock_addrmap;
 
-	const sockaddr_in* getSockAddr(uint32_t server_id);
 	uint32_t checksum(const void *data, uint16_t len);
 	bool startup();
 	void makeACK(st_frame* frame, uint32_t server_id, uint32_t message_id);
@@ -92,9 +91,36 @@ private:
 		UDPReceiver(int sock, UDTCPPeerMessenger* messenger);
 		bool process();
 	};
+
+	class TCPRetriever : public Socket {
+	private:
+		UDTCPPeerMessenger* _messenger;
+		uint32_t _server_id;
+		uint32_t _message_id;
+		uint32_t _size;
+		Queue<uint32_t> _sq;
+		set<uint32_t> _servers;
+	public:
+		TCPRetriever(UDTCPPeerMessenger* messenger, uint32_t server_id, uint32_t message_id, uint32_t size, uint32_t init_server);
+		~TCPRetriever();
+
+		bool process();
+		void addSourceServer(uint32_t server);
+	};
+
+	// must be locked before retrieving the tcp pointer,
+	// and unlocked when the pointer will no longer be used.
+	// ie: overlocking, but it's the simplest solution that'll work,
+	// and the ops that requires this lock is pretty fast.
+	pthread_mutex_t _lock_tcp_retrievers;
+	map<uint32_t, map<uint32_t, TCPRetriever*> > _tcp_retrievers;
 public:
 	UDTCPPeerMessenger();
 	virtual ~UDTCPPeerMessenger();
+
+	const sockaddr_in* getSockAddr(uint32_t server_id);
+	void removeTCPReceiver(uint32_t server_id, uint32_t message_id);
+	void notifyTCPMessage(uint32_t server_id, uint32_t message_id, uint32_t size, uint32_t sending_server);
 
 	const unsigned char* cipher_key() const { return _cipher_key; }
 	const unsigned char* cipher_iv() const { return _cipher_iv; }
@@ -188,11 +214,10 @@ bool UDTCPPeerMessenger::UDPReceiver::process()
 			}; break;
 		case TYPE_NOTIFY:
 			{
-				if (Server::hasMessage(frame.server_id, frame.message_id)) {
+				if (Server::hasMessage(frame.server_id, frame.message_id))
 					_messenger->sendAck(frame.server_id, frame.message_id, frame.sender_id);
-					break;
-				}
-				// TODO: Create a TCPRetriever and go fetch the message.
+				else
+					_messenger->notifyTCPMessage(frame.server_id, frame.message_id, frame.message_size, frame.sender_id);
 			}; break;
 		default:
 			log(LOG_WARNING, "Unknown UDP Message type for message (%d,%d) from %u.", frame.server_id, frame.message_id, frame.sender_id);
@@ -202,6 +227,165 @@ bool UDTCPPeerMessenger::UDPReceiver::process()
 	EVP_CIPHER_CTX_cleanup(&dec_ctx);
 
 	return true;
+}
+
+UDTCPPeerMessenger::TCPRetriever::TCPRetriever(UDTCPPeerMessenger* messenger, uint32_t server_id, uint32_t message_id, uint32_t size, uint32_t init_server)
+{
+	_messenger = messenger;
+	_server_id = server_id;
+	_message_id = message_id;
+	_size = size;
+	addSourceServer(init_server);
+}
+
+UDTCPPeerMessenger::TCPRetriever::~TCPRetriever()
+{
+}
+
+bool UDTCPPeerMessenger::TCPRetriever::process()
+{
+	uint8_t *blob = (uint8_t*)malloc(_size);
+	uint32_t pos = 0;
+	ostringstream str;
+	MessageBlock mb("udtcppeermessageget");
+	int sock;
+	SSL *ssl = NULL;
+
+	if (!blob) {
+		log (LOG_CRIT, "Error allocating %d bytes of memory for receiving blob.", _size);
+		_messenger->removeTCPReceiver(_server_id, _message_id);
+		return false;
+	}
+
+	str << _server_id;
+	mb["server_id"] = str.str();
+	str.str("");
+	str << _message_id;
+	mb["message_id"] = str.str();
+
+	SSL_CTX *ctx = SSL_CTX_new(TLSv1_client_method());
+	if(!ctx) {
+		log_ssl_errors("SSL_CTX_new");
+		goto quit;
+	}
+
+	if(!SSL_CTX_load_verify_locations(ctx, Config::getConfig()["udtcpmessenger"]["cacert"].c_str(), NULL)) {
+		log_ssl_errors("SSL_CTX_load_verify_locations");
+		goto quit;
+	}
+
+	SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+	SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
+
+	while (pos < _size) {
+		str.str(""); str << pos;
+		mb["skip"] = str.str();
+
+		sock = socket(AF_INET, SOCK_STREAM, 0);
+
+		if (sock < 0) {
+			lerror("socket");
+			break;
+		}
+
+		int opt = 30;
+		setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &opt, sizeof(int));
+		setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &opt, sizeof(int));
+
+		uint32_t try_server_id = _sq.dequeue();
+		_sq.enqueue(try_server_id); // requeue for retry.
+
+		// THIS IS A BUG: tcppeerport == udppeerport ... shouldn't be required.
+		const struct sockaddr_in* serv_addr = _messenger->getSockAddr(try_server_id);
+		if (connect(sock, (const struct sockaddr*)serv_addr, sizeof(*serv_addr)) < 0) {
+			lerror("connect");
+			goto err;
+		}
+
+		ssl = SSL_new(ctx);
+		if (!ssl) {
+			log_ssl_errors("SSL_new");
+			goto err;
+		}
+
+		if (!SSL_set_fd(ssl, sock)) {
+			log_ssl_errors("SSL_set_fd");
+			goto err;
+		}
+
+		if (SSL_connect(ssl) < 1) {
+			log_ssl_errors("SSL_connect");
+			goto err;
+		}
+
+		if (!mb.writeToSSL(ssl))
+			goto err;
+
+		int rd;
+		char buf[16384];
+
+		rd = SSL_read(ssl, buf, sizeof(buf));
+		if (rd > 0) {
+			string headers(buf, rd);
+			if (headers.substr(headers.length() - 2) != "\n\n") {
+				log (LOG_CRIT, "crazy hearistic broke in %s (%s:%d)", __PRETTY_FUNCTION__, __FILE__, __LINE__);
+				goto quit;
+			}
+		}
+
+		while (pos < _size && (rd = SSL_read(ssl, buf, sizeof(buf))) > 0) {
+			memcpy(blob + pos, buf, rd);
+			pos += rd;
+		}
+err:
+		if (ssl)
+			SSL_free(ssl);
+
+		if (sock > 0)
+			close(sock);
+	}
+
+	if (pos == _size) {
+		Message*m = Message::buildMessage(blob, _size);
+		if (m)
+			_messenger->deliver_message(m);
+		blob = NULL;
+	}
+quit:
+	_messenger->removeTCPReceiver(_server_id, _message_id);
+	if (blob)
+		free(blob);
+	if (ctx)
+		SSL_CTX_free(ctx);
+	return false;
+}
+
+void UDTCPPeerMessenger::TCPRetriever::addSourceServer(uint32_t server)
+{
+	if (_servers.find(server) == _servers.end()) {
+		_servers.insert(server);
+		_sq.enqueue(server);
+	}
+}
+
+void UDTCPPeerMessenger::removeTCPReceiver(uint32_t server_id, uint32_t message_id)
+{
+	ScopedLock _(&_lock_tcp_retrievers);
+	map<uint32_t, TCPRetriever*>::iterator tr = _tcp_retrievers[server_id].find(message_id);
+	if (tr != _tcp_retrievers[server_id].end())
+		_tcp_retrievers[server_id].erase(tr);
+	else
+		log(LOG_WARNING, "Attempt to remove non-existant TCPReceiver from TCPReceiver map.");
+}
+
+void UDTCPPeerMessenger::notifyTCPMessage(uint32_t server_id, uint32_t message_id, uint32_t size, uint32_t sending_server)
+{
+	ScopedLock _(&_lock_tcp_retrievers);
+	map<uint32_t, TCPRetriever*>::iterator tr = _tcp_retrievers[server_id].find(message_id);
+	if (tr != _tcp_retrievers[server_id].end())
+		tr->second->addSourceServer(sending_server);
+	else
+		Server::putSocket(_tcp_retrievers[server_id][message_id] = new TCPRetriever(this, server_id, message_id, size, sending_server), true);
 }
 
 UDTCPPeerMessenger::UDTCPPeerMessenger() {
@@ -214,12 +398,14 @@ UDTCPPeerMessenger::UDTCPPeerMessenger() {
 	_cipher_ivsize = -1;
 	_cipher_keysize = -1;
 	pthread_mutex_init(&_lock_addrmap, NULL);
+	pthread_mutex_init(&_lock_tcp_retrievers, NULL);
 }
 
 UDTCPPeerMessenger::~UDTCPPeerMessenger() {
 	if(_sock > 0)
 		deinitialise();
 	pthread_mutex_destroy(&_lock_addrmap);
+	pthread_mutex_destroy(&_lock_tcp_retrievers);
 }
 
 bool UDTCPPeerMessenger::initialise() {
