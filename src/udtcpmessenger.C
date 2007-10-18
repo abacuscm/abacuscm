@@ -157,9 +157,10 @@ bool UDTCPPeerMessenger::UDPReceiver::process()
 	} else if ((size_t)(packet_size += tlen) < sizeof(st_frame)) { /* HEADS UP: packet_size __+=__ tlen */
 		log (LOG_WARNING, "Discarding frame due to short packet (%d bytes)",
 				packet_size + tlen);
-	} else if ((unsigned)packet_size != sizeof(st_frame) + frame.message_size) {
-		log (LOG_WARNING, "Invalid sized packet => %d != sizeof(st_frame) + frame.message_size == %d + %d == %d",
-				packet_size, (uint32_t)sizeof(st_frame), frame.message_size, (uint32_t)sizeof(st_frame) + frame.message_size);
+	} else if (frame.type == TYPE_INLINE ? (unsigned)packet_size != sizeof(st_frame) + frame.message_size : packet_size != sizeof(st_frame)) {
+		log (LOG_WARNING, "Invalid sized packet => %d != sizeof(st_frame) + frame.message_size == %d + %d == %d (type=%d)",
+				packet_size, (uint32_t)sizeof(st_frame), frame.message_size, (uint32_t)sizeof(st_frame) + frame.message_size,
+				frame.type);
 	} else {
 		switch (frame.type) {
 		case TYPE_ACK:
@@ -468,6 +469,7 @@ void UDTCPPeerMessenger::makeACK(st_frame* frame, uint32_t server_id, uint32_t m
 	frame->sender_id = Server::getId();
 	frame->server_id = server_id;
 	frame->message_id = message_id;
+	frame->message_size = 0;
 	frame->type = TYPE_ACK;
 	frame->checksum = 0;
 	frame->checksum = checksum(&frame, sizeof(st_frame));
