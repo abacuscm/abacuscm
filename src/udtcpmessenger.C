@@ -181,12 +181,14 @@ bool UDTCPPeerMessenger::UDPReceiver::process()
 	} else if (EVP_DecryptFinal(&dec_ctx, buffer + packet_size, &tlen) != 1) {
 		log_ssl_errors("EVP_DecryptFinal");
 	} else if ((size_t)(packet_size += tlen) < sizeof(st_frame)) { /* HEADS UP: packet_size __+=__ tlen */
-		log (LOG_WARNING, "Discarding frame due to short packet (%d bytes)",
-				packet_size + tlen);
+		log (LOG_WARNING, "Discarding frame due to short packet (%d bytes), received from: %s",
+				packet_size + tlen, inet_ntoa(from.sin_addr));
+		log_buffer (LOG_DEBUG, "short packet", (const unsigned char*)&frame, packet_size);
 	} else if (frame.type == TYPE_INLINE ? (unsigned)packet_size != sizeof(st_frame) + frame.message_size : packet_size != sizeof(st_frame)) {
 		log (LOG_WARNING, "Invalid sized packet => %d != sizeof(st_frame) + frame.message_size == %d + %d == %d (type=%d)",
 				packet_size, (uint32_t)sizeof(st_frame), frame.message_size, (uint32_t)sizeof(st_frame) + frame.message_size,
 				frame.type);
+		log_buffer (LOG_DEBUG, "short packet", (const unsigned char*)&frame, sizeof(st_frame));
 	} else {
 		switch (frame.type) {
 		case TYPE_ACK:
@@ -680,7 +682,7 @@ void UDTCPPeerMessenger::sendAck(uint32_t server_id, uint32_t message_id) {
 	vector<uint32_t>::iterator i;
 	for(i = servers.begin(); i != servers.end(); ++i) {
 		const sockaddr_in * dest = getSockAddr(*i);
-		if (!sendFrame(&frame, message_id, dest))
+		if (!sendFrame(&frame, sizeof(st_frame), dest))
 			log(LOG_WARNING, "Error sending ACK for (%u,%u) to %u.",
 					server_id, message_id, *i);
 	}
