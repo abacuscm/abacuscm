@@ -173,10 +173,10 @@ bool MessageBlock::writeBlockToSSL(const char *buffer, int length, SSL *ssl) con
 				log(LOG_DEBUG, "Eek, we are blocking on a read in %s "
 						"(%s:%d) where we are trying to send data out!",
 						__PRETTY_FUNCTION__, __FILE__, __LINE__);
-				sslfd.events |= POLLOUT;
+				sslfd.events |= POLLIN;
 				break;
 			case SSL_ERROR_WANT_WRITE:
-				sslfd.events |= POLLIN;
+				sslfd.events |= POLLOUT;
 				break;
 			default:
 				log_ssl_errors("SSL_write");
