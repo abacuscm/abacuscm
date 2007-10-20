@@ -1272,6 +1272,54 @@
         <receiver>MainWindowBase</receiver>
         <slot>updateStandings()</slot>
     </connection>
+    <connection>
+        <sender>stateFilterAbnormalAction</sender>
+        <signal>toggled(bool)</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>updateSubmissions()</slot>
+    </connection>
+    <connection>
+        <sender>stateFilterCompileAction</sender>
+        <signal>toggled(bool)</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>updateSubmissions()</slot>
+    </connection>
+    <connection>
+        <sender>stateFilterCorrectAction</sender>
+        <signal>toggled(bool)</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>updateSubmissions()</slot>
+    </connection>
+    <connection>
+        <sender>stateFilterJudgeAction</sender>
+        <signal>toggled(bool)</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>updateSubmissions()</slot>
+    </connection>
+    <connection>
+        <sender>stateFilterOtherAction</sender>
+        <signal>toggled(bool)</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>updateSubmissions()</slot>
+    </connection>
+    <connection>
+        <sender>stateFilterTimeExceededAction</sender>
+        <signal>toggled(bool)</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>updateSubmissions()</slot>
+    </connection>
+    <connection>
+        <sender>stateFilterUnmarkedAction</sender>
+        <signal>toggled(bool)</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>updateSubmissions()</slot>
+    </connection>
+    <connection>
+        <sender>stateFilterWrongAction</sender>
+        <signal>toggled(bool)</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>updateSubmissions()</slot>
+    </connection>
 </connections>
 <signals>
     <signal>signalAdminControls(bool)</signal>
