@@ -851,8 +851,8 @@ void MainWindow::updateSubmissions() {
 				if (!s->second)
 					// not subscribed to this problem
 					continue;
-			if ((*l)["comment"] != "Awaiting judge")
-				// not in the awaiting judge state
+			int result = atol((*l)["result"].c_str());
+			if (wanted_states.find(result) == wanted_states.end())
 				continue;
 		}
 
