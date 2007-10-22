@@ -9,7 +9,9 @@ pkglib_LTLIBRARIES =
 EXTRA_DIST = conf/marker.conf.sample conf/client.conf.sample conf/server.conf.sample conf/java.policy \
 	     misc/bootstrap.sh misc/qtdeps.sh misc/valgrind.suppressions \
 	     misc/standings.pl misc/abacuscm.css \
-	     misc/mitm/mitm.sh misc/mitm/mitm_serv.sh
+	     misc/mitm/mitm.sh misc/mitm/mitm_serv.sh \
+	     certs/addserver.sh certs/makeca.sh certs/openssl.conf \
+	     db/reload_sql.sh db/structure.sql
 
 if DO_SERVER
 bin_PROGRAMS += bin/abacusd
