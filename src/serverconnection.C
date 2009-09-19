@@ -26,6 +26,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <algorithm>
 
 // 16K is the max size of an SSL block, thus
 // optimal in terms of speed, but memory intensive.

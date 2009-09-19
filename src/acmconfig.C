@@ -14,6 +14,8 @@
 #include <fstream>
 #include <sstream>
 #include <errno.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include "acmconfig.h"
 
