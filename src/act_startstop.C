@@ -177,6 +177,7 @@ uint32_t MsgStartStop::load(const uint8_t *buffer, uint32_t size) {
 	_time = *pos++;
 	_action = *pos++;
 
+	log(LOG_DEBUG, "MsgStartStop: %d %d %d", _server_id, _time, _action);
 	return 3 * sizeof(uint32_t);
 }
 
