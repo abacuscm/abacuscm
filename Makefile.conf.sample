@@ -1,0 +1,7 @@
+# This is probably the only config option you should need.  It basically sets which modules should be built
+# when invoking make.  By default all is built.  You can get a complete list by invocing the following command:
+#  awk -F'[ ,]' '/^ifneq .*mods/ { print $3}' < Makefile
+#mods=server client marker admintools
+
+# Whether or not to build the TEX documentation
+#builddocs=yes

@@ -1,6 +1,7 @@
 -include Makefile.conf
 
 mods ?= client server marker admintools
+builddocs ?= no
 TOPDIR ?= .
 
 TARGET_BINS:=
@@ -113,4 +114,7 @@ MODS_adduser = createuser serverconnection messageblock logger sigsegv acmconfig
 LIBS_adduser = ssl pthread
 endif
 
+ifeq ($(builddocs),yes)
+TARGET_DOCS=usermanual qna
+endif
 include $(TOPDIR)/Makefile.inc
