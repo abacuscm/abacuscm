@@ -14,6 +14,8 @@
 #include "peermessenger.h"
 
 #include <time.h>
+#include <stdlib.h>
+#include <string.h>
 
 std::map<uint32_t, MessageFunctor> Message::_functors;
 

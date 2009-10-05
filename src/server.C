@@ -17,6 +17,7 @@
 #include "socket.h"
 
 #include <pthread.h>
+#include <stdlib.h>
 #include <sstream>
 
 using namespace std;

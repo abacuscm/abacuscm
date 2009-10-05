@@ -8,6 +8,7 @@
  * $Id$
  */
 #include <unistd.h>
+#include <pthread.h>
 
 #include "socket.h"
 #include "logger.h"

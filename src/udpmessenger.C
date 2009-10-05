@@ -21,6 +21,7 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <signal.h>
+#include <string.h>
 
 #include "peermessenger.h"
 #include "logger.h"

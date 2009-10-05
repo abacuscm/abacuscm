@@ -17,6 +17,8 @@
 #include <sstream>
 #include <time.h>
 #include <pthread.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define log_mysql_error()	log(LOG_ERR,"%s line %d: %s", __PRETTY_FUNCTION__, __LINE__, mysql_error(&_mysql))
 

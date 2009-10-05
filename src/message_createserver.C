@@ -15,6 +15,8 @@
 
 #include "message_type_ids.h"
 
+#include <string.h>
+
 using namespace std;
 
 Message_CreateServer::Message_CreateServer() {

@@ -14,6 +14,7 @@
 #include <pthread.h>
 #include <set>
 #include <map>
+#include <string>
 
 class ClientConnection;
 class MessageBlock;

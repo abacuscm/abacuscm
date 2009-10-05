@@ -14,6 +14,7 @@
 #include <map>
 #include <execinfo.h>
 #include <pthread.h>
+#include <stdlib.h>
 
 using namespace std;
 
