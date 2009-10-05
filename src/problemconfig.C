@@ -50,7 +50,7 @@ bool ProblemConfig::addAttribute(QGridLayout *g, std::string attr_name, std::str
 			if(!subgrid)
 				return false;
 			QLabel * l = new QLabel(attr_name, prop_data);
-			l->setAlignment(l->alignment() & ~Qt::AlignVCenter | Qt::AlignTop);
+			l->setAlignment((l->alignment() & ~Qt::AlignVCenter) | Qt::AlignTop);
 			int row = g->numRows();
 			g->addWidget(l, row, 0);
 			g->addMultiCellLayout(subgrid, row, row, 1, 2);
