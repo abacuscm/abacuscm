@@ -7,14 +7,11 @@
  *
  * $Id$
  */
-#if HAVE_CONFIG_H
-# include <config.h>
-#endif
+#include <config.h>
 #include "mainwindow.h"
 
 #include "serverconnection.h"
 #include "acmconfig.h"
-#include "sigsegv.h"
 #include "logger.h"
 #include "guievent.h"
 
@@ -28,8 +25,6 @@
 using namespace std;
 
 int main(int argc, char** argv) {
-	setup_sigsegv();
-
 	Config &config = Config::getConfig();
 
 	config.load(DEFAULT_CLIENT_CONFIG);

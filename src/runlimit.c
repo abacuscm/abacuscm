@@ -7,9 +7,6 @@
  *
  * $Id$
  */
-#if HAVE_CONFIG_H
-# include <config.h>
-#endif
 #ifndef _GNU_SOURCE
 # define _GNU_SOURCE
 #endif
@@ -28,7 +25,7 @@
 #include <signal.h>
 
 #ifndef VERSION
-#define VERSION "trunk"
+#define VERSION "trunk $Id$"
 #endif
 
 static struct option const long_options[] = {

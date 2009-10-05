@@ -7,9 +7,6 @@
  *
  * $Id$
  */
-#if HAVE_CONFIG_H
-# include <config.h>
-#endif
 #include "usersupportmodule.h"
 #include "dbcon.h"
 #include "server.h"

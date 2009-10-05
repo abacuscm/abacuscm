@@ -7,14 +7,10 @@
  *
  * $Id$
  */
-#if HAVE_CONFIG_H
-# include <config.h>
-#endif
 #include "buffer.h"
 #include "problemmarker.h"
 #include "logger.h"
 #include "acmconfig.h"
-#include "sigsegv.h"
 #include "serverconnection.h"
 #include "queue.h"
 #include "messageblock.h"
@@ -40,7 +36,6 @@ static void server_close(const MessageBlock*, void*) {
 }
 
 int main(int argc, char **argv) {
-	setup_sigsegv();
 	Config &conf = Config::getConfig();
 	conf.load(DEFAULT_MARKER_CONFIG);
 	if(argc > 1)

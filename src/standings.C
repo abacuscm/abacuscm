@@ -7,12 +7,8 @@
  *
  * $Id: balloon.C 368 2006-10-09 21:18:36Z bmerry $
  */
-#if HAVE_CONFIG_H
-# include <config.h>
-#endif
 #include "logger.h"
 #include "acmconfig.h"
-#include "sigsegv.h"
 #include "serverconnection.h"
 #include "messageblock.h"
 
@@ -100,7 +96,6 @@ int main(int argc, char **argv) {
 
 	register_log_listener(log_function);
 
-	setup_sigsegv();
 	Config &conf = Config::getConfig();
 	conf.load(DEFAULT_CLIENT_CONFIG);
 	char *home = getenv("HOME");

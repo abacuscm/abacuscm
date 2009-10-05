@@ -1,36 +1,60 @@
 /**
- * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
- *  with contributions from various authors.
+ * This source file is used to print out a stack-trace when your program
+ * segfaults. It is relatively reliable and spot-on accurate.
  *
- * This file is distributed under GPLv2, please see
- * COPYING for more details.
+ * This code is in the public domain. Use it as you see fit, some credit
+ * would be appreciated, but is not a prerequisite for usage. Feedback
+ * on it's use would encourage further development and maintenance.
  *
- * $Id$
+ * Due to a bug in gcc-4.x.x you currently have to compile as C++ if you want
+ * demangling to work.
+ *
+ * Please note that it's been ported into my ULS library, thus the check for
+ * HAS_ULSLIB and the use of the sigsegv_outp macro based on that define.
+ *
+ * Author: Jaco Kroon <jaco@kroon.co.za>
+ *
+ * Copyright (C) 2005 - 2009 Jaco Kroon
  */
-#if HAVE_CONFIG_H
-# include <config.h>
-#endif
 #ifndef _GNU_SOURCE
-# define _GNU_SOURCE
+#define _GNU_SOURCE
 #endif
+
+/* Bug in gcc prevents from using CPP_DEMANGLE in pure "C" */
+#if !defined(__cplusplus) && !defined(NO_CPP_DEMANGLE)
+#define NO_CPP_DEMANGLE
+#endif
+
 #include <memory.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <signal.h>
 #include <ucontext.h>
 #include <dlfcn.h>
-#ifdef CPP_DEMANGLE
+#ifndef NO_CPP_DEMANGLE
 #include <cxxabi.h>
+#ifdef __cplusplus
+using __cxxabiv1::__cxa_demangle;
+#endif
 #endif
 
-#include "logger.h"
+#ifdef HAS_ULSLIB
+#include "uls/logger.h"
+#define sigsegv_outp(x)         sigsegv_outp(,gx)
+#else
+#define sigsegv_outp(x, ...)    fprintf(stderr, x "\n", ##__VA_ARGS__)
+#endif
 
 #if defined(REG_RIP)
-#define REGFORMAT "%016lx"
+# define SIGSEGV_STACK_IA64
+# define REGFORMAT "%016lx"
 #elif defined(REG_EIP)
-#define REGFORMAT "%08x"
+# define SIGSEGV_STACK_X86
+# define REGFORMAT "%08x"
 #else
-#define REGFORMAT "%x"
+# define SIGSEGV_STACK_GENERIC
+# define REGFORMAT "%x"
 #endif
 
 static void signal_segv(int signum, siginfo_t* info, void*ptr) {
@@ -42,50 +66,47 @@ static void signal_segv(int signum, siginfo_t* info, void*ptr) {
 	void **bp = 0;
 	void *ip = 0;
 
-	logc(LOG_CRIT, "Segmentation Fault!");
-	logc(LOG_CRIT, "info.si_signo = %d", signum);
-	logc(LOG_CRIT, "info.si_errno = %d", info->si_errno);
-	logc(LOG_CRIT, "info.si_code  = %d (%s)", info->si_code, si_codes[info->si_code]);
-	logc(LOG_CRIT, "info.si_addr  = %p", info->si_addr);
-#if defined(REG_RIP)
+	sigsegv_outp("Segmentation Fault!");
+	sigsegv_outp("info.si_signo = %d", signum);
+	sigsegv_outp("info.si_errno = %d", info->si_errno);
+	sigsegv_outp("info.si_code  = %d (%s)", info->si_code, si_codes[info->si_code]);
+	sigsegv_outp("info.si_addr  = %p", info->si_addr);
 	for(i = 0; i < NGREG; i++)
-		logc(LOG_CRIT, "reg[%02d]       = 0x" REGFORMAT, i, ucontext->uc_mcontext.gregs[i]);
-	ip = (void*)ucontext->uc_mcontext.gregs[REG_RIP];
-	bp = (void**)ucontext->uc_mcontext.gregs[REG_RBP];
-#elif defined(REG_EIP)
-	for(i = 0; i < NGREG; i++)
-		logc(LOG_CRIT, "reg[%02d]       = 0x" REGFORMAT, i, ucontext->uc_mcontext.gregs[i]);
-	ip = (void*)ucontext->uc_mcontext.gregs[REG_EIP];
-	bp = (void**)ucontext->uc_mcontext.gregs[REG_EBP];
-#else
-	logc(LOG_CRIT, "Unable to retrieve Instruction Pointer (not printing stack trace).");
-#define SIGSEGV_NOSTACK
-#endif
+		sigsegv_outp("reg[%02d]       = 0x" REGFORMAT, i, ucontext->uc_mcontext.gregs[i]);
 
 #ifndef SIGSEGV_NOSTACK
-	logc(LOG_CRIT, "Stack trace:");
+#if defined(SIGSEGV_STACK_IA64) || defined(SIGSEGV_STACK_X86)
+#if defined(SIGSEGV_STACK_IA64)
+	ip = (void*)ucontext->uc_mcontext.gregs[REG_RIP];
+	bp = (void**)ucontext->uc_mcontext.gregs[REG_RBP];
+#elif defined(SIGSEGV_STACK_X86)
+	ip = (void*)ucontext->uc_mcontext.gregs[REG_EIP];
+	bp = (void**)ucontext->uc_mcontext.gregs[REG_EBP];
+#endif
+
+	sigsegv_outp("Stack trace:");
 	while(bp && ip) {
 		if(!dladdr(ip, &dlinfo))
 			break;
 
-		const char * symname = dlinfo.dli_sname;
-#ifdef CPP_DEMANGLE
+		const char *symname = dlinfo.dli_sname;
+
+#ifndef NO_CPP_DEMANGLE
 		int status;
 		char * tmp = __cxa_demangle(symname, NULL, 0, &status);
 
-		if (status == 0 && tmp) {
+		if (status == 0 && tmp)
 			symname = tmp;
-		}
 #endif
 
-		logc(LOG_CRIT, "% 2d: %p <%s+%u> (%s)",
+		sigsegv_outp("% 2d: %p <%s+%lu> (%s)",
 				++f,
 				ip,
 				symname,
-				(unsigned)(ip - dlinfo.dli_saddr),
+				(unsigned long)ip - (unsigned long)dlinfo.dli_saddr,
 				dlinfo.dli_fname);
 
-#ifdef CPP_DEMANGLE
+#ifndef NO_CPP_DEMANGLE
 		if (tmp)
 			free(tmp);
 #endif
@@ -96,20 +117,25 @@ static void signal_segv(int signum, siginfo_t* info, void*ptr) {
 		ip = bp[1];
 		bp = (void**)bp[0];
 	}
-	logc(LOG_CRIT, "End of stack trace");
+#else
+	sigsegv_outp("Stack trace (non-dedicated):");
+	sz = backtrace(bt, 20);
+	strings = backtrace_symbols(bt, sz);
+	for(i = 0; i < sz; ++i)
+		sigsegv_outp("%s", strings[i]);
 #endif
-	exit (-1);
+	sigsegv_outp("End of stack trace.");
+#else
+	sigsegv_outp("Not printing stack strace.");
+#endif
+	_exit (-1);
 }
 
-int setup_sigsegv() {
+static void __attribute__((constructor)) setup_sigsegv() {
 	struct sigaction action;
 	memset(&action, 0, sizeof(action));
 	action.sa_sigaction = signal_segv;
 	action.sa_flags = SA_SIGINFO;
-	if(sigaction(SIGSEGV, &action, NULL) < 0) {
+	if(sigaction(SIGSEGV, &action, NULL) < 0)
 		perror("sigaction");
-		return 0;
-	}
-
-	return 1;
 }

@@ -7,9 +7,6 @@
  *
  * $Id$
  */
-#if HAVE_CONFIG_H
-# include <config.h>
-#endif
 #include "message_createserver.h"
 #include "logger.h"
 #include "dbcon.h"

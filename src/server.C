@@ -7,9 +7,6 @@
  *
  * $Id$
  */
-#if HAVE_CONFIG_H
-# include <config.h>
-#endif
 #include "server.h"
 #include "dbcon.h"
 #include "acmconfig.h"

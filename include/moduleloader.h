@@ -17,11 +17,14 @@
 #include <string>
 
 class ModuleLoader {
+private:
+	std::string moddir;
 public:
 	ModuleLoader();
 	~ModuleLoader();
-	static bool loadModule(std::string module_name, bool global = false);
-	static bool loadModuleSet(std::string prefix, std::string set, bool global = false);
+
+	bool loadModule(std::string module_name, bool global = false);
+	bool loadModuleSet(std::string prefix, std::string set, bool global = false);
 };
 
 #endif

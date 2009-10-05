@@ -7,9 +7,6 @@
  *
  * $Id$
  */
-#if HAVE_CONFIG_H
-# include <config.h>
-#endif
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <iostream>
@@ -27,7 +24,6 @@
 #include "message_createserver.h"
 #include "message_createuser.h"
 #include "server.h"
-#include "sigsegv.h"
 #include "dbcon.h"
 #include "socket.h"
 #include "clientlistener.h"
@@ -113,9 +109,6 @@ static bool setup_signals() {
 	action.sa_handler = signal_nothing;
 	if(sigaction(SIGUSR1, &action, NULL) < 0)
 		goto err;
-
-	if(!setup_sigsegv())
-		log(LOG_WARNING, "setup_sigsegv() failed.");
 
 	return true;
 err:

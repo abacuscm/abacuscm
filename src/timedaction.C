@@ -7,9 +7,6 @@
  *
  * $Id$
  */
-#if HAVE_CONFIG_H
-# include <config.h>
-#endif
 #include "timedaction.h"
 
 TimedAction::TimedAction(time_t time) {
