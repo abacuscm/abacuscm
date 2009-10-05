@@ -10,6 +10,7 @@
 #include "timersupportmodule.h"
 #include "dbcon.h"
 #include "logger.h"
+#include "acmconfig.h"
 
 #include <stdlib.h>
 #include <sstream>
@@ -36,8 +37,15 @@ TimerSupportModule::~TimerSupportModule()
 
 uint32_t TimerSupportModule::contestDuration()
 {
-	// TODO: read this from an attribute and cache it.
-	return 5 * 60 * 60; // 5 hours.
+	static bool warned = false;
+
+	Config &conf = Config::getConfig();
+	uint32_t duration = strtoul(conf["contest"]["duration"].c_str(), NULL, 0);
+	if (duration < 1800 && !warned) {
+		log(LOG_WARNING, "Duration is less than half an hour.  This is probably wrong.");
+		warned = true;
+	}
+	return duration;
 }
 
 uint32_t TimerSupportModule::contestTime(uint32_t server_id, time_t real_time)
