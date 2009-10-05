@@ -50,3 +50,6 @@ init=7
 ip = 127.0.0.1
 udppeerport = 7368
 marker = yes
+
+[contest]
+duration=18000
