@@ -52,7 +52,7 @@ list<string> Java_UserProg::getProgramArgv() {
 		runtime = "/usr/bin/java";
 	}
 	if(policy == "") {
-		log(LOG_WARNING, "[java][runtime] not set, defaulting to config/java.policy");
+		log(LOG_WARNING, "[java][runtime] not set, defaulting to conf/java.policy");
 		policy = "conf/java.policy";
 	}
 
