@@ -13,6 +13,8 @@
 #include "buffer.h"
 
 #include <regex.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sstream>
 
 using namespace std;
@@ -84,22 +86,6 @@ void Java_UserProg::setMemLimit(unsigned limit) {
 void Java_UserProg::setMaxProcs(unsigned) {
 	// TODO - ?!?
 }
-
-#ifndef HAVE_STRNDUP
-static char *strndup(const char *s, size_t n)
-{
-	char *ans;
-	size_t len;
-
-	len = strlen(s);
-	if (n > len) n = len;
-	ans = (char *) malloc(n + 1);
-	if (!ans) return NULL;
-	memcpy(ans, s, n);
-	ans[n] = '\0';
-	return ans;
-}
-#endif
 
 string Java_UserProg::sourceFilename(const Buffer& src) {
 	_classname = "";

@@ -104,6 +104,8 @@ MODS_markerd = markerd \
 	logger
 # These are listed separately because the really aught to be modules
 MODS_markerd += userprog \
+	java_userprog \
+	c_cpp_userprog \
 	compiledproblemmarker \
 	testcaseproblemmarker
 LIBS_markerd = ssl pthread
