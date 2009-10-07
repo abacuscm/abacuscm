@@ -10,44 +10,61 @@ installed:
 * OpenSSL (Any version should work).
 * MySQL 4.1.x (Whilst in theory any RDB could work currently only MySQL is
   supported - only required for server).
+* GNU make (the build process uses patterns and other cool features only
+  supported by GNU make).
 
-If you are compiling from an SVN checkout for the first time, you should run
-misc/bootstrap.sh
+If you need (want) to compile everything, just run make.
 
-which will create some files needed for the built process. If you are
-using a distributed tarball, then these files should already be in
-place.
+If you only want to compile certain components, copy Makefile.conf.sample to
+Makefile.conf and edit (there is details in the file).  From here you should
+be able to run make and only get what you want.
 
-The configuration process is the usual ./configure, which will detect
-your installed packages (you can also run it from a separate directory
-to keep built files separate from the source). It will automatically
-exclude the client and server if you do not have the necessary
-libraries. You can also explicitly exclude them by passing
---disable-client or --disable-server to configure.
+There is currently no official installation procedure for AbacusCM.  Please
+follow the following procedures:
 
-If you are planning to install abacus (as opposed to running it
-from the compilation directory), then you may want to pass
---sysconfdir=/etc. This will cause it to look for files in /etc/abacus
-instead of in /usr/local/etc/abacus.
+AbacusCM client:
+***************
 
-Once you have run configure, run 'make' to build AbacusCM, then 'make
-install' to install it. You can also run abacus without installing it,
-but there are a few things to note:
+(Script: misc/installclient.sh - as root)
 
-1. AbacusCM uses libtool for compilation. That means that actual
-binaries are compiled in bin/.libs, lib/.libs and modules/.libs, and
-the versions in the upper-level directory are libtool wrappers that
-take care of setting LD_LIBRARY_PATH to use the locally-compiled rather
-than the installed versions of libraries. If you want to debug abacus
-in-place, run it as
+* copy bin/abacus into a location in your PATH (/usr/local/bin).
+* copy conf/client.conf.sample to /etc/abacus/client.conf.
+* Edit /etc/abacus/client.conf according to your needs (Remember to obtain to
+  cacert from the contest administrator).
 
-libtool --mode=execute gdb bin/abacus
+AbacusCM server:
+***************
 
-2. The server uses a number of modules. You should set 'moddir' in the
-'modules' section of the server configuration to point to the versions
-of the modules that you wish to use. You can just specify the modules
-directory i.e. you don't have to specify modules/.libs/
+The easiest is to run the server from the compile location.  The required
+rpath's will be set, so just do the following:
 
-Once everything compiles you will most probably want to proceed with
-setting up a test (or as we call it, a mock) contest.  See
-"Creating_a_Contest.txt" for more information.
+* copy conf/server.conf.sample to conf/server.conf
+* edit conf/server.conf to your needs (Please see Creating_a_Contest.txt for details).
+* run the server with bin/abacusd conf/server.conf
+
+You really should read Creating_a_Contest.txt.
+
+AbacusCM marker:
+***************
+
+(Script: misc/installmarker.sh - as root)
+
+* copy bin/markerd into a location such as /usr/local/bin
+* copy bin/runlimit into /usr/local/bin
+* useradd markerd -g markerd -s /bin/bash -m -k /etc/skel
+* make sure it's owned root:markerd: chown root: /usr/local/bin/markerd
+* fix privs: chmod 4750 /usr/local/bin/markerd
+
+Please note that the markerd process normally assumes there is exactly one
+markerd running on each machine.  With multi-core machines this need not be the
+case, you can duplicate /etc/abacus/marker.conf into multiple config files and
+just make sure each one has a different user and group parameter, and
+preferably a separate username and password for the server.  Then invoke
+markerd with the explicit path to the individual config files.
+
+Other support programs:
+**********************
+
+There are other programs like balloon, adduser and standings.  These are
+described in various other pieces of documentation.  You should be able to run
+them in-place, or copy them anywhere you need them.
