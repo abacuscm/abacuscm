@@ -68,6 +68,11 @@ int main(int argc, char **argv) {
 		string problem_type = attrs["prob_type"];
 		ProblemMarker* marker = ProblemMarker::createMarker(problem_type);
 
+		if (!marker) {
+			log(LOG_CRIT, "Error locating marker for problem type '%s'.", attrs["prob_type"].c_str());
+			return -1;
+		}
+
 		marker->setServerCon(&_server_con);
 		marker->setMarkRequest(mr);
 		marker->setProblemAttributes(attrs);
@@ -84,26 +89,4 @@ int main(int argc, char **argv) {
 	log(LOG_INFO, "Terminating");
 
 	return 0;
-
-	// while(true)
-		// dequeue mark request
-		// obtain correct ProblemMarker object
-		// mark request
-		// give feedback
-		//
-/*
-	ProblemMarker* marker = ProblemMarker::createMarker("tcprob", 1);
-	if(!marker) {
-		log(LOG_ERR, "Unable to locate the marker for 'tcprob'");
-	} else {
-		//std::string submission_str = "int main() { printf(\"Hello world!\\n\"); return 0; }\n";
-		std::string submission_str = "class Hello { public static void main(String[] args) { System.out.println(\"Hello World!\"); } }";
-
-		Buffer submission;
-		submission.appendData(submission_str.c_str(), submission_str.length());
-
-		marker->mark(submission, "Java");
-		delete marker;
-	}
-*/
 }
