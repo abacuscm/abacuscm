@@ -45,6 +45,7 @@ private:
 	StandingsPtr _final_standings;
 	StandingsPtr _contestant_standings;
 	bool dirty;
+	time_t blinds;
 
 	StandingsSupportModule();
 	virtual ~StandingsSupportModule();

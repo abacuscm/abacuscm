@@ -7,6 +7,7 @@
  *
  * $Id$
  */
+#include "acmconfig.h"
 #include "standingssupportmodule.h"
 #include "scoped_lock.h"
 #include "usersupportmodule.h"
@@ -42,6 +43,7 @@ void TimedStandingsUpdater::perform() {
 
 StandingsSupportModule::StandingsSupportModule()
 {
+	blinds = 0;
 	dirty = true;
 	pthread_mutex_init(&_update_lock, NULL);
 }
@@ -105,6 +107,16 @@ bool StandingsSupportModule::updateStandings()
 		return false;
 	}
 
+	if (!blinds) {
+		Config &conf = Config::getConfig();
+		blinds = strtoul(conf["contest"]["blinds"].c_str(), NULL, 0);
+		if (blinds == 0) {
+			log(LOG_WARNING, "blinds is NOT set explicitly, defaulting to 1 hour for backwards compatibility.");
+			blinds = 3600;
+		}
+		if (blinds > duration / 2)
+			log(LOG_WARNING, "Blinds is longer than half the contest - this is most likely wrong.");
+	}
     map<uint32_t, map<uint32_t, vector<SubData> > > problemdata;
 
 	time_t future_time = 0;
@@ -136,7 +148,8 @@ bool StandingsSupportModule::updateStandings()
 					uint32_t prob_id = strtoll((*s)["prob_id"].c_str(), NULL, 0);
 					uint32_t team_id = db->submission2user_id(sub_id);
 
-					tmp.final_only = (timeRemaining < 3600) && (tRemain < 3600);
+					// TODO: This looks like a bug.  Suspect the check should be on tRemain only.
+					tmp.final_only = (timeRemaining < blinds) && (tRemain < blinds);
 
 					problemdata[team_id][prob_id].push_back(tmp);
 				}
