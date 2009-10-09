@@ -41,7 +41,13 @@ uint32_t TimerSupportModule::contestDuration()
 
 	Config &conf = Config::getConfig();
 	uint32_t duration = strtoul(conf["contest"]["duration"].c_str(), NULL, 0);
-	if (duration < 1800 && !warned) {
+	if (duration == 0) {
+		if (!warned) {
+			log(LOG_WARNING, "Duration is NOT set explicitly, defaulting to 5 hours for backwards compatibility.");
+			warned = true;
+		}
+		duration = 5 * 3600;
+	} else if (duration < 1800 && !warned) {
 		log(LOG_WARNING, "Duration is less than half an hour.  This is probably wrong.");
 		warned = true;
 	}
