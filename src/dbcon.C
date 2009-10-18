@@ -58,7 +58,7 @@ DbCon* DbCon::getInstance() {
 	else {
 		dbcon_bt_info bt;
 		bt.bt_size = backtrace(bt.bt, sizeof(bt.bt) / sizeof(*bt.bt));
-    	pthread_mutex_lock(&_lock);
+		pthread_mutex_lock(&_lock);
 		_dbcon_bt[tmp] = bt;
 		pthread_mutex_unlock(&_lock);
 	}
@@ -66,7 +66,7 @@ DbCon* DbCon::getInstance() {
 }
 
 void DbCon::release() {
-    pthread_mutex_lock(&_lock);
+	pthread_mutex_lock(&_lock);
 	bool ok = true;
 	dbcon_bt_map::iterator m = _dbcon_bt.find(this);
 	if(m != _dbcon_bt.end()) {
@@ -75,8 +75,8 @@ void DbCon::release() {
 		log(LOG_ERR, "Trying to release a DB connection that isn't currently 'out there'.");
 		ok = false;
 	}
-    if (ok)
-        _con_queue.push(this);
+	if (ok)
+		_con_queue.push(this);
 	pthread_mutex_unlock(&_lock);
 }
 

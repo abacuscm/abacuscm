@@ -40,12 +40,12 @@ protected:
 
 class ActSubmissionFileFetcher : public ClientAction {
 protected:
-    bool int_process(ClientConnection *cc, MessageBlock *mb);
+	bool int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
 class ActGetSubmissionSource : public ClientAction {
 protected:
-    bool int_process(ClientConnection *cc, MessageBlock *mb);
+	bool int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
 class SubmissionMessage : public Message {
@@ -264,8 +264,8 @@ bool SubmissionMessage::process() const {
 
 	ClientEventRegistry::getInstance().sendMessage(_user_id, &mb);
 
-    mb = MessageBlock("submission");
-    ClientEventRegistry::getInstance().triggerEvent("judgesubmission", &mb);
+	mb = MessageBlock("submission");
+	ClientEventRegistry::getInstance().triggerEvent("judgesubmission", &mb);
 
 	if(db->getServerAttribute(Server::getId(), "marker") == "yes")
 		Markers::getInstance().enqueueSubmission(_submission_id);
@@ -352,66 +352,66 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
 	uint32_t uid = cc->getProperty("user_id");
 	uint32_t utype = cc->getProperty("user_type");
 
-    std::string request = (*mb)["request"];
-    uint32_t submission_id = strtoll((*mb)["submission_id"].c_str(), NULL, 0);
+	std::string request = (*mb)["request"];
+	uint32_t submission_id = strtoll((*mb)["submission_id"].c_str(), NULL, 0);
 
-    MessageBlock result_mb("ok");
+	MessageBlock result_mb("ok");
 
-    if (utype == USER_TYPE_CONTESTANT) {
-        // make sure that this is a compilation failed type of error
-        // and that the submission belongs to this contestant
-        RunResult resinfo;
-        uint32_t utype;
-        std::string comment;
+	if (utype == USER_TYPE_CONTESTANT) {
+		// make sure that this is a compilation failed type of error
+		// and that the submission belongs to this contestant
+		RunResult resinfo;
+		uint32_t utype;
+		std::string comment;
 
-        if(db->getSubmissionState(
-                                  submission_id,
-                                  resinfo,
-                                  utype,
-                                  comment)) {
-            if (resinfo != COMPILE_FAILED) {
-                db->release();db=NULL;
-                return cc->sendError("Not allowed to fetch file data for anything except failed compilations");
-            }
-        }
-        else {
-            // no state => it hasn't been marked!
-            db->release(); db = NULL;
-            return cc->sendError("This submission hasn't been marked yet, please be patient :-)");
-        }
-
-        if (db->submission2user_id(submission_id) != uid) {
-            db->release();db=NULL;
-            return cc->sendError("This submission doesn't belong to you; I can't let you look at it");
-        }
-    }
-
-    if (request == "count") {
-        uint32_t count = db->countMarkFiles(submission_id);
-        std::ostringstream str("");
-        str << count;
-        result_mb["count"] = str.str();
-    }
-    else if (request == "data") {
-        uint32_t index = strtoll((*mb)["index"].c_str(), NULL, 0);
-        std::string name;
-        char *data;
-        uint32_t length;
-        bool result = db->getMarkFile(submission_id, index, name, &data, length);
-
-        if (!result) {
+		if(db->getSubmissionState(
+								  submission_id,
+								  resinfo,
+								  utype,
+								  comment)) {
+			if (resinfo != COMPILE_FAILED) {
+				db->release();db=NULL;
+				return cc->sendError("Not allowed to fetch file data for anything except failed compilations");
+			}
+		}
+		else {
+			// no state => it hasn't been marked!
 			db->release(); db = NULL;
-            log(LOG_ERR, "Failed to get submission file with index %u for submission_id %u\n", index, submission_id);
-            return false;
-        }
+			return cc->sendError("This submission hasn't been marked yet, please be patient :-)");
+		}
 
-        result_mb["name"] = name;
-        std::ostringstream str("");
-        str << length;
-        result_mb["length"] = str.str();
-        result_mb.setContent((char *) data, length);
+		if (db->submission2user_id(submission_id) != uid) {
+			db->release();db=NULL;
+			return cc->sendError("This submission doesn't belong to you; I can't let you look at it");
+		}
+	}
+
+	if (request == "count") {
+		uint32_t count = db->countMarkFiles(submission_id);
+		std::ostringstream str("");
+		str << count;
+		result_mb["count"] = str.str();
+	}
+	else if (request == "data") {
+		uint32_t index = strtoll((*mb)["index"].c_str(), NULL, 0);
+		std::string name;
+		char *data;
+		uint32_t length;
+		bool result = db->getMarkFile(submission_id, index, name, &data, length);
+
+		if (!result) {
+			db->release(); db = NULL;
+			log(LOG_ERR, "Failed to get submission file with index %u for submission_id %u\n", index, submission_id);
+			return false;
+		}
+
+		result_mb["name"] = name;
+		std::ostringstream str("");
+		str << length;
+		result_mb["length"] = str.str();
+		result_mb.setContent((char *) data, length);
 		delete []data;
-    }
+	}
 
 	db->release();db=NULL;
 
@@ -419,11 +419,11 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
 }
 
 bool ActGetSubmissionSource::int_process(ClientConnection *cc, MessageBlock *mb) {
-    DbCon *db = DbCon::getInstance();
-    if (!db)
-        return cc->sendError("Error connecting to database");
+	DbCon *db = DbCon::getInstance();
+	if (!db)
+		return cc->sendError("Error connecting to database");
 
-    uint32_t submission_id = strtoll((*mb)["submission_id"].c_str(), NULL, 0);
+	uint32_t submission_id = strtoll((*mb)["submission_id"].c_str(), NULL, 0);
 	char* content;
 	int length;
 	std::string language;
@@ -432,13 +432,13 @@ bool ActGetSubmissionSource::int_process(ClientConnection *cc, MessageBlock *mb)
 	bool has_data = db->retrieveSubmission(submission_id, &content, &length, language, &prob_id);
 	db->release();db=NULL;
 
-    if (!has_data)
-        return cc->sendError("Unable to retrieve contestant source code");
+	if (!has_data)
+		return cc->sendError("Unable to retrieve contestant source code");
 
-    MessageBlock result_mb("ok");
-    result_mb.setContent(content, length);
+	MessageBlock result_mb("ok");
+	result_mb.setContent(content, length);
 
-    return cc->sendMessageBlock(&result_mb);
+	return cc->sendMessageBlock(&result_mb);
 }
 
 static ActSubmit _act_submit;
@@ -456,10 +456,10 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getsubmissions", &_act_getsubs);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissions", &_act_getsubs);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "getsubmissions", &_act_getsubs);
-    ClientAction::registerAction(USER_TYPE_JUDGE, "fetchfile", &_act_submission_file_fetcher);
-    ClientAction::registerAction(USER_TYPE_ADMIN, "fetchfile", &_act_submission_file_fetcher);
-    ClientAction::registerAction(USER_TYPE_CONTESTANT, "fetchfile", &_act_submission_file_fetcher);
-    ClientAction::registerAction(USER_TYPE_JUDGE, "getsubmissionsource", &_act_get_submission_source);
-    ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissionsource", &_act_get_submission_source);
+	ClientAction::registerAction(USER_TYPE_JUDGE, "fetchfile", &_act_submission_file_fetcher);
+	ClientAction::registerAction(USER_TYPE_ADMIN, "fetchfile", &_act_submission_file_fetcher);
+	ClientAction::registerAction(USER_TYPE_CONTESTANT, "fetchfile", &_act_submission_file_fetcher);
+	ClientAction::registerAction(USER_TYPE_JUDGE, "getsubmissionsource", &_act_get_submission_source);
+	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissionsource", &_act_get_submission_source);
 	Message::registerMessageFunctor(TYPE_ID_SUBMISSION, create_submission_msg);
 }

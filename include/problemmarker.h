@@ -53,14 +53,14 @@ protected:
 	const Buffer& submission();
 	std::string language();
 
-    RunInfo *_run_info;
+	RunInfo *_run_info;
 
-    bool _have_result;
-    RunResult _result;
-    std::map<std::string, std::string> _result_files;
+	bool _have_result;
+	RunResult _result;
+	std::map<std::string, std::string> _result_files;
 
-    void setResult(RunResult result);
-    void addResultFile(std::string filetype, std::string filename, off_t max_size = 0);
+	void setResult(RunResult result);
+	void addResultFile(std::string filetype, std::string filename, off_t max_size = 0);
 
 public:
 	ProblemMarker();

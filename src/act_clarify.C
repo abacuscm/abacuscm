@@ -45,14 +45,14 @@ protected:
 public:
 	ClarificationMessage();
 	ClarificationMessage(uint32_t clarification_request_id,
-			     uint32_t prob_id,
-			     uint32_t user_id,
-			     const std::string& question);
+				 uint32_t prob_id,
+				 uint32_t user_id,
+				 const std::string& question);
 	ClarificationMessage(uint32_t clarification_request_id,
-			     uint32_t clarification_id,
-			     uint32_t user_id,
-			     bool pub,
-			     const std::string& answer);
+				 uint32_t clarification_id,
+				 uint32_t user_id,
+				 bool pub,
+				 const std::string& answer);
 	virtual ~ClarificationMessage();
 
 	virtual bool process() const;
@@ -244,11 +244,11 @@ bool ClarificationMessage::process() const {
 	if (_request)
 	{
 		result = db->putClarificationRequest(_clarification_request_id,
-						     _user_id,
-						     _prob_id,
-						     _time,
-						     _server_id,
-						     _text);
+							 _user_id,
+							 _prob_id,
+							 _time,
+							 _server_id,
+							 _text);
 		MessageBlock notify("updateclarificationrequests");
 		ClientEventRegistry::getInstance().broadcastEvent(&notify);
 	}
@@ -256,12 +256,12 @@ bool ClarificationMessage::process() const {
 	{
 		AttributeList req = db->getClarificationRequest(_clarification_request_id);
 		result = db->putClarification(_clarification_request_id,
-					      _clarification_id,
-					      _user_id,
-					      _time,
-					      _server_id,
-					      _prob_id, /* Actually pub */
-					      _text);
+						  _clarification_id,
+						  _user_id,
+						  _time,
+						  _server_id,
+						  _prob_id, /* Actually pub */
+						  _text);
 		MessageBlock update("updateclarifications");
 		ClientEventRegistry::getInstance().broadcastEvent(&update);
 

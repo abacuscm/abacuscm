@@ -49,7 +49,7 @@ bool ActStandings::int_process(ClientConnection *cc, MessageBlock *rmb) {
 	if (!usm)
 		return cc->sendError("Misconfigured Server - unable to calculate standings.");
 
-    uint32_t uType = cc->getProperty("user_type");
+	uint32_t uType = cc->getProperty("user_type");
 	bool include_non_contest = uType != USER_TYPE_CONTESTANT;
 
 	include_non_contest &= (*rmb)["include_non_contest"] != "no";
@@ -131,7 +131,7 @@ bool ActStandings::int_process(ClientConnection *cc, MessageBlock *rmb) {
 		sprintf(time_buffer, "%02d:%02d:%02d",
 			i->time / 3600,
 			(i->time / 60) % 60,
-                        i->time % 60);
+			i->time % 60);
 		mb[headername.str()] = time_buffer;
 
 		headername.str("");
@@ -148,10 +148,10 @@ bool ActStandings::int_process(ClientConnection *cc, MessageBlock *rmb) {
 			headername << "row_" << r << "_" << col;
 
 			val.str("");
-            if (pc->second > 0)
-                val << "(" << pc->second << ")  Yes";
-            else
-                val << "(" << -pc->second << ")";
+			if (pc->second > 0)
+				val << "(" << pc->second << ")  Yes";
+			else
+				val << "(" << -pc->second << ")";
 
 			mb[headername.str()] = val.str();
 		}

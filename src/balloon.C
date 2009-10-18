@@ -34,7 +34,7 @@ static void balloon_notification(const MessageBlock* mb, void*) {
 	time_t now = time(NULL);
 	char time_buffer[64];
 	struct tm time_tm;
-        ostringstream msg;
+	ostringstream msg;
 
 	if (!server.empty() && (*mb)["server"] != server)
 		return;  /* Wrong server, don't do anything */
@@ -43,7 +43,7 @@ static void balloon_notification(const MessageBlock* mb, void*) {
 	strftime(time_buffer, sizeof(time_buffer), "%X", &time_tm);
 
 	msg << time_buffer << " " << (*mb)["contestant"] << " solved "
-	    << (*mb)["problem"] << " (server: " << (*mb)["server"] << ")";
+		<< (*mb)["problem"] << " (server: " << (*mb)["server"] << ")";
 	pthread_mutex_lock(&_runlock);
 	notify.push(msg.str());
 	pthread_cond_signal(&_runcond);

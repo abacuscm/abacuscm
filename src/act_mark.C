@@ -54,9 +54,9 @@ private:
 	uint32_t _submission_id;
 	uint32_t _result;
 	uint32_t _time;
-    uint32_t _marker;
-    uint32_t _type;
-    uint32_t _server_id;
+	uint32_t _marker;
+	uint32_t _type;
+	uint32_t _server_id;
 
 	std::string _comment;
 	std::list<File> _files;
@@ -81,11 +81,11 @@ MarkMessage::MarkMessage() {
 
 MarkMessage::MarkMessage(uint32_t submission_id, uint32_t marker, uint32_t type, uint32_t result, std::string comment) {
 	_submission_id = submission_id;
-    _marker = marker;
-    _type = type;
+	_marker = marker;
+	_type = type;
 	_result = result;
 	_comment = comment;
-    _server_id = Server::getId();
+	_server_id = Server::getId();
 	_time = ::time(NULL);
 }
 
@@ -126,15 +126,15 @@ bool MarkMessage::process() const {
 	}
 
 
-    if (_result != JUDGE) {
-        MessageBlock mb("submission");
-        mb["msg"] = "You have newly marked information available under submissions";
+	if (_result != JUDGE) {
+		MessageBlock mb("submission");
+		mb["msg"] = "You have newly marked information available under submissions";
 
-        ClientEventRegistry::getInstance().sendMessage(db->submission2user_id(_submission_id), &mb);
-    }
+		ClientEventRegistry::getInstance().sendMessage(db->submission2user_id(_submission_id), &mb);
+	}
 
-    MessageBlock mb("submission");
-    ClientEventRegistry::getInstance().triggerEvent("judgesubmission", &mb);
+	MessageBlock mb("submission");
+	ClientEventRegistry::getInstance().triggerEvent("judgesubmission", &mb);
 
 	StandingsSupportModule *standings = getStandingsSupportModule();
 	if(standings)
@@ -260,25 +260,25 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 	if (cc->getProperty("user_type") == USER_TYPE_MARKER && Markers::getInstance().hasIssued(cc) != submission_id)
 		return cc->sendError("Markers may only mark submissions issued to them");
 
-    if (cc->getProperty("user_type") == USER_TYPE_JUDGE || cc->getProperty("user_type") == USER_TYPE_ADMIN) {
-        // extra code to avoid race conditions for judge marking
-        RunResult resinfo;
-        uint32_t utype;
-        std::string comment;
+	if (cc->getProperty("user_type") == USER_TYPE_JUDGE || cc->getProperty("user_type") == USER_TYPE_ADMIN) {
+		// extra code to avoid race conditions for judge marking
+		RunResult resinfo;
+		uint32_t utype;
+		std::string comment;
 
-        DbCon *db = DbCon::getInstance();
-        if(!db)
-            return cc->sendError("Error connecting to database");
+		DbCon *db = DbCon::getInstance();
+		if(!db)
+			return cc->sendError("Error connecting to database");
 
-        // POSSIBLE RACE BETWEEN DOING THIS CHECK AND ASSIGNING THE MARK
-        // but it's very small & unlikely ... and doesn't really affect anything.
+		// POSSIBLE RACE BETWEEN DOING THIS CHECK AND ASSIGNING THE MARK
+		// but it's very small & unlikely ... and doesn't really affect anything.
 		bool res = db->getSubmissionState( submission_id, resinfo, utype, comment);
 		db->release();db=NULL;
 
 		if (!res)
-            return cc->sendError("This hasn't been compiled or even run: you really think I'm going to let you fiddle with the marks?");
+			return cc->sendError("This hasn't been compiled or even run: you really think I'm going to let you fiddle with the marks?");
 
-    	if (cc->getProperty("user_type") == USER_TYPE_JUDGE) {
+		if (cc->getProperty("user_type") == USER_TYPE_JUDGE) {
 			if (utype == USER_TYPE_JUDGE) {
 				return cc->sendError("Another judge has already this submission, sorry!");
 			}
@@ -286,7 +286,7 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 				return cc->sendError("You cannot change the status of this submission: the decision was black and white; no human required ;-)");
 			}
 		}
-    }
+	}
 
 	uint32_t result = strtoll((*mb)["result"].c_str(), &errpnt, 0);
 	if(*errpnt || (*mb)["result"] == "") {
@@ -359,6 +359,6 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "balloonnotify", &_act_balloon);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "balloonnotify", &_act_balloon);
 	ClientAction::registerAction(USER_TYPE_NONCONTEST, "balloonnotify", &_act_balloon);
-    Message::registerMessageFunctor(TYPE_ID_SUBMISSION_MARK, create_mark_message);
+	Message::registerMessageFunctor(TYPE_ID_SUBMISSION_MARK, create_mark_message);
 	ClientEventRegistry::getInstance().registerEvent("balloon");
 }

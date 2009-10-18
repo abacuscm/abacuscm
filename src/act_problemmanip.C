@@ -306,9 +306,9 @@ bool ProbMessage::process() const {
 		return false;
 
 	if(_prob_id == ~0U) {
-            log(LOG_ERR, "Trying to process an improper ProbMessage!");
-	    db->release();
-	    return false;
+		log(LOG_ERR, "Trying to process an improper ProbMessage!");
+		db->release();
+		return false;
 	}
 
 	string ex_prob_type = db->getProblemType(_prob_id);

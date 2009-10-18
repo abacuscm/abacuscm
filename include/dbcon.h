@@ -268,11 +268,11 @@ public:
 	 */
 	virtual ClarificationList getClarifications(uint32_t user_id = 0) = 0;
 
-        /**
-         * Retrieves clarification with given ID. Returns empty list on
-         * failure.
-         */
-        virtual AttributeList getClarificationRequest(uint32_t req_id) = 0;
+	/**
+	 * Retrieves clarification with given ID. Returns empty list on
+	 * failure.
+	 */
+	virtual AttributeList getClarificationRequest(uint32_t req_id) = 0;
 
 	/**
 	 * Retrieves all clarification requests relevant to a specific user.
@@ -283,16 +283,16 @@ public:
 	 * Add a clarification request to the database
 	 */
 	virtual bool putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t prob_id,
-					     uint32_t time, uint32_t server_id,
-					     const std::string& question) = 0;
+						 uint32_t time, uint32_t server_id,
+						 const std::string& question) = 0;
 
 	/**
 	 * Add a clarification to the database
 	 */
 	virtual bool putClarification(uint32_t cr_id, uint32_t c_id,
-				      uint32_t user_id, uint32_t time,
-				      uint32_t server_id, uint32_t pub,
-				      const std::string& answer) = 0;
+					  uint32_t user_id, uint32_t time,
+					  uint32_t server_id, uint32_t pub,
+					  const std::string& answer) = 0;
 
 	/**
 	 * Retrieve Submission content (and language).

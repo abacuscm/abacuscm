@@ -94,7 +94,7 @@ NewClarificationEvent::NewClarificationEvent(const QString &problem, const QStri
 }
 
 void NewClarificationEvent::process(QWidget *parent) {
-        bool popup = true;
+	bool popup = true;
 	MainWindow* mainwin = dynamic_cast<MainWindow*>(parent);
 	if(mainwin)
 		popup = mainwin->getActiveType() == "contestant";
@@ -549,7 +549,7 @@ void MainWindow::doAdminStartStop() {
 			stop_str = (const char *) dialog.stop->text();
 			err = strptime(start_str.c_str(), "%T", &start_tm);
 			if (!err || *err || start_str == "")
-                                correct = false;
+				correct = false;
 			err = strptime(stop_str.c_str(), "%T", &stop_tm);
 			if (!err || *err || stop_str == "")
 				correct = false;
@@ -563,11 +563,11 @@ void MainWindow::doAdminStartStop() {
 
 		if (!correct)
 			QMessageBox("Error", "Please enter start and end times as HH:MM:SS",
-				    QMessageBox::Warning, QMessageBox::Ok,
-				    QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+					QMessageBox::Warning, QMessageBox::Ok,
+					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
 	}
 
-        bool global = dialog.server->currentItem() == 0;
+		bool global = dialog.server->currentItem() == 0;
 	_server_con.startStop(global, true, start)
 	&& _server_con.startStop(global, false, stop);
 }
@@ -581,7 +581,7 @@ void MainWindow::doSubmit() {
 
 	if (!_submit_dialog)
 	{
-                _submit_dialog = new Submit(this);
+		_submit_dialog = new Submit(this);
 	}
 	if (!_submit_file_dialog)
 	{
@@ -645,7 +645,7 @@ void MainWindow::doShowClarificationRequest(QListViewItem *item) {
 	ViewClarificationRequestSub vcr(atol(item->text(0)), &_server_con);
 
 	if (_active_type == "contestant")
-	    vcr.reply->setEnabled(false);
+		vcr.reply->setEnabled(false);
 	vcr.problem->setText(item->text(2));
 	vcr.question->setText(fullClarificationRequests[item->text(0)]);
 	vcr.exec();
@@ -709,12 +709,12 @@ void MainWindow::doJudgeSubscribeToProblems() {
 				QMessageBox("Error changing subscription!", "An error occurred whilst changing your subscription settings",
 						QMessageBox::Critical, QMessageBox::Ok,
 						QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
-            else
+			else
 				QMessageBox("Subscriptions changed!", "Your subscription settings have been changed",
 						QMessageBox::Information, QMessageBox::Ok,
 						QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
-            updateSubmissions();
-        }
+			updateSubmissions();
+		}
 	}
 }
 
@@ -970,8 +970,8 @@ void MainWindow::submissionHandler(QListViewItem *item) {
 			if (!result) {
 				log(LOG_DEBUG, "Uh-oh, something went wrong when getting file from server");
 				QMessageBox("Failed to fetch compilation log", "There was a problem fetching your compilation log",
-					    QMessageBox::Critical, QMessageBox::Ok,
-					    QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+						QMessageBox::Critical, QMessageBox::Ok,
+						QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
 				return;
 			}
 			compilerOutputDialog.FileData->setText(data);

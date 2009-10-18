@@ -33,7 +33,7 @@ protected:
 
 class ActGetUsers : public ClientAction {
 protected:
-        virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
 class PasswdMessage : public Message {
@@ -155,8 +155,8 @@ bool PasswdMessage::process() const {
 	stringstream query;
 	query << "UPDATE User SET password='" << db->escape_string(_newpass) << "' WHERE user_id=" << _user_id;
 	bool result = db->executeQuery(query.str());
-    db->release();
-    return result;
+	db->release();
+	return result;
 }
 
 static ActPasswd _act_passwd;

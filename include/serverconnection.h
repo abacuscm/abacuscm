@@ -106,9 +106,9 @@ public:
 	std::string whatAmI();
 	bool createuser(std::string username, std::string password, std::string type);
 	bool changePassword(std::string password);
-        bool changePassword(uint32_t id, std::string password);
+	bool changePassword(uint32_t id, std::string password);
 
-        bool startStop(bool global, bool start, time_t time);
+	bool startStop(bool global, bool start, time_t time);
 
 	std::vector<std::string> getProblemTypes();
 	std::vector<ProblemInfo> getProblems();
@@ -124,8 +124,8 @@ public:
 	bool setProblemAttributes(uint32_t prob_id, std::string type,
 			const AttributeMap& normal, const AttributeMap& file);
 	bool getProblemAttributes(uint32_t prob_id, AttributeMap& attrs);
-    bool getProblemFile(uint32_t prob_id, std::string attrib, char **bufferptr, uint32_t *bufferlen);
-    bool getSubmissionSource(uint32_t submission_id, char **bufferptr, uint32_t *bufferlen);
+	bool getProblemFile(uint32_t prob_id, std::string attrib, char **bufferptr, uint32_t *bufferlen);
+	bool getSubmissionSource(uint32_t submission_id, char **bufferptr, uint32_t *bufferlen);
 	bool submit(uint32_t prob_id, int fd, const std::string& language);
 	bool clarificationRequest(uint32_t prob_id, const std::string& question);
 	bool clarificationReply(uint32_t clarification_req_id, bool pub, const std::string& answer);

@@ -426,7 +426,7 @@ bool ServerConnection::changePassword(string password) {
 bool ServerConnection::changePassword(uint32_t id, string password) {
 	MessageBlock mb("id_passwd");
 	ostringstream id_str;
-        id_str << id;
+	id_str << id;
 
 	mb["user_id"] = id_str.str();
 	mb["newpass"] = password;
@@ -602,22 +602,22 @@ bool ServerConnection::getProblemFile(uint32_t prob_id, string attrib, char **bu
 }
 
 bool ServerConnection::getSubmissionSource(uint32_t submission_id, char **bufferptr, uint32_t *bufferlen) {
-    ostringstream str;
+	ostringstream str;
 
-    MessageBlock mb("getsubmissionsource");
-    str << submission_id;
-    mb["submission_id"] = str.str();
+	MessageBlock mb("getsubmissionsource");
+	str << submission_id;
+	mb["submission_id"] = str.str();
 
-    MessageBlock *ret = sendMB(&mb);
-    if (!ret)
-        return false;
+	MessageBlock *ret = sendMB(&mb);
+	if (!ret)
+		return false;
 
-    *bufferlen = ret->content_size();
-    *bufferptr = new char[(*bufferlen)];
-    memcpy(*bufferptr, ret->content(), *bufferlen);
+	*bufferlen = ret->content_size();
+	*bufferptr = new char[(*bufferlen)];
+	memcpy(*bufferptr, ret->content(), *bufferlen);
 
-    delete ret;
-    return true;
+	delete ret;
+	return true;
 }
 
 vector<ProblemInfo> ServerConnection::getProblems() {
@@ -692,15 +692,15 @@ vector<UserInfo> ServerConnection::getUsers() {
 	}
 
 	delete res;
-        return response;
+	return response;
 }
 
 vector<bool> ServerConnection::getSubscriptions(vector<ProblemInfo> problems) {
-    vector<bool> response;
-    for (unsigned int p = 0; p < problems.size(); p++) {
-	MessageBlock mb("problem_subscription");
-	mb["action"] = "is_subscribed";
-	mb["event"] = string("judge_") + problems[p].code;
+	vector<bool> response;
+	for (unsigned int p = 0; p < problems.size(); p++) {
+		MessageBlock mb("problem_subscription");
+		mb["action"] = "is_subscribed";
+		mb["event"] = string("judge_") + problems[p].code;
 
 		MessageBlock *res = sendMB(&mb);
 		if(res && res->action() == "ok")
@@ -712,22 +712,22 @@ vector<bool> ServerConnection::getSubscriptions(vector<ProblemInfo> problems) {
 				log(LOG_ERR, "Unknown error retrieving subscription status");
 			return response;
 		}
-    }
-    return response;
+	}
+	return response;
 }
 
 bool ServerConnection::subscribeToProblem(ProblemInfo info) {
-    MessageBlock mb("problem_subscription");
-    mb["action"] = "subscribe";
-    mb["event"] = string("judge_") + info.code;
-    return simpleAction(mb);
+	MessageBlock mb("problem_subscription");
+	mb["action"] = "subscribe";
+	mb["event"] = string("judge_") + info.code;
+	return simpleAction(mb);
 }
 
 bool ServerConnection::unsubscribeToProblem(ProblemInfo info) {
-    MessageBlock mb("problem_subscription");
-    mb["action"] = "unsubscribe";
-    mb["event"] = string("judge_") + info.code;
-    return simpleAction(mb);
+	MessageBlock mb("problem_subscription");
+	mb["action"] = "unsubscribe";
+	mb["event"] = string("judge_") + info.code;
+	return simpleAction(mb);
 }
 
 bool ServerConnection::submit(uint32_t prob_id, int fd, const string& lang) {
@@ -865,11 +865,11 @@ bool ServerConnection::watchBalloons(bool yesno) {
 }
 
 bool ServerConnection::watchJudgeSubmissions() {
-    MessageBlock mb("problem_subscription");
-    mb["action"] = "subscribe";
-    mb["event"] = "judgesubmission";
+	MessageBlock mb("problem_subscription");
+	mb["action"] = "subscribe";
+	mb["event"] = "judgesubmission";
 
-    return simpleAction(mb);
+	return simpleAction(mb);
 }
 
 bool ServerConnection::becomeMarker() {
@@ -964,37 +964,37 @@ bool ServerConnection::mark(uint32_t submission_id, RunResult result, std::strin
 }
 
 uint32_t ServerConnection::countMarkFiles(uint32_t submission_id) {
-    MessageBlock mb("fetchfile");
-    mb["request"] = "count";
-    ostringstream str("");
-    str << submission_id;
-    mb["submission_id"] = str.str();
+	MessageBlock mb("fetchfile");
+	mb["request"] = "count";
+	ostringstream str("");
+	str << submission_id;
+	mb["submission_id"] = str.str();
 
-    MessageBlock *result = sendMB(&mb);
+	MessageBlock *result = sendMB(&mb);
 
-    uint32_t count = strtoll((*result)["count"].c_str(), NULL, 0);
-    delete result;
-    return count;
+	uint32_t count = strtoll((*result)["count"].c_str(), NULL, 0);
+	delete result;
+	return count;
 }
 
 bool ServerConnection::getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length) {
-    MessageBlock mb("fetchfile");
-    mb["request"] = "data";
-    ostringstream str("");
-    str << submission_id;
-    mb["submission_id"] = str.str();
-    str.str("");
-    str << file_index;
-    mb["index"] = str.str();
+	MessageBlock mb("fetchfile");
+	mb["request"] = "data";
+	ostringstream str("");
+	str << submission_id;
+	mb["submission_id"] = str.str();
+	str.str("");
+	str << file_index;
+	mb["index"] = str.str();
 
-    MessageBlock *result = sendMB(&mb);
+	MessageBlock *result = sendMB(&mb);
 
-    name = (*result)["name"];
-    length = strtoll((*result)["length"].c_str(), NULL, 0);
-    *data = (void *) new char[length + 1];
-    memcpy(*data, result->content(), length);
-    ((char *) *data) [length] = 0;
-    return true;
+	name = (*result)["name"];
+	length = strtoll((*result)["length"].c_str(), NULL, 0);
+	*data = (void *) new char[length + 1];
+	memcpy(*data, result->content(), length);
+	((char *) *data) [length] = 0;
+	return true;
 }
 
 uint32_t ServerConnection::contestTime() {

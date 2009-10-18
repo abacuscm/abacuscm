@@ -36,8 +36,8 @@ typedef struct {
 class MainWindow : public MainWindowBase {
 private:
 	LoginDialog _login_dialog;
-        Submit *_submit_dialog;
-        QFileDialog *_submit_file_dialog;
+	Submit *_submit_dialog;
+	QFileDialog *_submit_file_dialog;
 
 	ServerConnection _server_con;
 
@@ -65,13 +65,13 @@ protected:
 	virtual void doSubmit();
 	virtual void doClarificationRequest();
 	virtual void doShowClarificationRequest(QListViewItem*);
-        virtual void doShowClarificationReply(QListViewItem*);
-        virtual void doTimer();
+	virtual void doShowClarificationReply(QListViewItem*);
+	virtual void doTimer();
 	virtual void tabChanged(QWidget*);
 	virtual void doChangePassword();
 	virtual void doJudgeSubscribeToProblems();
 	virtual void submissionHandler(QListViewItem *);
-        virtual void toggleBalloonPopups(bool);
+	virtual void toggleBalloonPopups(bool);
 
 	virtual void customEvent(QCustomEvent *ev);
 public:
@@ -86,7 +86,7 @@ public:
 	virtual void updateSubmissions();
 	void updateClarificationRequests();
 	void updateClarifications();
-        void updateStatus();
+	void updateStatus();
 	void serverDisconnect();
 
 	std::string getActiveType();

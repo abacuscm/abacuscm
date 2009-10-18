@@ -90,14 +90,14 @@ public:
 	virtual SubmissionList getSubmissions(uint32_t uid);
 	virtual ClarificationList getClarifications(uint32_t uid);
 	virtual ClarificationRequestList getClarificationRequests(uint32_t uid);
-        virtual AttributeList getClarificationRequest(uint32_t req_id);
+	virtual AttributeList getClarificationRequest(uint32_t req_id);
 	virtual bool putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t prob_id,
-					     uint32_t time, uint32_t server_id,
-					     const std::string& question);
+						 uint32_t time, uint32_t server_id,
+						 const std::string& question);
 	virtual bool putClarification(uint32_t cr_id, uint32_t c_id,
-				      uint32_t user_id, uint32_t time,
-				      uint32_t server_id, uint32_t pub,
-				      const std::string& answer);
+					  uint32_t user_id, uint32_t time,
+					  uint32_t server_id, uint32_t pub,
+					  const std::string& answer);
 	virtual bool retrieveSubmission(uint32_t sub_id, char** buffer, int *length,
 			string& language, uint32_t* prob_id);
 	virtual IdList getUnmarked(uint32_t server_id);
@@ -408,8 +408,8 @@ std::vector<uint32_t> MySQL::getRemoteServers() {
 		MYSQL_ROW row;
 		while((row = mysql_fetch_row(res)) != 0) {
 			remservers.push_back(atol(row[0]));
-        }
-        mysql_free_result(res);
+		}
+		mysql_free_result(res);
 	}
 
 	return remservers;
@@ -707,7 +707,7 @@ ProblemList MySQL::getProblems() {
 			while((row = mysql_fetch_row(res)) != 0) {
 				result.push_back(atol(row[0]));
 			}
-            		mysql_free_result(res);
+			mysql_free_result(res);
 		}
 	}
 	return result;
@@ -760,11 +760,11 @@ SubmissionList MySQL::getSubmissions(uint32_t uid) {
 
 	SubmissionList lst;
 
-    MYSQL_RES *res = mysql_use_result(&_mysql);
-    if (!res) {
-        log_mysql_error();
-        return SubmissionList();
-    }
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if (!res) {
+		log_mysql_error();
+		return SubmissionList();
+	}
 	MYSQL_ROW row;
 	while((row = mysql_fetch_row(res)) != 0) {
 		AttributeList attrs;
@@ -826,7 +826,7 @@ AttributeList MySQL::getClarificationRequest(uint32_t req_id) {
 		return AttributeList();
 	}
 
-        AttributeList attrs;
+	AttributeList attrs;
 	MYSQL_RES *res = mysql_use_result(&_mysql);
 	if (!res) {
 		log_mysql_error();
@@ -886,8 +886,8 @@ ClarificationRequestList MySQL::getClarificationRequests(uint32_t uid) {
 }
 
 bool MySQL::putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t prob_id,
-				    uint32_t time, uint32_t /* server_id */,
-				    const std::string& question) {
+					uint32_t time, uint32_t /* server_id */,
+					const std::string& question) {
 	ostringstream query;
 	query << "INSERT INTO ClarificationRequest (clarification_req_id, user_id, problem_id, time, text)";
 	query << " VALUES (" << cr_id << ", " << user_id << ", " << prob_id << ", " << time << ", '" << escape_string(question) << "')";
@@ -901,9 +901,9 @@ bool MySQL::putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t p
 }
 
 bool MySQL::putClarification(uint32_t cr_id, uint32_t c_id,
-			     uint32_t user_id, uint32_t time,
-			     uint32_t /* server_id */, uint32_t pub,
-			     const std::string& answer) {
+				 uint32_t user_id, uint32_t time,
+				 uint32_t /* server_id */, uint32_t pub,
+				 const std::string& answer) {
 	ostringstream query;
 	query << "INSERT INTO Clarification (clarification_id, clarification_req_id, user_id, time, public, text)";
 	query << " VALUES (" << c_id << ", " << cr_id << ", " << user_id << ", " << time << ", " << (pub ? 1 : 0) << ", '" << escape_string(answer) << "')";
@@ -972,9 +972,9 @@ IdList MySQL::getUnmarked(uint32_t server_id) {
 bool MySQL::putMark(uint32_t submission_id, uint32_t marker_id, uint32_t time, uint32_t result, std::string comment, uint32_t server_id) {
 	ostringstream query;
 	query << "INSERT INTO SubmissionMark (submission_id, marker_id, mark_time, result, remark, server_id) VALUES("
-        << submission_id << ", " << marker_id << ", " << time << ", " << result << ", '" << escape_string(comment) << "', " << server_id << ")";
-    if (true)
-        query << " ON DUPLICATE KEY UPDATE mark_time=" << time << ",result=" << result << ",remark='" << escape_string(comment) << "',server_id=" << server_id;
+		<< submission_id << ", " << marker_id << ", " << time << ", " << result << ", '" << escape_string(comment) << "', " << server_id << ")";
+	if (true)
+		query << " ON DUPLICATE KEY UPDATE mark_time=" << time << ",result=" << result << ",remark='" << escape_string(comment) << "',server_id=" << server_id;
 
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();
@@ -999,70 +999,70 @@ bool MySQL::putMarkFile(uint32_t submission_id, uint32_t marker_id,
 }
 
 uint32_t MySQL::countMarkFiles(uint32_t submission_id) {
-    ostringstream query;
-    query << "SELECT COUNT(*) FROM SubmissionMarkFile where submission_id=" << submission_id;
+	ostringstream query;
+	query << "SELECT COUNT(*) FROM SubmissionMarkFile where submission_id=" << submission_id;
 
-    if (mysql_query(&_mysql, query.str().c_str())) {
-        log_mysql_error();
-        return 0;
-    } else {
-        MYSQL_RES *res = mysql_use_result(&_mysql);
-        if (!res) {
-            log_mysql_error();
-            return 0;
-        }
+	if (mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return 0;
+	} else {
+		MYSQL_RES *res = mysql_use_result(&_mysql);
+		if (!res) {
+			log_mysql_error();
+			return 0;
+		}
 
-        MYSQL_ROW row = mysql_fetch_row(res);
+		MYSQL_ROW row = mysql_fetch_row(res);
 
-        uint32_t result;
+		uint32_t result;
 
-        if (row)
-            result = strtoll(row[0], NULL, 0);
-        else
-            result = 0;
-        mysql_free_result(res);
-        return result;
-    }
+		if (row)
+			result = strtoll(row[0], NULL, 0);
+		else
+			result = 0;
+		mysql_free_result(res);
+		return result;
+	}
 }
 
 bool MySQL::getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, char **data, uint32_t &length) {
-    ostringstream query;
-    query << "SELECT name, content FROM SubmissionMarkFile where submission_id=" << submission_id;
+	ostringstream query;
+	query << "SELECT name, content FROM SubmissionMarkFile where submission_id=" << submission_id;
 
-    if (mysql_query(&_mysql, query.str().c_str())) {
-        log_mysql_error();
-        return 0;
-    } else {
-        MYSQL_RES *res = mysql_use_result(&_mysql);
-        if (!res) {
-            log_mysql_error();
-            return false;
-        }
+	if (mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return 0;
+	} else {
+		MYSQL_RES *res = mysql_use_result(&_mysql);
+		if (!res) {
+			log_mysql_error();
+			return false;
+		}
 
-        MYSQL_ROW row;
-        uint32_t cur = 0;
-        while ((row = mysql_fetch_row(res)) != NULL && cur < file_index)
-            cur++;
+		MYSQL_ROW row;
+		uint32_t cur = 0;
+		while ((row = mysql_fetch_row(res)) != NULL && cur < file_index)
+			cur++;
 
-        if (row == NULL) {
-            log_mysql_error();
-            mysql_free_result(res);
-            return false;
-        }
+		if (row == NULL) {
+			log_mysql_error();
+			mysql_free_result(res);
+			return false;
+		}
 
-        name = row[0];
-        unsigned long *lengths = mysql_fetch_lengths(res);
-        *data = new char[lengths[1]];
-        memcpy(*data, row[1], lengths[1]);
-        length = lengths[1];
+		name = row[0];
+		unsigned long *lengths = mysql_fetch_lengths(res);
+		*data = new char[lengths[1]];
+		memcpy(*data, row[1], lengths[1]);
+		length = lengths[1];
 
-        if (row != NULL)
-            while (mysql_fetch_row(res) != NULL)
-                ;
+		if (row != NULL)
+			while (mysql_fetch_row(res) != NULL)
+				;
 
-        mysql_free_result(res);
-        return true;
-    }
+		mysql_free_result(res);
+		return true;
+	}
 }
 
 bool MySQL::getSubmissionState(uint32_t submission_id, RunResult& state, uint32_t &utype, string& comment) {

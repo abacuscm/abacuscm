@@ -16,19 +16,19 @@
 
 class RunInfo {
 public:
-    RunInfo(const char *filename);
-    ~RunInfo();
+	RunInfo(const char *filename);
+	~RunInfo();
 
-    unsigned int time;
-    bool timeExceeded;
-    bool cpuExceeded;
-    bool realTimeExceeded;
+	unsigned int time;
+	bool timeExceeded;
+	bool cpuExceeded;
+	bool realTimeExceeded;
 
-    int exitCode;
-    int signal;
-    char *signalName;
-    bool signalTerm;
-    bool normalTerm;
+	int exitCode;
+	int signal;
+	char *signalName;
+	bool signalTerm;
+	bool normalTerm;
 };
 
 #endif

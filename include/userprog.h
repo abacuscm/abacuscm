@@ -36,7 +36,7 @@ protected:
 	 */
 	virtual std::list<std::string> getProgramArgv() = 0;
 
-    int execcompiler(std::list<std::string> compiler_argv, std::string compiler_log);
+	int execcompiler(std::list<std::string> compiler_argv, std::string compiler_log);
 
 	/**
 	 * Will be called after the user program has been successfully compiled.
@@ -53,7 +53,7 @@ public:
 	 * environment _inside_ this directory.  See the JavaUserProg for an
 	 * example.
 	 */
-    virtual bool compile(std::string infile, std::string compiler_log, std::string outdir) = 0;
+	virtual bool compile(std::string infile, std::string compiler_log, std::string outdir) = 0;
 
 	/**
 	 * Since some compilers might require specific filenames this

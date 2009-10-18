@@ -117,7 +117,7 @@ bool StandingsSupportModule::updateStandings()
 		if (blinds > duration / 2)
 			log(LOG_WARNING, "Blinds is longer than half the contest - this is most likely wrong.");
 	}
-    map<uint32_t, map<uint32_t, vector<SubData> > > problemdata;
+	map<uint32_t, map<uint32_t, vector<SubData> > > problemdata;
 
 	time_t future_time = 0;
 	time_t server_time = timer->contestTime(Server::getId());
@@ -135,7 +135,7 @@ bool StandingsSupportModule::updateStandings()
 				SubData tmp;
 
 				uint32_t server_id = db->submission2server_id(sub_id);
-                tmp.correct = state == CORRECT;
+				tmp.correct = state == CORRECT;
 				tmp.time = timer->contestTime(server_id, strtoull((*s)["time"].c_str(), NULL, 0));
 
 				if (tmp.time > server_time) {

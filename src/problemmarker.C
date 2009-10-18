@@ -22,10 +22,10 @@ ProblemMarker::FunctorMap ProblemMarker::_functors
 
 ProblemMarker::ProblemMarker() {
 	_mr = NULL;
-    _server_con = NULL;
-    _run_info = NULL;
+	_server_con = NULL;
+	_run_info = NULL;
 
-    _have_result = false;
+	_have_result = false;
 }
 
 ProblemMarker::~ProblemMarker() {
@@ -57,8 +57,8 @@ void ProblemMarker::setProblemAttributes(AttributeMap& attrs) {
 }
 
 void ProblemMarker::setResult(RunResult result) {
-    _result = result;
-    _have_result = true;
+	_result = result;
+	_have_result = true;
 }
 
 // The final argument may be non-zero to specify a size to truncate the

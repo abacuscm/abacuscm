@@ -40,6 +40,6 @@ public:
 
 #define DEFINE_SUPPORT_MODULE(c)                                        \
 	c c::__singleton_instance;                                           \
-    SupportModuleRegistrar c::__registrar(#c, &c::__singleton_instance); \
+	SupportModuleRegistrar c::__registrar(#c, &c::__singleton_instance); \
 
 #endif
