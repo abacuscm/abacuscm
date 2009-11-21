@@ -84,6 +84,11 @@ public:
 	virtual bool delProblemAttribute(uint32_t problem_id, std::string attr);
 	virtual bool getProblemFileData(uint32_t problem_id, std::string attr,
 			uint8_t **dataptr, uint32_t *lenptr);
+	virtual bool delProblemDependency(uint32_t problem_id, uint32_t dependent_problem_id);
+	virtual bool addProblemDependency(uint32_t problem_id, uint32_t dependent_problem_id);
+	virtual ProblemList getProblemDependencies(uint32_t problem_id);
+	virtual ProblemList getDependentProblemsPending(uint32_t user_id, uint32_t problem_id);
+	virtual bool isSubmissionAllowed(uint32_t user_id, uint32_t problem_id);
 	virtual bool putSubmission(uint32_t submission_id, uint32_t user_id, uint32_t prob_id,
 			uint32_t time, uint32_t server_id, char* content,
 			uint32_t content_size, std::string language);
@@ -217,7 +222,7 @@ QueryResultRow MySQL::singleRowQuery(const std::string& query) {
 			resrow.push_back(string(row[i], lens[i]));
 
 		// have to flush the entire result.
-		while(mysql_fetch_row(res));
+		while(mysql_fetch_row(res)) {}
 	}
 
 	mysql_free_result(res);
@@ -732,6 +737,67 @@ time_t MySQL::getProblemUpdateTime(uint32_t problem_id) {
 	}
 }
 
+bool MySQL::delProblemDependency(uint32_t problem_id, uint32_t dependent_problem_id) {
+	ostringstream query;
+	query << "DELETE FROM ProblemDependencies WHERE problem_id=" << problem_id << " AND dependent_problem_id=" << dependent_problem_id;
+	if (mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	} else {
+		return true;
+	}
+}
+
+bool MySQL::addProblemDependency(uint32_t problem_id, uint32_t dependent_problem_id) {
+	ostringstream query;
+	query << "INSERT INTO ProblemDependencies (problem_id, dependent_problem_id) VALUES (" << problem_id << ", " << dependent_problem_id << ")";
+	if (mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	} else {
+		return true;
+	}
+}
+
+ProblemList MySQL::getProblemDependencies(uint32_t problem_id) {
+	ostringstream query;
+	query << "SELECT Problem.problem_id FROM Problem,ProblemDependencies WHERE ProblemDependencies.problem_id=" << problem_id << " AND Problem.problem_id=ProblemDependencies.dependent_problem_id";
+
+    ProblemList result;
+	if (mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+	}
+	else {
+		MYSQL_RES *res = mysql_use_result(&_mysql);
+		if(res) {
+			MYSQL_ROW row;
+			while((row = mysql_fetch_row(res)) != 0) {
+				result.push_back(atol(row[0]));
+			}
+			mysql_free_result(res);
+		}
+	}
+	return result;
+}
+
+ProblemList MySQL::getDependentProblemsPending(uint32_t user_id, uint32_t problem_id) {
+	ProblemList result;
+	ProblemList dependent_problems = getProblemDependencies(problem_id);
+	for (ProblemList::iterator it = dependent_problems.begin(); it != dependent_problems.end(); it++)
+	{
+        uint32_t dependent_problem_id = *it;
+		if (!hasSolved(user_id, dependent_problem_id)) {
+			result.push_back(dependent_problem_id);
+		}
+	}
+    return result;
+}
+
+bool MySQL::isSubmissionAllowed(uint32_t user_id, uint32_t problem_id) {
+	ProblemList dependent_problems_pending = getDependentProblemsPending(user_id, problem_id);
+	return dependent_problems_pending.size() == 0;
+}
+
 bool MySQL::putSubmission(uint32_t submission_id, uint32_t user_id, uint32_t prob_id, uint32_t time, uint32_t server_id, char* content, uint32_t content_size, std::string language) {
 	ostringstream query;
 	query << "INSERT INTO Submission (submission_id, user_id, prob_id, time, server_id, content, language) VALUES(" << submission_id << ", " << user_id << ", " << prob_id << ", " << time << ", " << server_id << ", '" << escape_buffer((uint8_t*)content, content_size) << "', '" << escape_string(language) << "')";
@@ -842,7 +908,7 @@ AttributeList MySQL::getClarificationRequest(uint32_t req_id) {
 		attrs["time"] = row[4];
 		attrs["question"] = row[5];
 		attrs["status"] = atoi(row[6]) ? "answered" : "pending";
-		while (mysql_fetch_row(res));
+		while (mysql_fetch_row(res)) {}
 	}
 	mysql_free_result(res);
 

@@ -61,6 +61,8 @@ private:
 	typedef map<string, string> StringMap;
 	typedef map<string, int32_t> IntMap;
 
+	ProblemList _deps;
+
 	uint32_t _prob_id;
 	uint32_t _update_time;
 
@@ -76,7 +78,7 @@ protected:
 	virtual uint32_t load(const uint8_t *buffer, uint32_t size);
 public:
 	ProbMessage();
-	ProbMessage(uint32_t prob_id, const string& type);
+	ProbMessage(uint32_t prob_id, const string& type, ProblemList &deps);
 
 	virtual ~ProbMessage();
 
@@ -93,12 +95,13 @@ ProbMessage::ProbMessage() {
 	_prob_id = ~0U;
 }
 
-ProbMessage::ProbMessage(uint32_t prob_id, const string& type) {
+ProbMessage::ProbMessage(uint32_t prob_id, const string& type, ProblemList &deps) {
 	_prob_id = prob_id;
 	if(!prob_id)
 		_prob_id = Server::nextProblemId();
 	_update_time = ::time(NULL);
 	_type = type;
+	_deps = deps;
 }
 
 ProbMessage::~ProbMessage() {
@@ -114,6 +117,9 @@ uint32_t ProbMessage::storageRequired() {
 	}
 	uint32_t total = sizeof(_prob_id) + sizeof(_update_time);
 	total += _type.length() + 1;
+
+	// Dependencies
+	total += (1 + _deps.size()) * sizeof(uint32_t);
 
 	IntMap::iterator i;
 	for(i = _ints.begin(); i != _ints.end(); ++i)
@@ -137,6 +143,12 @@ uint32_t ProbMessage::store(uint8_t *buffer, uint32_t size) {
 	*(uint32_t*)buffer = _prob_id; buffer += sizeof(uint32_t);
 	*(uint32_t*)buffer = _update_time; buffer += sizeof(uint32_t);
 	used += sizeof(uint32_t) * 2;
+
+	*(uint32_t*)buffer = (uint32_t) _deps.size(); buffer += sizeof(uint32_t);
+	for (ProblemList::iterator p = _deps.begin(); p != _deps.end(); p++) {
+		*(uint32_t*)buffer = *p; buffer += sizeof(uint32_t);
+	}
+	used += (1 + _deps.size()) * sizeof(uint32_t);
 
 	strcpy((char*)buffer, _type.c_str());
 	used += _type.length() + 1;
@@ -192,6 +204,13 @@ uint32_t ProbMessage::load(const uint8_t *buffer, uint32_t size) {
 	_prob_id = *(uint32_t*)pos; pos += sizeof(uint32_t);
 	_update_time = *(uint32_t*)pos; pos += sizeof(uint32_t);
 	size -= sizeof(uint32_t) * 2;
+
+	uint32_t deps_size = *(uint32_t*)pos; pos += sizeof(uint32_t);
+	_deps.resize(deps_size);
+	for (ProblemList::iterator p = _deps.begin(); p != _deps.end(); p++) {
+		*p = *(uint32_t*)pos; pos += sizeof(uint32_t);
+	}
+	size -= (1 + deps_size) * sizeof(uint32_t);
 
 	if(!checkStringTerms(pos, size, 1)) {
 		log(LOG_ERR, "We need to pull a string indicating the type of the problem, yet the buffer does not contain any appropriate null terminators");
@@ -365,6 +384,34 @@ bool ProbMessage::process() const {
 	else
 		db->setProblemUpdateTime(_prob_id, _update_time);
 
+	ProblemList oldDeps = db->getProblemDependencies(_prob_id);
+	// Remove dependencies which are no longer needed
+	for (ProblemList::iterator i = oldDeps.begin(); i != oldDeps.end(); i++) {
+		bool remove = true;
+		for (ProblemList::const_iterator j = _deps.begin(); j != _deps.end(); j++)
+			if (*i == *j) {
+				remove = false;
+				break;
+			}
+		if (remove) {
+			log(LOG_DEBUG, "Problem %d: removing dependency on %d", _prob_id, *i);
+			db->delProblemDependency(_prob_id, *i);
+		}
+	}
+	// Add new dependencies
+	for (ProblemList::const_iterator i = _deps.begin(); i != _deps.end(); i++) {
+		bool add = true;
+		for (ProblemList::iterator j = oldDeps.begin(); j != oldDeps.end(); j++)
+			if (*i == *j) {
+				add = false;
+				break;
+			}
+		if (add) {
+			log(LOG_DEBUG, "Problem %d: adding dependency on %d", _prob_id, *i);
+			db->addProblemDependency(_prob_id, *i);
+		}
+	}
+
 	db->release();db=NULL;
 
 	if(ex_prob_type == "" && code != "")
@@ -397,6 +444,17 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 	if(prob_type == "")
 		return cc->sendError("You must specify prob_type for new problems");
 
+	string prob_deps = (*mb)["prob_dependencies"];
+	ProblemList deps;
+	size_t i = 0;
+	while(i < prob_deps.length()) {
+		size_t epos = prob_deps.find(',', i);
+		if(epos == std::string::npos)
+			epos = prob_deps.length();
+		deps.push_back(atoi(prob_deps.substr(i, epos - i).c_str()));
+		i = epos + 1;
+	}
+
 	string attr_desc = ProblemType::getProblemDescription(prob_type);
 	if(attr_desc == "")
 		return cc->sendError("Invalid prob_type or internal server error");
@@ -413,7 +471,7 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 
 	vector<string> stack;
 
-	ProbMessage *msg = new ProbMessage(prob_id, prob_type);
+	ProbMessage *msg = new ProbMessage(prob_id, prob_type, deps);
 
 	size_t pos = 0;
 	while(pos < attr_desc.length()) {

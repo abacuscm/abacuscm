@@ -11,6 +11,7 @@
 #include "ui_aboutdialog.h"
 
 #include "acmconfig.h"
+#include "dbcon.h"
 #include "logger.h"
 #include "ui_adduser.h"
 #include "ui_submit.h"
@@ -501,10 +502,13 @@ void MainWindow::doAdminProblemConfig() {
 	}
 
 	string prob_desc = _server_con.getProblemDescription(prob_type);
-	if(prob_desc == "")
-		return;
+	vector<ProblemInfo> probs = _server_con.getProblems();
+	vector<string> existing_problems;
+	for (size_t i = 0; i < probs.size(); i++) {
+		existing_problems.push_back(probs[i].code);
+	}
 
-	if(!prob_conf.setProblemDescription(prob_desc)) {
+	if(!prob_conf.setProblemDescription(prob_desc, existing_problems)) {
 		QMessageBox::critical(this, "Error", "Error initialising problem description", "O&k");
 		return;
 	}
@@ -523,7 +527,21 @@ void MainWindow::doAdminProblemConfig() {
 		for(i = files.begin(); i != files.end(); ++i)
 			log(LOG_DEBUG, "%s -> %s", i->first.c_str(), i->second.c_str());
 
-		if(!_server_con.setProblemAttributes(0, prob_type, normal, files))
+		std::vector<std::string> dependencies = prob_conf.getDependencies();
+		ProblemList deps;
+		for (size_t i = 0; i < dependencies.size(); i++)
+		{
+			uint32_t id = 0;
+			for (size_t j = 0; j < probs.size(); j++) {
+				if (dependencies[i] == probs[j].code) {
+					id = probs[j].id;
+					break;
+				}
+			}
+			deps.push_back(id);
+		}
+
+		if(!_server_con.setProblemAttributes(0, prob_type, normal, files, deps))
 			QMessageBox::critical(this, "Error", "Server failed to accept the set values.", "O&k");
 	}
 }
@@ -573,7 +591,7 @@ void MainWindow::doAdminStartStop() {
 }
 
 void MainWindow::doSubmit() {
-	vector<ProblemInfo> probs = _server_con.getProblems();
+	vector<ProblemInfo> probs = _server_con.getSubmissibleProblems();
 	if(probs.empty()) {
 		QMessageBox::critical(this, "Error", "There are no active problems to submit solutions for!", "O&k");
 		return;

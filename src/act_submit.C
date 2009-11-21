@@ -33,6 +33,11 @@ protected:
 	bool int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
+class ActGetSubmissibleProblems : public ClientAction {
+protected:
+	bool int_process(ClientConnection *cc, MessageBlock *mb);
+};
+
 class ActGetSubmissions : public ClientAction {
 protected:
 	bool int_process(ClientConnection *cc, MessageBlock *mb);
@@ -97,9 +102,13 @@ bool ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
 	}
 
 	bool solved = db->hasSolved(user_id, prob_id);
-	db->release();db=NULL;
 	if(solved)
 		return cc->sendError("You have already solved this problem, you may no longer submit solutions for it");
+
+	if (!db->isSubmissionAllowed(user_id, prob_id))
+		return cc->sendError("You are not allowed to submit a solution for this problem");
+
+	db->release();db=NULL;
 
 	std::string lang = (*mb)["lang"];
 
@@ -131,6 +140,41 @@ bool ActGetProblems::int_process(ClientConnection *cc, MessageBlock *) {
 	ProblemList::iterator p;
 	int c = 0;
 	for(p = probs.begin(); p != probs.end(); ++p, ++c) {
+		std::ostringstream ostrstrm;
+		ostrstrm << c;
+		std::string cstr = ostrstrm.str();
+		ostrstrm.str("");
+		ostrstrm << *p;
+
+		mb["id" + cstr] = ostrstrm.str();
+
+		AttributeList lst = db->getProblemAttributes(*p);
+		mb["code" + cstr] = lst["shortname"];
+		mb["name" + cstr] = lst["longname"];
+	}
+	db->release();db=NULL;
+
+	return cc->sendMessageBlock(&mb);
+}
+
+bool ActGetSubmissibleProblems::int_process(ClientConnection *cc, MessageBlock *) {
+	uint32_t user_id = cc->getProperty("user_id");
+
+	DbCon *db = DbCon::getInstance();
+	if(!db)
+		return cc->sendError("Error connecting to database");
+
+	ProblemList probs = db->getProblems();
+
+	MessageBlock mb("ok");
+
+	ProblemList::iterator p;
+	int c = 0;
+	for (p = probs.begin(); p != probs.end(); p++, c++) {
+        uint32_t problem_id = *p;
+		if (!db->isSubmissionAllowed(user_id, problem_id))
+			continue;
+
 		std::ostringstream ostrstrm;
 		ostrstrm << c;
 		std::string cstr = ostrstrm.str();
@@ -446,6 +490,7 @@ static ActGetProblems _act_getproblems;
 static ActGetSubmissions _act_getsubs;
 static ActSubmissionFileFetcher _act_submission_file_fetcher;
 static ActGetSubmissionSource _act_get_submission_source;
+static ActGetSubmissibleProblems _act_get_submissible_problems;
 
 static void init() __attribute__((constructor));
 static void init() {
@@ -461,5 +506,6 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "fetchfile", &_act_submission_file_fetcher);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "getsubmissionsource", &_act_get_submission_source);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissionsource", &_act_get_submission_source);
+	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getsubmissibleproblems", &_act_get_submissible_problems);
 	Message::registerMessageFunctor(TYPE_ID_SUBMISSION, create_submission_msg);
 }

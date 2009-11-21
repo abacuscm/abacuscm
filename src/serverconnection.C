@@ -466,7 +466,8 @@ string ServerConnection::getProblemDescription(string type) {
 }
 
 bool ServerConnection::setProblemAttributes(uint32_t prob_id, std::string type,
-			const AttributeMap& normal, const AttributeMap& file) {
+                       const AttributeMap& normal, const AttributeMap& file,
+		               ProblemList dependencies) {
 	ostringstream ostrstrm;
 	AttributeMap::const_iterator i;
 	MessageBlock mb("setprobattrs");
@@ -526,7 +527,7 @@ bool ServerConnection::setProblemAttributes(uint32_t prob_id, std::string type,
 				for( ; fd_ptr != fds.end(); ++fd_ptr)
 					close(*fd_ptr);
 				delete []filedata;
-				return false;
+		    	return false;
 			}
 			st_stat.st_size -= res;
 			pos += res;
@@ -540,6 +541,17 @@ bool ServerConnection::setProblemAttributes(uint32_t prob_id, std::string type,
 	for(i = normal.begin(); i != normal.end(); ++i) {
 		mb[i->first] = i->second;
 	}
+
+	std::ostringstream deps;
+	bool done_one = false;
+	for (ProblemList::iterator i = dependencies.begin(); i != dependencies.end(); i++) {
+		if (done_one)
+			deps << ",";
+		deps << *i;
+		done_one = true;
+	}
+
+	mb["prob_dependencies"] = deps.str();
 
 //	mb.dump();
 
@@ -621,8 +633,16 @@ bool ServerConnection::getSubmissionSource(uint32_t submission_id, char **buffer
 }
 
 vector<ProblemInfo> ServerConnection::getProblems() {
+	return _getProblems("getproblems");
+}
+
+vector<ProblemInfo> ServerConnection::getSubmissibleProblems() {
+	return _getProblems("getsubmissibleproblems");
+}
+
+vector<ProblemInfo> ServerConnection::_getProblems(std::string query) {
 	vector<ProblemInfo> response;
-	MessageBlock mb("getproblems");
+	MessageBlock mb(query);
 
 	MessageBlock *res = sendMB(&mb);
 	if(!res)

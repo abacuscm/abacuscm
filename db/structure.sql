@@ -126,6 +126,19 @@ CREATE TABLE `ProblemAttributes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
+-- Table structure for table `ProblemDependencies`
+--
+
+DROP TABLE IF EXISTS `ProblemDependencies`;
+CREATE TABLE `ProblemDependencies` (
+  `problem_id` int(11) NOT NULL default '0',
+  `dependent_problem_id` int(11) NOT NULL default '0',
+  PRIMARY KEY (`problem_id`,`dependent_problem_id`),
+  CONSTRAINT `ProblemDependencies_ibfk_1` FOREIGN KEY (`problem_id`) REFERENCES `Problem` (`problem_id`) ON UPDATE CASCADE,
+  CONSTRAINT `ProblemDependencies_ibfk_2` FOREIGN KEY (`dependent_problem_id`) REFERENCES `Problem` (`problem_id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
 -- Table structure for table `ProblemFileData`
 --
 

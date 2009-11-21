@@ -13,6 +13,7 @@
 #if HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include "dbcon.h"
 #include "misc.h"
 
 #include <vector>
@@ -112,6 +113,7 @@ public:
 
 	std::vector<std::string> getProblemTypes();
 	std::vector<ProblemInfo> getProblems();
+	std::vector<ProblemInfo> getSubmissibleProblems();
 	std::string getProblemDescription(std::string problemtype);
 	std::vector<bool> getSubscriptions(std::vector<ProblemInfo> problems);
 	bool subscribeToProblem(ProblemInfo info);
@@ -122,7 +124,8 @@ public:
 	std::vector<std::string> getServerList();
 
 	bool setProblemAttributes(uint32_t prob_id, std::string type,
-			const AttributeMap& normal, const AttributeMap& file);
+	                const AttributeMap& normal, const AttributeMap& file,
+		            ProblemList dependencies);
 	bool getProblemAttributes(uint32_t prob_id, AttributeMap& attrs);
 	bool getProblemFile(uint32_t prob_id, std::string attrib, char **bufferptr, uint32_t *bufferlen);
 	bool getSubmissionSource(uint32_t submission_id, char **bufferptr, uint32_t *bufferlen);
@@ -151,6 +154,9 @@ public:
 
 	bool registerEventCallback(std::string event, EventCallback func, void *custom);
 	bool deregisterEventCallback(std::string event, EventCallback func);
+
+private:
+	std::vector<ProblemInfo> _getProblems(std::string query);
 };
 
 #endif
