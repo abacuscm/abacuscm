@@ -22,6 +22,9 @@ compiler=/opt/blackdown-jdk-1.4.2.02/bin/javac
 runtime=/opt/blackdown-jdk-1.4.2.02/bin/java
 policy=conf/java.policy
 
+[python]
+interpreter=/usr/bin/python
+
 [marker]
 workdir=/tmp/abacus-marker-XXXXXX
 runlimit=bin/runlimit

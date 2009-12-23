@@ -113,7 +113,7 @@ bool ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
 	std::string lang = (*mb)["lang"];
 
 	// TODO:  Proper check - this will do for now:
-	if(lang != "C" && lang != "C++" && lang != "Java")
+	if(lang != "C" && lang != "C++" && lang != "Java" && lang != "Python")
 		return cc->sendError("You have not specified the language");
 
 	uint32_t sub_id = Server::nextSubmissionId();

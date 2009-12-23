@@ -106,6 +106,7 @@ MODS_markerd = markerd \
 MODS_markerd += userprog \
 	java_userprog \
 	c_cpp_userprog \
+	python_userprog \
 	compiledproblemmarker \
 	testcaseproblemmarker
 LIBS_markerd = ssl pthread
