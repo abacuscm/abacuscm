@@ -113,13 +113,16 @@ LIBS_markerd = ssl pthread
 endif
 
 ifneq ($(filter admintools,$(mods)),)
-TARGET_BINS += balloon adduser standings
+TARGET_BINS += balloon adduser addproblem standings
 
 MODS_balloon = balloon serverconnection messageblock logger sigsegv acmconfig
 LIBS_balloon = ssl pthread
 
 MODS_adduser = createuser serverconnection messageblock logger sigsegv acmconfig
 LIBS_adduser = ssl pthread
+
+MODS_addproblem = createproblem serverconnection messageblock logger sigsegv acmconfig
+LIBS_addproblem = ssl pthread
 
 MODS_standings = standings serverconnection messageblock logger sigsegv acmconfig
 LIBS_standings = ssl pthread
