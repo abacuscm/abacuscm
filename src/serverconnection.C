@@ -360,10 +360,11 @@ string ServerConnection::whatAmI() {
 	return stringAction(mb, "type");
 }
 
-bool ServerConnection::createuser(string username, string password, string type) {
+bool ServerConnection::createuser(string username, string friendlyname, string password, string type) {
 	MessageBlock mb("adduser");
 
 	mb["username"] = username;
+	mb["friendlyname"] = friendlyname;
 	mb["passwd"] = password;
 	mb["type"] = type;
 

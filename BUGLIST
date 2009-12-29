@@ -3,10 +3,11 @@ BUGLIST
 
 This file contains a list of BUGS and or nice to haves (wishlist).
 
-* username vs realname
-	A user should have both a username and a real-name.  The username can be
-	used to log in whilst the real-name can be used for display in standings
-	or clarification requests.
+* UTF-8 support
+	Currently only the friendly-name field uses UTF-8 encoding. The
+	clarification request and reply fields should also be UTF-8 encoded. Also
+	there are potentially problems if the username contains Latin-1
+	characters, since it is appended with the friendly-name for the standings.
 
 	PRIORITY: low
 

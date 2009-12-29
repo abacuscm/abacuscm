@@ -238,6 +238,7 @@ DROP TABLE IF EXISTS `User`;
 CREATE TABLE `User` (
   `user_id` int(11) NOT NULL default '0',
   `username` varchar(16) NOT NULL default '',
+  `friendlyname` varchar(128) CHARACTER SET utf8 NOT NULL default '',
   `password` varchar(32) NOT NULL default '',
   `type` int(11) NOT NULL default '0',
   PRIMARY KEY  (`user_id`),

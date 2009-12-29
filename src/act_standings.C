@@ -114,7 +114,7 @@ bool ActStandings::int_process(ClientConnection *cc, MessageBlock *rmb) {
 		ostringstream val;
 		char time_buffer[64];
 		headername << "row_" << r << "_0";
-		mb[headername.str()] = usm->username(i->user_id);
+		mb[headername.str()] = usm->displayname(i->user_id);
 
 		if (include_non_contest) {
 			headername.str("");

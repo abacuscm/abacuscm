@@ -460,6 +460,7 @@ void MainWindow::doAdminCreateUser() {
 					QMessageBox::Warning, QMessageBox::Ok,
 					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
 		} else if(!_server_con.createuser(add_user_dialog.username->text(),
+					(const char *) add_user_dialog.friendlyname->text().utf8(),
 					add_user_dialog.pass1->text(),
 					add_user_dialog.type->currentText().lower())) {
 			QMessageBox("Connection error",
@@ -809,7 +810,7 @@ void MainWindow::updateStandings() {
 
 		int c = 1;
 		for(cell = row->begin(); cell != row->end(); ++cell, ++c)
-			item->setText(c, *cell);
+			item->setText(c, QString::fromUtf8(cell->c_str()));
 	}
 }
 

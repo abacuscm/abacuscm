@@ -20,16 +20,17 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-	if(argc < 7) {
-		cerr << "USAGE: " << *argv << " config username password newaccount newpassword type\n";
+	if(argc != 8) {
+		cerr << "USAGE: " << *argv << " config username password newaccount newname newpassword type\n";
 		return -1;
 	}
 
 	string username = argv[2];
 	string password = argv[3];
 	string newusername = argv[4];
-	string newpassword = argv[5];
-	string type = argv[6];
+	string newfriendlyname = argv[5];
+	string newpassword = argv[6];
+	string type = argv[7];
 
 	ServerConnection _server_con;
 
@@ -50,7 +51,7 @@ int main(int argc, char **argv) {
 
 	log(LOG_DEBUG, "Creating user ...");
 
-	if(!_server_con.createuser(newusername, newpassword, type))
+	if(!_server_con.createuser(newusername, newfriendlyname, newpassword, type))
 		return -1;
 
 	log(LOG_DEBUG, "Done.");
