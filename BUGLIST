@@ -173,12 +173,6 @@ This file contains a list of BUGS and or nice to haves (wishlist).
 
 	PRIORITY: low
 
-* Cleaner messages on authentication error
-	The GUI currently displays about 4 dialogs if the wrong password is
-	used.
-
-	PRIORITY: low
-
 * If --enable-client etc are passed to configure, abort if they are not
 	possible.
 

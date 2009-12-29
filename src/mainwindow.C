@@ -364,9 +364,7 @@ void MainWindow::doFileConnect() {
 				updateStandings();
 				updateSubmissions();
 			} else {
-				QMessageBox("Auth error", "Invalid username and/or password",
-						QMessageBox::Information, QMessageBox::Ok,
-						QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+				_server_con.deregisterEventCallback("close", server_disconnect);
 				_server_con.disconnect();
 			}
 
