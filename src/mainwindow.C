@@ -51,22 +51,23 @@
 
 #include <time.h>
 #include <set>
+#include <string>
 
 using namespace std;
 
 /********************** Notification Dialogs ************************/
 class NotifyEvent : public GUIEvent {
 private:
-	QString _caption;
-	QString _text;
+	string _caption;
+	string _text;
 	QMessageBox::Icon _icon;
 public:
-	NotifyEvent(const QString& caption, const QString& text, QMessageBox::Icon icon);
+	NotifyEvent(const string& caption, const string& text, QMessageBox::Icon icon);
 
 	virtual void process(QWidget*);
 };
 
-NotifyEvent::NotifyEvent(const QString& caption, const QString& text, QMessageBox::Icon icon) {
+NotifyEvent::NotifyEvent(const string& caption, const string& text, QMessageBox::Icon icon) {
 	_caption = caption;
 	_text = text;
 	_icon = icon;
@@ -78,16 +79,16 @@ void NotifyEvent::process(QWidget *parent) {
 
 class NewClarificationEvent : public GUIEvent {
 private:
-	QString _problem;
-	QString _question;
-	QString _answer;
+	string _problem;
+	string _question;
+	string _answer;
 public:
-	NewClarificationEvent(const QString &problem, const QString &question, const QString &answer);
+	NewClarificationEvent(const string &problem, const string &question, const string &answer);
 
 	virtual void process(QWidget*);
 };
 
-NewClarificationEvent::NewClarificationEvent(const QString &problem, const QString &question, const QString &answer) {
+NewClarificationEvent::NewClarificationEvent(const string &problem, const string &question, const string &answer) {
 	_problem = problem;
 	_question = question;
 	_answer = answer;
@@ -113,7 +114,7 @@ void NewClarificationEvent::process(QWidget *parent) {
 }
 
 static void window_log(int priority, const char* format, va_list ap) {
-	QString caption;
+	string caption;
 	QMessageBox::Icon icon;
 
 	switch(priority) {
