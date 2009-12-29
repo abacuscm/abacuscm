@@ -15,6 +15,7 @@
 #endif
 #include "dbcon.h"
 #include "misc.h"
+#include "threadssl.h"
 
 #include <vector>
 #include <string>
@@ -54,15 +55,11 @@ private:
 	typedef std::list<CallbackData> CallbackList;
 	typedef std::map<std::string, CallbackList> EventMap;
 
-	pthread_mutex_t _lock_sockdata;
-	pthread_mutex_t _lock_sender;
-	pthread_cond_t _cond_read_count;
-
-	int _reader_count; // -1 indicates that a write lock is in effect.
-	int _sock;
-	SSL *_ssl;
 	SSL_CTX *_ctx;
 
+	/* Single-entry queue for passing responses back from the receiver to the
+	 * control thread.
+	 */
 	pthread_mutex_t _lock_response;
 	pthread_cond_t _cond_response;
 	MessageBlock* _response;
@@ -70,16 +67,13 @@ private:
 	pthread_mutex_t _lock_eventmap;
 	EventMap _eventmap;
 
-	pthread_mutex_t _lock_thread;
-	pthread_cond_t _cond_thread;
-	bool _has_thread;
-
-	void ensureThread();
-	void killThread();
-
-	void sockdata_readlock();
-	void sockdata_writelock();
-	void sockdata_unlock();
+	/* These do not need locks, since they are synchronised through the
+	 * internal lock in ThreadSSL. The control thread may not change their
+	 * values while the receiver thread is alive.
+	 */
+	pthread_t _receiver_thread;
+	int _sock;
+	ThreadSSL *_ssl;
 
 	void processMB(MessageBlock *mb);
 	MessageBlock *sendMB(MessageBlock *mb);

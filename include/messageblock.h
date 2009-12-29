@@ -16,6 +16,7 @@
 #include <string>
 #include <map>
 #include <openssl/ssl.h>
+#include "threadssl.h"
 
 typedef std::map<std::string, std::string> MessageHeaders;
 
@@ -28,7 +29,7 @@ private:
 	char *_content;
 	char *_content_pos;
 
-	bool writeBlockToSSL(const char *buffer, int length, SSL *ssl) const;
+	bool writeBlockToSSL(const char *buffer, int length, ThreadSSL *ssl) const;
 public:
 	MessageBlock(const std::string& message);
 	MessageBlock();
@@ -86,7 +87,7 @@ public:
 	 * connection - ie: no other thread may also be writing to
 	 * this ssl connection.
 	 */
-	bool writeToSSL(SSL* ssl) const;
+	bool writeToSSL(ThreadSSL* ssl) const;
 
 	/**
 	 * Dumps the MB to log() with LOG_DEBUG

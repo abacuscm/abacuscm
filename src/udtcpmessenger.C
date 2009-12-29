@@ -32,6 +32,7 @@
 #include "clientaction.h"
 #include "clientconnection.h"
 #include "messageblock.h"
+#include "threadssl.h"
 
 #include <map>
 #include <algorithm>
@@ -249,6 +250,7 @@ bool UDTCPPeerMessenger::TCPRetriever::process()
 	MessageBlock mb("udtcppeermessageget");
 	int sock;
 	SSL *ssl = NULL;
+	ThreadSSL *tssl = NULL;
 
 	if (!blob) {
 		log (LOG_CRIT, "Error allocating %d bytes of memory for receiving blob.", _size);
@@ -312,31 +314,38 @@ bool UDTCPPeerMessenger::TCPRetriever::process()
 			goto err;
 		}
 
-		if (SSL_connect(ssl) < 1) {
+		tssl = new(nothrow) ThreadSSL(ssl);
+		if (tssl == NULL) {
+			log(LOG_ERR, "OOM allocating ThreadSSL");
+			goto err;
+		}
+		ssl = NULL;    // tssl now owns it
+
+		if (tssl->connect(ThreadSSL::BLOCK_FULL).processed < 1) {
 			log_ssl_errors("SSL_connect");
 			goto err;
 		}
 
-		if (!mb.writeToSSL(ssl))
+		if (!mb.writeToSSL(tssl))
 			goto err;
 
 		int rd;
 		char buf[16384];
 
-		rd = SSL_read(ssl, buf, sizeof(buf));
+		rd = tssl->read(buf, sizeof(buf), ThreadSSL::BLOCK_PARTIAL).processed;
 		if (rd > 0) {
 			string headers(buf, rd);
 			if (headers.substr(headers.length() - 2) != "\n\n") {
-				log (LOG_CRIT, "crazy hearistic broke in %s (%s:%d)", __PRETTY_FUNCTION__, __FILE__, __LINE__);
+				log (LOG_CRIT, "crazy heuristic broke in %s (%s:%d)", __PRETTY_FUNCTION__, __FILE__, __LINE__);
 				goto quit;
 			}
 		}
 
-		while (pos < _size && (rd = SSL_read(ssl, buf, sizeof(buf))) > 0) {
-			memcpy(blob + pos, buf, rd);
-			pos += rd;
-		}
+		pos = tssl->read(blob, _size, ThreadSSL::BLOCK_FULL).processed;
 err:
+		if (tssl)
+			delete tssl;
+
 		if (ssl)
 			SSL_free(ssl);
 

@@ -17,6 +17,7 @@
 #include <pthread.h>
 
 #include "socket.h"
+#include "threadssl.h"
 
 #define CLIENT_BFR_SIZE			512
 
@@ -29,6 +30,12 @@ private:
 	static SSL_METHOD *_method;
 	static SSL_CTX *_context;
 
+	/* The connection is a state machine:
+	 * 1. Uninitialised: _tssl = NULL, _ssl = NULL
+	 * 2. Connecting: _tssl = NULL, _ssl != NULL
+	 * 3. Connected: _tssl != NULL, _ssl = NULL
+	 */
+	ThreadSSL *_tssl;
 	SSL *_ssl;
 
 	MessageBlock *_message;

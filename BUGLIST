@@ -173,18 +173,20 @@ This file contains a list of BUGS and or nice to haves (wishlist).
 
 	PRIORITY: low
 
-* Cleaner messages on authentication error
-	The GUI currently displays about 4 dialogs if the wrong password is
-	used.
-
-	PRIORITY: low
-
 * If --enable-client etc are passed to configure, abort if they are not
 	possible.
 
 	PRIORITY: low
 
 * Prevent module loader for looking into LD_LIBRARY_PATH
+
+	PRIORITY: low
+
+* Guarantee calls to my_thread_end happen in the right place.
+	Currently they're done in a TLS destructor, but destructors run in
+	arbitrary order while this has to be done before MySQL's TLS is destroyed.
+	Should have a registration system for a thread-local list of shutdown
+	functions, and have all threads call them before quitting.
 
 	PRIORITY: low
 

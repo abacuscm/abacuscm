@@ -184,3 +184,30 @@ libz Cond
 Memcheck:Cond
 obj:*/libz.so*
 }
+
+{
+   libc thread spawning
+   Helgrind:Race
+   obj:/usr/lib64/valgrind/amd64-linux/vgpreload_helgrind.so
+   fun:start_thread
+   fun:clone
+}
+
+{
+   OpenSSL (crypto) memory allocator flag
+   Helgrind:Race
+   fun:CRYPTO_malloc
+}
+
+{
+   OpenSSL (ssl) memory cleanser
+   Helgrind:Race
+   fun:OPENSSL_cleanse
+}
+
+{
+   OpenSSL (ssl) ssl3_accept updates shared statistics
+   Helgrind:Race
+   fun:ssl3_accept
+   fun:SSL_accept
+}
