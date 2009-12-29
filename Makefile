@@ -9,7 +9,7 @@ TARGET_LIBS :=
 
 ifneq ($(filter client,$(mods)),)
 TARGET_BINS += abacus
-MODS_abacus = abacus serverconnection messageblock logger sigsegv acmconfig \
+MODS_abacus = abacus serverconnection messageblock logger sigsegv acmconfig threadssl \
 	guievent \
 	ui_mainwindowbase moc_ui_mainwindowbase mainwindow \
 	ui_adduser moc_ui_adduser \
@@ -59,7 +59,8 @@ LIBMODS_abacus = socket \
 	markers \
 	clienteventregistry \
 	problemtype \
-	timedaction
+	timedaction \
+	threadssl
 
 TARGET_MODS += dbmysql \
 	udtcpmessenger \
@@ -101,7 +102,8 @@ MODS_markerd = markerd \
 	buffer \
 	runinfo \
 	misc \
-	logger
+	logger \
+	threadssl
 # These are listed separately because the really aught to be modules
 MODS_markerd += userprog \
 	java_userprog \
@@ -114,13 +116,13 @@ endif
 ifneq ($(filter admintools,$(mods)),)
 TARGET_BINS += balloon adduser standings
 
-MODS_balloon = balloon serverconnection messageblock logger sigsegv acmconfig
+MODS_balloon = balloon serverconnection messageblock logger sigsegv acmconfig threadssl
 LIBS_balloon = ssl pthread
 
-MODS_adduser = createuser serverconnection messageblock logger sigsegv acmconfig
+MODS_adduser = createuser serverconnection messageblock logger sigsegv acmconfig threadssl
 LIBS_adduser = ssl pthread
 
-MODS_standings = standings serverconnection messageblock logger sigsegv acmconfig
+MODS_standings = standings serverconnection messageblock logger sigsegv acmconfig threadssl
 LIBS_standings = ssl pthread
 endif
 

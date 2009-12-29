@@ -251,6 +251,8 @@ static void server_disconnect(const MessageBlock*, void*) {
 MainWindow::MainWindow() {
 	Config &config = Config::getConfig();
 
+	ThreadSSL::initialise();
+
 	_login_dialog.serverName->setText(config["server"]["address"]);
 	_login_dialog.service->setText(config["server"]["service"]);
 
@@ -271,6 +273,7 @@ MainWindow::MainWindow() {
 }
 
 MainWindow::~MainWindow() {
+	ThreadSSL::cleanup();
 }
 
 void MainWindow::triggerType(std::string type, bool status) {

@@ -35,22 +35,15 @@
 using namespace std;
 
 ServerConnection::ServerConnection() {
-	_reader_count = 0;
 	_sock = -1;
 	_ssl = NULL;
 	_ctx = NULL;
 	_response = NULL;
-	_has_thread = false;
 
-	pthread_mutex_init(&_lock_sockdata, NULL);
-	pthread_mutex_init(&_lock_sender, NULL);
 	pthread_mutex_init(&_lock_response, NULL);
 	pthread_mutex_init(&_lock_eventmap, NULL);
-	pthread_mutex_init(&_lock_thread, NULL);
 
-	pthread_cond_init(&_cond_read_count, NULL);
 	pthread_cond_init(&_cond_response, NULL);
-	pthread_cond_init(&_cond_thread, NULL);
 }
 
 ServerConnection::~ServerConnection() {
@@ -58,39 +51,6 @@ ServerConnection::~ServerConnection() {
 		disconnect();
 	if(_ctx)
 		SSL_CTX_free(_ctx);
-}
-
-void ServerConnection::sockdata_readlock() {
-	pthread_mutex_lock(&_lock_sockdata);
-	while(_reader_count < 0)
-		pthread_cond_wait(&_cond_read_count, &_lock_sockdata);
-	_reader_count++;
-	pthread_mutex_unlock(&_lock_sockdata);
-}
-
-void ServerConnection::sockdata_writelock() {
-	pthread_mutex_lock(&_lock_sockdata);
-	while(_reader_count != 0)
-		pthread_cond_wait(&_cond_read_count, &_lock_sockdata);
-	_reader_count = -1;
-	pthread_mutex_unlock(&_lock_sockdata);
-}
-
-void ServerConnection::sockdata_unlock() {
-	pthread_mutex_lock(&_lock_sockdata);
-	if(_reader_count < 0) {
-		_reader_count = 0;
-		// there can be many readers/writers waiting,
-		// wake them all up so that if a reader grabs
-		// the lock all readers can grab.
-		pthread_cond_broadcast(&_cond_read_count);
-	} else {
-		// there can only be writers waiting so only
-		// wake one up.
-		if(--_reader_count == 0)
-			pthread_cond_signal(&_cond_read_count);
-	}
-	pthread_mutex_unlock(&_lock_sockdata);
 }
 
 bool ServerConnection::connect(string server, string service) {
@@ -101,12 +61,11 @@ bool ServerConnection::connect(string server, string service) {
 	hints.ai_socktype = SOCK_STREAM;
 	addrinfo * adinf = NULL;
 	addrinfo * i;
+	SSL *ssl = NULL;
 
-	sockdata_writelock();
-
-	if(_sock > 0) {
+	if(_ssl != NULL) {
 		log(LOG_ERR, "Already connected!");
-		goto err;
+		return false;
 	}
 
 	if(!_ctx) {
@@ -152,31 +111,50 @@ bool ServerConnection::connect(string server, string service) {
 	freeaddrinfo(adinf);
 	adinf = NULL;
 
-	_ssl = SSL_new(_ctx);
-	if(!_ssl) {
+	ssl = SSL_new(_ctx);
+	if(!ssl) {
 		log_ssl_errors("SSL_new");
 		goto err;
 	}
 
-	if(!SSL_set_fd(_ssl, _sock)) {
+	if (fcntl(_sock, F_SETFL, O_NONBLOCK) != 0) {
+		lerror("fcntl");
+		goto err;
+	}
+
+	if(!SSL_set_fd(ssl, _sock)) {
 		log_ssl_errors("SSL_set_fd");
 		goto err;
 	}
 
-	if(SSL_connect(_ssl) < 1) {
+	_ssl = new(nothrow) ThreadSSL(ssl);
+	if (_ssl == NULL) {
+		log(LOG_ERR, "OOM allocating ThreadSSL");
+		goto err;
+	}
+	ssl = NULL;    // _ssl takes over ownership
+
+	if(_ssl->connect(ThreadSSL::BLOCK_FULL).processed < 1) {
 		log_ssl_errors("SSL_connect");
 		goto err;
 	}
 
 	log(LOG_DEBUG, "TODO:  Check servername against cn of certificate");
 
-	ensureThread();
+	if (pthread_create(&_receiver_thread, NULL, thread_spawner, this) != 0)
+	{
+		log(LOG_ERR, "failed to create receiver thread");
+		goto err;
+	}
 
-	sockdata_unlock();
 	return true;
 err:
+	if(ssl) {
+		SSL_free(ssl);
+		ssl = NULL;
+	}
 	if(_ssl) {
-		SSL_free(_ssl);
+		delete _ssl;
 		_ssl = NULL;
 	}
 	if(_sock) {
@@ -185,40 +163,23 @@ err:
 	}
 	if(adinf)
 		freeaddrinfo(adinf);
-	sockdata_unlock();
 	return false;
 }
 
 bool ServerConnection::disconnect() {
-	// This seems to break the rules but I'm
-	// not modifying the value of _ssl directly,
-	// I'm changing an underlying state that will
-	// further use of _ssl to fail, and cause all
-	// threads using it to drop out and allow me
-	// to obtain a writelock instead.
-	sockdata_readlock();
-	if(_ssl)
-		SSL_shutdown(_ssl);
-	sockdata_unlock();
-
-	sockdata_writelock();
-	if(_sock < 0) {
+	if (_ssl == NULL) {
 		log(LOG_WARNING, "Attempting to disconnect non-connected socket.");
-		sockdata_unlock();
 		return false;
 	}
-	if(_ssl) {
-		SSL_free(_ssl);
-		_ssl = NULL;
-	}
+
+	// This will internally wake up the receiver and get it to shut down
+	_ssl->startShutdown();
+	pthread_join(_receiver_thread, NULL);
+
+	delete _ssl;
+	_ssl = NULL;
 	close(_sock);
 	_sock = -1;
-	sockdata_unlock();
-
-	pthread_mutex_lock(&_lock_thread);
-	if(_has_thread)
-		pthread_cond_wait(&_cond_thread, &_lock_thread);
-	pthread_mutex_unlock(&_lock_thread);
 
 	return true;
 }
@@ -250,27 +211,21 @@ void ServerConnection::processMB(MessageBlock *mb) {
 
 MessageBlock* ServerConnection::sendMB(MessageBlock *mb) {
 	MessageBlock *res = NULL;
-	sockdata_readlock();
 
 	if(!_ssl) {
 		log(LOG_ERR, "Attempting to send data to a NULL _ssl socket");
-		sockdata_unlock();
 		return NULL;
 	}
 
-	pthread_mutex_lock(&_lock_sender);
 	if(mb->writeToSSL(_ssl)) {
-		pthread_mutex_unlock(&_lock_sender);
 		pthread_mutex_lock(&_lock_response);
 		while(!_response)
 			pthread_cond_wait(&_cond_response, &_lock_response);
 		res = _response;
 		_response = NULL;
 		pthread_mutex_unlock(&_lock_response);
-	} else
-		pthread_mutex_unlock(&_lock_sender);
+	}
 
-	sockdata_unlock();
 	return res;
 }
 
@@ -1095,66 +1050,42 @@ bool ServerConnection::deregisterEventCallback(string event, EventCallback func)
 	return true;
 }
 
-/**
- * BUG: RACE CONDITION:
- * We actually need to lock the decisions to terminate the thread
- * with _lock_thread, not the actual shutdown.  If the thread
- * decides to shut down then gets interrupted, a new thread starts
- * decides to not start (cause another thread is running) and then
- * the orriginal thread runs again then both threads will die.
- *
- * This _should_ not be a problem since we start threads when we
- * establish connections, and it takes longer to re-establish a
- * connection that what it should take for this thread to die.  But
- * if that condition _always_ holds then testing for a thread is
- * irrelavent.
- */
 void* ServerConnection::receive_thread() {
 	char buffer[BFR_SIZE];
 	MessageBlock *mb = NULL;
 
-	pthread_mutex_lock(&_lock_thread);
-	if(_has_thread) {
-		pthread_mutex_unlock(&_lock_thread);
-		log(LOG_WARNING, "Double spawned ServerConnection::receive_thread");
-		return NULL;
-	}
-	_has_thread = true;
-	pthread_mutex_unlock(&_lock_thread);
-
 	log(LOG_DEBUG, "Starting ServerConnection receive_thread");
 	while(true) {
-		sockdata_readlock();
 		if(!_ssl) {
-			sockdata_unlock();
 			log(LOG_CRIT, "This is bad!  Null _ssl pointer!");
 			break;
 		}
-		int res = SSL_read(_ssl, buffer, BFR_SIZE);
-		sockdata_unlock();
+		ThreadSSL::Status res = _ssl->read(buffer, BFR_SIZE, ThreadSSL::BLOCK_PARTIAL);
 
 		char *pos = buffer;
-		if(res < 0) {
-			log_ssl_errors("SSL_read");
-		} else if(res == 0) {
+		if(res.err == SSL_ERROR_ZERO_RETURN) {
 			log(LOG_DEBUG, "Connection got shut down, terminating receive_thread");
 			break;
-		} else while(res > 0) {
+		}
+		else if(res.err != SSL_ERROR_NONE) {
+			log_ssl_errors("SSL_read");
+		}
+		else while(res.processed > 0) {
 			if(!mb)
 				mb = new MessageBlock();
-			int bytes_used = mb->addBytes(pos, res);
+			int bytes_used = mb->addBytes(pos, res.processed);
 
 			if(bytes_used < 0) {
 				log(LOG_ERR, "Sync error!  This is extremely serious and probably indicates a bug!");
 				delete mb;
 				mb = NULL;
 			} else if(bytes_used == 0) {
-				res = 0;
+				res.processed = 0;
 			} else {
 				// processMB either deletes mb or puts it in a queue.
 				processMB(mb);
 				mb = NULL;
-				res -= bytes_used;
+				res.processed -= bytes_used;
 				pos += bytes_used;
 			}
 		}
@@ -1164,26 +1095,11 @@ void* ServerConnection::receive_thread() {
 
 	processMB(new MessageBlock("close"));
 
-	pthread_mutex_lock(&_lock_thread);
-	_has_thread = false;
-	pthread_cond_signal(&_cond_thread);
-	pthread_mutex_unlock(&_lock_thread);
-
 	return NULL;
 }
 
 void* ServerConnection::thread_spawner(void *p) {
 	return ((ServerConnection*)p)->receive_thread();
-}
-
-void ServerConnection::ensureThread() {
-	pthread_mutex_lock(&_lock_thread);
-	if(!_has_thread) {
-		pthread_t tid;
-		pthread_create(&tid, NULL, thread_spawner, this);
-		pthread_detach(tid);
-	}
-	pthread_mutex_unlock(&_lock_thread);
 }
 
 static void init() __attribute__((constructor));

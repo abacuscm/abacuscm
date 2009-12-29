@@ -25,6 +25,7 @@
 #include "message_createuser.h"
 #include "server.h"
 #include "dbcon.h"
+#include "threadssl.h"
 #include "socket.h"
 #include "clientlistener.h"
 #include "clientconnection.h"
@@ -177,6 +178,7 @@ static bool initialise() {
 
 	SSL_load_error_strings();
 	SSL_library_init();
+	ThreadSSL::initialise();
 
 	// it would be nicer to have these in their appropriate source files - but they
 	// insist on segfaulting there.
@@ -653,6 +655,7 @@ int main(int argc, char ** argv) {
 	socket_pool.unlock();
 
 	DbCon::cleanup();
+	ThreadSSL::cleanup();
 
 	log(LOG_INFO, "abacusd is shut down.");
 	return 0;

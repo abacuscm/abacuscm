@@ -9,9 +9,10 @@
  */
 #include "messageblock.h"
 #include "logger.h"
+#include "threadssl.h"
 
-#include <sys/poll.h>
 #include <sstream>
+#include <cassert>
 
 using namespace std;
 
@@ -150,47 +151,18 @@ int MessageBlock::addBytes(const char* bytes, int count) {
 	return -1;
 }
 
-bool MessageBlock::writeBlockToSSL(const char *buffer, int length, SSL *ssl) const {
-	while(length) {
-		int res = SSL_write(ssl, buffer, length);
-		if(res > 0) {
-			buffer += res;
-			length -= res;
-		} else {
-			struct pollfd sslfd;
-			sslfd.fd = SSL_get_fd(ssl);
-			sslfd.events = 0;
-			sslfd.revents = 0;
-			switch(SSL_get_error(ssl, res)) {
-			case SSL_ERROR_NONE:
-				log(LOG_DEBUG, "Not supposed to get here! (%s:%d)", __FILE__,
-						__LINE__);
-				break;
-			case SSL_ERROR_WANT_READ:
-				log(LOG_DEBUG, "Eek, we are blocking on a read in %s "
-						"(%s:%d) where we are trying to send data out!",
-						__PRETTY_FUNCTION__, __FILE__, __LINE__);
-				sslfd.events |= POLLIN;
-				break;
-			case SSL_ERROR_WANT_WRITE:
-				sslfd.events |= POLLOUT;
-				break;
-			default:
-				log_ssl_errors("SSL_write");
-				return false;
-			}
-			if(!sslfd.events)
-				break;
-			if(poll(&sslfd, 1, 0) < 0) {
-				lerror("poll");
-				return false;
-			}
-		}
+bool MessageBlock::writeBlockToSSL(const char *buffer, int length, ThreadSSL *ssl) const {
+	ThreadSSL::Status status = ssl->write(buffer, length, ThreadSSL::BLOCK_FULL);
+	if (status.err != SSL_ERROR_NONE)
+	{
+		log_ssl_errors("SSL_write");
+		return false;
 	}
+	assert(status.processed == length);
 	return true;
 }
 
-bool MessageBlock::writeToSSL(SSL* ssl) const {
+bool MessageBlock::writeToSSL(ThreadSSL* ssl) const {
 	ostringstream init_block;
 	init_block << _message << '\n';
 	for(MessageHeaders::const_iterator i = _headers.begin(); i != _headers.end(); ++i)

@@ -10,6 +10,8 @@
 #include <openssl/rand.h>
 #include <openssl/ssl.h>
 
+#include <cassert>
+#include <new>
 #include "clientconnection.h"
 #include "logger.h"
 #include "acmconfig.h"
@@ -17,12 +19,16 @@
 #include "clientaction.h"
 #include "clienteventregistry.h"
 #include "markers.h"
+#include "threadssl.h"
+
+using namespace std;
 
 SSL_METHOD *ClientConnection::_method = NULL;
 SSL_CTX *ClientConnection::_context = NULL;
 
 ClientConnection::ClientConnection(int sock) {
 	sockfd() = sock;
+	_tssl = NULL;
 	_ssl = NULL;
 	_message = NULL;
 	pthread_mutex_init(&_write_lock, NULL);
@@ -36,15 +42,22 @@ ClientConnection::~ClientConnection() {
 		delete _message;
 
 	if(_ssl) {
-		log(LOG_DEBUG, "Shutting down connection");
+		log(LOG_DEBUG, "Shutting down (incomplete) connection");
 		SSL_shutdown(_ssl);
 		SSL_free(_ssl);
+		_ssl = NULL;
+	}
+	if(_tssl) {
+		log(LOG_DEBUG, "Shutting down connection");
+		delete _tssl;
+		_tssl = NULL;
 	}
 
 	pthread_mutex_destroy(&_write_lock);
 }
 
 bool ClientConnection::initiate_ssl() {
+	assert(_tssl == NULL);
 	if(!_ssl) {
 		_ssl = SSL_new(_context);
 		if(!_ssl) {
@@ -52,14 +65,22 @@ bool ClientConnection::initiate_ssl() {
 			goto err;
 		}
 
-		if(!SSL_set_fd(_ssl, sockfd()) < 0) {
+		if(!SSL_set_fd(_ssl, sockfd())) {
 			log_ssl_errors("SSL_set_fd");
 			goto err;
 		}
 	}
 
+
 	switch(SSL_get_error(_ssl, SSL_accept(_ssl))) {
 		case SSL_ERROR_NONE:
+			_tssl = new(nothrow) ThreadSSL(_ssl);
+			if (_tssl == NULL) {
+				log(LOG_ERR, "OOM allocating ThreadSSL");
+				goto err;
+			}
+			_ssl = NULL;
+			break;
 		case SSL_ERROR_WANT_READ:
 		case SSL_ERROR_WANT_WRITE:
 			break;
@@ -74,16 +95,20 @@ err:
 		SSL_free(_ssl);
 		_ssl = NULL;
 	}
+	if (_tssl) {
+		delete _tssl;
+		_tssl = NULL;
+	}
 
 	return false;
-
 }
 
 bool ClientConnection::process_data() {
 	char buffer[CLIENT_BFR_SIZE];
-	int res;
-	while(0 < (res = SSL_read(_ssl, buffer, CLIENT_BFR_SIZE))) {
+	ThreadSSL::Status status;
+	while(0 < (status = _tssl->read(buffer, CLIENT_BFR_SIZE, ThreadSSL::NONBLOCK)).processed) {
 		char *pos = buffer;
+		int res = status.processed;
 		while(res) {
 			if(!_message)
 				_message = new MessageBlock;
@@ -104,7 +129,7 @@ bool ClientConnection::process_data() {
 		}
 	}
 
-	switch(SSL_get_error(_ssl, res)) {
+	switch(status.err) {
 		case SSL_ERROR_NONE:
 		case SSL_ERROR_WANT_READ:
 		case SSL_ERROR_WANT_WRITE:
@@ -119,7 +144,7 @@ bool ClientConnection::process_data() {
 }
 
 bool ClientConnection::process() {
-	if(!_ssl || !SSL_is_init_finished(_ssl))
+	if(!_tssl)
 		return initiate_ssl();
 	else
 		return process_data();
@@ -139,8 +164,12 @@ bool ClientConnection::reportSuccess() {
 }
 
 bool ClientConnection::sendMessageBlock(const MessageBlock *mb) {
+	/* Note: the ThreadSSL lock only protects readers and writers from each
+	 * other. We need need the _write_lock to prevent the data from multiple
+	 * concurrent callers to this function from becoming interleaved.
+	 */
 	pthread_mutex_lock(&_write_lock);
-	bool res = mb->writeToSSL(_ssl);
+	bool res = mb->writeToSSL(_tssl);
 	pthread_mutex_unlock(&_write_lock);
 	if(!res)
 		log(LOG_NOTICE, "Failed to write MessageBlock to client - not sure what this means though");
