@@ -3,19 +3,10 @@ BUGLIST
 
 This file contains a list of BUGS and or nice to haves (wishlist).
 
-* race conditions on generating IDs
-	When adding new DB rows, IDs are generated in two phases: query the
-	database to find the next available ID, then add a new row using this ID.
-	If two clients connect to the same server, they could execute these steps
-	interleaved and duplicate IDs.
-
-	The correct approach is to have two primary key columns: one which is set
-	to the server ID, and one which is auto-incrementing. That way servers
-	never generate identical keys (due to the server ID), and within a server
-	the addition of a new row generates the ID atomicly.
-
-	Problem IDs are for some reason generated using time(NULL), which is even
-	more broken.
+* race conditions on generating problem IDs
+	For most IDs, the next value is kept internally and protected by a lock.
+	However, problem IDs are simply taken from time(). If problems are added
+	faster than once a second it will go wrong.
 
 	PRIORITY: medium
 
