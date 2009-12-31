@@ -12,6 +12,7 @@
 #include "acmconfig.h"
 #include "message.h"
 #include "server.h"
+#include "hashpw.h"
 
 #include <mysql/mysql.h>
 #include <sstream>
@@ -457,7 +458,8 @@ bool MySQL::addServer(const string& name, uint32_t id) {
 int MySQL::authenticate(const std::string& uname, const std::string& pass, uint32_t *user_id, uint32_t *user_type) {
 	ostringstream query;
 
-	query << "SELECT user_id, type FROM User WHERE username='" << escape_string(uname) << "' AND password=MD5('" << escape_string(uname) << escape_string(pass) << "')";
+	string hash = hashpw(uname, pass);
+	query << "SELECT user_id, type FROM User WHERE username='" << escape_string(uname) << "' AND password='" << escape_string(hash) << "'";
 
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();

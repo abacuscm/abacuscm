@@ -54,7 +54,6 @@ public:
 	uint32_t nextId();
 
 	std::string __attribute__((pure)) hashpw(uint32_t user_id, const std::string& pw);
-	std::string __attribute__((pure)) hashpw(const std::string& uname, const std::string& pw);
 };
 
 DEFINE_SUPPORT_MODULE_GETTER(UserSupportModule);

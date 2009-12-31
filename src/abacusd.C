@@ -26,6 +26,7 @@
 #include "server.h"
 #include "dbcon.h"
 #include "threadssl.h"
+#include "hashpw.h"
 #include "socket.h"
 #include "clientlistener.h"
 #include "clientconnection.h"
@@ -206,7 +207,13 @@ static bool initialise() {
 		for(i = config["init_attribs"].begin(); i != config["init_attribs"].end(); ++i)
 			init->addAttribute(i->first, i->second);
 
-		Message_CreateUser *admin = new Message_CreateUser("admin", "Administrator", "f6fdffe48c908deb0f4c3bd36c032e72", 1, USER_TYPE_ADMIN);
+		string initial_pw = config["initialisation"]["admin_password"];
+		if (initial_pw == "") {
+			log(LOG_DEBUG, "No initial password set, using default");
+			initial_pw = "admin";
+		}
+		string initial_hashpw = hashpw("admin", initial_pw);
+		Message_CreateUser *admin = new Message_CreateUser("admin", "Administrator", initial_hashpw, 1, USER_TYPE_ADMIN);
 
 		if(init->makeMessage() && admin->makeMessage()) {
 			message_queue.enqueue(init);

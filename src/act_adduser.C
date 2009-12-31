@@ -15,6 +15,7 @@
 #include "message_createuser.h"
 #include "usersupportmodule.h"
 #include "misc.h"
+#include "hashpw.h"
 
 #include <map>
 
@@ -59,7 +60,7 @@ bool ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
 	if(new_passwd == "")
 		return cc->sendError("Cannot set a blank password");
 
-	if ((new_passwd = usm->hashpw(new_username, new_passwd)) == "")
+	if ((new_passwd = hashpw(new_username, new_passwd)) == "")
 		return cc->sendError("Password hashing error");
 
 	if (new_friendlyname == "")

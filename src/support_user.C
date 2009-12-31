@@ -10,6 +10,7 @@
 #include "usersupportmodule.h"
 #include "dbcon.h"
 #include "server.h"
+#include "hashpw.h"
 
 #include <stdlib.h>
 #include <sstream>
@@ -161,35 +162,10 @@ err:
 
 string UserSupportModule::hashpw(uint32_t user_id, const string& pw)
 {
-	DbCon *db = DbCon::getInstance();
-	if (!db)
-		return "";
+	string username = this->username(user_id);
+	if (username == "") return "";
 
-	ostringstream query;
-	query << "SELECT MD5(CONCAT(username, '" << db->escape_string(pw)
-		<< "')) FROM User WHERE user_id=" << user_id;
-	QueryResultRow res = db->singleRowQuery(query.str());
-	db->release();
-
-	if (res.size())
-		return *res.begin();
-	return "";
-}
-
-string UserSupportModule::hashpw(const string& uname, const string& pw)
-{
-	DbCon *db = DbCon::getInstance();
-	if (!db)
-		return "";
-
-	ostringstream query;
-	query << "SELECT MD5('" << db->escape_string(uname + pw) << "')";
-	QueryResultRow res = db->singleRowQuery(query.str());
-	db->release();
-
-	if (res.size())
-		return *res.begin();
-	return "";
+	return ::hashpw(username, pw);
 }
 
 bool UserSupportModule::addUser(uint32_t user_id, const std::string& username, const std::string& friendlyname, const std::string& password, uint32_t type)

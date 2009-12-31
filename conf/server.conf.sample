@@ -39,6 +39,7 @@ ciphers = HIGH
 [initialisation]
 type=master
 name=chimera
+admin_password = admin
 
 [workers]
 min_idle=5

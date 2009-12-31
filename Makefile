@@ -60,7 +60,8 @@ LIBMODS_abacus = socket \
 	clienteventregistry \
 	problemtype \
 	timedaction \
-	threadssl
+	threadssl \
+	hashpw
 
 TARGET_MODS += dbmysql \
 	udtcpmessenger \
