@@ -18,7 +18,6 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <netdb.h>
-#include <arpa/inet.h>
 
 #include "peermessenger.h"
 #include "logger.h"
@@ -71,14 +70,14 @@ private:
 	int _cipher_ivsize;
 	int _cipher_keysize;
 
-	map<uint32_t, struct sockaddr_in> _addrmap;
+	map<uint32_t, struct addrinfo*> _addrmap;
 	pthread_mutex_t _lock_addrmap;
 
 	uint32_t checksum(const void *data, uint16_t len);
 	bool startup();
 	void makeACK(st_frame* frame, uint32_t server_id, uint32_t message_id);
 	void sendAck(uint32_t server_id, uint32_t message_id, uint32_t to_server);
-	bool sendFrame(st_frame *frame, int packetsize, const struct sockaddr_in* dest);
+	bool sendFrame(st_frame *frame, int packetsize, const struct addrinfo* dest);
 
 	Queue<Message*> _received_messages;
 
@@ -116,7 +115,7 @@ public:
 	UDTCPPeerMessenger();
 	virtual ~UDTCPPeerMessenger();
 
-	const sockaddr_in* getSockAddr(uint32_t server_id);
+	const struct addrinfo* getSockAddr(uint32_t server_id);
 	void removeTCPReceiver(uint32_t server_id, uint32_t message_id);
 	void notifyTCPMessage(uint32_t server_id, uint32_t message_id, uint32_t size, uint32_t sending_server);
 
@@ -146,7 +145,7 @@ bool UDTCPPeerMessenger::UDPReceiver::process()
 {
 	ssize_t bytes_received;
 	int packet_size, tlen;
-	struct sockaddr_in from;
+	struct sockaddr from;
 	socklen_t fromlen = sizeof(from);
 	uint8_t inbuffer[BUFFER_SIZE + MAX_BLOCKSIZE];
 	union {
@@ -179,8 +178,14 @@ bool UDTCPPeerMessenger::UDPReceiver::process()
 	} else if (EVP_DecryptFinal(&dec_ctx, buffer + packet_size, &tlen) != 1) {
 		log_ssl_errors("EVP_DecryptFinal");
 	} else if ((size_t)(packet_size += tlen) < sizeof(st_frame)) { /* HEADS UP: packet_size __+=__ tlen */
-		log (LOG_WARNING, "Discarding frame due to short packet (%d bytes), received from: %s",
-				packet_size + tlen, inet_ntoa(from.sin_addr));
+		char host[47];
+		char port[7];
+		if (getnameinfo(&from, fromlen, host, sizeof(host), port, sizeof(port), NI_NUMERICHOST) == 0)
+			log (LOG_WARNING, "Discarding frame due to short packet (%d bytes), received from: %s",
+					packet_size + tlen, host);
+		else
+			log (LOG_WARNING, "Discarding frame due to short packet (%d bytes), received from unknown host", packet_size + tlen);
+
 		log_buffer (LOG_DEBUG, "short packet", (const unsigned char*)&frame, packet_size);
 	} else if (frame.type == TYPE_INLINE ? (unsigned)packet_size != sizeof(st_frame) + frame.message_size : packet_size != sizeof(st_frame)) {
 		log (LOG_WARNING, "Invalid sized packet => %d != sizeof(st_frame) + frame.message_size == %d + %d == %d (type=%d)",
@@ -282,7 +287,12 @@ bool UDTCPPeerMessenger::TCPRetriever::process()
 		str.str(""); str << pos;
 		mb["skip"] = str.str();
 
-		sock = socket(AF_INET, SOCK_STREAM, 0);
+		uint32_t try_server_id = _sq.dequeue();
+		_sq.enqueue(try_server_id); // requeue for retry.
+
+		// THIS IS A BUG: tcppeerport == udppeerport ... shouldn't be required.
+		const struct addrinfo* serv_addr = _messenger->getSockAddr(try_server_id);
+		sock = socket(serv_addr->ai_family, SOCK_STREAM, 0);
 
 		if (sock < 0) {
 			lerror("socket");
@@ -293,12 +303,7 @@ bool UDTCPPeerMessenger::TCPRetriever::process()
 		setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &opt, sizeof(int));
 		setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &opt, sizeof(int));
 
-		uint32_t try_server_id = _sq.dequeue();
-		_sq.enqueue(try_server_id); // requeue for retry.
-
-		// THIS IS A BUG: tcppeerport == udppeerport ... shouldn't be required.
-		const struct sockaddr_in* serv_addr = _messenger->getSockAddr(try_server_id);
-		if (connect(sock, (const struct sockaddr*)serv_addr, sizeof(*serv_addr)) < 0) {
+		if (connect(sock, serv_addr->ai_addr, serv_addr->ai_addrlen) < 0) {
 			lerror("connect");
 			goto err;
 		}
@@ -414,6 +419,10 @@ UDTCPPeerMessenger::~UDTCPPeerMessenger() {
 		deinitialise();
 	pthread_mutex_destroy(&_lock_addrmap);
 	pthread_mutex_destroy(&_lock_tcp_retrievers);
+
+	map<uint32_t, struct addrinfo*>::iterator i;
+	for (i = _addrmap.begin(); i != _addrmap.end(); ++i)
+		freeaddrinfo(i->second);
 }
 
 bool UDTCPPeerMessenger::initialise() {
@@ -447,31 +456,49 @@ void UDTCPPeerMessenger::shutdown()
 }
 
 bool UDTCPPeerMessenger::startup() {
-	struct sockaddr_in sock_addr;
-	uint16_t portnum;
+	struct addrinfo hints;
+	struct addrinfo *adinf = NULL;
+	struct addrinfo *i;
+
 	Config &config = Config::getConfig();
 	string cipher_string = config["udtcpmessenger"]["cipher"];
 	string cipher_key = config["udtcpmessenger"]["keyfile"];
 	string cipher_iv = config["udtcpmessenger"]["ivfile"];
+	string bind = config["udtcpmessenger"]["bind"];
+	string port = config["udtcpmessenger"]["port"];
+
 	int fd;
 
-	_sock = socket(PF_INET, SOCK_DGRAM, 0);
-	if(_sock < 0) {
-		lerror("socket");
-		goto err;
+	if (bind == "")
+		bind = "any";
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_socktype = SOCK_DGRAM;
+
+	if (getaddrinfo(bind.c_str(), port.c_str(), &hints, &adinf)) {
+		lerror("getaddrinfo");
+		return false;
 	}
 
-	portnum = atol(config["udtcpmessenger"]["udpport"].c_str());
-	if(!portnum)
-		portnum = DEFAULT_UDPRECEIVER_PORT;
+	for (i = adinf; i && _sock <= 0; i = i->ai_next) {
+		_sock = socket(i->ai_family, i->ai_socktype, i->ai_protocol);
+		if (_sock < 0) {
+			lerror("socket");
+			continue;
+		}
 
-	log(LOG_INFO, "Binding UDTCP Messenger to UDP port %d.", portnum);
-	sock_addr.sin_family = AF_INET;
-	sock_addr.sin_port = htons(portnum);
-	sock_addr.sin_addr.s_addr = INADDR_ANY;
+		if (::bind(_sock, i->ai_addr, i->ai_addrlen) < 0) {
+			lerror("bind");
+			close(_sock);
+			_sock = -1;
+			continue;
+		}
+	}
 
-	if(bind(_sock, (struct sockaddr*)&sock_addr, sizeof(sock_addr)) < 0) {
-		lerror("bind");
+	freeaddrinfo(adinf);
+
+	if (_sock < 0) {
+		log(LOG_ERR, "Unable to bind udp port for udtcpmessenger, bombing out.");
 		goto err;
 	}
 
@@ -572,15 +599,13 @@ uint32_t UDTCPPeerMessenger::checksum(const void *_data, uint16_t len) {
 	return checksum;
 }
 
-const sockaddr_in* UDTCPPeerMessenger::getSockAddr(uint32_t server_id) {
-	sockaddr_in *result = NULL;
+const struct addrinfo* UDTCPPeerMessenger::getSockAddr(uint32_t server_id) {
+	ScopedLock _(&_lock_addrmap);
 
-	pthread_mutex_lock(&_lock_addrmap);
-
-	map<uint32_t, struct sockaddr_in>::iterator i;
+	map<uint32_t, struct addrinfo*>::iterator i;
 	i = _addrmap.find(server_id);
 	if(i != _addrmap.end()) {
-		result = &i->second;
+		return i->second;
 	} else {
 		string ip;
 		string port;
@@ -595,31 +620,28 @@ const sockaddr_in* UDTCPPeerMessenger::getSockAddr(uint32_t server_id) {
 		if(ip == "") {
 			log(LOG_ERR, "Unable to obtain attribute 'ip' for server %u",
 					server_id);
-		} else if(port == "" || !atol(port.c_str())) {
+			return NULL;
+		} else if(port == "") {
 			log(LOG_ERR, "Unable to obtain attribute 'udppeerport' for "
 					"server %u", server_id);
+			return NULL;
 		}else {
-			struct hostent * host = gethostbyname(ip.c_str());
-			if(!host) {
-				log(LOG_ERR, "Error resolving '%s'", ip.c_str());
-			} else if(host->h_addrtype != AF_INET) {
-				log(LOG_ERR, "Invalid network type for '%s'", ip.c_str());
-			} else {
-				_addrmap[server_id].sin_family = AF_INET;
-				_addrmap[server_id].sin_addr.s_addr = *(u_int32_t*)host->h_addr_list[0];
-				_addrmap[server_id].sin_port = htons(atol(port.c_str()));
-				result = &_addrmap[server_id];
-				log(LOG_INFO, "Resolved %s to %s", ip.c_str(),
-						inet_ntoa(result->sin_addr));
+			struct addrinfo hints;
+			struct addrinfo *adinf = NULL;
+
+
+			if (getaddrinfo(ip.c_str(), port.c_str(), &hints, &adinf)) {
+				lerror("getaddrinfo");
+				log(LOG_ERR, "Error obtaining sockaddr data for %s:%s.", ip.c_str(), port.c_str());
+				return NULL;
 			}
+
+			return _addrmap[server_id] = adinf;
 		}
 	}
-	pthread_mutex_unlock(&_lock_addrmap);
-
-	return result;
 }
 
-bool UDTCPPeerMessenger::sendFrame(st_frame *buffer, int packetsize, const struct sockaddr_in* dest) {
+bool UDTCPPeerMessenger::sendFrame(st_frame *buffer, int packetsize, const struct addrinfo* dest) {
 	int sendlen;
 	int tlen;
 
@@ -646,7 +668,7 @@ bool UDTCPPeerMessenger::sendFrame(st_frame *buffer, int packetsize, const struc
 	EVP_CIPHER_CTX_cleanup(&enc_ctx);
 
 	int result = sendto(_sock, sendbuffer, sendlen, 0,
-			(const struct sockaddr*)dest, sizeof(*dest));
+			dest->ai_addr, dest->ai_addrlen);
 	if(result < 0) {
 		lerror("sendto");
 		return false;
@@ -687,7 +709,7 @@ void UDTCPPeerMessenger::sendAck(uint32_t server_id, uint32_t message_id) {
 
 	vector<uint32_t>::iterator i;
 	for(i = servers.begin(); i != servers.end(); ++i) {
-		const sockaddr_in * dest = getSockAddr(*i);
+		const addrinfo * dest = getSockAddr(*i);
 		if (!sendFrame(&frame, sizeof(st_frame), dest))
 			log(LOG_WARNING, "Error sending ACK for (%u,%u) to %u.",
 					server_id, message_id, *i);
@@ -699,7 +721,7 @@ void UDTCPPeerMessenger::sendAck(uint32_t server_id, uint32_t message_id, uint32
 		return;
 
 	st_frame frame;
-	const sockaddr_in * dest = getSockAddr(to_server);
+	const addrinfo * dest = getSockAddr(to_server);
 
 	makeACK(&frame, server_id, message_id);
 
@@ -712,7 +734,7 @@ bool UDTCPPeerMessenger::sendMessage(uint32_t server_id, const Message * message
 {
 	uint32_t transmit_size;
 	const uint8_t *message_data;
-	const struct sockaddr_in *dest = getSockAddr(server_id);
+	const struct addrinfo *dest = getSockAddr(server_id);
 	union {
 		uint8_t buffer[BUFFER_SIZE];
 		struct st_frame frame;

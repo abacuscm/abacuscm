@@ -7,7 +7,7 @@ actions = auth,passwd,adduser,addserver,whatami,problemtypes,problemmanip,status
 problemtypes = testcasedriventype
 
 [udtcpmessenger]
-bind = all
+bind = 0.0.0.0
 port = 7368
 maxfragmentsize = 1000
 checksumseed = 1976534597
