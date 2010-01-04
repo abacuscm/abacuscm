@@ -89,6 +89,7 @@ bool ClientListener::init(SocketPool *pool) {
 		return false;
 	}
 
+	sockfd() = sock;
 	_pool = pool;
 	return true;
 }
