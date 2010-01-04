@@ -188,7 +188,7 @@ obj:*/libz.so*
 {
    libc thread spawning
    Helgrind:Race
-   obj:/usr/lib64/valgrind/amd64-linux/vgpreload_helgrind.so
+   obj:*/vgpreload_helgrind.so
    fun:start_thread
    fun:clone
 }
