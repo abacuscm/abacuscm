@@ -47,6 +47,8 @@ typedef struct {
 } UserInfo;
 
 class ServerConnection {
+	// In batch.C, to allow it to call sendMB directly
+	friend void batch_sendMB(ServerConnection &_server_con, MessageBlock *mb);
 private:
 	struct CallbackData {
 		EventCallback func;
