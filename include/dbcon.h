@@ -175,6 +175,11 @@ public:
 	virtual uint32_t maxClarificationId() = 0;
 
 	/**
+	 * Used to retrieve the max Problem Id. See maxUserId.
+	 */
+	virtual uint32_t maxProblemId() = 0;
+
+	/**
 	 * Used to authenticate a user.  Return values should be as follows:
 	 * <0	Error
 	 * 0	Authentication failed

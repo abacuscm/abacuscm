@@ -9,13 +9,6 @@ This file contains a list of BUGS and or nice to haves (wishlist).
 	there are potentially problems if the username contains Latin-1
 	characters, since it is appended with the friendly-name for the standings.
 
-* race conditions on generating problem IDs
-	For most IDs, the next value is kept internally and protected by a lock.
-	However, problem IDs are simply taken from time(). If problems are added
-	faster than once a second it will go wrong.
-
-	PRIORITY: medium
-
 * build system doesn't show errors with broken #include's
 	When I misspelt the name of a local #include, the build system had very
 	unhelpful behaviour. It insisted that everything was up to date, when it

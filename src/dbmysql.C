@@ -70,6 +70,7 @@ public:
 	virtual uint32_t maxSubmissionId();
 	virtual uint32_t maxClarificationReqId();
 	virtual uint32_t maxClarificationId();
+	virtual uint32_t maxProblemId();
 	virtual ProblemList getProblems();
 	virtual time_t getProblemUpdateTime(uint32_t problem_id);
 	virtual bool setProblemUpdateTime(uint32_t problem_id, time_t time);
@@ -701,6 +702,30 @@ uint32_t MySQL::maxClarificationId() {
 	}
 
 	return max_user_id;
+}
+
+uint32_t MySQL::maxProblemId() {
+	uint32_t max_problem_id = ~0U;
+	ostringstream query;
+	query << "SELECT MAX(problem_id) FROM Problem WHERE problem_id & " << (ID_GRANULARITY - 1) << " = " << Server::getId();
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return ~0U;
+	}
+
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if(res) {
+		MYSQL_ROW row = mysql_fetch_row(res);
+		if(row) {
+			if(row[0])
+				max_problem_id = atol(row[0]);
+			else
+				max_problem_id = 0;
+		}
+		mysql_free_result(res);
+	}
+
+	return max_problem_id;
 }
 
 ProblemList MySQL::getProblems() {
