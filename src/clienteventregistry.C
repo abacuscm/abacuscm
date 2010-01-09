@@ -64,37 +64,45 @@ void ClientEventRegistry::deregisterClient(ClientConnection *cc) {
 }
 
 void ClientEventRegistry::deregisterClient(string eventname, ClientConnection *cc) {
+	pthread_mutex_lock(&_lock);
 	Event* ev = _eventmap[eventname];
 	log(LOG_DEBUG, "Deregistering from event '%s'", eventname.c_str());
 	if(!ev)
 		log(LOG_INFO, "Attempt by user %d to deregister from non-existant event '%s'", cc->getProperty("user_id"), eventname.c_str());
 	else
 		ev->deregisterClient(cc);
+	pthread_mutex_unlock(&_lock);
 }
 
 bool ClientEventRegistry::isClientRegistered(string eventname, ClientConnection *cc) {
+	bool ans;
+	pthread_mutex_lock(&_lock);
+
 	EventMap::iterator i = _eventmap.find(eventname);
 	if(i == _eventmap.end()) {
-	log(LOG_INFO, "Attempt by user %d to check registration for non-existant event '%s'", cc->getProperty("user_id"), eventname.c_str());
-	return false;
+		log(LOG_INFO, "Attempt by user %d to check registration for non-existant event '%s'", cc->getProperty("user_id"), eventname.c_str());
+		ans = false;
 	}
 	else
-		return i->second->isClientRegistered(cc);
+		ans = i->second->isClientRegistered(cc);
+	pthread_mutex_unlock(&_lock);
+	return ans;
 }
 
 void ClientEventRegistry::registerEvent(string eventname) {
-	// Yes, I know here is a race condition, but most (if not all)
-	// events will only register once at startup whilst we aren't
-	// multi-threading yet.
+	pthread_mutex_lock(&_lock);
 	Event* ev = _eventmap[eventname];
 	if(ev)
 		log(LOG_NOTICE, "Attempt to re-register event '%s'", eventname.c_str());
 	else
 		_eventmap[eventname] = new Event();
+	pthread_mutex_unlock(&_lock);
 }
 
 void ClientEventRegistry::triggerEvent(string eventname, const MessageBlock *mb) {
+	pthread_mutex_lock(&_lock);
 	EventMap::iterator i = _eventmap.find(eventname);
+	pthread_mutex_unlock(&_lock);
 	if(i == _eventmap.end())
 		log(LOG_ERR, "Attempt to trigger unknown event '%s'",
 				eventname.c_str());
