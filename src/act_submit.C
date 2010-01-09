@@ -446,7 +446,7 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
 		if (!result) {
 			db->release(); db = NULL;
 			log(LOG_ERR, "Failed to get submission file with index %u for submission_id %u\n", index, submission_id);
-			return false;
+			return cc->sendError("Mark file not found");
 		}
 
 		result_mb["name"] = name;
