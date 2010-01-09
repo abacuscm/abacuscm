@@ -1089,6 +1089,10 @@ void* ServerConnection::receive_thread() {
 			break;
 		}
 		else if(res.err != SSL_ERROR_NONE) {
+			if (res.processed == 0) {
+				log(LOG_DEBUG, "Connection shut down uncleanly, terminating receive_thread");
+				break;
+			}
 			log_ssl_errors("SSL_read");
 		}
 		else while(res.processed > 0) {
