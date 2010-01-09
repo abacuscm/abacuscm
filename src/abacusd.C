@@ -574,10 +574,14 @@ void* timed_actions(void*) {
 			next = timed_queue.dequeue();
 	}
 
-	timed_queue.enqueue(NULL);
-	while(next) {
+	delete next;
+	timed_queue.enqueue(NULL);  // ensures that the loop below won't block
+	while((next = timed_queue.dequeue()) != NULL) {
 		delete next;
-		next = timed_queue.dequeue();
+	}
+	while (!heap.empty()) {
+		delete heap.back();
+		heap.pop_back();
 	}
 
 	return NULL;
