@@ -216,11 +216,6 @@ bool StandingsSupportModule::updateStandings()
 	return true;
 }
 
-bool StandingsSupportModule::checkStandings()
-{
-	return dirty ? updateStandings() : true;
-}
-
 void StandingsSupportModule::notifySolution(time_t /* submit_time */)
 {
 	{
@@ -239,7 +234,7 @@ void StandingsSupportModule::timedUpdate()
 
 const StandingsSupportModule::StandingsPtr StandingsSupportModule::getStandings(uint32_t user_type)
 {
-	if (checkStandings()) {
+	if (updateStandings()) {
 		if(user_type == USER_TYPE_CONTESTANT || user_type == USER_TYPE_NONCONTEST)
 			return _contestant_standings;
 		else

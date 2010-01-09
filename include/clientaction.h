@@ -27,6 +27,10 @@ class ClientAction {
 private:
 	static Queue<Message*> *_message_queue;
 	static std::map<int, std::map<std::string, ClientAction*> > actionmap;
+
+	// Gets the ClientAction object from actionmap, returning NULL if it is
+	// not a known action
+	static ClientAction* getAction(int user_type, const std::string &action);
 protected:
 	bool triggerMessage(ClientConnection *cc, Message*);
 	virtual bool int_process(ClientConnection *cc, MessageBlock *mb) = 0;

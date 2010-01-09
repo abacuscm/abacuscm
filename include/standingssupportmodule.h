@@ -52,8 +52,6 @@ private:
 
 	bool updateStandings();
 
-	bool checkStandings();
-
 public:
 	const StandingsPtr getStandings(uint32_t user_type);
 	void notifySolution(time_t submit_time);

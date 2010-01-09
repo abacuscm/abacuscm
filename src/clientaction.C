@@ -24,6 +24,20 @@ ClientAction::ClientAction() {
 ClientAction::~ClientAction() {
 }
 
+ClientAction *ClientAction::getAction(int user_type, const std::string &action) {
+	std::map<int, std::map<std::string, ClientAction*> >::const_iterator usermap_it;
+
+	usermap_it = actionmap.find(user_type);
+	if (usermap_it == actionmap.end())
+		return NULL;
+
+	std::map<std::string, ClientAction*>::const_iterator action_it;
+	action_it = usermap_it->second.find(action);
+	if (action_it == usermap_it->second.end())
+		return NULL;
+	else
+		return action_it->second;
+}
 
 bool ClientAction::registerAction(int user_type, std::string action, ClientAction *ca) {
 	if(actionmap[user_type][action] != NULL)
@@ -54,7 +68,7 @@ bool ClientAction::process(ClientConnection *cc, MessageBlock *mb) {
 	if (user_type == USER_TYPE_NONCONTEST)
 		user_type = USER_TYPE_CONTESTANT;
 
-	ClientAction* ca = actionmap[user_type][action];
+	ClientAction* ca = getAction(user_type, action);
 	if(ca)
 		return ca->int_process(cc, mb);
 	else {
