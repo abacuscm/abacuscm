@@ -1,13 +1,13 @@
 [modules]
 moddir = modules
-peermessenger = udpmessenger
+peermessenger = udtcpmessenger
 dbconnector = dbmysql
 support = user,timer,submission,standings
 actions = auth,passwd,adduser,addserver,whatami,problemtypes,problemmanip,status,serverlist,submit,events,startstop,mark,problem_subscription,clarify,contesttime,standings
 problemtypes = testcasedriventype
 
-[udpmessenger]
-bind = all
+[udtcpmessenger]
+bind = 0.0.0.0
 port = 7368
 maxfragmentsize = 1000
 checksumseed = 1976534597
@@ -31,6 +31,7 @@ user=abacus
 password=counting beeds
 
 [clientlistener]
+bind = 0.0.0.0
 port = 7368
 x509 = certs/chimera.crt
 private = certs/chimera.key
