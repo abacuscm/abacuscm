@@ -24,7 +24,7 @@ void JudgeDecisionDialog::FileSelector_activated( const QString &key )
 				display += text[i];
 			else {
 				char buffer[10];
-				sprintf(buffer, "\\%03o", text[i]);
+				sprintf(buffer, "\\%03o", (unsigned char) text[i]);
 				log(LOG_DEBUG, "buffer: %s", buffer);
 				display += buffer;
 			}
