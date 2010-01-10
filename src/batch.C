@@ -19,15 +19,24 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <numeric>
 #include <map>
 #include <stdexcept>
 #include <cassert>
 
 using namespace std;
 
-void batch_sendMB(ServerConnection &_server_con, MessageBlock *mb) {
+void batch_sendMB(ServerConnection &_server_con, MessageBlock *&mb,
+				  vector<string> &content) {
+	string all_content;
+
 	if (mb == NULL)
 		return;
+
+	if (!content.empty()) {
+		all_content = accumulate(content.begin(), content.end(), string());
+		mb->setContent(all_content.c_str(), all_content.size(), false);
+	}
 
 	log(LOG_DEBUG, "Sending %s", mb->action().c_str());
 	MessageBlock *ret = _server_con.sendMB(mb);
@@ -36,45 +45,85 @@ void batch_sendMB(ServerConnection &_server_con, MessageBlock *mb) {
 		mb->dump();
 		return;
 	}
+	else
+	{
+		log(LOG_DEBUG, "Received reply");
+		ret->dump();
+	}
 
-	log(LOG_DEBUG, "Received reply");
-	ret->dump();
 	delete ret;
+	delete mb;
+	mb = NULL;
+	content.clear();
 }
 
 static int process(ServerConnection &_server_con, istream &in) {
 	string line;
 	MessageBlock *cur = NULL;
+	vector<string> content;
 	int lineno = 0;
+
 	while (getline(in, line)) {
 		lineno++;
 		if (line == "") {
 			/* Useful in interactive mode for flushing a record */
-			batch_sendMB(_server_con, cur);
-			delete cur;
-			cur = NULL;
+			batch_sendMB(_server_con, cur, content);
 			continue;
 		}
 
 		string::size_type split = line.find(':');
 		if (split == string::npos) {
-			/* Start of a new record */
-			batch_sendMB(_server_con, cur);
-			delete cur;
-			cur = new MessageBlock(line);
+			split = line.find('<');
+			if (split == string::npos) {
+				/* Start of a new record */
+				batch_sendMB(_server_con, cur, content);
+				cur = new MessageBlock(line);
+			}
+			else {
+				/* File input */
+				string field = line.substr(0, split);
+				string fname = line.substr(split + 1);
+				ostringstream buffer;
+				ifstream inf(fname.c_str());
+				if (!inf) {
+					log(LOG_ERR, "Cannot open %s", fname.c_str());
+				}
+				else {
+					buffer << inf.rdbuf();
+					if (!buffer) {
+						log(LOG_ERR, "Cannot read %s", fname.c_str());
+					}
+					else {
+						inf.close();
+
+						/* Extract the base name */
+						string::size_type slash = fname.rfind('/');
+						if (slash != string::npos)
+							fname = fname.substr(slash + 1);
+						if (field != "") {
+							/* Encode the location, for the set problem attribs message */
+							ostringstream value;
+							size_t offset = 0;
+							for (size_t i = 0; i < content.size(); i++)
+								offset += content[i].size();
+							value << offset << " " << buffer.str().size() << " " << fname;
+							(*cur)[field] = value.str();
+						}
+						content.push_back(buffer.str());
+					}
+				}
+			}
 		}
 		else {
-			/* Continuation */
+			/* Header */
 			if (cur == NULL) {
-				cerr << "Message data with no message header\n";
+				log(LOG_ERR, "Message data with no message header");
 				return -1;
 			}
 			(*cur)[line.substr(0, split)] = line.substr(split + 1);
 		}
 	}
-	batch_sendMB(_server_con, cur);
-	delete cur;
-	cur = NULL;
+	batch_sendMB(_server_con, cur, content);
 	return 0;
 }
 
