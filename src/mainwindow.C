@@ -434,7 +434,7 @@ void MainWindow::doChangePassword() {
 					QMessageBox::Information, QMessageBox::Ok,
 					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
 		else
-			QMessageBox("Failed to change password!", "Something went wront while changing password...",
+			QMessageBox("Failed to change password!", "Something went wrong while changing password...",
 					QMessageBox::Critical, QMessageBox::Ok,
 					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
 	}
