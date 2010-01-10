@@ -135,7 +135,7 @@ bool ClientConnection::process_data() {
 		case SSL_ERROR_WANT_WRITE:
 			return true;
 		case SSL_ERROR_ZERO_RETURN:
-			// clean shut down.
+			// connection shut down
 			return false;
 		default:
 			log_ssl_errors("SSL_read");

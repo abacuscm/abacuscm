@@ -126,7 +126,14 @@ ThreadSSL::Status ThreadSSL::read(void *buf, int len, Mode mode) {
 			return stat;
 		}
 		ret = SSL_read(_ssl, buffer + stat.processed, len - stat.processed);
-		stat.err = SSL_get_error(_ssl, ret);
+		if (ret == 0) {
+			/* We don't particularly care about the difference between
+			 * clean and unclean shutdown, so claim it was clean.
+			 */
+			stat.err = SSL_ERROR_ZERO_RETURN;
+		}
+		else
+			stat.err = SSL_get_error(_ssl, ret);
 		fd = SSL_get_fd(_ssl);
 		pthread_mutex_unlock(&_lock);
 
@@ -156,7 +163,14 @@ ThreadSSL::Status ThreadSSL::write(const void *buf, int len, Mode mode)
 			return stat;
 		}
 		ret = SSL_write(_ssl, buffer + stat.processed, len - stat.processed);
-		stat.err = SSL_get_error(_ssl, ret);
+		if (ret == 0) {
+			/* We don't particularly care about the difference between
+			 * clean and unclean shutdown, so claim it was clean.
+			 */
+			stat.err = SSL_ERROR_ZERO_RETURN;
+		}
+		else
+			stat.err = SSL_get_error(_ssl, ret);
 		fd = SSL_get_fd(_ssl);
 		pthread_mutex_unlock(&_lock);
 
