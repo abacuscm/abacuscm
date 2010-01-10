@@ -30,6 +30,7 @@ public:
 protected:
 	virtual list<string> getProgramArgv();
 public:
+	virtual void setRootDir(string root);
 	virtual string sourceFilename(const Buffer&);
 	virtual bool compile(string infile, string compiler_log, string outdir);
 };
@@ -40,6 +41,11 @@ Python_UserProg::Python_UserProg() {
 
 Python_UserProg::~Python_UserProg() {
 	/* Nothing required */
+}
+
+void Python_UserProg::setRootDir(string root) {
+	/* Do nothing, to prevent the normal chroot */
+	(void) root;
 }
 
 list<string> Python_UserProg::getProgramArgv() {
