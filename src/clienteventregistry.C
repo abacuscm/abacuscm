@@ -40,12 +40,15 @@ void ClientEventRegistry::registerClient(ClientConnection *cc) {
 };
 
 bool ClientEventRegistry::registerClient(string eventname, ClientConnection *cc) {
+	pthread_mutex_lock(&_lock);
 	EventMap::iterator i = _eventmap.find(eventname);
 	if(i == _eventmap.end()) {
 		log(LOG_INFO, "Attempt to register for non-existant event '%s' from user %u.", eventname.c_str(), cc->getProperty("user_id"));
+		pthread_mutex_unlock(&_lock);
 		return false;
 	}
 	i->second->registerClient(cc);
+	pthread_mutex_unlock(&_lock);
 	return true;
 }
 
@@ -65,12 +68,12 @@ void ClientEventRegistry::deregisterClient(ClientConnection *cc) {
 
 void ClientEventRegistry::deregisterClient(string eventname, ClientConnection *cc) {
 	pthread_mutex_lock(&_lock);
-	Event* ev = _eventmap[eventname];
 	log(LOG_DEBUG, "Deregistering from event '%s'", eventname.c_str());
-	if(!ev)
+	EventMap::iterator i = _eventmap.find(eventname);
+	if(i == _eventmap.end())
 		log(LOG_INFO, "Attempt by user %d to deregister from non-existant event '%s'", cc->getProperty("user_id"), eventname.c_str());
 	else
-		ev->deregisterClient(cc);
+		i->second->deregisterClient(cc);
 	pthread_mutex_unlock(&_lock);
 }
 
