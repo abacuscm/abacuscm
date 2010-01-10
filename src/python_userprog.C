@@ -23,6 +23,7 @@ using namespace std;
 class Python_UserProg : public UserProg {
 private:
 	string _progname;
+	string _dir;	
 
 public:
 	Python_UserProg();
@@ -44,8 +45,7 @@ Python_UserProg::~Python_UserProg() {
 }
 
 void Python_UserProg::setRootDir(string root) {
-	/* Do nothing, to prevent the normal chroot */
-	(void) root;
+	_dir = root;
 }
 
 list<string> Python_UserProg::getProgramArgv() {
@@ -56,7 +56,13 @@ list<string> Python_UserProg::getProgramArgv() {
 		interpreter = "/usr/bin/python";
 	}
 	argv.push_back(interpreter);
-	argv.push_back(_progname);
+	
+	string progname;
+	if (_dir != "")
+		progname = _dir + "/" + _progname;
+	else
+		progname = _progname;
+	argv.push_back(progname);
 	return argv;
 }
 
