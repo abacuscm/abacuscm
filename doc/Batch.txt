@@ -19,7 +19,9 @@ key:value
 
 There may optionally be a blank line between messages, but NOT within a
 message. A blank line also flushes the current message, which may be
-convenient if using it interactively. The valid types and their required
+convenient if using it interactively. Lines beginning with a # are ignored.
+
+The valid types and their required
 key-value pairs are not currently documented, but can generally be inferred
 from the code in src/serverconnection.C. As an example, the first message will
 generally be

@@ -70,6 +70,10 @@ static int process(ServerConnection &_server_con, istream &in) {
 			batch_sendMB(_server_con, cur, content);
 			continue;
 		}
+		else if (line[0] == '#') {
+			/* Comment */
+			continue;
+		}
 
 		string::size_type split = line.find(':');
 		if (split == string::npos) {

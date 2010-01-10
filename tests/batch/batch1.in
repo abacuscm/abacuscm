@@ -1,0 +1,126 @@
+# Run this one first on a pristine database (you might need to change the
+# admin password back to 'admin' first though.
+
+auth
+user:admin
+pass:admin
+
+passwd
+newpass:admin
+
+adduser
+username:test1
+friendlyname:Unicode: ēßõ±°½—£
+passwd:testtmp
+type:contestant
+
+id_passwd
+user_id:17
+newpass:test1
+
+# A time in the past, so that contest will start
+startstop
+action:start
+time:1000000000
+server_id:all
+
+# Send same time again, to check that that doesn't break it
+startstop
+action:start
+time:1000000000
+server_id:all
+
+# Hopefully a long time in the future
+startstop
+action:stop
+time:2063050000
+server_id:all
+
+getprobtypes
+
+getserverlist
+
+getprobdescript
+type:tcprob
+
+setprobattrs
+prob_id:0
+prob_type:tcprob
+time_limit:5
+ignore_whitespace:Yes
+shortname:test
+longname:Test Problem
+testcase.input<tests/batch/test.in
+testcase.output<tests/batch/test.out
+
+getprobattrs
+prob_id:1
+
+getprobfile
+prob_id:1
+file:testcase.input
+
+getproblems
+
+getsubmissibleproblems
+
+getusers
+
+problem_subscription
+action:is_subscribed
+event:judge_1
+
+problem_subscription
+action:subscribe
+event:judge_1
+
+problem_subscription
+action:unsubscribe
+event:judge_1
+
+# A nonsense subscription, to check that the server won't die
+problem_subscription
+action:subscribe
+event:judge_nonsense
+
+# A nonsense desubscription, to check that the server won't die
+problem_subscription
+action:unsubscribe
+event:judge_nonsense
+
+clarificationrequest
+prob_id:1
+question:Question?
+
+clarification
+clarification_request_id:1
+answer:Answer!
+public:1
+
+getsubmissions
+
+getclarifications
+
+getclarificationrequests
+
+standings
+
+balloonnotify
+action:subscribe
+
+balloonnotify
+action:unsubscribe
+
+problem_subscription
+action:subscribe
+event:judgesubmission
+
+contesttime
+
+subscribetime
+
+# Still TODO:
+# mark
+# fetchfile
+# subscribemark
+# addserver
