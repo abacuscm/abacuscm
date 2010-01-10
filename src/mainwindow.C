@@ -995,7 +995,7 @@ void MainWindow::submissionHandler(QListViewItem *item) {
 						QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
 				return;
 			}
-			compilerOutputDialog.FileData->setText(data);
+			compilerOutputDialog.FileData->setText(QString::fromUtf8(data));
 			delete[] data;
 			compilerOutputDialog.exec();
 		}
