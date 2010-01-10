@@ -171,9 +171,11 @@ bool ActGetSubmissibleProblems::int_process(ClientConnection *cc, MessageBlock *
 	ProblemList::iterator p;
 	int c = 0;
 	for (p = probs.begin(); p != probs.end(); p++, c++) {
-        uint32_t problem_id = *p;
-		if (!db->isSubmissionAllowed(user_id, problem_id))
+		uint32_t problem_id = *p;
+		if (!db->isSubmissionAllowed(user_id, problem_id)) {
+			c--;
 			continue;
+		}
 
 		std::ostringstream ostrstrm;
 		ostrstrm << c;
