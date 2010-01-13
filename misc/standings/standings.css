@@ -1,0 +1,8 @@
+table { border: 2px solid;border-collapse: collapse; }
+th { background-color: lightblue; }
+col.team { width: 20em; }
+colgroup.problem col { width: 8ex; }
+tr.even { background-color: #eeeeee; }
+td, th { border: 1px solid; }
+span.correct { font-weight: bold; color: green; }
+p.updated { font-size: small; }
