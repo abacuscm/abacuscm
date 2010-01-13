@@ -50,8 +50,8 @@ time_limit:5
 ignore_whitespace:Yes
 shortname:test
 longname:Test Problem
-testcase.input<tests/batch/test.in
-testcase.output<tests/batch/test.out
+testcase.input<tests/batch/data.in
+testcase.output<tests/batch/data.out
 
 getprobattrs
 prob_id:1
@@ -62,21 +62,22 @@ file:testcase.input
 
 getproblems
 
+# Not valid for admin, will fail
 getsubmissibleproblems
 
 getusers
 
 problem_subscription
 action:is_subscribed
-event:judge_1
+event:judge_test
 
 problem_subscription
 action:subscribe
-event:judge_1
+event:judge_test
 
 problem_subscription
 action:unsubscribe
-event:judge_1
+event:judge_test
 
 # A nonsense subscription, to check that the server won't die
 problem_subscription
