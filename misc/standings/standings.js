@@ -137,6 +137,12 @@ $(document).ready(function()
         // If we try to do this immediately, we get the old input value
         setTimeout(function() { update_table(null); }, 0);
     });
+    // IE doesn't send backspace through keypress
+    $("#searchbox").keyup(function(e)
+    {
+        if (e.keyCode == 8)
+            setTimeout(function() { update_table(null); }, 0);
+    });
 
     $.ajaxSetup({cache: false});
     update();
