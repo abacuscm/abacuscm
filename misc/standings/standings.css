@@ -3,6 +3,10 @@ th { background-color: lightblue; }
 col.team { width: 20em; }
 colgroup.problem col { width: 8ex; }
 tr.even { background-color: #eeeeee; }
+tr.search { background-color: #ffff88; }
+tr.even.search { background-color: #eeee88; }
 td, th { border: 1px solid; }
 span.correct { font-weight: bold; color: green; }
 p.updated { font-size: small; }
+.jsonly { display: none; }
+input.invalid { background-color: #ff8888; }
