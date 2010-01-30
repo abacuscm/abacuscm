@@ -74,6 +74,7 @@ void Markers::real_enqueueSubmission(uint32_t sd) {
 }
 
 void Markers::real_enqueueMarker(ClientConnection* cc) {
+	log(LOG_DEBUG, "Enqueuing marker %p", cc);
 	if(_problems.empty()) {
 		_markers.push_back(cc);
 	} else {
