@@ -164,6 +164,7 @@ void Markers::notifyMarked(ClientConnection* cc, uint32_t submission_id) {
 
 		// chuck the submission_id - it has now been marked.
 		// re-enqueue the ClientConnection.
+		log(LOG_DEBUG, "Adding marker %p back to queue after successful mark of submission %u", cc, submission_id);
 		real_enqueueMarker(cc);
 	}
 	pthread_mutex_unlock(&_lock);
