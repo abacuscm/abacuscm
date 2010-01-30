@@ -130,8 +130,11 @@ void Markers::issue(ClientConnection* cc, uint32_t sd) {
 
 	if(cc->sendMessageBlock(&mb)) {
 		_issued[cc] = sd;
-	} else
+		log(LOG_DEBUG, "Issued submission %u to %p", sd, cc);
+	} else {
 		enqueueSubmission(sd);
+		log(LOG_DEBUG, "Submission of %u to %p failed; returning submission to queue", sd, cc);
+	}
 }
 
 uint32_t Markers::hasIssued(ClientConnection*cc) {
