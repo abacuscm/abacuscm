@@ -50,10 +50,13 @@ void Markers::preemptMarker(ClientConnection* cc) {
 	std::list<ClientConnection*>::iterator i1;
 	std::map<ClientConnection*, uint32_t>::iterator i2;
 
-	if((i1 = list_find(_markers, cc)) != _markers.end())
+	if((i1 = list_find(_markers, cc)) != _markers.end()) {
+		log(LOG_DEBUG, "Removing %p from available markers - was not issued anything", cc);
 		_markers.erase(i1);
+	}
 	else if((i2 = _issued.find(cc)) != _issued.end()) {
 		uint32_t tmp = i2->second;
+		log(LOG_DEBUG, "Removing %p from available markers - was issued %u", cc, tmp);
 		_issued.erase(i2);
 		real_enqueueSubmission(tmp);
 	}
@@ -129,6 +132,7 @@ void Markers::issue(ClientConnection* cc, uint32_t sd) {
 	mb.setContent(content, length);
 	delete []content;
 
+	log(LOG_DEBUG, "About to issue %u to %p", sd, cc);
 	if(cc->sendMessageBlock(&mb)) {
 		_issued[cc] = sd;
 		log(LOG_DEBUG, "Issued submission %u to %p", sd, cc);
