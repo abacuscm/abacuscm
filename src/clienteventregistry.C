@@ -35,7 +35,7 @@ void ClientEventRegistry::registerClient(ClientConnection *cc) {
 	}
 	uint32_t user_id = cc->getProperty("user_id");
 	pthread_mutex_lock(&_lock);
-	_clients[user_id] = cc;
+	_clients.insert(make_pair(user_id, cc));
 	pthread_mutex_unlock(&_lock);
 };
 
@@ -60,9 +60,15 @@ void ClientEventRegistry::deregisterClient(ClientConnection *cc) {
 	for(e = _eventmap.begin(); e != _eventmap.end(); ++e)
 		e->second->deregisterClient(cc);
 
-	ClientMap::iterator c = _clients.find(user_id);
-	if(c != _clients.end())
-		_clients.erase(c);
+	pair<ClientMap::iterator, ClientMap::iterator> range = _clients.equal_range(user_id);
+	ClientMap::iterator c = range.first;
+	while (c != range.second) {
+		ClientMap::iterator next = c;
+		++next;
+		if (c->second == cc)
+			_clients.erase(c);
+		c = next;
+	}
 	pthread_mutex_unlock(&_lock);
 }
 
@@ -125,8 +131,8 @@ void ClientEventRegistry::broadcastEvent(const MessageBlock *mb) {
 
 void ClientEventRegistry::sendMessage(uint32_t user_id, const MessageBlock *mb) {
 	pthread_mutex_lock(&_lock);
-	ClientMap::iterator i = _clients.find(user_id);
-	if (i != _clients.end()) {
+	pair<ClientMap::const_iterator, ClientMap::const_iterator> range = _clients.equal_range(user_id);
+	for (ClientMap::const_iterator i = range.first; i != range.second; ++i) {
 		ClientConnection *cc = i->second;
 		if(cc)
 			cc->sendMessageBlock(mb);

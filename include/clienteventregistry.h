@@ -40,7 +40,7 @@ private:
 	};
 
 	typedef std::map<std::string, Event*> EventMap;
-	typedef std::map<uint32_t, ClientConnection*> ClientMap;
+	typedef std::multimap<uint32_t, ClientConnection*> ClientMap;
 
 	EventMap _eventmap;
 	ClientMap _clients;
