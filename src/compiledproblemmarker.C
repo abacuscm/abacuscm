@@ -55,7 +55,7 @@ void CompiledProblemMarker::mark() {
 	if(fname == "") {
 		string compiler_log_filename = wdir + "/compiler_log";
 		ofstream compiler_log(compiler_log_filename.c_str());
-		compiler_log << "Unable to automatically determine class name. Make sure that your main class is the first class in the source file, and that you have declared it as 'public class MyClass {'. Pay attention to case whitespace; in particular there should be only whitespace between the name of your class and the opening {, and the keywords 'public' and 'class' should all be in lowercase. Class names must also begin with a letter or underscore (and not a digit or other character)." << endl;
+		compiler_log << "Unable to automatically determine class name. Make sure that your main class is the first class in the source file, and that you have declared it as 'public class MyClass {'. Pay attention to case and whitespace; in particular there should be only whitespace between the name of your class and the opening {, and the keywords 'public' and 'class' should all be in lowercase. Class names must also begin with a letter or underscore (and not a digit or other character)." << endl;
 		compiler_log.close();
 		addResultFile("Compilation log", compiler_log_filename, 16384);
 		log(LOG_ERR, "Failed to determine class name for user program.");
