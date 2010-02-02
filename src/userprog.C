@@ -56,7 +56,9 @@ int UserProg::execcompiler(list<string> p_argv, string compiler_log) {
 		}
 		execv(*argv, argv);
 		lerror("execv");
-		exit(-1);
+		/* Note: not 'exit', since that would call all our destructors
+		 */
+		_exit(-1);
 	} else { // parent
 		int status;
 		while(waitpid(pid, &status, 0) < 0)
