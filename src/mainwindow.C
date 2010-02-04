@@ -643,7 +643,7 @@ void MainWindow::doSubmit() {
 }
 
 void MainWindow::doClarificationRequest() {
-	vector<ProblemInfo> probs = _server_con.getProblems();
+	vector<ProblemInfo> probs = _server_con.getSubmissibleProblems();
 
 	ClarificationRequest cr;
 
