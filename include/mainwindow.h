@@ -55,6 +55,8 @@ private:
 
 	void triggerType(std::string type, bool status);
 	void switchType(std::string type);
+
+	template<typename T> void setClarification(QListViewItem *item, T &cr);
 protected:
 	virtual void doHelpAbout();
 	virtual void doFileConnect();
@@ -82,12 +84,12 @@ public:
 	// we can't cast member function pointers to void* - no idea
 	// why though - can probably memcpy them but that would be
 	// even uglier.
-	void updateStandings();
-	virtual void updateSubmissions();
-	void updateClarificationRequests();
-	void updateClarifications();
-	void updateStatus();
-	void serverDisconnect();
+	void updateStandings(const MessageBlock *mb = NULL);
+	virtual void updateSubmissions(const MessageBlock *mb = NULL);
+	void updateClarificationRequests(const MessageBlock *mb = NULL);
+	void updateClarifications(const MessageBlock *mb = NULL);
+	void updateStatus(const MessageBlock *mb = NULL);
+	void serverDisconnect(const MessageBlock *mb = NULL);
 
 	std::string getActiveType();
 };

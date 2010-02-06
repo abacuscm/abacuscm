@@ -162,24 +162,24 @@ static void event_balloon(const MessageBlock *mb, void*) {
 }
 
 /********************* MainWindowCaller *****************************/
-typedef void (MainWindow::*MainWindowFuncPtr)();
+typedef void (MainWindow::*MainWindowFuncPtr)(const MessageBlock *mb);
 class MainWindowCaller : public GUIEvent {
 private:
 	MainWindowFuncPtr _func;
 public:
-	MainWindowCaller(MainWindowFuncPtr func);
+	MainWindowCaller(MainWindowFuncPtr func, const MessageBlock *mb = NULL);
 
 	virtual void process(QWidget*);
 };
 
-MainWindowCaller::MainWindowCaller(MainWindowFuncPtr func) {
+MainWindowCaller::MainWindowCaller(MainWindowFuncPtr func, const MessageBlock *mb) : GUIEvent(mb) {
 	_func = func;
 }
 
 void MainWindowCaller::process(QWidget* wid) {
 	MainWindow* mainwin = dynamic_cast<MainWindow*>(wid);
 	if(mainwin)
-		(mainwin->*_func)();
+		(mainwin->*_func)(getMB());
 	else
 		log(LOG_ERR, "MainWindowCaller::process must receive an instance of MainWindow as parent!");
 }
@@ -205,8 +205,8 @@ static void updateSubmissionsFunctor(const MessageBlock* mb, void*) {
 	}
 }
 
-static void updateClarificationRequestsFunctor(const MessageBlock*, void*) {
-	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateClarificationRequests);
+static void updateClarificationRequestsFunctor(const MessageBlock* mb, void*) {
+	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateClarificationRequests, mb);
 	ev->post();
 }
 
@@ -349,13 +349,13 @@ void MainWindow::doFileConnect() {
 				_server_con.registerEventCallback("msg", event_msg, NULL);
 				_server_con.registerEventCallback("startstop", contestStartStop, NULL);
 				_server_con.registerEventCallback("balloon", event_balloon, NULL);
+				_server_con.registerEventCallback("updateclarificationrequests", updateClarificationRequestsFunctor, NULL);
 				if (_active_type == "contestant")
 				{
 					_server_con.registerEventCallback("newclarification", newClarificationFunctor, NULL);
 				}
 				else
 				{
-					_server_con.registerEventCallback("updateclarificationrequests", updateClarificationRequestsFunctor, NULL);
 					_server_con.registerEventCallback("updateclarifications", updateClarificationsFunctor, NULL);
 					_server_con.watchJudgeSubmissions();
 				}
@@ -658,7 +658,6 @@ void MainWindow::doClarificationRequest() {
 		uint32_t prob_id = (item == -1) ? 0 : probs[item].id;
 
 		_server_con.clarificationRequest(prob_id, cr.question->text());
-		updateClarificationRequests();
 	}
 }
 
@@ -759,7 +758,7 @@ void MainWindow::customEvent(QCustomEvent *ev) {
 		log(LOG_DEBUG, "Unknown QCustomEvent!!!");
 }
 
-void MainWindow::updateStatus() {
+void MainWindow::updateStatus(const MessageBlock *) {
 	if (_active_type == "")
 	{
 		status->setText("Not connected");
@@ -778,7 +777,7 @@ void MainWindow::updateStatus() {
 	}
 }
 
-void MainWindow::updateStandings() {
+void MainWindow::updateStandings(const MessageBlock *) {
 	if (maintabs->currentPage() != tabStandings)
 		return;
 
@@ -814,7 +813,7 @@ void MainWindow::updateStandings() {
 	}
 }
 
-void MainWindow::updateSubmissions() {
+void MainWindow::updateSubmissions(const MessageBlock *) {
 	if (maintabs->currentPage() != tabSubmissions)
 		return;
 
@@ -1033,7 +1032,7 @@ static string summary_string(const string &s)
 	return ans;
 }
 
-void MainWindow::updateClarifications() {
+void MainWindow::updateClarifications(const MessageBlock *) {
 	if (maintabs->currentPage() != tabClarifications)
 		return;
 
@@ -1067,41 +1066,57 @@ void MainWindow::updateClarifications() {
 	}
 }
 
-void MainWindow::updateClarificationRequests() {
+template<typename T>
+void MainWindow::setClarification(QListViewItem *item, T &cr) {
+	char time_buffer[64];
+	struct tm time_tm;
+	time_t time;
+
+	log(LOG_DEBUG, "clarification request:");
+	for(typename T::const_iterator a = cr.begin(); a != cr.end(); ++a)
+		log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());
+
+	time = atol(cr["time"].c_str());
+	localtime_r(&time, &time_tm);
+	strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
+
+	item->setText(0, cr["id"]);
+	item->setText(1, time_buffer);
+	item->setText(2, cr["problem"]);
+	item->setText(3, cr["status"]);
+	item->setText(4, summary_string(cr["question"]));
+	fullClarificationRequests[cr["id"]] = cr["question"];
+}
+
+void MainWindow::updateClarificationRequests(const MessageBlock *mb) {
 	if (maintabs->currentPage() != tabClarificationRequests)
 		return;
 
-	ClarificationRequestList list = _server_con.getClarificationRequests();
+	if (mb == NULL) {
+		/* Full refresh */
+		ClarificationRequestList list = _server_con.getClarificationRequests();
 
-	clarificationRequests->clear();
-	fullClarificationRequests.clear();
+		clarificationRequests->clear();
+		fullClarificationRequests.clear();
 
-	ClarificationRequestList::iterator l;
-	for(l = list.begin(); l != list.end(); ++l) {
-		log(LOG_DEBUG, "clarification request:");
-		AttributeMap::iterator a;
-		QListViewItem *item = new QListViewItem(clarificationRequests);
-		char time_buffer[64];
-		struct tm time_tm;
-		time_t time;
+		ClarificationRequestList::iterator l;
+		for(l = list.begin(); l != list.end(); ++l) {
+			QListViewItem *item = new QListViewItem(clarificationRequests);
 
-		time = atol((*l)["time"].c_str());
-		localtime_r(&time, &time_tm);
-		strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
+			setClarification(item, *l);
+		}
+	}
+	else {
+		/* Replace if already present, otherwise add */
+		QListViewItem *item = clarificationRequests->findItem((*mb)["id"], 0);
+		if (!item)
+			item = new QListViewItem(clarificationRequests);
 
-		item->setText(0, (*l)["id"]);
-		item->setText(1, time_buffer);
-		item->setText(2, (*l)["problem"]);
-		item->setText(3, (*l)["status"]);
-		item->setText(4, summary_string((*l)["question"]));
-		fullClarificationRequests[(*l)["id"]] = (*l)["question"];
-
-		for(a = l->begin(); a != l->end(); ++a)
-			log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());
+		setClarification(item, *mb);
 	}
 }
 
-void MainWindow::serverDisconnect() {
+void MainWindow::serverDisconnect(const MessageBlock *) {
 	doFileDisconnect();
 }
 

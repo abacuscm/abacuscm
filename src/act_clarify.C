@@ -249,8 +249,21 @@ bool ClarificationMessage::process() const {
 							 _time,
 							 _server_id,
 							 _text);
-		MessageBlock notify("updateclarificationrequests");
-		ClientEventRegistry::getInstance().broadcastEvent(&notify);
+		if (result) {
+			/* FIXME: this is a nasty hack to get back the information about
+			 * problem names etc.
+			 */
+			AttributeList req = db->getClarificationRequest(_clarification_request_id);
+			if (req.empty())
+				result = false;
+			else {
+				MessageBlock notify("updateclarificationrequests");
+				AttributeList::iterator a;
+				for(a = req.begin(); a != req.end(); ++a)
+					notify[a->first] = a->second;
+				ClientEventRegistry::getInstance().broadcastEvent("updateclarificationrequests", _user_id, &notify);
+			}
+		}
 	}
 	else
 	{

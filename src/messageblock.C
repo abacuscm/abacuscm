@@ -31,6 +31,26 @@ MessageBlock::MessageBlock() {
 	_content_private = true;
 }
 
+MessageBlock::MessageBlock(const MessageBlock &mb) {
+	_message = mb._message;
+	_headers = mb._headers;
+	_content_length = mb._content_length;
+	if (mb._content) {
+		_content = new char[_content_length];
+		memcpy(_content, mb._content, _content_length);
+		if (mb._content_pos)
+			_content_pos = _content + (mb._content_pos - mb._content);
+		else
+			_content_pos = NULL;
+		_content_private = true;
+	}
+	else {
+		_content = NULL;
+		_content_pos = NULL;
+		_content_private = true;
+	}
+}
+
 MessageBlock::~MessageBlock() {
 	if(_content && _content_private)
 		delete []_content;

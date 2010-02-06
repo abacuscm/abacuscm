@@ -30,8 +30,15 @@ private:
 	char *_content_pos;
 
 	bool writeBlockToSSL(const char *buffer, int length, ThreadSSL *ssl) const;
+
+	// Prevent copying, which would corrupt content
+	MessageBlock &operator= (const MessageBlock &mb);
 public:
+	typedef MessageHeaders::const_iterator const_iterator;
+	typedef MessageHeaders::iterator iterator;
+
 	MessageBlock(const std::string& message);
+	MessageBlock(const MessageBlock &mb);
 	MessageBlock();
 	~MessageBlock();
 

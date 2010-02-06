@@ -310,8 +310,8 @@ bool SubmissionMessage::process() const {
 
 	ClientEventRegistry::getInstance().sendMessage(_user_id, &mb);
 
-	mb = MessageBlock("submission");
-	ClientEventRegistry::getInstance().triggerEvent("judgesubmission", &mb);
+	MessageBlock mb2("submission");
+	ClientEventRegistry::getInstance().triggerEvent("judgesubmission", &mb2);
 
 	if(db->getServerAttribute(Server::getId(), "marker") == "yes")
 		Markers::getInstance().enqueueSubmission(_submission_id);
