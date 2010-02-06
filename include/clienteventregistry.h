@@ -29,9 +29,8 @@ private:
 		ClientConnectionPool _clients;
 		ClientConnection* _next_single;
 		pthread_mutex_t _lock;
-		int _broadcast_mask;
 	public:
-		explicit Event(int broadcast_mask);
+		Event();
 		~Event();
 
 		void triggerEvent(const MessageBlock* mb);
@@ -39,8 +38,6 @@ private:
 		void registerClient(ClientConnection *);
 		void deregisterClient(ClientConnection *);
 		bool isClientRegistered(ClientConnection *);
-
-		int broadcastMask() const { return _broadcast_mask; }
 	};
 
 	typedef std::map<std::string, Event*> EventMap;
@@ -63,7 +60,7 @@ public:
 
 	// Creates an event, and determines which users should always receive
 	// notifications sent via the event-specific broadcastEvent.
-	void registerEvent(const std::string &eventname, int broadcast_mask = 0);
+	void registerEvent(const std::string &eventname);
 
 	// Send message to clients registered via registerClient for the event
 	void triggerEvent(const std::string &eventname, const MessageBlock *mb);
@@ -71,7 +68,7 @@ public:
 	// Send message to all clients either in the broadcast mask, or with the
 	// given user id. If user_id is zero it is ignored. Note that clients do
 	// not need to register with the event to receive it.
-	void broadcastEvent(const std::string &eventname, uint32_t user_id, const MessageBlock *mb);
+	void broadcastEvent(const std::string &eventname, uint32_t user_id, int mask, const MessageBlock *mb);
 
 	// Send message to all clients
 	void broadcastEvent(const MessageBlock *mb);

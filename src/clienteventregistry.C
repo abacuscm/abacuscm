@@ -98,13 +98,13 @@ bool ClientEventRegistry::isClientRegistered(const string &eventname, ClientConn
 	return ans;
 }
 
-void ClientEventRegistry::registerEvent(const string &eventname, int broadcast_mask) {
+void ClientEventRegistry::registerEvent(const string &eventname) {
 	pthread_mutex_lock(&_lock);
 	Event* ev = _eventmap[eventname];
 	if(ev)
 		log(LOG_NOTICE, "Attempt to re-register event '%s'", eventname.c_str());
 	else
-		_eventmap[eventname] = new Event(broadcast_mask);
+		_eventmap[eventname] = new Event();
 	pthread_mutex_unlock(&_lock);
 }
 
@@ -129,7 +129,7 @@ void ClientEventRegistry::broadcastEvent(const MessageBlock *mb) {
 	pthread_mutex_unlock(&_lock);
 }
 
-void ClientEventRegistry::broadcastEvent(const string &eventname, uint32_t user_id, const MessageBlock *mb) {
+void ClientEventRegistry::broadcastEvent(const string &eventname, uint32_t user_id, int mask, const MessageBlock *mb) {
 	pthread_mutex_lock(&_lock);
 	EventMap::iterator i = _eventmap.find(eventname);
 	pthread_mutex_unlock(&_lock);
@@ -137,7 +137,6 @@ void ClientEventRegistry::broadcastEvent(const string &eventname, uint32_t user_
 		log(LOG_ERR, "Attempt to trigger unknown event '%s'",
 				eventname.c_str());
 	else {
-		int mask = i->second->broadcastMask();
 		for(ClientMap::iterator j = _clients.begin(); j != _clients.end(); ++j) {
 			uint32_t user_type = j->second->getProperty("user_type");
 			if (j->first == user_id || ( (1 << user_type) & mask)) {
@@ -164,9 +163,8 @@ ClientEventRegistry& ClientEventRegistry::getInstance() {
 	return _instance;
 }
 
-ClientEventRegistry::Event::Event(int broadcast_mask) {
+ClientEventRegistry::Event::Event() {
 	pthread_mutex_init(&_lock, NULL);
-	_broadcast_mask = broadcast_mask;
 }
 
 ClientEventRegistry::Event::~Event() {

@@ -298,12 +298,18 @@ public:
 	virtual SubmissionList getSubmissions(uint32_t user_id = 0) = 0;
 
 	/**
+	 * Retrieves clarification with given ID. Returns empty list on
+	 * failure.
+	 */
+	virtual AttributeList getClarification(uint32_t c_id) = 0;
+
+	/**
 	 * Retrieves all clarifications relevant to a specific user.
 	 */
 	virtual ClarificationList getClarifications(uint32_t user_id = 0) = 0;
 
 	/**
-	 * Retrieves clarification with given ID. Returns empty list on
+	 * Retrieves clarification request with given ID. Returns empty list on
 	 * failure.
 	 */
 	virtual AttributeList getClarificationRequest(uint32_t req_id) = 0;

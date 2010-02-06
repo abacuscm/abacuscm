@@ -96,6 +96,7 @@ public:
 			uint32_t content_size, std::string language);
 	virtual SubmissionList getSubmissions(uint32_t uid);
 	virtual ClarificationList getClarifications(uint32_t uid);
+	virtual AttributeList getClarification(uint32_t c_id);
 	virtual ClarificationRequestList getClarificationRequests(uint32_t uid);
 	virtual AttributeList getClarificationRequest(uint32_t req_id);
 	virtual bool putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t prob_id,
@@ -871,6 +872,38 @@ SubmissionList MySQL::getSubmissions(uint32_t uid) {
 	mysql_free_result(res);
 
 	return lst;
+}
+
+AttributeList MySQL::getClarification(uint32_t c_id) {
+	ostringstream query;
+	query << "SELECT Clarification.clarification_id, username, value, Clarification.time, ClarificationRequest.text, Clarification.text FROM Clarification LEFT JOIN ClarificationRequest USING(clarification_req_id) LEFT JOIN User ON Clarification.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ProblemAttributes.problem_id = ClarificationRequest.problem_id AND ProblemAttributes.attribute = 'shortname'";
+	query << " WHERE Clarification.clarification_id = " << c_id;
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return AttributeList();
+	}
+
+	AttributeList attrs;
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if (!res) {
+		log_mysql_error();
+		return AttributeList();
+	}
+	MYSQL_ROW row = mysql_fetch_row(res);
+	if (row)
+	{
+		attrs["id"] = row[0];
+		/* Leave out Judge for now; can be added as row[1] later */
+		attrs["problem"] = row[2] ? row[2] : "General";
+		attrs["time"] = row[3];
+		attrs["question"] = row[4];
+		attrs["answer"] = row[5];
+		while (mysql_fetch_row(res)) {}
+	}
+	mysql_free_result(res);
+
+	return attrs;
 }
 
 ClarificationList MySQL::getClarifications(uint32_t uid) {

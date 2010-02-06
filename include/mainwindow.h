@@ -57,6 +57,7 @@ private:
 	void switchType(std::string type);
 
 	template<typename T> void setClarificationRequest(ClarificationRequestItem *item, T &cr);
+	template<typename T> void setClarification(ClarificationItem *item, T &cr);
 protected:
 	virtual void doHelpAbout();
 	virtual void doFileConnect();

@@ -261,31 +261,42 @@ bool ClarificationMessage::process() const {
 				AttributeList::iterator a;
 				for(a = req.begin(); a != req.end(); ++a)
 					notify[a->first] = a->second;
-				ClientEventRegistry::getInstance().broadcastEvent("updateclarificationrequests", _user_id, &notify);
+				ClientEventRegistry::getInstance().broadcastEvent("updateclarificationrequests", _user_id,
+																  USER_MASK_JUDGE | USER_MASK_ADMIN, &notify);
 			}
 		}
 	}
 	else
 	{
+		int pub = _prob_id;   /* _prob_id field is overloaded for public */
 		AttributeList req = db->getClarificationRequest(_clarification_request_id);
 		result = db->putClarification(_clarification_request_id,
 						  _clarification_id,
 						  _user_id,
 						  _time,
 						  _server_id,
-						  _prob_id, /* Actually pub */
+						  pub,
 						  _text);
-		MessageBlock update("updateclarifications");
-		ClientEventRegistry::getInstance().broadcastEvent(&update);
-
-		MessageBlock notify("newclarification");
-		notify["problem"] = req["problem"];
-		notify["question"] = req["question"];
-		notify["answer"] = _text;
-		if (_prob_id) /* public */
-			ClientEventRegistry::getInstance().broadcastEvent(&notify);
-		else
-			ClientEventRegistry::getInstance().sendMessage(atol(req["user_id"].c_str()), &notify);
+		if (result) {
+			/* FIXME: this is a nasty hack to get back the information about
+			 * problem names etc.
+			 */
+			AttributeList c = db->getClarification(_clarification_id);
+			if (req.empty())
+				result = false;
+			else {
+				MessageBlock notify("updateclarifications");
+				AttributeList::iterator a;
+				for(a = c.begin(); a != c.end(); ++a)
+					notify[a->first] = a->second;
+				if (pub)
+					ClientEventRegistry::getInstance().broadcastEvent("updateclarifications", 0,
+																	  USER_MASK_ALL & ~USER_MASK_MARKER, &notify);
+				else
+					ClientEventRegistry::getInstance().broadcastEvent("updateclarifications", strtoul(req["user_id"].c_str(), NULL, 10),
+																	  USER_MASK_JUDGE | USER_MASK_ADMIN, &notify);
+			}
+		}
 	}
 	db->release();db=NULL;
 	return result;

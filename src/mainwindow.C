@@ -80,42 +80,6 @@ void NotifyEvent::process(QWidget *parent) {
 	QMessageBox(_caption, _text, _icon, QMessageBox::Ok, QMessageBox::NoButton, QMessageBox::NoButton, parent).exec();
 }
 
-class NewClarificationEvent : public GUIEvent {
-private:
-	string _problem;
-	string _question;
-	string _answer;
-public:
-	NewClarificationEvent(const string &problem, const string &question, const string &answer);
-
-	virtual void process(QWidget*);
-};
-
-NewClarificationEvent::NewClarificationEvent(const string &problem, const string &question, const string &answer) {
-	_problem = problem;
-	_question = question;
-	_answer = answer;
-}
-
-void NewClarificationEvent::process(QWidget *parent) {
-	bool popup = true;
-	MainWindow* mainwin = dynamic_cast<MainWindow*>(parent);
-	if(mainwin)
-		popup = mainwin->getActiveType() == "contestant";
-	else
-		log(LOG_WARNING, "NewClarificationEvent::process must receive an instance of MainWindow as parent!");
-
-	if (popup)
-	{
-		ViewClarificationReply dialog;
-
-		dialog.problem->setText(QString::fromUtf8(_problem.c_str()));
-		dialog.question->setText(QString::fromUtf8(_question.c_str()));
-		dialog.answer->setText(QString::fromUtf8(_answer.c_str()));
-		dialog.exec();
-	}
-}
-
 static void window_log(int priority, const char* format, va_list ap) {
 	string caption;
 	QMessageBox::Icon icon;
@@ -468,8 +432,8 @@ static void updateClarificationRequestsFunctor(const MessageBlock* mb, void*) {
 	ev->post();
 }
 
-static void updateClarificationsFunctor(const MessageBlock*, void*) {
-	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateClarifications);
+static void updateClarificationsFunctor(const MessageBlock*mb, void*) {
+	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateClarifications, mb);
 	ev->post();
 
 	/* Also need to update the clarifications window, since the status
@@ -477,16 +441,6 @@ static void updateClarificationsFunctor(const MessageBlock*, void*) {
 	 */
 	GUIEvent *ev2 = new MainWindowCaller(&MainWindow::updateClarificationRequests);
 	ev2->post();
-}
-
-static void newClarificationFunctor(const MessageBlock* mb, void*) {
-	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateClarifications);
-	ev->post();
-	ev = new MainWindowCaller(&MainWindow::updateClarificationRequests);
-	ev->post();
-
-	NewClarificationEvent *nce = new NewClarificationEvent((*mb)["problem"], (*mb)["question"], (*mb)["answer"]);
-	nce->post();
 }
 
 static void contestStartStop(const MessageBlock* mb, void*) {
@@ -608,13 +562,8 @@ void MainWindow::doFileConnect() {
 				_server_con.registerEventCallback("startstop", contestStartStop, NULL);
 				_server_con.registerEventCallback("balloon", event_balloon, NULL);
 				_server_con.registerEventCallback("updateclarificationrequests", updateClarificationRequestsFunctor, NULL);
-				if (_active_type == "contestant")
-				{
-					_server_con.registerEventCallback("newclarification", newClarificationFunctor, NULL);
-				}
-				else
-				{
-					_server_con.registerEventCallback("updateclarifications", updateClarificationsFunctor, NULL);
+				_server_con.registerEventCallback("updateclarifications", updateClarificationsFunctor, NULL);
+				if (_active_type != "contestant") {
 					_server_con.watchJudgeSubmissions();
 				}
 
@@ -1271,31 +1220,58 @@ void MainWindow::toggleBalloonPopups(bool activate) {
 	}
 }
 
-void MainWindow::updateClarifications(const MessageBlock *) {
+template<typename T>
+void MainWindow::setClarification(ClarificationItem *item, T &c) {
+	log(LOG_DEBUG, "clarification:");
+	for(typename T::const_iterator a = c.begin(); a != c.end(); ++a)
+		log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());
+
+	uint32_t id = strtoul(c["id"].c_str(), NULL, 10);
+	item->setId(id);
+	item->setTime(strtoull(c["time"].c_str(), NULL, 10));
+	item->setProblem(c["problem"]);
+	item->setQuestion(c["question"]);
+	item->setAnswer(c["answer"]);
+
+	/* TODO: update the "answered" field on the request. This should be done by
+	 * passing through the request id.
+	 */
+}
+
+void MainWindow::updateClarifications(const MessageBlock *mb) {
 	if (maintabs->currentPage() != tabClarifications)
 		return;
 
-	ClarificationList list = _server_con.getClarifications();
+	if (mb == NULL) {
+		/* Full refresh */
+		ClarificationList list = _server_con.getClarifications();
 
-	clarifications->clear();
-	clarificationMap.clear();
+		clarifications->clear();
+		clarificationMap.clear();
 
-	ClarificationList::iterator l;
-	for(l = list.begin(); l != list.end(); ++l) {
-		log(LOG_DEBUG, "clarification:");
-		AttributeMap::iterator a;
-		ClarificationItem *item = new ClarificationItem(clarifications);
+		ClarificationList::iterator l;
+		for(l = list.begin(); l != list.end(); ++l) {
+			ClarificationItem *item = new ClarificationItem(clarifications);
+			setClarification(item, (*l));
+			clarificationMap[item->getId()] = item;
+		}
+	}
+	else {
+		/* Replace if already present, otherwise add */
+		uint32_t id = strtoull((*mb)["id"].c_str(), NULL, 10);
+		ClarificationItem *&item = clarificationMap[id];
+		if (!item)
+			item = new ClarificationItem(clarifications);
 
-		uint32_t id = strtoul((*l)["id"].c_str(), NULL, 10);
-		item->setId(id);
-		item->setTime(strtoull((*l)["time"].c_str(), NULL, 10));
-		item->setProblem((*l)["problem"]);
-		item->setQuestion((*l)["question"]);
-		item->setAnswer((*l)["answer"]);
-		clarificationMap[id] = item;
+		setClarification(item, *mb);
+		if (_active_type == "contestant") {
+			ViewClarificationReply dialog;
 
-		for(a = l->begin(); a != l->end(); ++a)
-			log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());
+			dialog.problem->setText(QString::fromUtf8(item->getProblem().c_str()));
+			dialog.question->setText(QString::fromUtf8(item->getQuestion().c_str()));
+			dialog.answer->setText(QString::fromUtf8(item->getAnswer().c_str()));
+			dialog.exec();
+		}
 	}
 }
 
