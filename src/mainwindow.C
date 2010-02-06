@@ -279,6 +279,7 @@ int ClarificationRequestItem::compare(QListViewItem *other, int col, bool ascend
 class ClarificationItem : public QListViewItem {
 private:
 	uint32_t _id;
+	uint32_t _request_id;
 	time_t _time;
 	string _problem;
 	string _question;
@@ -300,12 +301,14 @@ public:
 	ClarificationItem(QListViewItem *parent, QListViewItem *after);
 
 	uint32_t getId() const { return _id; }
+	uint32_t getRequestId() const { return _request_id; }
 	time_t getTime() const { return _time; }
 	const string &getProblem() const { return _problem; }
 	const string &getQuestion() const { return _question; }
 	const string &getAnswer() const { return _answer; }
 
 	void setId(uint32_t id);
+	void setRequestId(uint32_t request_id);
 	void setTime(time_t time);
 	void setProblem(const string &problem);
 	void setQuestion(const string &question);
@@ -317,22 +320,22 @@ public:
 
 ClarificationItem::ClarificationItem(QListView *parent) :
 	QListViewItem(parent),
-	_id(0), _time(0), _problem(""), _question(""), _answer("") {
+	_id(0), _request_id(0), _time(0), _problem(""), _question(""), _answer("") {
 }
 
 ClarificationItem::ClarificationItem(QListViewItem *parent) :
 	QListViewItem(parent),
-	_id(0), _time(0), _problem(""), _question(""), _answer("") {
+	_id(0), _request_id(0), _time(0), _problem(""), _question(""), _answer("") {
 }
 
 ClarificationItem::ClarificationItem(QListView *parent, QListViewItem *after) :
 	QListViewItem(parent, after),
-	_id(0), _time(0), _problem(""), _question(""), _answer("") {
+	_id(0), _request_id(0), _time(0), _problem(""), _question(""), _answer("") {
 }
 
 ClarificationItem::ClarificationItem(QListViewItem *parent, QListViewItem *after) :
 	QListViewItem(parent, after),
-	_id(0), _time(0), _problem(""), _question(""), _answer("") {
+	_id(0), _request_id(0), _time(0), _problem(""), _question(""), _answer("") {
 }
 
 void ClarificationItem::setId(uint32_t id) {
@@ -341,6 +344,10 @@ void ClarificationItem::setId(uint32_t id) {
 	_id = id;
 	s << id;
 	setText(COLUMN_ID, s.str());
+}
+
+void ClarificationItem::setRequestId(uint32_t request_id) {
+	_request_id = request_id;
 }
 
 void ClarificationItem::setTime(time_t time) {
@@ -435,12 +442,6 @@ static void updateClarificationRequestsFunctor(const MessageBlock* mb, void*) {
 static void updateClarificationsFunctor(const MessageBlock*mb, void*) {
 	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateClarifications, mb);
 	ev->post();
-
-	/* Also need to update the clarifications window, since the status
-	 * of one of our requests may have changed
-	 */
-	GUIEvent *ev2 = new MainWindowCaller(&MainWindow::updateClarificationRequests);
-	ev2->post();
 }
 
 static void contestStartStop(const MessageBlock* mb, void*) {
@@ -571,7 +572,6 @@ void MainWindow::doFileConnect() {
 				_server_con.subscribeTime();
 				updateStatus();
 				updateClarificationRequests();
-				updateClarifications();
 				updateStandings();
 				updateSubmissions();
 			} else {
@@ -600,7 +600,6 @@ void MainWindow::doFileDisconnect() {
 
 	switchType("");
 	updateStatus();
-	updateClarifications();
 	updateClarificationRequests();
 	updateSubmissions();
 	updateStandings();
@@ -1227,21 +1226,21 @@ void MainWindow::setClarification(ClarificationItem *item, T &c) {
 		log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());
 
 	uint32_t id = strtoul(c["id"].c_str(), NULL, 10);
+	uint32_t request_id = strtoul(c["req_id"].c_str(), NULL, 10);
 	item->setId(id);
+	item->setRequestId(request_id);
 	item->setTime(strtoull(c["time"].c_str(), NULL, 10));
 	item->setProblem(c["problem"]);
 	item->setQuestion(c["question"]);
 	item->setAnswer(c["answer"]);
 
-	/* TODO: update the "answered" field on the request. This should be done by
-	 * passing through the request id.
-	 */
+	map<uint32_t, ClarificationRequestItem *>::iterator pos;
+	pos = clarificationRequestMap.find(request_id);
+	if (pos != clarificationRequestMap.end())
+		pos->second->setAnswered(true);
 }
 
 void MainWindow::updateClarifications(const MessageBlock *mb) {
-	if (maintabs->currentPage() != tabClarifications)
-		return;
-
 	if (mb == NULL) {
 		/* Full refresh */
 		ClarificationList list = _server_con.getClarifications();
@@ -1285,8 +1284,16 @@ void MainWindow::setClarificationRequest(ClarificationRequestItem *item, T &cr) 
 	item->setId(id);
 	item->setTime(strtoull(cr["time"].c_str(), NULL, 10));
 	item->setProblem(cr["problem"]);
-	item->setAnswered(cr["status"] == "answered");
 	item->setQuestion(cr["question"]);
+
+	bool answered = false;
+	/* Check if we already have a clarification */
+	for (map<uint32_t, ClarificationItem *>::const_iterator i = clarificationMap.begin(); i != clarificationMap.end(); ++i)
+		if (i->second->getRequestId() == id) {
+			answered = true;
+			break;
+		}
+	item->setAnswered(answered);
 }
 
 void MainWindow::updateClarificationRequests(const MessageBlock *mb) {
@@ -1295,6 +1302,12 @@ void MainWindow::updateClarificationRequests(const MessageBlock *mb) {
 
 	if (mb == NULL) {
 		/* Full refresh */
+
+		/* First update clarifications, since they're needed to figure out if
+		 * our queries have been answered
+		 */
+		updateClarifications();
+
 		ClarificationRequestList list = _server_con.getClarificationRequests();
 
 		clarificationRequests->clear();

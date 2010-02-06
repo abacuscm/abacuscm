@@ -788,6 +788,7 @@ ClarificationList ServerConnection::getClarifications() {
 	MessageBlock mb("getclarifications");
 	list<string> attrs;
 	attrs.push_back("id");
+	attrs.push_back("req_id");
 	attrs.push_back("time");
 	attrs.push_back("problem");
 	attrs.push_back("question");
@@ -810,7 +811,6 @@ ClarificationRequestList ServerConnection::getClarificationRequests() {
 	attrs.push_back("time");
 	attrs.push_back("problem");
 	attrs.push_back("question");
-	attrs.push_back("status");
 
 	ClarificationRequestList l = multiVectorAction(mb, attrs);
 	for (ClarificationRequestList::iterator i = l.begin(); i != l.end(); i++)

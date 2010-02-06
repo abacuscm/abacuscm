@@ -876,7 +876,7 @@ SubmissionList MySQL::getSubmissions(uint32_t uid) {
 
 AttributeList MySQL::getClarification(uint32_t c_id) {
 	ostringstream query;
-	query << "SELECT Clarification.clarification_id, username, value, Clarification.time, ClarificationRequest.text, Clarification.text FROM Clarification LEFT JOIN ClarificationRequest USING(clarification_req_id) LEFT JOIN User ON Clarification.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ProblemAttributes.problem_id = ClarificationRequest.problem_id AND ProblemAttributes.attribute = 'shortname'";
+	query << "SELECT Clarification.clarification_id, Clarification.clarification_req_id, username, value, Clarification.time, ClarificationRequest.text, Clarification.text FROM Clarification LEFT JOIN ClarificationRequest USING(clarification_req_id) LEFT JOIN User ON Clarification.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ProblemAttributes.problem_id = ClarificationRequest.problem_id AND ProblemAttributes.attribute = 'shortname'";
 	query << " WHERE Clarification.clarification_id = " << c_id;
 
 	if(mysql_query(&_mysql, query.str().c_str())) {
@@ -894,11 +894,12 @@ AttributeList MySQL::getClarification(uint32_t c_id) {
 	if (row)
 	{
 		attrs["id"] = row[0];
-		/* Leave out Judge for now; can be added as row[1] later */
-		attrs["problem"] = row[2] ? row[2] : "General";
-		attrs["time"] = row[3];
-		attrs["question"] = row[4];
-		attrs["answer"] = row[5];
+		attrs["req_id"] = row[1];
+		/* Leave out Judge for now; can be added as row[2] later */
+		attrs["problem"] = row[3] ? row[3] : "General";
+		attrs["time"] = row[4];
+		attrs["question"] = row[5];
+		attrs["answer"] = row[6];
 		while (mysql_fetch_row(res)) {}
 	}
 	mysql_free_result(res);
@@ -908,7 +909,7 @@ AttributeList MySQL::getClarification(uint32_t c_id) {
 
 ClarificationList MySQL::getClarifications(uint32_t uid) {
 	ostringstream query;
-	query << "SELECT Clarification.clarification_id, username, value, Clarification.time, ClarificationRequest.text, Clarification.text FROM Clarification LEFT JOIN ClarificationRequest USING(clarification_req_id) LEFT JOIN User ON Clarification.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ProblemAttributes.problem_id = ClarificationRequest.problem_id AND ProblemAttributes.attribute = 'shortname'";
+	query << "SELECT Clarification.clarification_id, Clarification.clarification_req_id, username, value, Clarification.time, ClarificationRequest.text, Clarification.text FROM Clarification LEFT JOIN ClarificationRequest USING(clarification_req_id) LEFT JOIN User ON Clarification.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ProblemAttributes.problem_id = ClarificationRequest.problem_id AND ProblemAttributes.attribute = 'shortname'";
 	if (uid)
 		query << " WHERE Clarification.public != 0 OR ClarificationRequest.user_id = " << uid;
 	query << " ORDER BY TIME";
@@ -928,11 +929,12 @@ ClarificationList MySQL::getClarifications(uint32_t uid) {
 	while ((row = mysql_fetch_row(res)) != 0) {
 		AttributeList attrs;
 		attrs["id"] = row[0];
-		/* Leave out Judge for now; can be added as row[1] later */
-		attrs["problem"] = row[2] ? row[2] : "General";
-		attrs["time"] = row[3];
-		attrs["question"] = row[4];
-		attrs["answer"] = row[5];
+		attrs["req_id"] = row[1];
+		/* Leave out Judge for now; can be added as row[2] later */
+		attrs["problem"] = row[3] ? row[3] : "General";
+		attrs["time"] = row[4];
+		attrs["question"] = row[5];
+		attrs["answer"] = row[6];
 
 		lst.push_back(attrs);
 	}
@@ -943,9 +945,8 @@ ClarificationList MySQL::getClarifications(uint32_t uid) {
 
 AttributeList MySQL::getClarificationRequest(uint32_t req_id) {
 	ostringstream query;
-	query << "SELECT ClarificationRequest.clarification_req_id, ClarificationRequest.user_id, username, value, ClarificationRequest.time, ClarificationRequest.text AS question, COUNT(clarification_id) AS answers FROM ClarificationRequest LEFT OUTER JOIN Clarification USING(clarification_req_id) LEFT JOIN User ON ClarificationRequest.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ClarificationRequest.problem_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute='shortname'";
+	query << "SELECT ClarificationRequest.clarification_req_id, ClarificationRequest.user_id, username, value, ClarificationRequest.time, ClarificationRequest.text AS question FROM ClarificationRequest LEFT JOIN User ON ClarificationRequest.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ClarificationRequest.problem_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute='shortname'";
 	query << " WHERE ClarificationRequest.clarification_req_id = " << req_id;
-	query << " GROUP BY ClarificationRequest.clarification_req_id";
 
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();
@@ -967,7 +968,6 @@ AttributeList MySQL::getClarificationRequest(uint32_t req_id) {
 		attrs["problem"] = row[3] ? row[3] : "General";
 		attrs["time"] = row[4];
 		attrs["question"] = row[5];
-		attrs["status"] = atoi(row[6]) ? "answered" : "pending";
 		while (mysql_fetch_row(res)) {}
 	}
 	mysql_free_result(res);
@@ -978,9 +978,9 @@ AttributeList MySQL::getClarificationRequest(uint32_t req_id) {
 ClarificationRequestList MySQL::getClarificationRequests(uint32_t uid) {
 	ostringstream query;
 
-	query << "SELECT ClarificationRequest.clarification_req_id, ClarificationRequest.user_id, username, value, ClarificationRequest.time, ClarificationRequest.text AS question, COUNT(clarification_id) AS answers FROM ClarificationRequest LEFT OUTER JOIN Clarification USING(clarification_req_id) LEFT JOIN User ON ClarificationRequest.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ClarificationRequest.problem_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute='shortname'";
+	query << "SELECT ClarificationRequest.clarification_req_id, ClarificationRequest.user_id, username, value, ClarificationRequest.time, ClarificationRequest.text AS question FROM ClarificationRequest LEFT JOIN User ON ClarificationRequest.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ClarificationRequest.problem_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute='shortname'";
 	if (uid) query << " WHERE ClarificationRequest.user_id = " << uid;
-	query << " GROUP BY ClarificationRequest.clarification_req_id ORDER BY ClarificationRequest.time";
+	query << " ORDER BY ClarificationRequest.time";
 
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();
@@ -1002,7 +1002,6 @@ ClarificationRequestList MySQL::getClarificationRequests(uint32_t uid) {
 		attrs["problem"] = row[3] ? row[3] : "General";
 		attrs["time"] = row[4];
 		attrs["question"] = row[5];
-		attrs["status"] = atoi(row[6]) ? "answered" : "pending";
 
 		lst.push_back(attrs);
 	}
