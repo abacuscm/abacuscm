@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ * Copyright (c) 2005 - 2006, 2010 Kroon Infomation Systems,
  *  with contributions from various authors.
  *
  * This file is distributed under GPLv2, please see
@@ -35,7 +35,7 @@ void ViewClarificationRequestSub::doReply() {
 	if (reply.exec())
 	{
 		bool pub = reply.visibility->currentItem() == 1;
-		_server_con->clarificationReply(_clarification_request_id, pub, reply.answer->text());
+		_server_con->clarificationReply(_clarification_request_id, pub, (const char *) reply.answer->text().utf8());
 		accept();
 	}
 }

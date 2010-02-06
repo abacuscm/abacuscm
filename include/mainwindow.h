@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ * Copyright (c) 2005 - 2006, 2010 Kroon Infomation Systems,
  *  with contributions from various authors.
  *
  * This file is distributed under GPLv2, please see
@@ -27,6 +27,8 @@ class QListViewItem;
 class QTimer;
 class QFileDialog;
 class Submit;
+class ClarificationRequestItem;
+class ClarificationItem;
 
 typedef struct {
 	int prio_level;
@@ -47,16 +49,14 @@ private:
 	QTimer *timer;
 	time_t projected_stop;
 
-	/* Clarification stuff. The list box holds just the summary, so
-	 * we need to map the ID to the full text in each case.
-	 */
-	std::map<std::string, std::string> fullClarificationRequests;
-	std::map<std::string, std::pair<std::string, std::string> > fullClarifications;
+	/* Clarification stuff. Quick lookup of clarification requests by ID */
+	std::map<uint32_t, ClarificationRequestItem *> clarificationRequestMap;
+	std::map<uint32_t, ClarificationItem *> clarificationMap;
 
 	void triggerType(std::string type, bool status);
 	void switchType(std::string type);
 
-	template<typename T> void setClarification(QListViewItem *item, T &cr);
+	template<typename T> void setClarificationRequest(ClarificationRequestItem *item, T &cr);
 protected:
 	virtual void doHelpAbout();
 	virtual void doFileConnect();

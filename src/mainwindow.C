@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ * Copyright (c) 2005 - 2006, 2010 Kroon Infomation Systems,
  *  with contributions from various authors.
  *
  * This file is distributed under GPLv2, please see
@@ -53,6 +53,8 @@
 #include <time.h>
 #include <set>
 #include <string>
+#include <sstream>
+#include <cassert>
 
 using namespace std;
 
@@ -107,9 +109,9 @@ void NewClarificationEvent::process(QWidget *parent) {
 	{
 		ViewClarificationReply dialog;
 
-		dialog.problem->setText(_problem);
-		dialog.question->setText(_question);
-		dialog.answer->setText(_answer);
+		dialog.problem->setText(QString::fromUtf8(_problem.c_str()));
+		dialog.question->setText(QString::fromUtf8(_question.c_str()));
+		dialog.answer->setText(QString::fromUtf8(_answer.c_str()));
 		dialog.exec();
 	}
 }
@@ -159,6 +161,262 @@ static void event_balloon(const MessageBlock *mb, void*) {
 
 	NotifyEvent *ne = new NotifyEvent("Balloon Notification", msg, QMessageBox::Information);
 	ne->post();
+}
+
+/********************** Custom list items ***************************/
+
+#define RTTI_CLARIFICATION_REQUEST 2001
+#define RTTI_CLARIFICATION         2002
+
+// Returns at most one line and at most 50 characters of string, appending
+// "..." if anything was cut off.
+static string summary_string(const string &s)
+{
+	string ans = s;
+	bool clipped = false;
+	string::size_type nl;
+
+	nl = ans.find('\n');
+	if (nl != string::npos)
+	{
+		ans.erase(nl);
+		clipped = true;
+	}
+
+	/* Cut off at 50, with UTF-8 awareness. Characters in 0-0x7F and 0xC0-0xFF
+	 * start characters, everything else is a continuation.
+	 */
+	size_t cut = 0;
+	int seen = 0;
+	while (cut < s.size()) {
+		if ((unsigned char) s[cut] < 0x80 || (unsigned char) s[cut] >= 0xC0) {
+			seen++;
+			if (seen > 50)
+				break;
+		}
+		cut++;
+	}
+	if (cut < s.size()) {
+		ans.erase(cut);
+		clipped = true;
+	}
+	if (clipped) ans += "...";
+	return ans;
+}
+
+class ClarificationRequestItem : public QListViewItem {
+private:
+	uint32_t _id;
+	time_t _time;
+	string _problem;
+	bool _answered;
+	string _question;
+
+	enum Column
+	{
+		COLUMN_ID = 0,
+		COLUMN_TIME = 1,
+		COLUMN_PROBLEM = 2,
+		COLUMN_ANSWERED = 3,
+		COLUMN_QUESTION = 4
+	};
+public:
+	ClarificationRequestItem(QListView *parent);
+	ClarificationRequestItem(QListViewItem *parent);
+	ClarificationRequestItem(QListView *parent, QListViewItem *after);
+	ClarificationRequestItem(QListViewItem *parent, QListViewItem *after);
+
+	uint32_t getId() const { return _id; }
+	time_t getTime() const { return _time; }
+	const string &getProblem() const { return _problem; }
+	bool isAnswered() const { return _answered; }
+	const string &getQuestion() const { return _question; }
+
+	void setId(uint32_t id);
+	void setTime(time_t time);
+	void setProblem(const string &problem);
+	void setAnswered(bool answered);
+	void setQuestion(const string &question);
+
+	virtual int rtti() const { return RTTI_CLARIFICATION_REQUEST; }
+	virtual int compare(QListViewItem *other, int col, bool ascending) const;
+};
+
+ClarificationRequestItem::ClarificationRequestItem(QListView *parent) :
+	QListViewItem(parent),
+	_id(0), _time(0), _problem(""), _answered(false), _question("") {
+}
+
+ClarificationRequestItem::ClarificationRequestItem(QListViewItem *parent) :
+	QListViewItem(parent),
+	_id(0), _time(0), _problem(""), _answered(false), _question("") {
+}
+
+ClarificationRequestItem::ClarificationRequestItem(QListView *parent, QListViewItem *after) :
+	QListViewItem(parent, after),
+	_id(0), _time(0), _problem(""), _answered(false), _question("") {
+}
+
+ClarificationRequestItem::ClarificationRequestItem(QListViewItem *parent, QListViewItem *after) :
+	QListViewItem(parent, after),
+	_id(0), _time(0), _problem(""), _answered(false), _question("") {
+}
+
+void ClarificationRequestItem::setId(uint32_t id) {
+	ostringstream s;
+
+	_id = id;
+	s << id;
+	setText(COLUMN_ID, s.str());
+}
+
+void ClarificationRequestItem::setTime(time_t time) {
+	struct tm time_tm;
+	char time_buffer[64];
+
+	_time = time;
+	localtime_r(&time, &time_tm);
+	strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
+	setText(COLUMN_TIME, time_buffer);
+}
+
+void ClarificationRequestItem::setProblem(const string &problem) {
+	_problem = problem;
+	setText(COLUMN_PROBLEM, QString::fromUtf8(problem.c_str()));
+}
+
+void ClarificationRequestItem::setAnswered(bool answered) {
+	_answered = answered;
+	setText(COLUMN_ANSWERED, answered ? "answered" : "pending");
+}
+
+void ClarificationRequestItem::setQuestion(const string &question) {
+	_question = question;
+	setText(COLUMN_QUESTION, QString::fromUtf8(summary_string(question).c_str()));
+}
+
+int ClarificationRequestItem::compare(QListViewItem *other, int col, bool ascending) const {
+	if (other == NULL || other->rtti() != rtti())
+		return QListViewItem::compare(other, col, ascending);
+
+	const ClarificationRequestItem *i = static_cast<const ClarificationRequestItem *>(other);
+	switch (col) {
+	case COLUMN_ID:
+		return _id < i->_id ? -1 : _id > i->_id ? 1 : 0;
+	case COLUMN_TIME:
+		return _time < i->_time ? -1 : _time > i->_time ? 1 : 0;
+	case COLUMN_ANSWERED:
+		return _answered < i->_answered ? -1 : _answered > i->_answered ? 1 : 0;
+	default:
+		return QListViewItem::compare(other, col, ascending);
+	}
+}
+
+class ClarificationItem : public QListViewItem {
+private:
+	uint32_t _id;
+	time_t _time;
+	string _problem;
+	string _question;
+	string _answer;
+
+	enum Column
+	{
+		COLUMN_ID = 0,
+		COLUMN_TIME = 1,
+		COLUMN_PROBLEM = 2,
+		COLUMN_QUESTION = 3,
+		COLUMN_ANSWER = 4
+	};
+
+public:
+	ClarificationItem(QListView *parent);
+	ClarificationItem(QListViewItem *parent);
+	ClarificationItem(QListView *parent, QListViewItem *after);
+	ClarificationItem(QListViewItem *parent, QListViewItem *after);
+
+	uint32_t getId() const { return _id; }
+	time_t getTime() const { return _time; }
+	const string &getProblem() const { return _problem; }
+	const string &getQuestion() const { return _question; }
+	const string &getAnswer() const { return _answer; }
+
+	void setId(uint32_t id);
+	void setTime(time_t time);
+	void setProblem(const string &problem);
+	void setQuestion(const string &question);
+	void setAnswer(const string &answer);
+
+	virtual int rtti() const { return RTTI_CLARIFICATION; }
+	virtual int compare(QListViewItem *other, int col, bool ascending) const;
+};
+
+ClarificationItem::ClarificationItem(QListView *parent) :
+	QListViewItem(parent),
+	_id(0), _time(0), _problem(""), _question(""), _answer("") {
+}
+
+ClarificationItem::ClarificationItem(QListViewItem *parent) :
+	QListViewItem(parent),
+	_id(0), _time(0), _problem(""), _question(""), _answer("") {
+}
+
+ClarificationItem::ClarificationItem(QListView *parent, QListViewItem *after) :
+	QListViewItem(parent, after),
+	_id(0), _time(0), _problem(""), _question(""), _answer("") {
+}
+
+ClarificationItem::ClarificationItem(QListViewItem *parent, QListViewItem *after) :
+	QListViewItem(parent, after),
+	_id(0), _time(0), _problem(""), _question(""), _answer("") {
+}
+
+void ClarificationItem::setId(uint32_t id) {
+	ostringstream s;
+
+	_id = id;
+	s << id;
+	setText(COLUMN_ID, s.str());
+}
+
+void ClarificationItem::setTime(time_t time) {
+	struct tm time_tm;
+	char time_buffer[64];
+
+	_time = time;
+	localtime_r(&time, &time_tm);
+	strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
+	setText(COLUMN_TIME, time_buffer);
+}
+
+void ClarificationItem::setProblem(const string &problem) {
+	_problem = problem;
+	setText(COLUMN_PROBLEM, QString::fromUtf8(problem.c_str()));
+}
+
+void ClarificationItem::setQuestion(const string &question) {
+	_question = question;
+	setText(COLUMN_QUESTION, QString::fromUtf8(summary_string(question).c_str()));
+}
+
+void ClarificationItem::setAnswer(const string &answer) {
+	_answer = answer;
+	setText(COLUMN_ANSWER, QString::fromUtf8(summary_string(answer).c_str()));
+}
+
+int ClarificationItem::compare(QListViewItem *other, int col, bool ascending) const {
+	if (other == NULL || other->rtti() != rtti())
+		return QListViewItem::compare(other, col, ascending);
+
+	const ClarificationItem *i = static_cast<const ClarificationItem *>(other);
+	switch (col) {
+	case COLUMN_ID:
+		return _id < i->_id ? -1 : _id > i->_id ? 1 : 0;
+	case COLUMN_TIME:
+		return _time < i->_time ? -1 : _time > i->_time ? 1 : 0;
+	default:
+		return QListViewItem::compare(other, col, ascending);
+	}
 }
 
 /********************* MainWindowCaller *****************************/
@@ -657,7 +915,7 @@ void MainWindow::doClarificationRequest() {
 		int item = cr.problemSelection->currentItem() - 1;
 		uint32_t prob_id = (item == -1) ? 0 : probs[item].id;
 
-		_server_con.clarificationRequest(prob_id, cr.question->text());
+		_server_con.clarificationRequest(prob_id, (const char *) cr.question->text().utf8());
 	}
 }
 
@@ -666,17 +924,21 @@ void MainWindow::doShowClarificationRequest(QListViewItem *item) {
 
 	if (_active_type == "contestant")
 		vcr.reply->setEnabled(false);
-	vcr.problem->setText(item->text(2));
-	vcr.question->setText(fullClarificationRequests[item->text(0)]);
+	assert(item->rtti() == RTTI_CLARIFICATION_REQUEST);
+	const ClarificationRequestItem *cri = static_cast<const ClarificationRequestItem *>(item);
+	vcr.problem->setText(QString::fromUtf8(cri->getProblem().c_str()));
+	vcr.question->setText(QString::fromUtf8(cri->getQuestion().c_str()));
 	vcr.exec();
 }
 
 void MainWindow::doShowClarificationReply(QListViewItem *item) {
 	ViewClarificationReply vcr;
 
-	vcr.problem->setText(item->text(2));
-	vcr.question->setText(fullClarifications[item->text(0)].first);
-	vcr.answer->setText(fullClarifications[item->text(0)].second);
+	assert(item->rtti() == RTTI_CLARIFICATION);
+	const ClarificationItem *ci = static_cast<const ClarificationItem *>(item);
+	vcr.problem->setText(QString::fromUtf8(ci->getProblem().c_str()));
+	vcr.question->setText(QString::fromUtf8(ci->getQuestion().c_str()));
+	vcr.answer->setText(QString::fromUtf8(ci->getAnswer().c_str()));
 	vcr.exec();
 }
 
@@ -1009,29 +1271,6 @@ void MainWindow::toggleBalloonPopups(bool activate) {
 	}
 }
 
-// Returns at most one line and at most 50 characters of string, appending
-// "..." if anything was cut off.
-static string summary_string(const string &s)
-{
-	string ans = s;
-	bool clipped = false;
-	string::size_type nl;
-
-	nl = ans.find('\n');
-	if (nl != string::npos)
-	{
-		ans.erase(nl);
-		clipped = true;
-	}
-	if (ans.size() > 50)
-	{
-		ans.erase(50);
-		clipped = true;
-	}
-	if (clipped) ans += "...";
-	return ans;
-}
-
 void MainWindow::updateClarifications(const MessageBlock *) {
 	if (maintabs->currentPage() != tabClarifications)
 		return;
@@ -1039,27 +1278,21 @@ void MainWindow::updateClarifications(const MessageBlock *) {
 	ClarificationList list = _server_con.getClarifications();
 
 	clarifications->clear();
-	fullClarifications.clear();
+	clarificationMap.clear();
 
 	ClarificationList::iterator l;
 	for(l = list.begin(); l != list.end(); ++l) {
 		log(LOG_DEBUG, "clarification:");
 		AttributeMap::iterator a;
-		QListViewItem *item = new QListViewItem(clarifications);
-		char time_buffer[64];
-		struct tm time_tm;
-		time_t time;
+		ClarificationItem *item = new ClarificationItem(clarifications);
 
-		time = atol((*l)["time"].c_str());
-		localtime_r(&time, &time_tm);
-		strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
-
-		item->setText(0, (*l)["id"]);
-		item->setText(1, time_buffer);
-		item->setText(2, (*l)["problem"]);
-		item->setText(3, summary_string((*l)["question"]));
-		item->setText(4, summary_string((*l)["answer"]));
-		fullClarifications[(*l)["id"]] = make_pair((*l)["question"], (*l)["answer"]);
+		uint32_t id = strtoul((*l)["id"].c_str(), NULL, 10);
+		item->setId(id);
+		item->setTime(strtoull((*l)["time"].c_str(), NULL, 10));
+		item->setProblem((*l)["problem"]);
+		item->setQuestion((*l)["question"]);
+		item->setAnswer((*l)["answer"]);
+		clarificationMap[id] = item;
 
 		for(a = l->begin(); a != l->end(); ++a)
 			log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());
@@ -1067,25 +1300,17 @@ void MainWindow::updateClarifications(const MessageBlock *) {
 }
 
 template<typename T>
-void MainWindow::setClarification(QListViewItem *item, T &cr) {
-	char time_buffer[64];
-	struct tm time_tm;
-	time_t time;
-
+void MainWindow::setClarificationRequest(ClarificationRequestItem *item, T &cr) {
 	log(LOG_DEBUG, "clarification request:");
 	for(typename T::const_iterator a = cr.begin(); a != cr.end(); ++a)
 		log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());
 
-	time = atol(cr["time"].c_str());
-	localtime_r(&time, &time_tm);
-	strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
-
-	item->setText(0, cr["id"]);
-	item->setText(1, time_buffer);
-	item->setText(2, cr["problem"]);
-	item->setText(3, cr["status"]);
-	item->setText(4, summary_string(cr["question"]));
-	fullClarificationRequests[cr["id"]] = cr["question"];
+	uint32_t id = strtoul(cr["id"].c_str(), NULL, 10);
+	item->setId(id);
+	item->setTime(strtoull(cr["time"].c_str(), NULL, 10));
+	item->setProblem(cr["problem"]);
+	item->setAnswered(cr["status"] == "answered");
+	item->setQuestion(cr["question"]);
 }
 
 void MainWindow::updateClarificationRequests(const MessageBlock *mb) {
@@ -1097,22 +1322,23 @@ void MainWindow::updateClarificationRequests(const MessageBlock *mb) {
 		ClarificationRequestList list = _server_con.getClarificationRequests();
 
 		clarificationRequests->clear();
-		fullClarificationRequests.clear();
+		clarificationRequestMap.clear();
 
 		ClarificationRequestList::iterator l;
 		for(l = list.begin(); l != list.end(); ++l) {
-			QListViewItem *item = new QListViewItem(clarificationRequests);
-
-			setClarification(item, *l);
+			ClarificationRequestItem *item = new ClarificationRequestItem(clarificationRequests);
+			setClarificationRequest(item, *l);
+			clarificationRequestMap[item->getId()] = item;
 		}
 	}
 	else {
 		/* Replace if already present, otherwise add */
-		QListViewItem *item = clarificationRequests->findItem((*mb)["id"], 0);
+		uint32_t id = strtoull((*mb)["id"].c_str(), NULL, 10);
+		ClarificationRequestItem *&item = clarificationRequestMap[id];
 		if (!item)
-			item = new QListViewItem(clarificationRequests);
+			item = new ClarificationRequestItem(clarificationRequests);
 
-		setClarification(item, *mb);
+		setClarificationRequest(item, *mb);
 	}
 }
 
