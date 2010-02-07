@@ -131,6 +131,7 @@ static void event_balloon(const MessageBlock *mb, void*) {
 
 #define RTTI_CLARIFICATION_REQUEST 2001
 #define RTTI_CLARIFICATION         2002
+#define RTTI_SUBMISSION            2003
 
 // Returns at most one line and at most 50 characters of string, appending
 // "..." if anything was cut off.
@@ -185,8 +186,8 @@ private:
 		COLUMN_QUESTION = 4
 	};
 public:
-	ClarificationRequestItem(QListView *parent);
-	ClarificationRequestItem(QListViewItem *parent);
+	explicit ClarificationRequestItem(QListView *parent);
+	explicit ClarificationRequestItem(QListViewItem *parent);
 	ClarificationRequestItem(QListView *parent, QListViewItem *after);
 	ClarificationRequestItem(QListViewItem *parent, QListViewItem *after);
 
@@ -295,8 +296,8 @@ private:
 	};
 
 public:
-	ClarificationItem(QListView *parent);
-	ClarificationItem(QListViewItem *parent);
+	explicit ClarificationItem(QListView *parent);
+	explicit ClarificationItem(QListViewItem *parent);
 	ClarificationItem(QListView *parent, QListViewItem *after);
 	ClarificationItem(QListViewItem *parent, QListViewItem *after);
 
@@ -383,6 +384,139 @@ int ClarificationItem::compare(QListViewItem *other, int col, bool ascending) co
 	switch (col) {
 	case COLUMN_ID:
 		return _id < i->_id ? -1 : _id > i->_id ? 1 : 0;
+	case COLUMN_TIME:
+		return _time < i->_time ? -1 : _time > i->_time ? 1 : 0;
+	default:
+		return QListViewItem::compare(other, col, ascending);
+	}
+}
+
+class SubmissionItem : public QListViewItem {
+private:
+	uint32_t _id;
+	time_t _contest_time;
+	time_t _time;
+	string _problem;
+	string _status;
+
+	/* Submissions are a little more complicated because they are filtered.
+	 * QListView isn't so hot on filtering, so and doesn't allow most methods
+	 * on a QListViewItem that's not in a view. So, we need to keep track
+	 * internally of whether we're visible, and defer setText calls if not.
+	 */
+	QListView *_parent;
+	bool _visible;
+
+	enum Column {
+		COLUMN_ID = 0,
+		COLUMN_CONTEST_TIME = 1,
+		COLUMN_TIME = 2,
+		COLUMN_PROBLEM = 3,
+		COLUMN_STATUS = 4
+	};
+public:
+	SubmissionItem(QListView *parent);
+	SubmissionItem(QListView *parent, QListViewItem *after);
+
+	void setId(uint32_t id);
+	void setContestTime(time_t contest_time);
+	void setTime(time_t time);
+	void setProblem(const string &problem);
+	void setStatus(const string &status);
+	void setVisible(bool visible);
+
+	uint32_t getId() const { return _id; }
+	time_t getContestTime() const { return _contest_time; }
+	time_t getTime() const { return _time; }
+	const string &getProblem() const { return _problem; }
+	const string &getStatus() const { return _status; }
+	bool isVisible() const { return _visible; }
+
+	virtual int rtti() const { return RTTI_SUBMISSION; }
+	virtual int compare(QListViewItem *other, int col, bool ascending) const;
+};
+
+SubmissionItem::SubmissionItem(QListView *parent) :
+	QListViewItem(parent),
+	_id(0), _contest_time(0), _time(0), _problem(""), _status(""),
+	_parent(parent), _visible(true) {
+}
+
+SubmissionItem::SubmissionItem(QListView *parent, QListViewItem *after) :
+	QListViewItem(parent, after),
+	_id(0), _contest_time(0), _time(0), _problem(""), _status(""),
+	_parent(parent), _visible(true) {
+}
+
+void SubmissionItem::setId(uint32_t id) {
+	_id = id;
+	if (_visible) {
+		ostringstream s;
+		s << id;
+		setText(COLUMN_ID, s.str());
+	}
+}
+
+void SubmissionItem::setContestTime(time_t contest_time) {
+	char buffer[64];
+
+	_contest_time = contest_time;
+	if (_visible) {
+		sprintf(buffer, "%02ld:%02ld:%02ld", (long) (contest_time / 3600), (long) (contest_time / 60 % 60), (long) (contest_time % 60));
+		setText(COLUMN_CONTEST_TIME, buffer);
+	}
+}
+
+void SubmissionItem::setTime(time_t time) {
+	struct tm time_tm;
+	char time_buffer[64];
+
+	_time = time;
+	if (_visible) {
+		localtime_r(&time, &time_tm);
+		strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
+		setText(COLUMN_TIME, time_buffer);
+	}
+}
+
+void SubmissionItem::setProblem(const string &problem) {
+	_problem = problem;
+	setText(COLUMN_PROBLEM, problem);
+}
+
+void SubmissionItem::setStatus(const string &status) {
+	_status = status;
+	if (_visible)
+		setText(COLUMN_STATUS, status);
+}
+
+void SubmissionItem::setVisible(bool visible) {
+	if (_visible && !visible) {
+		_parent->takeItem(this);
+		_visible = false;
+	}
+	else if (!_visible && visible) {
+		_parent->insertItem(this);
+		/* Trigger updates of the text */
+		setId(_id);
+		setContestTime(_contest_time);
+		setTime(_time);
+		setProblem(_problem);
+		setStatus(_status);
+		_visible = true;
+	}
+}
+
+int SubmissionItem::compare(QListViewItem *other, int col, bool ascending) const {
+	if (other == NULL || other->rtti() != rtti())
+		return QListViewItem::compare(other, col, ascending);
+
+	const SubmissionItem *i = static_cast<const SubmissionItem *>(other);
+	switch (col) {
+	case COLUMN_ID:
+		return _id < i->_id ? -1 : _id > i->_id ? 1 : 0;
+	case COLUMN_CONTEST_TIME:
+		return _contest_time < i->_contest_time ? -1 : _contest_time > i->_contest_time ? 1 : 0;
 	case COLUMN_TIME:
 		return _time < i->_time ? -1 : _time > i->_time ? 1 : 0;
 	default:
@@ -1083,26 +1217,14 @@ void MainWindow::updateSubmissions(const MessageBlock *) {
 				continue;
 		}
 
-		AttributeMap::iterator a;
-		QListViewItem *item = new QListViewItem(submissions);
-		char time_buffer[64];
-		char contesttime_buffer[64];
-		struct tm time_tm;
-		time_t time;
-		uint32_t contesttime;
+		SubmissionItem *item = new SubmissionItem(submissions);
+		uint32_t id = strtoul((*l)["submission_id"].c_str(), NULL, 10);
 
-		time = atol((*l)["time"].c_str());
-		localtime_r(&time, &time_tm);
-		strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
-
-		contesttime = atoll((*l)["contesttime"].c_str());
-		sprintf(contesttime_buffer, "%02d:%02d:%02d", contesttime / 3600, contesttime / 60 % 60, contesttime % 60);
-
-		item->setText(0, (*l)["submission_id"]);
-		item->setText(1, contesttime_buffer);
-		item->setText(2, time_buffer);
-		item->setText(3, (*l)["problem"]);
-		item->setText(4, (*l)["comment"]);
+		item->setId(id);
+		item->setContestTime(atoll((*l)["contesttime"].c_str()));
+		item->setTime(atoll((*l)["time"].c_str()));
+		item->setProblem((*l)["problem"]);
+		item->setStatus((*l)["comment"]);
 	}
 }
 
