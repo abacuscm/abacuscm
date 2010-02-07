@@ -195,13 +195,12 @@ bool ActGetSubmissibleProblems::int_process(ClientConnection *cc, MessageBlock *
 }
 
 bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
-	TimerSupportModule *timer = getTimerSupportModule();
-	if(!timer)
-		return cc->sendError("Error getting timer info.");
-
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return cc->sendError("Error connecting to database");
+	SubmissionSupportModule *submission = getSubmissionSupportModule();
+	if (!submission)
+		return cc->sendError("Error getting submission support module");
 
 	uint32_t uid = cc->getProperty("user_id");
 	uint32_t utype = cc->getProperty("user_type");
@@ -222,36 +221,7 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 		tmp << c;
 		std::string cntr = tmp.str();
 
-		uint32_t submission_id = strtoll((*s)["submission_id"].c_str(), NULL, 0);
-		AttributeList::iterator a;
-		for(a = s->begin(); a != s->end(); ++a)
-			mb[a->first + cntr] = a->second;
-
-		tmp.str("");
-		tmp << timer->contestTime(db->submission2server_id(submission_id),
-				strtoll((*s)["time"].c_str(), NULL, 0));
-
-		mb["contesttime" + cntr] = tmp.str();
-
-		RunResult resinfo;
-		uint32_t type;
-		std::string comment;
-
-		if(db->getSubmissionState(
-					submission_id,
-					resinfo,
-					type,
-					comment)) {
-			tmp.str("");
-			tmp << (int)resinfo;
-			mb["result" + cntr] = tmp.str();
-			mb["comment" + cntr] = comment;
-		} else {
-			tmp.str("");
-			tmp << PENDING;
-			mb["result" + cntr] = tmp.str();
-			mb["comment" + cntr] = "Pending";
-		}
+		submission->submissionToMB(db, *s, mb, cntr);
 	}
 	db->release();db=NULL;
 
@@ -298,23 +268,29 @@ bool SubmissionMessage::process() const {
 	bool result = submission->putSubmission(_submission_id, _user_id, _prob_id, _time, _server_id,
 			_content, _content_size, _language);
 
+	if (result) {
+		AttributeList s = db->getSubmission(_submission_id);
+		if (s.empty())
+			result = false;
+		else {
+			MessageBlock notify("updatesubmissions");
+			submission->submissionToMB(db, s, notify, "");
+			ClientEventRegistry::getInstance().broadcastEvent("updatesubmissions", _user_id, USER_MASK_JUDGE | USER_MASK_ADMIN, &notify);
 
-	AttributeList lst = db->getProblemAttributes(_prob_id);
-	std::string problem = lst["shortname"];
+		}
+		if(db->getServerAttribute(Server::getId(), "marker") == "yes")
+			Markers::getInstance().enqueueSubmission(_submission_id);
+	}
 
-	MessageBlock mb("submission");
-	if(result)
-		mb["msg"] = "Your submission for '" + problem + "' has been queued for marking";
-	else
+	if (!result) {
+		AttributeList lst = db->getProblemAttributes(_prob_id);
+		std::string problem = lst["shortname"];
+
+		MessageBlock mb("submission");
 		mb["msg"] = "Your submission for '" + problem + "' has failed - please notify the contest administrator";
 
-	ClientEventRegistry::getInstance().sendMessage(_user_id, &mb);
-
-	MessageBlock mb2("submission");
-	ClientEventRegistry::getInstance().triggerEvent("judgesubmission", &mb2);
-
-	if(db->getServerAttribute(Server::getId(), "marker") == "yes")
-		Markers::getInstance().enqueueSubmission(_submission_id);
+		ClientEventRegistry::getInstance().sendMessage(_user_id, &mb);
+	}
 
 	db->release();db=NULL;
 
@@ -510,4 +486,6 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissionsource", &_act_get_submission_source);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getsubmissibleproblems", &_act_get_submissible_problems);
 	Message::registerMessageFunctor(TYPE_ID_SUBMISSION, create_submission_msg);
+
+	ClientEventRegistry::getInstance().registerEvent("updatesubmissions");
 }

@@ -293,9 +293,14 @@ public:
 	virtual bool isSubmissionAllowed(uint32_t user_id, uint32_t problem_id) = 0;
 
 	/**
-	 * Retrieve all submissions for a specific user.
+	 * Retrieve all submissions for a specific user (or all users if no id).
 	 */
 	virtual SubmissionList getSubmissions(uint32_t user_id = 0) = 0;
+
+	/**
+	 * Retrieve a single submission
+	 */
+	virtual AttributeList getSubmission(uint32_t submission_id) = 0;
 
 	/**
 	 * Retrieves clarification with given ID. Returns empty list on

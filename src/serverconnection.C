@@ -840,14 +840,6 @@ bool ServerConnection::watchBalloons(bool yesno) {
 	return simpleAction(mb);
 }
 
-bool ServerConnection::watchJudgeSubmissions() {
-	MessageBlock mb("problem_subscription");
-	mb["action"] = "subscribe";
-	mb["event"] = "judgesubmission";
-
-	return simpleAction(mb);
-}
-
 bool ServerConnection::becomeMarker() {
 	MessageBlock mb("subscribemark");
 

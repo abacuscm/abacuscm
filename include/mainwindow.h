@@ -29,6 +29,7 @@ class QFileDialog;
 class Submit;
 class ClarificationRequestItem;
 class ClarificationItem;
+class SubmissionItem;
 
 typedef struct {
 	int prio_level;
@@ -49,9 +50,10 @@ private:
 	QTimer *timer;
 	time_t projected_stop;
 
-	/* Clarification stuff. Quick lookup of clarification requests by ID */
+	/* Look up internal data by ID */
 	std::map<uint32_t, ClarificationRequestItem *> clarificationRequestMap;
 	std::map<uint32_t, ClarificationItem *> clarificationMap;
+	std::map<uint32_t, SubmissionItem *> submissionMap;
 
 	void triggerType(std::string type, bool status);
 	void switchType(std::string type);
@@ -85,12 +87,16 @@ public:
 	// we can't cast member function pointers to void* - no idea
 	// why though - can probably memcpy them but that would be
 	// even uglier.
-	void updateStandings(const MessageBlock *mb = NULL);
-	virtual void updateSubmissions(const MessageBlock *mb = NULL);
+	void updateStandings(const MessageBlock *mb);
+	void updateSubmissions(const MessageBlock *mb);
 	void updateClarificationRequests(const MessageBlock *mb = NULL);
 	void updateClarifications(const MessageBlock *mb = NULL);
 	void updateStatus(const MessageBlock *mb = NULL);
 	void serverDisconnect(const MessageBlock *mb = NULL);
+
+	// Overloads of functions in MainWindowBase
+	virtual void updateStandings() { updateStandings(NULL); }
+	virtual void updateSubmissions() { updateSubmissions(NULL); }
 
 	std::string getActiveType();
 };

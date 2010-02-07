@@ -691,17 +691,13 @@ void MainWindow::doFileConnect() {
 				changePasswordAction->setEnabled(true);
 				clarifyButton->setEnabled(true);
 
-				_server_con.registerEventCallback("submission", updateSubmissionsFunctor, NULL);
+				_server_con.registerEventCallback("updatesubmissions", updateSubmissionsFunctor, NULL);
 				_server_con.registerEventCallback("standings", updateStandingsFunctor, NULL);
 				_server_con.registerEventCallback("msg", event_msg, NULL);
 				_server_con.registerEventCallback("startstop", contestStartStop, NULL);
 				_server_con.registerEventCallback("balloon", event_balloon, NULL);
 				_server_con.registerEventCallback("updateclarificationrequests", updateClarificationRequestsFunctor, NULL);
 				_server_con.registerEventCallback("updateclarifications", updateClarificationsFunctor, NULL);
-				if (_active_type != "contestant") {
-					_server_con.watchJudgeSubmissions();
-				}
-
 				_server_con.registerEventCallback("updateclock", updateStatusFunctor, NULL);
 				_server_con.subscribeTime();
 				updateStatus();
@@ -1157,74 +1153,86 @@ void MainWindow::updateStandings(const MessageBlock *) {
 	}
 }
 
-void MainWindow::updateSubmissions(const MessageBlock *) {
+void MainWindow::updateSubmissions(const MessageBlock *mb) {
 	if (maintabs->currentPage() != tabSubmissions)
 		return;
 
-	SubmissionList list = _server_con.getSubmissions();
-
-	submissions->clear();
 	set<int> wanted_states;
-
-	if(list.empty())
-		return;
-
-	std::vector<ProblemInfo> problems = _server_con.getProblems();
 	bool filter = (_active_type == "judge" || _active_type == "admin") && judgesShowOnlySubscribedSubmissionsAction->isOn();
 	std::map<string, bool> is_subscribed;
-	if (filter) {
-		std::vector<bool> subscribed = _server_con.getSubscriptions(problems);
-		for (unsigned int p = 0; p < problems.size(); p++)
-			is_subscribed[problems[p].code] = subscribed[p];
+	std::vector<ProblemInfo> problems;
 
-			if (stateFilterUnmarkedAction->isOn())
-				wanted_states.insert(PENDING);
+	if (_active_type != "") { // first check that we're connected
+		problems = _server_con.getProblems();
+		if (filter) {
+			std::vector<bool> subscribed = _server_con.getSubscriptions(problems);
+			for (unsigned int p = 0; p < problems.size(); p++)
+				is_subscribed[problems[p].code] = subscribed[p];
 
-			if (stateFilterJudgeAction->isOn())
-				wanted_states.insert(JUDGE);
+				if (stateFilterUnmarkedAction->isOn())
+					wanted_states.insert(PENDING);
 
-			if (stateFilterWrongAction->isOn())
-				wanted_states.insert(WRONG);
+				if (stateFilterJudgeAction->isOn())
+					wanted_states.insert(JUDGE);
 
-			if (stateFilterCorrectAction->isOn())
-				wanted_states.insert(CORRECT);
+				if (stateFilterWrongAction->isOn())
+					wanted_states.insert(WRONG);
 
-			if (stateFilterTimeExceededAction->isOn())
-				wanted_states.insert(TIME_EXCEEDED);
+				if (stateFilterCorrectAction->isOn())
+					wanted_states.insert(CORRECT);
 
-			if (stateFilterCompileAction->isOn())
-				wanted_states.insert(COMPILE_FAILED);
+				if (stateFilterTimeExceededAction->isOn())
+					wanted_states.insert(TIME_EXCEEDED);
 
-			if (stateFilterAbnormalAction->isOn())
-				wanted_states.insert(ABNORMAL);
+				if (stateFilterCompileAction->isOn())
+					wanted_states.insert(COMPILE_FAILED);
 
-			if (stateFilterOtherAction->isOn())
-				wanted_states.insert(OTHER);
+				if (stateFilterAbnormalAction->isOn())
+					wanted_states.insert(ABNORMAL);
+
+				if (stateFilterOtherAction->isOn())
+					wanted_states.insert(OTHER);
+		}
 	}
 
-	SubmissionList::iterator l;
-	for(l = list.begin(); l != list.end(); ++l) {
-		if (filter) {
-			std::map<string, bool>::iterator s = is_subscribed.find((*l)["problem"]);
-			if(s == is_subscribed.end())
-				log(LOG_WARNING, "Couldn't find %s in subscription map", (*l)["problem"].c_str());
-			else
-				if (!s->second)
-					// not subscribed to this problem
-					continue;
-			int result = atol((*l)["result"].c_str());
-			if (wanted_states.find(result) == wanted_states.end())
-				continue;
+	// TODO: remove the if true and do an incremental else branch
+	if (true || mb == NULL || !mb->hasAttribute("submission_id")) {
+		/* Full update, or a legacy message that hasn't been updated */
+		SubmissionList list = _server_con.getSubmissions();
+
+		/* Clear out the list, included anything filtered away */
+		map<uint32_t, SubmissionItem *>::iterator i;
+		for (i = submissionMap.begin(); i != submissionMap.end(); ++i)
+			delete i->second;
+		submissionMap.clear();
+
+		SubmissionList::iterator l;
+		for(l = list.begin(); l != list.end(); ++l) {
+			bool visible = true;
+			if (filter) {
+				std::map<string, bool>::iterator s = is_subscribed.find((*l)["problem"]);
+				if(s == is_subscribed.end())
+					log(LOG_WARNING, "Couldn't find %s in subscription map", (*l)["problem"].c_str());
+				else
+					if (!s->second)
+						// not subscribed to this problem
+						continue;
+				int result = atol((*l)["result"].c_str());
+				if (wanted_states.find(result) == wanted_states.end())
+					visible = false;
+			}
+
+			SubmissionItem *item = new SubmissionItem(submissions);
+			uint32_t id = strtoul((*l)["submission_id"].c_str(), NULL, 10);
+			submissionMap[id] = item;
+
+			item->setVisible(visible);
+			item->setId(id);
+			item->setContestTime(atoll((*l)["contesttime"].c_str()));
+			item->setTime(atoll((*l)["time"].c_str()));
+			item->setProblem((*l)["problem"]);
+			item->setStatus((*l)["comment"]);
 		}
-
-		SubmissionItem *item = new SubmissionItem(submissions);
-		uint32_t id = strtoul((*l)["submission_id"].c_str(), NULL, 10);
-
-		item->setId(id);
-		item->setContestTime(atoll((*l)["contesttime"].c_str()));
-		item->setTime(atoll((*l)["time"].c_str()));
-		item->setProblem((*l)["problem"]);
-		item->setStatus((*l)["comment"]);
 	}
 }
 

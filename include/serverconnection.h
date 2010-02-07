@@ -143,8 +143,6 @@ public:
 
 	bool watchBalloons(bool yesno);
 
-	bool watchJudgeSubmissions();
-
 	bool becomeMarker();
 	bool mark(uint32_t submission_id, RunResult result, std::string comment, const AttributeMap &files);
 

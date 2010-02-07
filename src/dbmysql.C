@@ -95,6 +95,7 @@ public:
 			uint32_t time, uint32_t server_id, char* content,
 			uint32_t content_size, std::string language);
 	virtual SubmissionList getSubmissions(uint32_t uid);
+	virtual AttributeList getSubmission(uint32_t submission_id);
 	virtual ClarificationList getClarifications(uint32_t uid);
 	virtual AttributeList getClarification(uint32_t c_id);
 	virtual ClarificationRequestList getClarificationRequests(uint32_t uid);
@@ -836,6 +837,34 @@ bool MySQL::putSubmission(uint32_t submission_id, uint32_t user_id, uint32_t pro
 	}
 
 	return true;
+}
+
+AttributeList MySQL::getSubmission(uint32_t submission_id) {
+	ostringstream query;
+	query << "SELECT submission_id, time, value, Submission.prob_id FROM User, ProblemAttributes, Submission WHERE User.user_id = Submission.user_id AND Submission.prob_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute = 'shortname'";
+	query << " AND submission_id = " << submission_id;
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return AttributeList();
+	}
+
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if (!res) {
+		log_mysql_error();
+		return AttributeList();
+	}
+	MYSQL_ROW row;
+	AttributeList attrs;
+	while((row = mysql_fetch_row(res)) != 0) {
+		attrs["submission_id"] = row[0];
+		attrs["time"] = row[1];
+		attrs["problem"] = row[2];
+		attrs["prob_id"] = row[3];
+	}
+	mysql_free_result(res);
+
+	return attrs;
 }
 
 SubmissionList MySQL::getSubmissions(uint32_t uid) {
