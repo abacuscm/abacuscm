@@ -608,6 +608,8 @@ int main(int argc, char ** argv) {
 	Server::setSocketQueue(&wait_queue);
 	Server::setSocketPool(&socket_pool);
 
+	Markers::getInstance().startTimeoutCheckingThread();
+
 	ModuleLoader module_loader;
 	/* The ModuleLoader object uses scope to clean up on destruction. It
 	 * also grabs config during initialisation, so the above line should not
@@ -638,6 +640,8 @@ int main(int argc, char ** argv) {
 	// is easier right now than figuring out sigprocmask and sigwait.
 	while (abacusd_running)
 		pause();
+
+	Markers::getInstance().shutdown();
 
 	PeerMessenger::getMessenger()->shutdown();
 

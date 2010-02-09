@@ -7,6 +7,7 @@
  *
  * $Id$
  */
+#include "acmconfig.h"
 #include "markers.h"
 #include "messageblock.h"
 #include "clientconnection.h"
@@ -17,6 +18,17 @@
 #include <sstream>
 
 Markers Markers::_instance;
+
+void *checkForTimeoutsThread(void *) {
+	while (!Markers::getInstance().shouldTerminate()) {
+		Markers::getInstance().checkForTimeouts();
+
+		// Sleep for 1 second and then have another look
+		sleep(1);
+	}
+
+	return NULL;
+}
 
 Markers::Markers() {
 	pthread_mutex_init(&_lock, NULL);
@@ -44,7 +56,6 @@ void Markers::enqueueMarker(ClientConnection* cc) {
 }
 
 void Markers::preemptMarker(ClientConnection* cc) {
-	log(LOG_DEBUG, "Removing %p from available markers", cc);
 	pthread_mutex_lock(&_lock);
 
 	std::list<ClientConnection*>::iterator i1;
@@ -135,6 +146,7 @@ void Markers::issue(ClientConnection* cc, uint32_t sd) {
 	log(LOG_DEBUG, "About to issue %u to %p", sd, cc);
 	if(cc->sendMessageBlock(&mb)) {
 		_issued[cc] = sd;
+		_issue_times.push(std::make_pair(time(NULL), std::make_pair(cc, sd)));
 		log(LOG_DEBUG, "Issued submission %u to %p", sd, cc);
 	} else {
 		enqueueSubmission(sd);
@@ -173,3 +185,51 @@ void Markers::notifyMarked(ClientConnection* cc, uint32_t submission_id) {
 	}
 	pthread_mutex_unlock(&_lock);
 }
+
+void Markers::checkForTimeouts() {
+	pthread_mutex_lock(&_lock);
+
+	while (!_issue_times.empty() && ((time(NULL) - _issue_times.top().first) > (time_t) _timeout)) {
+		// The earliest submitted marking job has timed out
+		ClientConnection *cc = _issue_times.top().second.first;
+		uint32_t submission_id = _issue_times.top().second.second;
+		_issue_times.pop();
+
+		std::map<ClientConnection*, uint32_t>::iterator i = _issued.find(cc);
+		if (i == _issued.end() || i->second != submission_id)
+			continue;
+
+		log(LOG_WARNING, "Marker %p timed out in marking submission %u, re-enqueuing submission and dropping marker client connection from pool", cc, submission_id);
+
+		_issued.erase(i);
+		real_enqueueSubmission(submission_id);
+	}
+
+	pthread_mutex_unlock(&_lock);
+}
+
+void Markers::startTimeoutCheckingThread() {
+	_timeout = atoll(Config::getConfig()["markers"]["timeout"].c_str());
+	if (_timeout == 0) {
+		// Disable timeout checking if the timeout is 0
+		return;
+	}
+
+	_shouldTerminate = false;
+	pthread_create(&_timeout_checker, NULL, checkForTimeoutsThread, NULL);
+}
+
+bool Markers::shouldTerminate() {
+	return _shouldTerminate;
+}
+
+void Markers::shutdown() {
+	_shouldTerminate = true;
+
+	// Only join the timeout thread if we created it
+	if (_timeout > 0) {
+		pthread_join(_timeout_checker, NULL);
+	}
+}
+
+
