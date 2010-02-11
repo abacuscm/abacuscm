@@ -174,5 +174,6 @@ static void init() __attribute__((constructor));
 static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "standings", &_act_standings);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "standings", &_act_standings);
+	ClientAction::registerAction(USER_TYPE_NONCONTEST, "standings", &_act_standings);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "standings", &_act_standings);
 }

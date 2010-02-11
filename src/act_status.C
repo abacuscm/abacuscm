@@ -35,5 +35,6 @@ static void init() __attribute__((constructor));
 static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "conteststatus", &_act_running);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "conteststatus", &_act_running);
+	ClientAction::registerAction(USER_TYPE_NONCONTEST, "conteststatus", &_act_running);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "conteststatus", &_act_running);
 }

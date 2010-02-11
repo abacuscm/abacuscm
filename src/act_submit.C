@@ -379,7 +379,7 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
 
 	MessageBlock result_mb("ok");
 
-	if (utype == USER_TYPE_CONTESTANT) {
+	if (utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_NONCONTEST) {
 		// make sure that this is a compilation failed type of error
 		// and that the submission belongs to this contestant
 		RunResult resinfo;
@@ -473,18 +473,23 @@ static ActGetSubmissibleProblems _act_get_submissible_problems;
 static void init() __attribute__((constructor));
 static void init() {
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "submit", &_act_submit);
+	ClientAction::registerAction(USER_TYPE_NONCONTEST, "submit", &_act_submit);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getproblems", &_act_getproblems);
+	ClientAction::registerAction(USER_TYPE_NONCONTEST, "getproblems", &_act_getproblems);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "getproblems", &_act_getproblems);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getproblems", &_act_getproblems);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getsubmissions", &_act_getsubs);
+	ClientAction::registerAction(USER_TYPE_NONCONTEST, "getsubmissions", &_act_getsubs);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissions", &_act_getsubs);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "getsubmissions", &_act_getsubs);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "fetchfile", &_act_submission_file_fetcher);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "fetchfile", &_act_submission_file_fetcher);
+	ClientAction::registerAction(USER_TYPE_NONCONTEST, "fetchfile", &_act_submission_file_fetcher);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "fetchfile", &_act_submission_file_fetcher);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "getsubmissionsource", &_act_get_submission_source);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissionsource", &_act_get_submission_source);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getsubmissibleproblems", &_act_get_submissible_problems);
+	ClientAction::registerAction(USER_TYPE_NONCONTEST, "getsubmissibleproblems", &_act_get_submissible_problems);
 	Message::registerMessageFunctor(TYPE_ID_SUBMISSION, create_submission_msg);
 
 	ClientEventRegistry::getInstance().registerEvent("updatesubmissions");

@@ -65,9 +65,6 @@ bool ClientAction::process(ClientConnection *cc, MessageBlock *mb) {
 	uint32_t user_type = cc->getProperty("user_type");
 	std::string action = mb->action();
 
-	if (user_type == USER_TYPE_NONCONTEST)
-		user_type = USER_TYPE_CONTESTANT;
-
 	ClientAction* ca = getAction(user_type, action);
 	if(ca)
 		return ca->int_process(cc, mb);

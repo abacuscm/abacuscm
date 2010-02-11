@@ -632,6 +632,8 @@ void MainWindow::triggerType(std::string type, bool status) {
 		signalJudgeControls(status);
 	else if(type == "contestant")
 		signalContestantControls(status);
+	else if(type == "observer")
+		signalObserverControls(status);
 	else
 		log(LOG_ERR, "Unknown control-type '%s'.", type.c_str());
 }
@@ -1000,7 +1002,7 @@ void MainWindow::doClarificationRequest() {
 void MainWindow::doShowClarificationRequest(QListViewItem *item) {
 	ViewClarificationRequestSub vcr(atol(item->text(0)), &_server_con);
 
-	if (_active_type == "contestant")
+	if (_active_type == "contestant" || _active_type == "observer")
 		vcr.reply->setEnabled(false);
 	assert(item->rtti() == RTTI_CLARIFICATION_REQUEST);
 	const ClarificationRequestItem *cri = static_cast<const ClarificationRequestItem *>(item);
@@ -1316,7 +1318,7 @@ void MainWindow::submissionHandler(QListViewItem *item) {
 			return;
 		}
 	}
-	else if (_active_type == "contestant") {
+	else if (_active_type == "contestant" || _active_type == "observer") {
 		if (item->text(4) == "Compilation failed") {
 			CompilerOutputDialog compilerOutputDialog;
 			string name;
@@ -1393,7 +1395,7 @@ void MainWindow::updateClarifications(const MessageBlock *mb) {
 			item = new ClarificationItem(clarifications);
 
 		setClarification(item, *mb);
-		if (_active_type == "contestant") {
+		if (_active_type == "contestant" || _active_type == "observer") {
 			ViewClarificationReply dialog;
 
 			dialog.problem->setText(QString::fromUtf8(item->getProblem().c_str()));

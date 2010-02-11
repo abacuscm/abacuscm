@@ -1225,6 +1225,30 @@
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalObserverControls(bool)</signal>
+        <receiver>nonContestInStandingsAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalObserverControls(bool)</signal>
+        <receiver>judgesNotify_about_Correct_SubmissionsAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalObserverControls(bool)</signal>
+        <receiver>submissionButton</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalObserverControls(bool)</signal>
+        <receiver>nonContestInStandingsAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
         <sender>nonContestInStandingsAction</sender>
         <signal>toggled(bool)</signal>
         <receiver>MainWindowBase</receiver>
@@ -1283,6 +1307,7 @@
     <signal>signalAdminControls(bool)</signal>
     <signal>signalJudgeControls(bool)</signal>
     <signal>signalContestantControls(bool)</signal>
+    <signal>signalObserverControls(bool)</signal>
 </signals>
 <slots>
     <slot access="protected" specifier="pure virtual">doHelpAbout()</slot>

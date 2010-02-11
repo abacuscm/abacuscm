@@ -49,5 +49,6 @@ static void init() __attribute__((constructor));
 static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "contesttime", &_act_contesttime);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "contesttime", &_act_contesttime);
+	ClientAction::registerAction(USER_TYPE_NONCONTEST, "contesttime", &_act_contesttime);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "contesttime", &_act_contesttime);
 }
