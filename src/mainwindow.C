@@ -132,6 +132,15 @@ static void event_balloon(const MessageBlock *mb, void*) {
 #define RTTI_CLARIFICATION_REQUEST 2001
 #define RTTI_CLARIFICATION         2002
 #define RTTI_SUBMISSION            2003
+#define RTTI_STANDING              2004
+
+/* Compares any two objects and returns -1, 0, 1 suitable for use in a
+ * QListViewItem::compare overload.
+ */
+template<typename T>
+static int comparator(const T &a, const T &b) {
+	return a < b ? -1 : a > b ? 1 : 0;
+}
 
 // Returns at most one line and at most 50 characters of string, appending
 // "..." if anything was cut off.
@@ -267,11 +276,11 @@ int ClarificationRequestItem::compare(QListViewItem *other, int col, bool ascend
 	const ClarificationRequestItem *i = static_cast<const ClarificationRequestItem *>(other);
 	switch (col) {
 	case COLUMN_ID:
-		return _id < i->_id ? -1 : _id > i->_id ? 1 : 0;
+		return comparator(_id, i->_id);
 	case COLUMN_TIME:
-		return _time < i->_time ? -1 : _time > i->_time ? 1 : 0;
+		return comparator(_time, i->_time);
 	case COLUMN_ANSWERED:
-		return _answered < i->_answered ? -1 : _answered > i->_answered ? 1 : 0;
+		return comparator(_answered, i->_answered);
 	default:
 		return QListViewItem::compare(other, col, ascending);
 	}
@@ -383,9 +392,9 @@ int ClarificationItem::compare(QListViewItem *other, int col, bool ascending) co
 	const ClarificationItem *i = static_cast<const ClarificationItem *>(other);
 	switch (col) {
 	case COLUMN_ID:
-		return _id < i->_id ? -1 : _id > i->_id ? 1 : 0;
+		return comparator(_id, i->_id);
 	case COLUMN_TIME:
-		return _time < i->_time ? -1 : _time > i->_time ? 1 : 0;
+		return comparator(_time, i->_time);
 	default:
 		return QListViewItem::compare(other, col, ascending);
 	}
@@ -514,13 +523,180 @@ int SubmissionItem::compare(QListViewItem *other, int col, bool ascending) const
 	const SubmissionItem *i = static_cast<const SubmissionItem *>(other);
 	switch (col) {
 	case COLUMN_ID:
-		return _id < i->_id ? -1 : _id > i->_id ? 1 : 0;
+		return comparator(_id, i->_id);
 	case COLUMN_CONTEST_TIME:
-		return _contest_time < i->_contest_time ? -1 : _contest_time > i->_contest_time ? 1 : 0;
+		return comparator(_contest_time, i->_contest_time);
 	case COLUMN_TIME:
-		return _time < i->_time ? -1 : _time > i->_time ? 1 : 0;
+		return comparator(_time, i->_time);
 	default:
 		return QListViewItem::compare(other, col, ascending);
+	}
+}
+
+class StandingItem : public QListViewItem {
+private:
+	int _place;
+	uint32_t _id;
+	string _username;
+	string _friendlyname;
+	uint32_t _total_time;
+	vector<int> _solved;   // -x for x wrong attempts, +x for x total attempts with a solution
+
+	enum Column {
+		COLUMN_PLACE = 0,
+		COLUMN_USERNAME = 1,
+		COLUMN_FRIENDLYNAME = 2,
+		COLUMN_TOTAL_SOLVED = 3,
+		COLUMN_TOTAL_TIME = 4,
+		COLUMN_SOLVED = 5,  // start of variable number of columns
+	};
+
+public:
+	StandingItem(QListView *parent);
+	StandingItem(QListView *parent, QListViewItem *after);
+	StandingItem(QListViewItem *parent);
+	StandingItem(QListViewItem *parent, QListViewItem *after);
+
+	void setPlace(int place);
+	void setId(uint32_t id);
+	void setUsername(const string &username);
+	void setFriendlyname(const string &friendlyname);
+	void setTotalTime(uint32_t time);
+	void setSolved(const vector<int> &solved);
+
+	int getPlace() const { return _place; }
+	uint32_t getId() const { return _id; }
+	const string &getUsername() const { return _username; }
+	const string &getFriendlyName() const { return _friendlyname; }
+	uint32_t getTotalTime() const { return _total_time; }
+	const vector<int> &getSolved() const { return _solved; }
+	int getTotalSolved() const;
+
+	virtual int rtti() const { return RTTI_SUBMISSION; }
+	virtual int compare(QListViewItem *other, int col, bool ascending);
+};
+
+StandingItem::StandingItem(QListView *parent) :
+	QListViewItem(parent),
+	_place(0), _id(0), _username(""), _friendlyname(""), _total_time(0), _solved() {
+}
+
+StandingItem::StandingItem(QListView *parent, QListViewItem *after) :
+	QListViewItem(parent, after),
+	_place(0), _id(0), _username(""), _friendlyname(""), _total_time(0), _solved() {
+}
+
+StandingItem::StandingItem(QListViewItem *parent) :
+	QListViewItem(parent),
+	_place(0), _id(0), _username(""), _friendlyname(""), _total_time(0), _solved() {
+}
+
+StandingItem::StandingItem(QListViewItem *parent, QListViewItem *after) :
+	QListViewItem(parent, after),
+	_place(0), _id(0), _username(""), _friendlyname(""), _total_time(0), _solved() {
+}
+
+void StandingItem::setPlace(int place) {
+	_place = place;
+	if (place <= 0) setText(COLUMN_PLACE, "");
+	else {
+		ostringstream s;
+		s << place;
+		setText(COLUMN_PLACE, s.str());
+	}
+}
+
+void StandingItem::setId(uint32_t id) {
+	_id = id;
+}
+
+void StandingItem::setUsername(const string &username) {
+	_username = username;
+	setText(COLUMN_USERNAME, username);
+}
+
+void StandingItem::setFriendlyname(const string &friendlyname) {
+	_friendlyname = friendlyname;
+	setText(COLUMN_FRIENDLYNAME, QString::fromUtf8(friendlyname.c_str()));
+}
+
+void StandingItem::setTotalTime(uint32_t time) {
+	_total_time = time;
+	char buffer[32];
+	sprintf(buffer, "%02d:%02d", time / 3600, (time / 60) % 60);
+	setText(COLUMN_TOTAL_TIME, buffer);
+}
+
+void StandingItem::setSolved(const vector<int> &solved) {
+	_solved = solved;
+	int total = 0;
+	for (size_t i = 0; i < solved.size(); i++) {
+		ostringstream s;
+		if (solved[i] > 0) {
+			s << "+";
+			if (solved[i] > 1)
+				s << solved[i] - 1;
+			total++;
+		}
+		else if (solved[i] < 0) {
+			s << "-" << -solved[i];
+		}
+		setText(COLUMN_SOLVED + i, s.str());
+	}
+
+	ostringstream s;
+	s << total;
+	setText(COLUMN_TOTAL_SOLVED, s.str());
+}
+
+int StandingItem::getTotalSolved() const {
+	int total = 0;
+
+	for (size_t i = 0; i < _solved.size(); i++)
+		if (_solved[i] > 0) total++;
+	return total;
+}
+
+int StandingItem::compare(QListViewItem *other, int col, bool ascending) {
+	if (other == NULL || other->rtti() != rtti())
+		return QListViewItem::compare(other, col, ascending);
+
+	const StandingItem *i = static_cast<const StandingItem *>(other);
+	int solveda = getTotalSolved();
+	int solvedb = i->getTotalSolved();
+	switch (col) {
+	case COLUMN_PLACE:
+		/* We might have unnumbered positions for unofficial contestants, but
+		 * we still want to sort by solved and time.
+		 */
+		if (_place != 0 && i->_place != 0)
+			return comparator(_place, i->_place);
+		else if (solveda != solvedb)
+			return comparator(solvedb, solveda); // reversed since more is better
+		else
+			return comparator(_total_time, i->_total_time);
+	case COLUMN_TOTAL_TIME:
+		return comparator(_total_time, i->_total_time);
+	case COLUMN_TOTAL_SOLVED:
+		return comparator(solveda, solvedb);
+	case COLUMN_USERNAME:
+	case COLUMN_FRIENDLYNAME:
+		return QListViewItem::compare(other, col, ascending);
+	default: // a problem column
+		{
+			size_t p = col - COLUMN_SOLVED;
+			int a = p < _solved.size() ? _solved[p] : 0;
+			int b = p < i->_solved.size() ? i->_solved[p] : 0;
+			// Order first by whether it is solved or not (yes is higher), then
+			// inversely by the number of attempts
+			if (a <= 0 && b > 0) return -1;
+			else if (b <= 0 && a > 0) return 1;
+			else {
+				if (a < 0) a = -a;
+				if (b < 0) b = -b;
+				return comparator(b, a);
+			}
+		}
 	}
 }
 
