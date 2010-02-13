@@ -178,7 +178,84 @@ static string summary_string(const string &s)
 	return ans;
 }
 
-class ClarificationRequestItem : public QListViewItem {
+/* Adds some extra features to QListViewItem, such as
+ * - automatic interpretation of std::string as UTF-8
+ * - automatic conversion of numeric values
+ * - automatic conversion of times
+ * - the ability to set the item visible or invisible
+ */
+class SmartListViewItem : public QListViewItem {
+private:
+	QListView *_parent;
+	bool _visible;
+
+	/* Internal copy of texts (in UTF-8), needed for when the list item
+	 * is not part of the view
+	 */
+	vector<string> texts;
+
+protected:
+	void setValue(int col, const string &s);
+	void setValue(int col, uint32_t value);
+	void setValueTime(int col, time_t time);
+	void setValueDuration(int col, uint32_t duration);
+
+public:
+	explicit SmartListViewItem(QListView *parent);
+
+	void setVisible(bool visible);
+	bool isVisible() const { return _visible; }
+};
+
+SmartListViewItem::SmartListViewItem(QListView *parent)
+	: QListViewItem(parent), _parent(parent), _visible(true) {
+	assert(parent != NULL);
+}
+
+void SmartListViewItem::setVisible(bool visible) {
+	if (_visible == visible) return;
+	_visible = visible;
+	if (visible) {
+		for (size_t i = 0; i < texts.size(); i++)
+			setText(i, QString::fromUtf8(texts[i].c_str()));
+		_parent->insertItem(this);
+	}
+	else {
+		_parent->takeItem(this);
+	}
+}
+
+void SmartListViewItem::setValue(int col, const string &s) {
+	assert(col >= 0);
+	if (texts.size() <= (size_t) col)
+		texts.resize(col + 1);
+	texts[col] = s;
+	if (_visible)
+		setText(col, QString::fromUtf8(texts[col].c_str()));
+}
+
+void SmartListViewItem::setValue(int col, uint32_t value) {
+	ostringstream s;
+	s << value;
+	setValue(col, s.str());
+}
+
+void SmartListViewItem::setValueTime(int col, time_t time) {
+	struct tm time_tm;
+	char time_buffer[64];
+
+	localtime_r(&time, &time_tm);
+	strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
+	setValue(col, string(time_buffer));
+}
+
+void SmartListViewItem::setValueDuration(int col, uint32_t duration) {
+	char buffer[64];
+	sprintf(buffer, "%02d:%02d", duration / 3600, duration / 60 % 60);
+	setValue(col, string(buffer));
+}
+
+class ClarificationRequestItem : public SmartListViewItem {
 private:
 	uint32_t _id;
 	time_t _time;
@@ -196,9 +273,6 @@ private:
 	};
 public:
 	explicit ClarificationRequestItem(QListView *parent);
-	explicit ClarificationRequestItem(QListViewItem *parent);
-	ClarificationRequestItem(QListView *parent, QListViewItem *after);
-	ClarificationRequestItem(QListViewItem *parent, QListViewItem *after);
 
 	uint32_t getId() const { return _id; }
 	time_t getTime() const { return _time; }
@@ -217,56 +291,33 @@ public:
 };
 
 ClarificationRequestItem::ClarificationRequestItem(QListView *parent) :
-	QListViewItem(parent),
-	_id(0), _time(0), _problem(""), _answered(false), _question("") {
-}
-
-ClarificationRequestItem::ClarificationRequestItem(QListViewItem *parent) :
-	QListViewItem(parent),
-	_id(0), _time(0), _problem(""), _answered(false), _question("") {
-}
-
-ClarificationRequestItem::ClarificationRequestItem(QListView *parent, QListViewItem *after) :
-	QListViewItem(parent, after),
-	_id(0), _time(0), _problem(""), _answered(false), _question("") {
-}
-
-ClarificationRequestItem::ClarificationRequestItem(QListViewItem *parent, QListViewItem *after) :
-	QListViewItem(parent, after),
+	SmartListViewItem(parent),
 	_id(0), _time(0), _problem(""), _answered(false), _question("") {
 }
 
 void ClarificationRequestItem::setId(uint32_t id) {
-	ostringstream s;
-
 	_id = id;
-	s << id;
-	setText(COLUMN_ID, s.str());
+	setValue(COLUMN_ID, id);
 }
 
 void ClarificationRequestItem::setTime(time_t time) {
-	struct tm time_tm;
-	char time_buffer[64];
-
 	_time = time;
-	localtime_r(&time, &time_tm);
-	strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
-	setText(COLUMN_TIME, time_buffer);
+	setValueTime(COLUMN_TIME, time);
 }
 
 void ClarificationRequestItem::setProblem(const string &problem) {
 	_problem = problem;
-	setText(COLUMN_PROBLEM, QString::fromUtf8(problem.c_str()));
+	setValue(COLUMN_PROBLEM, problem);
 }
 
 void ClarificationRequestItem::setAnswered(bool answered) {
 	_answered = answered;
-	setText(COLUMN_ANSWERED, answered ? "answered" : "pending");
+	setValue(COLUMN_ANSWERED, answered ? "answered" : "pending");
 }
 
 void ClarificationRequestItem::setQuestion(const string &question) {
 	_question = question;
-	setText(COLUMN_QUESTION, QString::fromUtf8(summary_string(question).c_str()));
+	setValue(COLUMN_QUESTION, summary_string(question).c_str());
 }
 
 int ClarificationRequestItem::compare(QListViewItem *other, int col, bool ascending) const {
@@ -286,7 +337,7 @@ int ClarificationRequestItem::compare(QListViewItem *other, int col, bool ascend
 	}
 }
 
-class ClarificationItem : public QListViewItem {
+class ClarificationItem : public SmartListViewItem {
 private:
 	uint32_t _id;
 	uint32_t _request_id;
@@ -306,9 +357,6 @@ private:
 
 public:
 	explicit ClarificationItem(QListView *parent);
-	explicit ClarificationItem(QListViewItem *parent);
-	ClarificationItem(QListView *parent, QListViewItem *after);
-	ClarificationItem(QListViewItem *parent, QListViewItem *after);
 
 	uint32_t getId() const { return _id; }
 	uint32_t getRequestId() const { return _request_id; }
@@ -329,31 +377,13 @@ public:
 };
 
 ClarificationItem::ClarificationItem(QListView *parent) :
-	QListViewItem(parent),
-	_id(0), _request_id(0), _time(0), _problem(""), _question(""), _answer("") {
-}
-
-ClarificationItem::ClarificationItem(QListViewItem *parent) :
-	QListViewItem(parent),
-	_id(0), _request_id(0), _time(0), _problem(""), _question(""), _answer("") {
-}
-
-ClarificationItem::ClarificationItem(QListView *parent, QListViewItem *after) :
-	QListViewItem(parent, after),
-	_id(0), _request_id(0), _time(0), _problem(""), _question(""), _answer("") {
-}
-
-ClarificationItem::ClarificationItem(QListViewItem *parent, QListViewItem *after) :
-	QListViewItem(parent, after),
+	SmartListViewItem(parent),
 	_id(0), _request_id(0), _time(0), _problem(""), _question(""), _answer("") {
 }
 
 void ClarificationItem::setId(uint32_t id) {
-	ostringstream s;
-
 	_id = id;
-	s << id;
-	setText(COLUMN_ID, s.str());
+	setValue(COLUMN_ID, id);
 }
 
 void ClarificationItem::setRequestId(uint32_t request_id) {
@@ -361,28 +391,23 @@ void ClarificationItem::setRequestId(uint32_t request_id) {
 }
 
 void ClarificationItem::setTime(time_t time) {
-	struct tm time_tm;
-	char time_buffer[64];
-
 	_time = time;
-	localtime_r(&time, &time_tm);
-	strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
-	setText(COLUMN_TIME, time_buffer);
+	setValueTime(COLUMN_TIME, time);
 }
 
 void ClarificationItem::setProblem(const string &problem) {
 	_problem = problem;
-	setText(COLUMN_PROBLEM, QString::fromUtf8(problem.c_str()));
+	setValue(COLUMN_PROBLEM, problem.c_str());
 }
 
 void ClarificationItem::setQuestion(const string &question) {
 	_question = question;
-	setText(COLUMN_QUESTION, QString::fromUtf8(summary_string(question).c_str()));
+	setValue(COLUMN_QUESTION, summary_string(question));
 }
 
 void ClarificationItem::setAnswer(const string &answer) {
 	_answer = answer;
-	setText(COLUMN_ANSWER, QString::fromUtf8(summary_string(answer).c_str()));
+	setValue(COLUMN_ANSWER, summary_string(answer).c_str());
 }
 
 int ClarificationItem::compare(QListViewItem *other, int col, bool ascending) const {
@@ -400,21 +425,13 @@ int ClarificationItem::compare(QListViewItem *other, int col, bool ascending) co
 	}
 }
 
-class SubmissionItem : public QListViewItem {
+class SubmissionItem : public SmartListViewItem {
 private:
 	uint32_t _id;
-	time_t _contest_time;
+	uint32_t _contest_time;
 	time_t _time;
 	string _problem;
 	string _status;
-
-	/* Submissions are a little more complicated because they are filtered.
-	 * QListView isn't so hot on filtering, so and doesn't allow most methods
-	 * on a QListViewItem that's not in a view. So, we need to keep track
-	 * internally of whether we're visible, and defer setText calls if not.
-	 */
-	QListView *_parent;
-	bool _visible;
 
 	enum Column {
 		COLUMN_ID = 0,
@@ -424,96 +441,52 @@ private:
 		COLUMN_STATUS = 4
 	};
 public:
-	SubmissionItem(QListView *parent);
-	SubmissionItem(QListView *parent, QListViewItem *after);
+	explicit SubmissionItem(QListView *parent);
 
 	void setId(uint32_t id);
-	void setContestTime(time_t contest_time);
+	void setContestTime(uint32_t contest_time);
 	void setTime(time_t time);
 	void setProblem(const string &problem);
 	void setStatus(const string &status);
-	void setVisible(bool visible);
 
 	uint32_t getId() const { return _id; }
 	time_t getContestTime() const { return _contest_time; }
 	time_t getTime() const { return _time; }
 	const string &getProblem() const { return _problem; }
 	const string &getStatus() const { return _status; }
-	bool isVisible() const { return _visible; }
 
 	virtual int rtti() const { return RTTI_SUBMISSION; }
 	virtual int compare(QListViewItem *other, int col, bool ascending) const;
 };
 
 SubmissionItem::SubmissionItem(QListView *parent) :
-	QListViewItem(parent),
-	_id(0), _contest_time(0), _time(0), _problem(""), _status(""),
-	_parent(parent), _visible(true) {
-}
-
-SubmissionItem::SubmissionItem(QListView *parent, QListViewItem *after) :
-	QListViewItem(parent, after),
-	_id(0), _contest_time(0), _time(0), _problem(""), _status(""),
-	_parent(parent), _visible(true) {
+	SmartListViewItem(parent),
+	_id(0), _contest_time(0), _time(0), _problem(""), _status("") {
 }
 
 void SubmissionItem::setId(uint32_t id) {
 	_id = id;
-	if (_visible) {
-		ostringstream s;
-		s << id;
-		setText(COLUMN_ID, s.str());
-	}
+	setValue(COLUMN_ID, id);
 }
 
-void SubmissionItem::setContestTime(time_t contest_time) {
-	char buffer[64];
-
+void SubmissionItem::setContestTime(uint32_t contest_time) {
 	_contest_time = contest_time;
-	if (_visible) {
-		sprintf(buffer, "%02ld:%02ld:%02ld", (long) (contest_time / 3600), (long) (contest_time / 60 % 60), (long) (contest_time % 60));
-		setText(COLUMN_CONTEST_TIME, buffer);
-	}
+	setValueDuration(COLUMN_CONTEST_TIME, contest_time);
 }
 
 void SubmissionItem::setTime(time_t time) {
-	struct tm time_tm;
-	char time_buffer[64];
-
 	_time = time;
-	if (_visible) {
-		localtime_r(&time, &time_tm);
-		strftime(time_buffer, sizeof(time_buffer) - 1, "%X", &time_tm);
-		setText(COLUMN_TIME, time_buffer);
-	}
+	setValueTime(COLUMN_TIME, time);
 }
 
 void SubmissionItem::setProblem(const string &problem) {
 	_problem = problem;
-	setText(COLUMN_PROBLEM, problem);
+	setValue(COLUMN_PROBLEM, problem);
 }
 
 void SubmissionItem::setStatus(const string &status) {
 	_status = status;
-	if (_visible)
-		setText(COLUMN_STATUS, status);
-}
-
-void SubmissionItem::setVisible(bool visible) {
-	if (_visible && !visible) {
-		_parent->takeItem(this);
-		_visible = false;
-	}
-	else if (!_visible && visible) {
-		_parent->insertItem(this);
-		/* Trigger updates of the text */
-		setId(_id);
-		setContestTime(_contest_time);
-		setTime(_time);
-		setProblem(_problem);
-		setStatus(_status);
-		_visible = true;
-	}
+	setValue(COLUMN_STATUS, status);
 }
 
 int SubmissionItem::compare(QListViewItem *other, int col, bool ascending) const {
@@ -533,7 +506,7 @@ int SubmissionItem::compare(QListViewItem *other, int col, bool ascending) const
 	}
 }
 
-class StandingItem : public QListViewItem {
+class StandingItem : public SmartListViewItem {
 private:
 	int _place;
 	uint32_t _id;
@@ -552,10 +525,7 @@ private:
 	};
 
 public:
-	StandingItem(QListView *parent);
-	StandingItem(QListView *parent, QListViewItem *after);
-	StandingItem(QListViewItem *parent);
-	StandingItem(QListViewItem *parent, QListViewItem *after);
+	explicit StandingItem(QListView *parent);
 
 	void setPlace(int place);
 	void setId(uint32_t id);
@@ -577,33 +547,16 @@ public:
 };
 
 StandingItem::StandingItem(QListView *parent) :
-	QListViewItem(parent),
-	_place(0), _id(0), _username(""), _friendlyname(""), _total_time(0), _solved() {
-}
-
-StandingItem::StandingItem(QListView *parent, QListViewItem *after) :
-	QListViewItem(parent, after),
-	_place(0), _id(0), _username(""), _friendlyname(""), _total_time(0), _solved() {
-}
-
-StandingItem::StandingItem(QListViewItem *parent) :
-	QListViewItem(parent),
-	_place(0), _id(0), _username(""), _friendlyname(""), _total_time(0), _solved() {
-}
-
-StandingItem::StandingItem(QListViewItem *parent, QListViewItem *after) :
-	QListViewItem(parent, after),
+	SmartListViewItem(parent),
 	_place(0), _id(0), _username(""), _friendlyname(""), _total_time(0), _solved() {
 }
 
 void StandingItem::setPlace(int place) {
 	_place = place;
-	if (place <= 0) setText(COLUMN_PLACE, "");
-	else {
-		ostringstream s;
-		s << place;
-		setText(COLUMN_PLACE, s.str());
-	}
+	if (place <= 0)
+		setValue(COLUMN_PLACE, "");
+	else
+		setValue(COLUMN_PLACE, place);
 }
 
 void StandingItem::setId(uint32_t id) {
@@ -612,19 +565,17 @@ void StandingItem::setId(uint32_t id) {
 
 void StandingItem::setUsername(const string &username) {
 	_username = username;
-	setText(COLUMN_USERNAME, username);
+	setValue(COLUMN_USERNAME, username);
 }
 
 void StandingItem::setFriendlyname(const string &friendlyname) {
 	_friendlyname = friendlyname;
-	setText(COLUMN_FRIENDLYNAME, QString::fromUtf8(friendlyname.c_str()));
+	setValue(COLUMN_FRIENDLYNAME, friendlyname.c_str());
 }
 
 void StandingItem::setTotalTime(uint32_t time) {
 	_total_time = time;
-	char buffer[32];
-	sprintf(buffer, "%02d:%02d", time / 3600, (time / 60) % 60);
-	setText(COLUMN_TOTAL_TIME, buffer);
+	setValueDuration(COLUMN_TOTAL_TIME, time);
 }
 
 void StandingItem::setSolved(const vector<int> &solved) {
@@ -641,12 +592,10 @@ void StandingItem::setSolved(const vector<int> &solved) {
 		else if (solved[i] < 0) {
 			s << "-" << -solved[i];
 		}
-		setText(COLUMN_SOLVED + i, s.str());
+		setValue(COLUMN_SOLVED + i, s.str());
 	}
 
-	ostringstream s;
-	s << total;
-	setText(COLUMN_TOTAL_SOLVED, s.str());
+	setValue(COLUMN_TOTAL_SOLVED, total);
 }
 
 int StandingItem::getTotalSolved() const {
