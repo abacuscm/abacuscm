@@ -79,7 +79,6 @@ TARGET_MODS += dbmysql \
 	act_events \
 	act_mark \
 	act_passwd \
-	act_problem_subscription \
 	act_problemmanip \
 	act_problemtypes \
 	act_serverlist \

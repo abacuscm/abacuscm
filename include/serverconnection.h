@@ -113,9 +113,6 @@ public:
 	std::vector<ProblemInfo> getProblems();
 	std::vector<ProblemInfo> getSubmissibleProblems();
 	std::string getProblemDescription(std::string problemtype);
-	std::vector<bool> getSubscriptions(std::vector<ProblemInfo> problems);
-	bool subscribeToProblem(ProblemInfo info);
-	bool unsubscribeToProblem(ProblemInfo info);
 
 	std::vector<UserInfo> getUsers();
 

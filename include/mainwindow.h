@@ -48,6 +48,8 @@ private:
 
 	std::string _active_type;
 
+	std::set<uint32_t> _subscribed_problems;
+
 	/* Clock-related stuff */
 	QTimer *timer;
 	time_t projected_stop;
@@ -61,10 +63,13 @@ private:
 	void triggerType(std::string type, bool status);
 	void switchType(std::string type);
 
+	std::set<int> getWantedStates() const;
+	/* Helpers to set information from either a bulk reply or an incremental
+	 * notification.
+	 */
 	template<typename T> void setClarificationRequest(ClarificationRequestItem *item, T &cr);
 	template<typename T> void setClarification(ClarificationItem *item, T &cr);
 	template<typename T> void setSubmission(SubmissionItem *item, bool filter,
-											const std::map<std::string, bool> &is_subscribed,
 											const std::set<int> &wanted_states,
 											T &submission);
 protected:
@@ -103,6 +108,7 @@ public:
 
 	// Overloads of functions in MainWindowBase
 	virtual void sortStandings();
+	virtual void refilterSubmissions();
 	virtual void updateStandings() { updateStandings(NULL); }
 	virtual void updateSubmissions() { updateSubmissions(NULL); }
 

@@ -414,9 +414,6 @@ bool ProbMessage::process() const {
 
 	db->release();db=NULL;
 
-	if(ex_prob_type == "" && code != "")
-		ClientEventRegistry::getInstance().registerEvent("judge_" + code);
-
 	return result;
 }
 

@@ -678,41 +678,6 @@ vector<UserInfo> ServerConnection::getUsers() {
 	return response;
 }
 
-vector<bool> ServerConnection::getSubscriptions(vector<ProblemInfo> problems) {
-	vector<bool> response;
-	for (unsigned int p = 0; p < problems.size(); p++) {
-		MessageBlock mb("problem_subscription");
-		mb["action"] = "is_subscribed";
-		mb["event"] = string("judge_") + problems[p].code;
-
-		MessageBlock *res = sendMB(&mb);
-		if(res && res->action() == "ok")
-			response.push_back((*res)["subscribed"] == "yes");
-		else {
-			if(res)
-				log(LOG_ERR, "%s", (*res)["msg"].c_str());
-			else
-				log(LOG_ERR, "Unknown error retrieving subscription status");
-			return response;
-		}
-	}
-	return response;
-}
-
-bool ServerConnection::subscribeToProblem(ProblemInfo info) {
-	MessageBlock mb("problem_subscription");
-	mb["action"] = "subscribe";
-	mb["event"] = string("judge_") + info.code;
-	return simpleAction(mb);
-}
-
-bool ServerConnection::unsubscribeToProblem(ProblemInfo info) {
-	MessageBlock mb("problem_subscription");
-	mb["action"] = "unsubscribe";
-	mb["event"] = string("judge_") + info.code;
-	return simpleAction(mb);
-}
-
 bool ServerConnection::submit(uint32_t prob_id, int fd, const string& lang) {
 	ostringstream str_prob_id;
 	str_prob_id << prob_id;
@@ -784,6 +749,7 @@ SubmissionList ServerConnection::getSubmissions() {
 	attrs.push_back("problem");
 	attrs.push_back("result");
 	attrs.push_back("comment");
+	attrs.push_back("prob_id");
 
 	return multiVectorAction(mb, attrs);
 }

@@ -430,6 +430,8 @@ int ClarificationItem::compare(QListViewItem *other, int col, bool ascending) co
 class SubmissionItem : public SmartListViewItem {
 private:
 	uint32_t _id;
+	uint32_t _problem_id;
+	int _result;
 	uint32_t _contest_time;
 	time_t _time;
 	string _problem;
@@ -446,12 +448,16 @@ public:
 	explicit SubmissionItem(QListView *parent);
 
 	void setId(uint32_t id);
+	void setProblemId(uint32_t problem_id);
+	void setResult(int result);
 	void setContestTime(uint32_t contest_time);
 	void setTime(time_t time);
 	void setProblem(const string &problem);
 	void setStatus(const string &status);
 
 	uint32_t getId() const { return _id; }
+	uint32_t getProblemId() const { return _problem_id; }
+	int getResult() const { return _result; }
 	time_t getContestTime() const { return _contest_time; }
 	time_t getTime() const { return _time; }
 	const string &getProblem() const { return _problem; }
@@ -469,6 +475,14 @@ SubmissionItem::SubmissionItem(QListView *parent) :
 void SubmissionItem::setId(uint32_t id) {
 	_id = id;
 	setValue(COLUMN_ID, id);
+}
+
+void SubmissionItem::setProblemId(uint32_t problem_id) {
+	_problem_id = problem_id;
+}
+
+void SubmissionItem::setResult(int result) {
+	_result = result;
 }
 
 void SubmissionItem::setContestTime(uint32_t contest_time) {
@@ -1193,10 +1207,6 @@ void MainWindow::doJudgeSubscribeToProblems() {
 		return;
 	}
 
-	// then a list of all problems that this judge is
-	// subscribed to
-	std::vector<bool> subscribed = _server_con.getSubscriptions(problems);
-
 	QVBoxLayout *l = new QVBoxLayout(problem_subscription_dialog.problemButtons);
 
 	for (unsigned int p = 0; p < problems.size(); p++) {
@@ -1204,7 +1214,7 @@ void MainWindow::doJudgeSubscribeToProblems() {
 				problems[p].name.c_str(),
 				problem_subscription_dialog.problemButtons);
 		l->addWidget(button);
-		button->setChecked(subscribed[p]);
+		button->setChecked(_subscribed_problems.count(problems[p].id) != 0);
 		problem_subscription_buttons.push_back(button);
 	}
 
@@ -1212,31 +1222,15 @@ void MainWindow::doJudgeSubscribeToProblems() {
 	l->addItem( spacer );
 
 	if (problem_subscription_dialog.exec()) {
-		bool changes = false;
-		bool failure = false;
 		for (unsigned int p = 0; p < problems.size(); p++) {
-			if (problem_subscription_buttons[p]->isChecked() != subscribed[p]) {
-				// effect the change
-				bool result;
-				if (subscribed[p])
-					result = _server_con.unsubscribeToProblem(problems[p]);
-				else
-					result = _server_con.subscribeToProblem(problems[p]);
-				failure = failure | (!result);
-				changes = true;
-			}
+			bool old = _subscribed_problems.count(problems[p].id) != 0;
+			bool cur = problem_subscription_buttons[p]->isChecked();
+			if (cur && !old)
+				_subscribed_problems.insert(problems[p].id);
+			else if (old && !cur)
+				_subscribed_problems.erase(problems[p].id);
 		}
-		if (changes) {
-			if (failure)
-				QMessageBox("Error changing subscription!", "An error occurred whilst changing your subscription settings",
-						QMessageBox::Critical, QMessageBox::Ok,
-						QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
-			else
-				QMessageBox("Subscriptions changed!", "Your subscription settings have been changed",
-						QMessageBox::Information, QMessageBox::Ok,
-						QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
-			updateSubmissions();
-		}
+		refilterSubmissions();
 	}
 }
 
@@ -1391,79 +1385,74 @@ void MainWindow::updateStandings(const MessageBlock *mb) {
 template<typename T>
 void MainWindow::setSubmission(SubmissionItem *item,
 							   bool filter,
-							   const map<string, bool> &is_subscribed,
 							   const set<int> &wanted_states,
 							   T &submission) {
+	uint32_t id = strtoul(submission["submission_id"].c_str(), NULL, 10);
+	uint32_t prob_id = strtoul(submission["prob_id"].c_str(), NULL, 10);
+	int result = atol(submission["result"].c_str());
+
 	bool visible = true;
 	if (filter) {
-		std::map<string, bool>::const_iterator s = is_subscribed.find(submission["problem"]);
-		if(s == is_subscribed.end())
-			log(LOG_WARNING, "Couldn't find %s in subscription map", submission["problem"].c_str());
-		else
-			if (!s->second)
-				// not subscribed to this problem
-				visible = false;
-		int result = atol(submission["result"].c_str());
-		if (wanted_states.find(result) == wanted_states.end())
+		if (!_subscribed_problems.count(prob_id) || !wanted_states.count(result))
 			visible = false;
 	}
 
-	uint32_t id = strtoul(submission["submission_id"].c_str(), NULL, 10);
-	log(LOG_DEBUG, "Updating submission %u", id);
-
 	item->setVisible(visible);
 	item->setId(id);
+	item->setProblemId(prob_id);
+	item->setResult(result);
 	item->setContestTime(atoll(submission["contesttime"].c_str()));
 	item->setTime(atoll(submission["time"].c_str()));
 	item->setProblem(submission["problem"]);
 	item->setStatus(submission["comment"]);
 }
 
+set<int> MainWindow::getWantedStates() const {
+	set<int> wanted_states;
+
+	if (stateFilterUnmarkedAction->isOn())
+		wanted_states.insert(PENDING);
+
+	if (stateFilterJudgeAction->isOn())
+		wanted_states.insert(JUDGE);
+
+	if (stateFilterWrongAction->isOn())
+		wanted_states.insert(WRONG);
+
+	if (stateFilterCorrectAction->isOn())
+		wanted_states.insert(CORRECT);
+
+	if (stateFilterTimeExceededAction->isOn())
+		wanted_states.insert(TIME_EXCEEDED);
+
+	if (stateFilterCompileAction->isOn())
+		wanted_states.insert(COMPILE_FAILED);
+
+	if (stateFilterAbnormalAction->isOn())
+		wanted_states.insert(ABNORMAL);
+
+	if (stateFilterOtherAction->isOn())
+		wanted_states.insert(OTHER);
+
+	return wanted_states;
+}
+
 void MainWindow::updateSubmissions(const MessageBlock *mb) {
 	if (maintabs->currentPage() != tabSubmissions)
 		return;
 
-	set<int> wanted_states;
-	bool filter = (_active_type == "judge" || _active_type == "admin") && judgesShowOnlySubscribedSubmissionsAction->isOn();
 	std::map<string, bool> is_subscribed;
 	std::vector<ProblemInfo> problems;
 
-	if (_active_type != "") { // first check that we're connected
-		problems = _server_con.getProblems();
-		if (filter) {
-			std::vector<bool> subscribed = _server_con.getSubscriptions(problems);
-			for (unsigned int p = 0; p < problems.size(); p++)
-				is_subscribed[problems[p].code] = subscribed[p];
-
-				if (stateFilterUnmarkedAction->isOn())
-					wanted_states.insert(PENDING);
-
-				if (stateFilterJudgeAction->isOn())
-					wanted_states.insert(JUDGE);
-
-				if (stateFilterWrongAction->isOn())
-					wanted_states.insert(WRONG);
-
-				if (stateFilterCorrectAction->isOn())
-					wanted_states.insert(CORRECT);
-
-				if (stateFilterTimeExceededAction->isOn())
-					wanted_states.insert(TIME_EXCEEDED);
-
-				if (stateFilterCompileAction->isOn())
-					wanted_states.insert(COMPILE_FAILED);
-
-				if (stateFilterAbnormalAction->isOn())
-					wanted_states.insert(ABNORMAL);
-
-				if (stateFilterOtherAction->isOn())
-					wanted_states.insert(OTHER);
-		}
-	}
+	bool filter = (_active_type == "judge" || _active_type == "admin") && judgesShowOnlySubscribedSubmissionsAction->isOn();
+	set<int> wanted_states = getWantedStates();
 
 	if (mb == NULL || !mb->hasAttribute("submission_id")) {
 		/* Full update, or a legacy message that hasn't been updated */
-		SubmissionList list = _server_con.getSubmissions();
+		SubmissionList list;
+
+		if (_active_type != "") // first check that we're connected
+			list = _server_con.getSubmissions();
 
 		/* Clear out the list, included anything filtered away */
 		map<uint32_t, SubmissionItem *>::iterator i;
@@ -1474,7 +1463,7 @@ void MainWindow::updateSubmissions(const MessageBlock *mb) {
 		SubmissionList::iterator l;
 		for(l = list.begin(); l != list.end(); ++l) {
 			SubmissionItem *item = new SubmissionItem(submissions);
-			setSubmission(item, filter, is_subscribed, wanted_states, *l);
+			setSubmission(item, filter, wanted_states, *l);
 			submissionMap[item->getId()] = item;
 		}
 	}
@@ -1483,9 +1472,27 @@ void MainWindow::updateSubmissions(const MessageBlock *mb) {
 		SubmissionItem *&item = submissionMap[id];
 		if (item == NULL)
 			item = new SubmissionItem(submissions);
-		setSubmission(item, filter, is_subscribed, wanted_states, *mb);
+		setSubmission(item, filter, wanted_states, *mb);
 	}
 
+	submissions->sort();
+}
+
+void MainWindow::refilterSubmissions() {
+	bool filter = (_active_type == "judge" || _active_type == "admin") && judgesShowOnlySubscribedSubmissionsAction->isOn();
+	set<int> wanted_states = getWantedStates();
+
+	map<uint32_t, SubmissionItem *>::iterator i;
+	for (i = submissionMap.begin(); i != submissionMap.end(); ++i) {
+		bool visible = true;
+		if (filter) {
+			uint32_t problem_id = i->second->getProblemId();
+			int result = i->second->getResult();
+			if (!_subscribed_problems.count(problem_id) || !wanted_states.count(result))
+				visible = false;
+		}
+		i->second->setVisible(visible);
+	}
 	submissions->sort();
 }
 
@@ -1556,7 +1563,6 @@ void MainWindow::submissionHandler(QListViewItem *item) {
 			// need to mark the problem as being correct
 			if (_server_con.mark(submission_id, CORRECT, "Correct answer", AttributeMap())) {
 				log(LOG_INFO, "Judge marked submission %u as correct", submission_id);
-				updateSubmissions();
 			}
 			return;
 		case 3:
@@ -1564,7 +1570,6 @@ void MainWindow::submissionHandler(QListViewItem *item) {
 			// need to mark the problem as being wrong
 			if (_server_con.mark(submission_id, WRONG, "Wrong answer", AttributeMap())) {
 				log(LOG_INFO, "Judge marked submission %u as wrong", submission_id);
-				updateSubmissions();
 			}
 			return;
 		}

@@ -244,17 +244,6 @@ static bool initialise() {
 	for(IdList::iterator i = sublist.begin(); i != sublist.end(); ++i)
 		Markers::getInstance().enqueueSubmission(*i);
 
-	db = DbCon::getInstance();
-	if(db) {
-		ProblemList problst = db->getProblems();
-		for(ProblemList::iterator j = problst.begin(); j != problst.end(); ++j) {
-			AttributeList prob = db->getProblemAttributes(*j);
-			ClientEventRegistry::getInstance().registerEvent("judge_" + prob["shortname"]);
-		}
-		db->release();db=NULL;
-	} else
-		log(LOG_ERR, "Error obtaining DbCon to load existing problems");
-
 	return true;
 }
 
