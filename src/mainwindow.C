@@ -692,7 +692,7 @@ static void updateStandingsFunctor(const MessageBlock*mb, void*) {
 }
 
 static void updateSubmissionsFunctor(const MessageBlock* mb, void*) {
-	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateSubmissions);
+	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateSubmissions, mb);
 	ev->post();
 
 	if ((*mb)["msg"] != "") {
@@ -1388,6 +1388,37 @@ void MainWindow::updateStandings(const MessageBlock *mb) {
 	sortStandings();
 }
 
+template<typename T>
+void MainWindow::setSubmission(SubmissionItem *item,
+							   bool filter,
+							   const map<string, bool> &is_subscribed,
+							   const set<int> &wanted_states,
+							   T &submission) {
+	bool visible = true;
+	if (filter) {
+		std::map<string, bool>::const_iterator s = is_subscribed.find(submission["problem"]);
+		if(s == is_subscribed.end())
+			log(LOG_WARNING, "Couldn't find %s in subscription map", submission["problem"].c_str());
+		else
+			if (!s->second)
+				// not subscribed to this problem
+				visible = false;
+		int result = atol(submission["result"].c_str());
+		if (wanted_states.find(result) == wanted_states.end())
+			visible = false;
+	}
+
+	uint32_t id = strtoul(submission["submission_id"].c_str(), NULL, 10);
+	log(LOG_DEBUG, "Updating submission %u", id);
+
+	item->setVisible(visible);
+	item->setId(id);
+	item->setContestTime(atoll(submission["contesttime"].c_str()));
+	item->setTime(atoll(submission["time"].c_str()));
+	item->setProblem(submission["problem"]);
+	item->setStatus(submission["comment"]);
+}
+
 void MainWindow::updateSubmissions(const MessageBlock *mb) {
 	if (maintabs->currentPage() != tabSubmissions)
 		return;
@@ -1430,8 +1461,7 @@ void MainWindow::updateSubmissions(const MessageBlock *mb) {
 		}
 	}
 
-	// TODO: remove the if true and do an incremental else branch
-	if (true || mb == NULL || !mb->hasAttribute("submission_id")) {
+	if (mb == NULL || !mb->hasAttribute("submission_id")) {
 		/* Full update, or a legacy message that hasn't been updated */
 		SubmissionList list = _server_con.getSubmissions();
 
@@ -1443,31 +1473,17 @@ void MainWindow::updateSubmissions(const MessageBlock *mb) {
 
 		SubmissionList::iterator l;
 		for(l = list.begin(); l != list.end(); ++l) {
-			bool visible = true;
-			if (filter) {
-				std::map<string, bool>::iterator s = is_subscribed.find((*l)["problem"]);
-				if(s == is_subscribed.end())
-					log(LOG_WARNING, "Couldn't find %s in subscription map", (*l)["problem"].c_str());
-				else
-					if (!s->second)
-						// not subscribed to this problem
-						continue;
-				int result = atol((*l)["result"].c_str());
-				if (wanted_states.find(result) == wanted_states.end())
-					visible = false;
-			}
-
 			SubmissionItem *item = new SubmissionItem(submissions);
-			uint32_t id = strtoul((*l)["submission_id"].c_str(), NULL, 10);
-			submissionMap[id] = item;
-
-			item->setVisible(visible);
-			item->setId(id);
-			item->setContestTime(atoll((*l)["contesttime"].c_str()));
-			item->setTime(atoll((*l)["time"].c_str()));
-			item->setProblem((*l)["problem"]);
-			item->setStatus((*l)["comment"]);
+			setSubmission(item, filter, is_subscribed, wanted_states, *l);
+			submissionMap[item->getId()] = item;
 		}
+	}
+	else {
+		uint32_t id = strtoul((*mb)["submission_id"].c_str(), NULL, 10);
+		SubmissionItem *&item = submissionMap[id];
+		if (item == NULL)
+			item = new SubmissionItem(submissions);
+		setSubmission(item, filter, is_subscribed, wanted_states, *mb);
 	}
 
 	submissions->sort();

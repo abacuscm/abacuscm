@@ -19,6 +19,7 @@
 #include "serverconnection.h"
 
 #include <map>
+#include <set>
 #include <string>
 #include <utility>
 
@@ -62,6 +63,10 @@ private:
 
 	template<typename T> void setClarificationRequest(ClarificationRequestItem *item, T &cr);
 	template<typename T> void setClarification(ClarificationItem *item, T &cr);
+	template<typename T> void setSubmission(SubmissionItem *item, bool filter,
+											const std::map<std::string, bool> &is_subscribed,
+											const std::set<int> &wanted_states,
+											T &submission);
 protected:
 	virtual void doHelpAbout();
 	virtual void doFileConnect();
