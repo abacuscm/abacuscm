@@ -43,6 +43,6 @@ static void init() __attribute__((constructor));
 static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "eventmap", &_act_eventreg);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "eventmap", &_act_eventreg);
-	ClientAction::registerAction(USER_TYPE_NONCONTEST, "eventmap", &_act_eventreg);
+	ClientAction::registerAction(USER_TYPE_OBSERVER, "eventmap", &_act_eventreg);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "eventmap", &_act_eventreg);
 }

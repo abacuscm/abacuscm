@@ -362,7 +362,7 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "mark", &_act_place_mark);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "balloonnotify", &_act_balloon);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "balloonnotify", &_act_balloon);
-	ClientAction::registerAction(USER_TYPE_NONCONTEST, "balloonnotify", &_act_balloon);
+	ClientAction::registerAction(USER_TYPE_OBSERVER, "balloonnotify", &_act_balloon);
 	Message::registerMessageFunctor(TYPE_ID_SUBMISSION_MARK, create_mark_message);
 	ClientEventRegistry::getInstance().registerEvent("balloon");
 }

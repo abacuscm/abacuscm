@@ -38,7 +38,7 @@ typedef enum {
 	USER_TYPE_JUDGE = 2,
 	USER_TYPE_CONTESTANT = 3,
 	USER_TYPE_MARKER = 4,
-	USER_TYPE_NONCONTEST = 5,
+	USER_TYPE_OBSERVER = 5,
 } UserType;
 
 /* Column numbering for standings client-server messages. Note: if you
@@ -59,8 +59,8 @@ static const int USER_MASK_ADMIN = 1 << USER_TYPE_ADMIN;
 static const int USER_MASK_JUDGE = 1 << USER_TYPE_JUDGE;
 static const int USER_MASK_CONTESTANT = 1 << USER_TYPE_CONTESTANT;
 static const int USER_MASK_MARKER = 1 << USER_TYPE_MARKER;
-static const int USER_MASK_NONCONTEST = 1 << USER_TYPE_NONCONTEST;
-static const int USER_MASK_ALL = USER_MASK_ADMIN | USER_MASK_JUDGE | USER_MASK_CONTESTANT | USER_MASK_MARKER | USER_MASK_NONCONTEST;
+static const int USER_MASK_OBSERVER = 1 << USER_TYPE_OBSERVER;
+static const int USER_MASK_ALL = USER_MASK_ADMIN | USER_MASK_JUDGE | USER_MASK_CONTESTANT | USER_MASK_MARKER | USER_MASK_OBSERVER;
 
 extern char *runMessages[];
 extern char *shortRunMessages[];

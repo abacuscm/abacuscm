@@ -251,7 +251,7 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "subscribetime", &_act_subscribetime);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "subscribetime", &_act_subscribetime);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "subscribetime", &_act_subscribetime);
-	ClientAction::registerAction(USER_TYPE_NONCONTEST, "subscribetime", &_act_subscribetime);
+	ClientAction::registerAction(USER_TYPE_OBSERVER, "subscribetime", &_act_subscribetime);
 	Message::registerMessageFunctor(TYPE_ID_STARTSTOP, StartStopFunctor);
 	ClientEventRegistry::getInstance().registerEvent("startstop");
 	ClientEventRegistry::getInstance().registerEvent("updateclock");

@@ -38,7 +38,7 @@ ActStandings::ActStandings()
 	typenames[USER_TYPE_ADMIN] = "Admin";
 	typenames[USER_TYPE_JUDGE] = "Judge";
 	typenames[USER_TYPE_CONTESTANT] = "Contestant";
-	typenames[USER_TYPE_NONCONTEST] = "Observer";
+	typenames[USER_TYPE_OBSERVER] = "Observer";
 }
 
 bool ActStandings::int_process(ClientConnection *cc, MessageBlock *) {
@@ -64,6 +64,6 @@ static void init() __attribute__((constructor));
 static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "standings", &_act_standings);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "standings", &_act_standings);
-	ClientAction::registerAction(USER_TYPE_NONCONTEST, "standings", &_act_standings);
+	ClientAction::registerAction(USER_TYPE_OBSERVER, "standings", &_act_standings);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "standings", &_act_standings);
 }

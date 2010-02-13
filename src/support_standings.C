@@ -63,10 +63,10 @@ uint32_t StandingsSupportModule::getStandingsFlags(uint32_t user_type) {
 	case USER_TYPE_CONTESTANT:
 		return STANDINGS_FLAG_SEND;
 		break;
-	case USER_TYPE_NONCONTEST:
+	case USER_TYPE_OBSERVER:
 	case USER_TYPE_JUDGE:
 	case USER_TYPE_ADMIN:
-		return STANDINGS_FLAG_SEND | STANDINGS_FLAG_FINAL | STANDINGS_FLAG_NONCONTEST;
+		return STANDINGS_FLAG_SEND | STANDINGS_FLAG_FINAL | STANDINGS_FLAG_OBSERVER;
 	default:
 		assert(false);
 		return 0;
@@ -222,7 +222,7 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 	}
 	pthread_rwlock_unlock(&_lock);
 
-	for (uint32_t type = USER_TYPE_ADMIN; type <= USER_TYPE_NONCONTEST; type++) {
+	for (uint32_t type = USER_TYPE_ADMIN; type <= USER_TYPE_OBSERVER; type++) {
 		uint32_t flags = getStandingsFlags(type);
 		if (!(flags & STANDINGS_FLAG_SEND))
 			continue;
@@ -302,7 +302,7 @@ bool StandingsSupportModule::getStandings(uint32_t user_type, uint32_t uid, Mess
 	}
 	for(i = first; i != last; ++i) {
 		if (i->second.user_type != USER_TYPE_CONTESTANT
-			&& !(flags & STANDINGS_FLAG_NONCONTEST))
+			&& !(flags & STANDINGS_FLAG_OBSERVER))
 			continue;
 		++r;
 

@@ -171,7 +171,7 @@ static void init() __attribute__((constructor));
 static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "passwd", &_act_passwd);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "passwd", &_act_passwd);
-	ClientAction::registerAction(USER_TYPE_NONCONTEST, "passwd", &_act_passwd);
+	ClientAction::registerAction(USER_TYPE_OBSERVER, "passwd", &_act_passwd);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "passwd", &_act_passwd);
 	ClientAction::registerAction(USER_TYPE_MARKER, "passwd", &_act_passwd);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "id_passwd", &_act_id_passwd);

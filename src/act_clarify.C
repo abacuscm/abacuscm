@@ -80,7 +80,7 @@ bool ActGetClarifications::int_process(ClientConnection *cc, MessageBlock *) {
 
 	ClarificationList lst;
 
-	if(utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_NONCONTEST)
+	if(utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_OBSERVER)
 		lst = db->getClarifications(uid);
 	else
 		lst = db->getClarifications();
@@ -118,7 +118,7 @@ bool ActGetClarificationRequests::int_process(ClientConnection *cc, MessageBlock
 
 	ClarificationRequestList lst;
 
-	if(utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_NONCONTEST)
+	if(utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_OBSERVER)
 		lst = db->getClarificationRequests(uid);
 	else
 		lst = db->getClarificationRequests();
@@ -380,17 +380,17 @@ static ActClarification _act_clarification;
 static void init() __attribute__((constructor));
 static void init() {
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getclarifications", &_act_getclarifications);
-	ClientAction::registerAction(USER_TYPE_NONCONTEST, "getclarifications", &_act_getclarifications);
+	ClientAction::registerAction(USER_TYPE_OBSERVER, "getclarifications", &_act_getclarifications);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "getclarifications", &_act_getclarifications);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getclarifications", &_act_getclarifications);
 
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getclarificationrequests", &_act_getclarificationrequests);
-	ClientAction::registerAction(USER_TYPE_NONCONTEST, "getclarificationrequests", &_act_getclarificationrequests);
+	ClientAction::registerAction(USER_TYPE_OBSERVER, "getclarificationrequests", &_act_getclarificationrequests);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "getclarificationrequests", &_act_getclarificationrequests);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getclarificationrequests", &_act_getclarificationrequests);
 
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "clarificationrequest", &_act_clarificationrequest);
-	ClientAction::registerAction(USER_TYPE_NONCONTEST, "clarificationrequest", &_act_clarificationrequest);
+	ClientAction::registerAction(USER_TYPE_OBSERVER, "clarificationrequest", &_act_clarificationrequest);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "clarificationrequest", &_act_clarificationrequest);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "clarificationrequest", &_act_clarificationrequest);
 

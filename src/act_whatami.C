@@ -28,7 +28,7 @@ ActWhatAmI::ActWhatAmI() {
 	_typemap[USER_TYPE_ADMIN] = "admin";
 	_typemap[USER_TYPE_JUDGE] = "judge";
 	_typemap[USER_TYPE_CONTESTANT] = "contestant";
-	_typemap[USER_TYPE_NONCONTEST] = "observer";
+	_typemap[USER_TYPE_OBSERVER] = "observer";
 }
 
 bool ActWhatAmI::int_process(ClientConnection *cc, MessageBlock *) {
@@ -51,5 +51,5 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "whatami", &_act_whatami);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "whatami", &_act_whatami);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "whatami", &_act_whatami);
-	ClientAction::registerAction(USER_TYPE_NONCONTEST, "whatami", &_act_whatami);
+	ClientAction::registerAction(USER_TYPE_OBSERVER, "whatami", &_act_whatami);
 }
