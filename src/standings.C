@@ -12,6 +12,7 @@
 #include "serverconnection.h"
 #include "messageblock.h"
 #include "misc.h"
+#include "score.h"
 
 #include <iostream>
 #include <fstream>
@@ -26,43 +27,30 @@
 
 using namespace std;
 
-class Score {
+class Standing : public Score {
 private:
-	uint32_t _id;
-	bool _contestant;
-	uint32_t _total_time;
-	int _total_solved;
-
 	vector<string> _raw;
 
 public:
-	bool operator<(const Score &other) const {
-		if (_total_solved != other._total_solved)
-			return _total_solved > other._total_solved;
-		else
-			return _total_time < other._total_time;
-	}
-
 	const vector<string> &getRaw() const { return _raw; }
-	uint32_t getId() const { return _id; }
-	bool isContestant() const { return _contestant; }
 
-	Score() {}
-	Score(const list<string> &row);
+	Standing() {}
+	Standing(const list<string> &row);
 };
 
-Score::Score(const list<string> &row) : _raw(row.begin(), row.end()) {
-	_id = strtoul(_raw[STANDING_RAW_ID].c_str(), NULL, 10);
-	_contestant = strtoul(_raw[STANDING_RAW_CONTESTANT].c_str(), NULL, 10) != 0;
-	_total_time = strtoull(_raw[STANDING_RAW_TOTAL_TIME].c_str(), NULL, 10);
-	_total_solved = strtol(_raw[STANDING_RAW_TOTAL_SOLVED].c_str(), NULL, 10);
+Standing::Standing(const list<string> &row) : _raw(row.begin(), row.end()) {
+	setId(strtoul(_raw[STANDING_RAW_ID].c_str(), NULL, 10));
+	setContestant(strtoul(_raw[STANDING_RAW_CONTESTANT].c_str(), NULL, 10) != 0);
+	setTotalTime(strtoull(_raw[STANDING_RAW_TOTAL_TIME].c_str(), NULL, 10));
+	for (size_t i = STANDING_RAW_SOLVED; i < _raw.size(); i++)
+		setSolved(i - STANDING_RAW_SOLVED, strtol(_raw[i].c_str(), NULL, 10));
 }
 
-typedef map<uint32_t, Score> ScoreMap;
+typedef map<uint32_t, Standing> StandingMap;
 
-struct CompareScore {
-	bool operator()(ScoreMap::const_iterator a, ScoreMap::const_iterator b) const {
-		return a->second < b->second;
+struct CompareStanding {
+	bool operator()(StandingMap::const_iterator a, StandingMap::const_iterator b) const {
+		return Score::CompareRanking()(a->second, b->second);
 	}
 };
 
@@ -70,8 +58,8 @@ static pthread_mutex_t _runlock;
 static pthread_cond_t _runcond;
 static bool closed = false;   // set to true by the close notification
 
-static vector<ScoreMap::const_iterator> ordered;
-static map<uint32_t, Score> scores;
+static vector<StandingMap::const_iterator> ordered;
+static map<uint32_t, Standing> scores;
 static vector<string> header;
 
 static void log_function(int priority, const char* format, va_list ap) {
@@ -89,16 +77,23 @@ static void grid_to_standings(const Grid &grid) {
 	header = vector<string>(row->begin(), row->end());
 
 	for (++row; row != grid.end(); ++row) {
-		Score s(*row);
+		Standing s(*row);
 		if (!s.isContestant())
 			continue;
-		pair<ScoreMap::iterator, bool> add = scores.insert(make_pair(s.getId(), s));
-		if (add.second)
-			ordered.push_back(add.first);
-		else
-			add.first->second = s;
+
+		StandingMap::iterator pos = scores.lower_bound(s.getId());
+		if (pos == scores.end() || pos->first != s.getId()) {
+			pos = scores.insert(pos, make_pair(s.getId(), s));
+			ordered.push_back(pos);
+		}
+		else if (Score::CompareAttempts()(pos->second, s)) {
+			/* Check above makes sure that we do the right thing even if we
+			 * get out-of-order updates
+			 */
+			pos->second = s;
+		}
 	}
-	sort(ordered.begin(), ordered.end(), CompareScore());
+	sort(ordered.begin(), ordered.end(), CompareStanding());
 }
 
 static void standings_update(const MessageBlock *mb, void*) {
@@ -141,7 +136,7 @@ static void update_standings(const string &fname) {
 		out << safe_string(*i);
 	}
 	out << "\n";
-	for (vector<ScoreMap::const_iterator>::const_iterator i = ordered.begin(); i != ordered.end(); ++i)
+	for (vector<StandingMap::const_iterator>::const_iterator i = ordered.begin(); i != ordered.end(); ++i)
 	{
 		const vector<string> &raw = (*i)->second.getRaw();
 		for (vector<string>::const_iterator c = raw.begin(); c != raw.end(); c++)

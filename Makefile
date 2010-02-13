@@ -10,7 +10,7 @@ TARGET_LIBS :=
 ifneq ($(filter client,$(mods)),)
 TARGET_BINS += abacus
 MODS_abacus = abacus serverconnection messageblock logger sigsegv acmconfig threadssl \
-	guievent \
+	guievent score \
 	ui_mainwindowbase moc_ui_mainwindowbase mainwindow \
 	ui_adduser moc_ui_adduser \
 	ui_compileroutputdialog moc_ui_compileroutputdialog \
@@ -61,6 +61,7 @@ LIBMODS_abacus = socket \
 	problemtype \
 	timedaction \
 	threadssl \
+	score \
 	hashpw
 
 TARGET_MODS += dbmysql \
@@ -130,7 +131,7 @@ LIBS_addproblem = ssl pthread
 MODS_batch = batch serverconnection messageblock logger sigsegv acmconfig threadssl
 LIBS_batch = ssl pthread
 
-MODS_standings = standings serverconnection messageblock logger sigsegv acmconfig threadssl
+MODS_standings = standings serverconnection messageblock logger sigsegv acmconfig threadssl score
 LIBS_standings = ssl pthread
 endif
 
