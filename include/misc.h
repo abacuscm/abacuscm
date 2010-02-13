@@ -41,6 +41,20 @@ typedef enum {
 	USER_TYPE_NONCONTEST = 5,
 } UserType;
 
+/* Column numbering for standings client-server messages. Note: if you
+ * update this, be sure to update the corresponding enumerations in
+ * standings.pl and standings.js.
+ */
+typedef enum {
+	STANDING_RAW_ID = 0,
+	STANDING_RAW_USERNAME = 1,
+	STANDING_RAW_FRIENDLYNAME = 2,
+	STANDING_RAW_CONTESTANT = 3,
+	STANDING_RAW_TOTAL_SOLVED = 4,
+	STANDING_RAW_TOTAL_TIME = 5,
+	STANDING_RAW_SOLVED = 6
+} StandingColumnRaw;
+
 static const int USER_MASK_ADMIN = 1 << USER_TYPE_ADMIN;
 static const int USER_MASK_JUDGE = 1 << USER_TYPE_JUDGE;
 static const int USER_MASK_CONTESTANT = 1 << USER_TYPE_CONTESTANT;

@@ -2,9 +2,39 @@ data = [];
 data_regex = null;
 first_time = true;
 
+STANDING_RAW_ID = 0;
+STANDING_RAW_USERNAME = 1;
+STANDING_RAW_FRIENDLYNAME = 2;
+STANDING_RAW_CONTESTANT = 3;
+STANDING_RAW_TOTAL_SOLVED = 4;
+STANDING_RAW_TOTAL_TIME = 5;
+STANDING_RAW_SOLVED = 6;
+
+COLUMN_PLACE = 0;
+COLUMN_USERNAME = 1;
+COLUMN_FRIENDLYNAME = 2;
+COLUMN_TOTAL_SOLVED = 3;
+COLUMN_TOTAL_TIME = 4;
+COLUMN_SOLVED = 5;
+
 function escapeHTML(str)
 {
 	return str.split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;");
+}
+
+function padNumber(num)
+{
+	var s = "" + num;
+	while (s.length < 2) s = "0" + s;
+	return s;
+}
+
+function timeToString(time)
+{
+	var seconds = time % 60;
+	var minutes = (time - seconds) / 60 % 60;
+	var hours = (time - 60 * minutes - seconds) / 3600;
+	return padNumber(hours) + ":" + padNumber(minutes) + ":" + padNumber(seconds);
 }
 
 function same_score(arr1, arr2)
@@ -12,7 +42,9 @@ function same_score(arr1, arr2)
 	var L = arr1.length;
 	if (arr2.length != L)
 		return false;
-	return arr1[0] == arr2[0] && arr1[L - 2] == arr2[L - 2] && arr1[L - 1] == arr2[L - 1];
+	return arr1[STANDING_RAW_ID] == arr2[STANDING_RAW_ID]
+		&& arr1[STANDING_RAW_TOTAL_SOLVED] == arr2[STANDING_RAW_TOTAL_SOLVED]
+		&& arr1[STANDING_RAW_TOTAL_TIME] == arr2[STANDING_RAW_TOTAL_TIME];
 }
 
 /* Updates the table in response to either new data or an updated search.
@@ -42,7 +74,7 @@ function update_table(new_data)
 	var seen = {};
 	var old_row = 0;
 	var highlight_rows = [];
-	var last_score;
+	var last_solved;
 	var last_time;
 	var tie_place = 1;
 	var row;
@@ -53,7 +85,7 @@ function update_table(new_data)
 		if (old_data !== data)
 		{
 			while (old_row < old_data.length
-				   && typeof(seen[old_data[old_row][0]]) != 'undefined')
+				   && typeof(seen[old_data[old_row][STANDING_RAW_ID]]) != 'undefined')
 				old_row = old_row + 1;
 			if (!first_time && 
 				(old_row >= old_data.length || !same_score(old_data[old_row], data[row])))
@@ -61,27 +93,38 @@ function update_table(new_data)
 		}
 
 		var C = data[row].length;
-		if (last_score != data[row][C - 2] || last_time != data[row][C - 1])
+		if (last_solved != data[row][STANDING_RAW_TOTAL_SOLVED] || last_time != data[row][STANDING_RAW_TOTAL_TIME])
 			tie_place = row + 1;
-		last_score = data[row][C - 2];
-		last_time = data[row][C - 1];
+		last_solved = data[row][STANDING_RAW_TOTAL_SOLVED];
+		last_time = data[row][STANDING_RAW_TOTAL_TIME];
 
-		if (data_regex !== null && data[row][0].match(data_regex))
+		if (data_regex !== null && data[row][STANDING_RAW_USERNAME].match(data_regex))
 			classes += ' search';
 
 		html += '<tr class="' + classes + '">';
-		html += '<td>' + tie_place + '</td>';
-		for (i in data[row])
+		fields = [];
+		fields[COLUMN_PLACE] = tie_place;
+		fields[COLUMN_USERNAME] = escapeHTML(data[row][STANDING_RAW_USERNAME]);
+		fields[COLUMN_FRIENDLYNAME] = escapeHTML(data[row][STANDING_RAW_FRIENDLYNAME]);
+		fields[COLUMN_TOTAL_TIME] = escapeHTML(timeToString(data[row][STANDING_RAW_TOTAL_TIME]));
+		fields[COLUMN_TOTAL_SOLVED] = escapeHTML(data[row][STANDING_RAW_TOTAL_SOLVED]);
+		for (i = STANDING_RAW_SOLVED; i < data[row].length; i++)
 		{
-			var s = escapeHTML(data[row][i]);
-			if (i > 0 && i < C - 2)
-				s = s.replace('Yes', '<span class="correct">Yes</span>');
-			html += '<td>' + s + '</td>';
+			if (data[row][i] > 1)
+				fields.push('<span class="correct">+' + (data[row][i] - 1) + '</span>');
+			else if (data[row][i] == 1)
+				fields.push('<span class="correct">+</span>')
+			else if (data[row][i] < 0)
+				fields.push('<span class="incorrect">&minus;' + (-data[row][i]) + '</span>');
+			else
+				fields.push('');
 		}
+		for (f in fields)
+			html += '<td>' + fields[f] + '</td>';
 		html += '</tr>';
 		parity++;
 
-		seen[data[row][0]] = 1;
+		seen[data[row][STANDING_RAW_ID]] = 1;
 	}
 
 	$("#tbody").html(html);
@@ -103,17 +146,17 @@ function data_callback(text, textStatus)
 				new_data.push(fields);
 		}
 
-	var header = new_data[0];
+	var raw_header = new_data[0];
 	new_data.shift();
 
 	var html = '';
-	for (i = 0; i < header.length - 2; i++)
+	for (i = 0; i < raw_header.length - STANDING_RAW_SOLVED; i++)
 		html += '<col />';
 	$("colgroup.problem").html(html);
 
-	html = '<tr><th>Place</th>';
-	for (i in header)
-		html += '<th>' + header[i] + '</th>';
+	html = '<tr><th>Place</th><th>Team</th><th>Name</th><th>Solved</th><th>Time</th>';
+	for (i = STANDING_RAW_SOLVED; i < raw_header.length; i++)
+		html += '<th>' + raw_header[i] + '</th>';
 	html += '</tr>';
 	$("#thead").html(html);
 

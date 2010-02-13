@@ -519,12 +519,15 @@ private:
 	vector<int> _solved;   // -x for x wrong attempts, +x for x total attempts with a solution
 
 public:
+	/* Note: if you update this, also update mainwindowbase.ui and the
+	 * various files in misc/standings.
+	 */
 	enum Column {
 		COLUMN_PLACE = 0,
-		COLUMN_TOTAL_SOLVED = 1,
-		COLUMN_TOTAL_TIME = 2,
-		COLUMN_USERNAME = 3,
-		COLUMN_FRIENDLYNAME = 4,
+		COLUMN_USERNAME = 1,
+		COLUMN_FRIENDLYNAME = 2,
+		COLUMN_TOTAL_SOLVED = 3,
+		COLUMN_TOTAL_TIME = 4,
 		COLUMN_SOLVED = 5,  // start of variable number of columns
 	};
 
@@ -1337,30 +1340,22 @@ void MainWindow::updateStandings(const MessageBlock *mb) {
 		standings->removeColumn(standings->columns() - 1);
 
 	while(++row != data.end()) {
-		cell = row->begin();
-		uint32_t id = strtoul(cell->c_str(), NULL, 10);
+		vector<string> raw(row->begin(), row->end());
+		uint32_t id = strtoul(raw[STANDING_RAW_ID].c_str(), NULL, 10);
 
 		StandingItem *&item = standingMap[id];
 		if (item == NULL)
 			item = new StandingItem(standings);
 
 		item->setId(id);
-
-		++cell;
-		item->setUsername(cell->c_str());
-
-		++cell;
-		item->setFriendlyname(cell->c_str());
-
-		++cell;
-		item->setContestant(atoi(cell->c_str()) != 0);
-
-		++cell;
-		item->setTotalTime(strtoul(cell->c_str(), NULL, 10));
+		item->setUsername(raw[STANDING_RAW_USERNAME]);
+		item->setFriendlyname(raw[STANDING_RAW_FRIENDLYNAME]);
+		item->setContestant(atoi(raw[STANDING_RAW_CONTESTANT].c_str()) != 0);
+		item->setTotalTime(strtoul(raw[STANDING_RAW_TOTAL_TIME].c_str(), NULL, 10));
 
 		vector<int> solved;
-		for (++cell; cell != row->end(); ++cell)
-			solved.push_back(atoi(cell->c_str()));
+		for (size_t i = STANDING_RAW_SOLVED; i < raw.size(); i++)
+			solved.push_back(atoi(raw[i].c_str()));
 		item->setSolved(solved);
 	}
 

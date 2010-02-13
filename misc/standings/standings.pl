@@ -1,7 +1,23 @@
 #!/usr/bin/perl -w -T
 use strict;
 use warnings;
-use CGI qw/:standard/;
+use CGI qw/:standard :pretty/;
+use constant {
+	STANDING_RAW_ID => 0,
+	STANDING_RAW_USERNAME => 1,
+	STANDING_RAW_FRIENDLYNAME => 2,
+	STANDING_RAW_CONTESTANT => 3,
+	STANDING_RAW_TOTAL_SOLVED => 4,
+	STANDING_RAW_TOTAL_TIME => 5,
+	STANDING_RAW_SOLVED => 6,
+
+	COLUMN_PLACE => 0,
+	COLUMN_USERNAME => 1,
+	COLUMN_FRIENDLYNAME => 2,
+	COLUMN_TOTAL_SOLVED => 3,
+	COLUMN_TOTAL_TIME => 4,
+	COLUMN_SOLVED => 5
+};
 
 # User-configurable stuff
 my $title = 'Standings';
@@ -23,7 +39,8 @@ sub load_file($)
 		die "Error: could not open $fname";
 	}
 	$/ = undef;
-	my $content = <$fh> or die("Error: could not read $fname: $!");
+	my $content = <$fh>;
+	defined ($content) or die("Error: could not read $fname: $!");
 	close($fh) or die("Error: could not read $fname: $!");
 
 	return $content;
@@ -38,10 +55,9 @@ eval
 	$_ = <IN>;
 	chomp;
 	my @fields = split(/\t/);
-	unshift @fields, 'Place';
 
-	$replace{'COLS'} = '<col/>' x (scalar(@fields) - 4);
-	$replace{'HEAD'} = Tr(th([map { escapeHTML($_) } @fields]));
+	$replace{'COLS'} = '<col/>' x (scalar(@fields) - STANDING_RAW_SOLVED);
+	$replace{'HEAD'} = th([map { escapeHTML($_) } @fields[STANDING_RAW_SOLVED..$#fields]]);
 	$replace{'BODY'} = '';
 	$replace{'UPDATEDAT'} = 'Updated at ' . escapeHTML(scalar(localtime()));
 	if (defined($base_url))
@@ -56,12 +72,19 @@ eval
 	while (<IN>)
 	{
 		chomp;
-		my @fields = split(/\t/);
+		@fields = split(/\t/);
 		next unless scalar(@fields);
 
 		$place++;
-		my $solved = $fields[$#fields - 1];
-		my $time = $fields[$#fields];
+		my $solved = 0;
+		for (my $i = STANDING_RAW_SOLVED; $i < scalar(@fields); $i++)
+		{
+			if ($fields[$i] > 0)
+			{
+				$solved++;
+			}
+		}
+		my $time = $fields[STANDING_RAW_TOTAL_TIME];
 		if ($solved ne $last_solved || $time ne $last_time)
 		{
 			$tie_place = $place;
@@ -69,14 +92,34 @@ eval
 			$last_time = $time;
 		}
 
-		unshift @fields, $tie_place;
-		@fields = map { escapeHTML($_) } @fields;
-		for (@fields[1..$#fields-2])
+		my @out_fields = ('') x COLUMN_SOLVED;
+		$out_fields[COLUMN_PLACE] = $tie_place;
+		$out_fields[COLUMN_USERNAME] = escapeHTML($fields[STANDING_RAW_USERNAME]);
+		$out_fields[COLUMN_FRIENDLYNAME] = escapeHTML($fields[STANDING_RAW_FRIENDLYNAME]);
+		$out_fields[COLUMN_TOTAL_SOLVED] = $solved;
+		$out_fields[COLUMN_TOTAL_TIME] = sprintf('%02d:%02d:%02d', $time / 3600, $time / 60 % 60, $time % 60);
+
+		foreach my $attempts (@fields[STANDING_RAW_SOLVED..$#fields])
 		{
-			s/Yes/span({-class => 'correct'}, 'Yes')/e;
+			if ($attempts > 0)
+			{
+				my $base = ($attempts - 1);
+				if ($base == 0) { $base = '+'; }
+				else { $base = '+' . $base; }
+				push @out_fields, span({-class => 'correct'}, $base);
+			}
+			elsif ($attempts < 0)
+			{
+				push @out_fields, span({-class => 'incorrect'}, sprintf("&minus;%d", -$attempts));
+			}
+			else
+			{
+				push @out_fields, '';
+			}
 		}
+
 		my $class = ($place & 1 ? "odd" : "even");
-		$replace{'BODY'} .= Tr({-class => $class}, td([@fields]));
+		$replace{'BODY'} .= Tr({-class => $class}, td([@out_fields]));
 	}
 	close(IN) or die("Error reading $standings_path: $!");
 

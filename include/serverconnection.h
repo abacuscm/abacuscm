@@ -88,8 +88,8 @@ private:
 	std::string stringAction(MessageBlock &mb, std::string fieldname);
 	Grid gridAction(MessageBlock &mb);
 
-	std::vector<std::string> vectorFromMB(MessageBlock &mb, std::string prefix);
-	MultiValuedList multiListFromMB(MessageBlock &mb, std::list<std::string> attrlst);
+	static std::vector<std::string> vectorFromMB(MessageBlock &mb, std::string prefix);
+	static MultiValuedList multiListFromMB(MessageBlock &mb, std::list<std::string> attrlst);
 
 	static void* thread_spawner(void*);
 public:
@@ -99,7 +99,7 @@ public:
 	bool connect(std::string servername, std::string service);
 	bool disconnect();
 
-	Grid gridFromMB(const MessageBlock &mb);
+	static Grid gridFromMB(const MessageBlock &mb);
 
 	bool auth(std::string username, std::string password);
 	std::string whatAmI();

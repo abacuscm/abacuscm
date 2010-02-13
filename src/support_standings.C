@@ -18,6 +18,7 @@
 #include "messageblock.h"
 #include "timedaction.h"
 #include "server.h"
+#include "misc.h"
 
 #include <string>
 #include <cassert>
@@ -257,17 +258,13 @@ bool StandingsSupportModule::getStandings(uint32_t user_type, uint32_t uid, Mess
 	if(!db)
 		return false;
 
-	const int COLUMN_ID = 0;
-	const int COLUMN_TEAM = 1;
-	const int COLUMN_NAME = 2;
-	const int COLUMN_CONTESTANT = 3;
-	const int COLUMN_TIME = 4;
-	int ncols = 5;
-	mb[cell_name(0, COLUMN_ID)] = "ID";
-	mb[cell_name(0, COLUMN_TEAM)] = "Team";
-	mb[cell_name(0, COLUMN_NAME)] = "Name";
-	mb[cell_name(0, COLUMN_CONTESTANT)] = "Type";
-	mb[cell_name(0, COLUMN_TIME)] = "Time";
+	int ncols = STANDING_RAW_SOLVED;
+	mb[cell_name(0, STANDING_RAW_ID)] = "ID";
+	mb[cell_name(0, STANDING_RAW_USERNAME)] = "Team";
+	mb[cell_name(0, STANDING_RAW_FRIENDLYNAME)] = "Name";
+	mb[cell_name(0, STANDING_RAW_CONTESTANT)] = "Contestant";
+	mb[cell_name(0, STANDING_RAW_TOTAL_SOLVED)] = "Solved";
+	mb[cell_name(0, STANDING_RAW_TOTAL_TIME)] = "Time";
 
 	ProblemList probs = db->getProblems();
 	map<uint32_t, uint32_t> prob2col;
@@ -313,23 +310,34 @@ bool StandingsSupportModule::getStandings(uint32_t user_type, uint32_t uid, Mess
 
 		val.str("");
 		val << i->first;
-		mb[cell_name(r, COLUMN_ID)] = val.str();
-		mb[cell_name(r, COLUMN_TEAM)] = usm->username(i->first);
-		mb[cell_name(r, COLUMN_NAME)] = usm->friendlyname(i->first);
-		mb[cell_name(r, COLUMN_CONTESTANT)] = (i->second.user_type == USER_TYPE_CONTESTANT ? "1" : "0");
+		mb[cell_name(r, STANDING_RAW_ID)] = val.str();
+		mb[cell_name(r, STANDING_RAW_USERNAME)] = usm->username(i->first);
+		mb[cell_name(r, STANDING_RAW_FRIENDLYNAME)] = usm->friendlyname(i->first);
+		mb[cell_name(r, STANDING_RAW_CONTESTANT)] = (i->second.user_type == USER_TYPE_CONTESTANT ? "1" : "0");
 
 		val.str("");
 		val << i->second.time;
-		mb[cell_name(r, COLUMN_TIME)] = val.str();
+		mb[cell_name(r, STANDING_RAW_TOTAL_TIME)] = val.str();
 
 		map<uint32_t, int32_t>::const_iterator pc;
+		/* Make sure there are no holes by pre-initialising with zeros */
+		for(int col = STANDING_RAW_SOLVED; col < ncols; col++)
+			mb[cell_name(r, col)] = "0";
+
+		int solved = 0;
 		for(pc = i->second.tries.begin(); pc != i->second.tries.end(); ++pc) {
 			int col = prob2col[pc->first];
 
 			val.str("");
 			val << pc->second;
 			mb[cell_name(r, col)] = val.str();
+			if (pc->second > 0)
+				solved++;
 		}
+
+		val.str("");
+		val << solved;
+		mb[cell_name(r, STANDING_RAW_TOTAL_SOLVED)] = val.str();
 	}
 
 	{
