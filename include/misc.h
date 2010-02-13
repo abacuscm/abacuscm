@@ -65,4 +65,6 @@ static const int USER_MASK_ALL = USER_MASK_ADMIN | USER_MASK_JUDGE | USER_MASK_C
 extern char *runMessages[];
 extern char *shortRunMessages[];
 
+#define NULL_TIME ((time_t) -1)
+
 #endif

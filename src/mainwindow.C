@@ -1041,29 +1041,51 @@ void MainWindow::doAdminStartStop() {
 
 			start_str = (const char *) dialog.start->text();
 			stop_str = (const char *) dialog.stop->text();
-			err = strptime(start_str.c_str(), "%T", &start_tm);
-			if (!err || *err || start_str == "")
-				correct = false;
-			err = strptime(stop_str.c_str(), "%T", &stop_tm);
-			if (!err || *err || stop_str == "")
-				correct = false;
 
-			start = mktime(&start_tm);
-			stop = mktime(&stop_tm);
-			correct = correct && start < stop && start != (time_t) -1 && stop != (time_t) -1;
+			if (start_str != "") {
+				err = strptime(start_str.c_str(), "%T", &start_tm);
+				if (!err || *err) {
+					correct = false;
+				}
+				else {
+					start = mktime(&start_tm);
+				}
+			}
+			else {
+				start = NULL_TIME;
+			}
+
+			if (stop_str != "") {
+				err = strptime(stop_str.c_str(), "%T", &stop_tm);
+				if (!err || *err || stop_str == "") {
+					correct = false;
+				}
+				else {
+					stop = mktime(&stop_tm);
+				}
+			}
+			else {
+				stop = NULL_TIME;
+			}
+
+			correct = correct && (start != NULL_TIME || stop != NULL_TIME) && (start == NULL_TIME || stop == NULL_TIME || start < stop);
 		}
 		else
 			return;
 
 		if (!correct)
-			QMessageBox("Error", "Please enter start and end times as HH:MM:SS",
+			QMessageBox("Error", "Please enter at least one of the start and end times as HH:MM:SS. If entering both times, then the start time should be earlier than the end time.",
 					QMessageBox::Warning, QMessageBox::Ok,
 					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
 	}
 
 		bool global = dialog.server->currentItem() == 0;
-	_server_con.startStop(global, true, start)
-	&& _server_con.startStop(global, false, stop);
+	if (start != NULL_TIME) {
+		_server_con.startStop(global, true, start);
+	}
+	if (stop != NULL_TIME) {
+		_server_con.startStop(global, false, stop);
+	}
 }
 
 void MainWindow::doSubmit() {
