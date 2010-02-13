@@ -142,7 +142,7 @@ bool MarkMessage::process() const {
 
 	StandingsSupportModule *standings = getStandingsSupportModule();
 	if(standings && _result != JUDGE)
-		standings->notifySolution(0); // TODO: problem time here.
+		standings->updateStandings(user_id, 0);
 
 	if(_result == CORRECT) {
 		MessageBlock bl("balloon");

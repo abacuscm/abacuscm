@@ -252,7 +252,7 @@ void SmartListViewItem::setValueTime(int col, time_t time) {
 
 void SmartListViewItem::setValueDuration(int col, uint32_t duration) {
 	char buffer[64];
-	sprintf(buffer, "%02d:%02d", duration / 3600, duration / 60 % 60);
+	sprintf(buffer, "%02d:%02d:%02d", duration / 3600, duration / 60 % 60, duration % 60);
 	setValue(col, string(buffer));
 }
 
