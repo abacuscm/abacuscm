@@ -289,22 +289,29 @@ Grid ServerConnection::gridAction(MessageBlock &mb) {
 			log(LOG_ERR, "%s", (*ret)["msg"].c_str());
 			delete ret;
 		}
-		return grid;
+		return Grid();
 	}
 
-	int ncols = strtoll((*ret)["ncols"].c_str(), NULL, 0);
-	int nrows = strtoll((*ret)["nrows"].c_str(), NULL, 0);
+	Grid resp(gridFromMB(*ret));
+	delete ret;
+	return resp;
+}
+
+Grid ServerConnection::gridFromMB(const MessageBlock &mb) {
+	Grid grid;
+
+	int ncols = strtoll(mb["ncols"].c_str(), NULL, 0);
+	int nrows = strtoll(mb["nrows"].c_str(), NULL, 0);
 
 	for(int r = 0; r < nrows; ++r) {
 		list<string> row;
 		for(int c = 0; c < ncols; ++c) {
 			ostringstream hdrname;
 			hdrname << "row_" << r << "_" << c;
-			row.push_back((*ret)[hdrname.str()]);
+			row.push_back(mb[hdrname.str()]);
 		}
 		grid.push_back(row);
 	}
-
 	return grid;
 }
 

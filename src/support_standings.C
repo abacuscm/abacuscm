@@ -228,8 +228,9 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 		int w = (flags & STANDINGS_FLAG_FINAL) ? 1 : 0;
 		if (have_update[w]) {
 			MessageBlock mb("updatestandings");
-			getStandings(type, uid, mb);
-			ClientEventRegistry::getInstance().broadcastEvent("updatestandings", 0, 1 << type, &mb);
+			if (getStandings(type, uid, mb)
+				&& mb["nrows"] != "0")
+				ClientEventRegistry::getInstance().broadcastEvent("updatestandings", 0, 1 << type, &mb);
 		}
 	}
 
@@ -366,5 +367,6 @@ void StandingsSupportModule::init() {
 	if (blinds > duration / 2)
 		log(LOG_WARNING, "Blinds is longer than half the contest - this is most likely wrong.");
 
+	ClientEventRegistry::getInstance().registerEvent("updatestandings");
 	updateStandings(0, 0);
 }

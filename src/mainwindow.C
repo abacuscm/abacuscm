@@ -680,8 +680,8 @@ static void updateStatusFunctor(const MessageBlock*, void*) {
 	ev->post();
 }
 
-static void updateStandingsFunctor(const MessageBlock*, void*) {
-	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateStandings);
+static void updateStandingsFunctor(const MessageBlock*mb, void*) {
+	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateStandings, mb);
 	ev->post();
 }
 
@@ -826,7 +826,7 @@ void MainWindow::doFileConnect() {
 				clarifyButton->setEnabled(true);
 
 				_server_con.registerEventCallback("updatesubmissions", updateSubmissionsFunctor, NULL);
-				_server_con.registerEventCallback("standings", updateStandingsFunctor, NULL);
+				_server_con.registerEventCallback("updatestandings", updateStandingsFunctor, NULL);
 				_server_con.registerEventCallback("msg", event_msg, NULL);
 				_server_con.registerEventCallback("startstop", contestStartStop, NULL);
 				_server_con.registerEventCallback("balloon", event_balloon, NULL);
@@ -1296,37 +1296,54 @@ void MainWindow::sortStandings() {
 	}
 }
 
-void MainWindow::updateStandings(const MessageBlock *) {
+void MainWindow::updateStandings(const MessageBlock *mb) {
 	if (maintabs->currentPage() != tabStandings)
 		return;
 
-	Grid data = _server_con.getStandings();
+	Grid data;
+	if (mb == NULL) {
+		data = _server_con.getStandings();
+		for (map<uint32_t, StandingItem *>::iterator i = standingMap.begin(); i != standingMap.end(); ++i)
+			delete i->second;  // also clears out the list view
+		standingMap.clear();
+	}
+	else {
+		data = _server_con.gridFromMB(*mb);
+	}
 
-	for (map<uint32_t, StandingItem *>::iterator i = standingMap.begin(); i != standingMap.end(); ++i)
-		delete i->second;  // also clears out the list view
-	standingMap.clear();
 	if(data.empty())
 		return;
 
 	Grid::iterator row = data.begin();
-	list<string>::iterator cell;
+	list<string>::iterator cell = row->begin();
 
-	while (standings->columns() > StandingItem::COLUMN_SOLVED)
-		standings->removeColumn(StandingItem::COLUMN_SOLVED);
-
-	/* Add column per problem */
-	cell = row->begin();
-	advance(cell, 5); /* Skip the common headers */
-	for(; cell != row->end(); ++cell) {
-		standings->addColumn(*cell);
-		standings->setColumnAlignment(standings->columns() - 1, Qt::AlignRight);
+	const unsigned int fixed_cols = 5; /* Number of cells in grid that are not problem scores */
+	if (row->size() < fixed_cols) {
+		log(LOG_WARNING, "Standings update has too few columns");
+		return;
 	}
 
-	while(++row != data.end()) {
-		StandingItem *item = new StandingItem(standings);
+	/* Add column per problem */
+	int table_col = StandingItem::COLUMN_SOLVED;
+	for (advance(cell, fixed_cols); cell != row->end(); ++cell) {
+		if (table_col >= standings->columns())
+			standings->addColumn(*cell);
+		else
+			standings->setColumnText(table_col, *cell);
+		standings->setColumnAlignment(table_col, Qt::AlignRight);
+		table_col++;
+	}
+	while (standings->columns() > table_col)
+		standings->removeColumn(standings->columns() - 1);
 
+	while(++row != data.end()) {
 		cell = row->begin();
 		uint32_t id = strtoul(cell->c_str(), NULL, 10);
+
+		StandingItem *&item = standingMap[id];
+		if (item == NULL)
+			item = new StandingItem(standings);
+
 		item->setId(id);
 
 		++cell;
@@ -1345,8 +1362,6 @@ void MainWindow::updateStandings(const MessageBlock *) {
 		for (++cell; cell != row->end(); ++cell)
 			solved.push_back(atoi(cell->c_str()));
 		item->setSolved(solved);
-
-		standingMap[id] = item;
 	}
 
 	sortStandings();
@@ -1550,10 +1565,6 @@ void MainWindow::toggleBalloonPopups(bool activate) {
 
 template<typename T>
 void MainWindow::setClarification(ClarificationItem *item, T &c) {
-	log(LOG_DEBUG, "clarification:");
-	for(typename T::const_iterator a = c.begin(); a != c.end(); ++a)
-		log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());
-
 	uint32_t id = strtoul(c["id"].c_str(), NULL, 10);
 	uint32_t request_id = strtoul(c["req_id"].c_str(), NULL, 10);
 	item->setId(id);
@@ -1605,10 +1616,6 @@ void MainWindow::updateClarifications(const MessageBlock *mb) {
 
 template<typename T>
 void MainWindow::setClarificationRequest(ClarificationRequestItem *item, T &cr) {
-	log(LOG_DEBUG, "clarification request:");
-	for(typename T::const_iterator a = cr.begin(); a != cr.end(); ++a)
-		log(LOG_DEBUG, "%s = %s", a->first.c_str(), a->second.c_str());
-
 	uint32_t id = strtoul(cr["id"].c_str(), NULL, 10);
 	item->setId(id);
 	item->setTime(strtoull(cr["time"].c_str(), NULL, 10));
