@@ -55,6 +55,7 @@
 #include <string>
 #include <sstream>
 #include <cassert>
+#include <algorithm>
 
 using namespace std;
 
@@ -512,25 +513,28 @@ private:
 	uint32_t _id;
 	string _username;
 	string _friendlyname;
+	bool _contestant;
 	uint32_t _total_time;
+	int _total_solved;
 	vector<int> _solved;   // -x for x wrong attempts, +x for x total attempts with a solution
 
+public:
 	enum Column {
 		COLUMN_PLACE = 0,
-		COLUMN_USERNAME = 1,
-		COLUMN_FRIENDLYNAME = 2,
-		COLUMN_TOTAL_SOLVED = 3,
-		COLUMN_TOTAL_TIME = 4,
+		COLUMN_TOTAL_SOLVED = 1,
+		COLUMN_TOTAL_TIME = 2,
+		COLUMN_USERNAME = 3,
+		COLUMN_FRIENDLYNAME = 4,
 		COLUMN_SOLVED = 5,  // start of variable number of columns
 	};
 
-public:
 	explicit StandingItem(QListView *parent);
 
 	void setPlace(int place);
 	void setId(uint32_t id);
 	void setUsername(const string &username);
 	void setFriendlyname(const string &friendlyname);
+	void setContestant(bool contestant);
 	void setTotalTime(uint32_t time);
 	void setSolved(const vector<int> &solved);
 
@@ -538,12 +542,13 @@ public:
 	uint32_t getId() const { return _id; }
 	const string &getUsername() const { return _username; }
 	const string &getFriendlyName() const { return _friendlyname; }
+	bool isContestant() const { return _contestant; }
 	uint32_t getTotalTime() const { return _total_time; }
 	const vector<int> &getSolved() const { return _solved; }
-	int getTotalSolved() const;
+	int getTotalSolved() const { return _total_solved; }
 
 	virtual int rtti() const { return RTTI_SUBMISSION; }
-	virtual int compare(QListViewItem *other, int col, bool ascending);
+	virtual int compare(QListViewItem *other, int col, bool ascending) const;
 };
 
 StandingItem::StandingItem(QListView *parent) :
@@ -573,6 +578,10 @@ void StandingItem::setFriendlyname(const string &friendlyname) {
 	setValue(COLUMN_FRIENDLYNAME, friendlyname.c_str());
 }
 
+void StandingItem::setContestant(bool contestant) {
+	_contestant = contestant;
+}
+
 void StandingItem::setTotalTime(uint32_t time) {
 	_total_time = time;
 	setValueDuration(COLUMN_TOTAL_TIME, time);
@@ -595,18 +604,11 @@ void StandingItem::setSolved(const vector<int> &solved) {
 		setValue(COLUMN_SOLVED + i, s.str());
 	}
 
+	_total_solved = total;
 	setValue(COLUMN_TOTAL_SOLVED, total);
 }
 
-int StandingItem::getTotalSolved() const {
-	int total = 0;
-
-	for (size_t i = 0; i < _solved.size(); i++)
-		if (_solved[i] > 0) total++;
-	return total;
-}
-
-int StandingItem::compare(QListViewItem *other, int col, bool ascending) {
+int StandingItem::compare(QListViewItem *other, int col, bool ascending) const {
 	if (other == NULL || other->rtti() != rtti())
 		return QListViewItem::compare(other, col, ascending);
 
@@ -732,6 +734,11 @@ MainWindow::MainWindow() {
 	clarifications->setSorting(1, FALSE);
 	clarificationRequests->setSorting(1, FALSE);
 	submissions->setSorting(1, FALSE);
+	standings->setSorting(0, TRUE);
+	standings->setShowSortIndicator(false);
+	standings->setColumnAlignment(StandingItem::COLUMN_PLACE, Qt::AlignRight);
+	standings->setColumnAlignment(StandingItem::COLUMN_TOTAL_SOLVED, Qt::AlignRight);
+	standings->setColumnAlignment(StandingItem::COLUMN_TOTAL_TIME, Qt::AlignRight);
 
 	GUIEvent::setReceiver(this);
 	register_log_listener(window_log);
@@ -1244,40 +1251,105 @@ void MainWindow::updateStatus(const MessageBlock *) {
 	}
 }
 
+/* Sorts standings items by solved and time */
+class CompareStanding {
+public:
+	bool operator()(StandingItem *a, StandingItem *b) const {
+		int solveda = a->getTotalSolved();
+		int solvedb = b->getTotalSolved();
+		if (solveda != solvedb)
+			return solveda > solvedb;
+		else
+			return a->getTotalTime() < b->getTotalTime();
+	}
+};
+
+void MainWindow::sortStandings() {
+	bool non_contestant = _active_type != "contestant" && nonContestInStandingsAction->isOn();
+
+	vector<StandingItem *> ordered;
+	CompareStanding compare;
+	for (map<uint32_t, StandingItem *>::const_iterator i = standingMap.begin(); i != standingMap.end(); ++i)
+		ordered.push_back(i->second);
+	stable_sort(ordered.begin(), ordered.end(), compare);
+
+	StandingItem *last_placed = NULL;
+	int pos = 0;
+	int last_pos = 0;
+
+	for (size_t i = 0; i < ordered.size(); i++) {
+		StandingItem *p = ordered[i];
+		if (p->isContestant()) {
+			pos++;
+			if (last_placed == NULL || compare(last_placed, p)) {
+				// Not a tie
+				last_pos = pos;
+			}
+			p->setPlace(last_pos);
+			p->setVisible(true);
+			last_placed = p;
+		}
+		else {
+			p->setPlace(0);
+			p->setVisible(non_contestant);
+		}
+	}
+}
+
 void MainWindow::updateStandings(const MessageBlock *) {
 	if (maintabs->currentPage() != tabStandings)
 		return;
 
-	// keep in mind that a real contestant can't get non-contestant standings,
-	// so passing true in those cases has no effect.
-	Grid data = _server_con.getStandings(_active_type == "contestant" || nonContestInStandingsAction->isOn());
+	Grid data = _server_con.getStandings();
 
-	standings->clear();
+	for (map<uint32_t, StandingItem *>::iterator i = standingMap.begin(); i != standingMap.end(); ++i)
+		delete i->second;  // also clears out the list view
+	standingMap.clear();
 	if(data.empty())
 		return;
-
-	while(standings->columns())
-		standings->removeColumn(0);
 
 	Grid::iterator row = data.begin();
 	list<string>::iterator cell;
 
-	standings->addColumn("Pos");
-	for(cell = row->begin(); cell != row->end(); ++cell)
+	while (standings->columns() > StandingItem::COLUMN_SOLVED)
+		standings->removeColumn(StandingItem::COLUMN_SOLVED);
+
+	/* Add column per problem */
+	cell = row->begin();
+	advance(cell, 5); /* Skip the common headers */
+	for(; cell != row->end(); ++cell) {
 		standings->addColumn(*cell);
-
-	int pos = 0;
-	while(++row != data.end()) {
-		QListViewItem *item = new QListViewItem(standings);
-
-		char bfr[20];
-		sprintf(bfr, "%02d", ++pos);
-		item->setText(0, bfr);
-
-		int c = 1;
-		for(cell = row->begin(); cell != row->end(); ++cell, ++c)
-			item->setText(c, QString::fromUtf8(cell->c_str()));
+		standings->setColumnAlignment(standings->columns() - 1, Qt::AlignRight);
 	}
+
+	while(++row != data.end()) {
+		StandingItem *item = new StandingItem(standings);
+
+		cell = row->begin();
+		uint32_t id = strtoul(cell->c_str(), NULL, 10);
+		item->setId(id);
+
+		++cell;
+		item->setUsername(cell->c_str());
+
+		++cell;
+		item->setFriendlyname(cell->c_str());
+
+		++cell;
+		item->setContestant(atoi(cell->c_str()) != 0);
+
+		++cell;
+		item->setTotalTime(strtoul(cell->c_str(), NULL, 10));
+
+		vector<int> solved;
+		for (++cell; cell != row->end(); ++cell)
+			solved.push_back(atoi(cell->c_str()));
+		item->setSolved(solved);
+
+		standingMap[id] = item;
+	}
+
+	sortStandings();
 }
 
 void MainWindow::updateSubmissions(const MessageBlock *mb) {

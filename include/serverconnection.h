@@ -131,7 +131,7 @@ public:
 	SubmissionList getSubmissions();
 	ClarificationList getClarifications();
 	ClarificationRequestList getClarificationRequests();
-	Grid getStandings(bool non_contest = false);
+	Grid getStandings();
 
 	uint32_t countMarkFiles(uint32_t submission_id);
 	bool getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length);

@@ -819,12 +819,11 @@ ClarificationRequestList ServerConnection::getClarificationRequests() {
 	return l;
 }
 
-Grid ServerConnection::getStandings(bool non_contest) {
+Grid ServerConnection::getStandings() {
 	if(!_ssl)
 		return Grid();
 
 	MessageBlock mb("standings");
-	mb["include_non_contest"] = non_contest ? "yes" : "no";
 
 	return gridAction(mb);
 }

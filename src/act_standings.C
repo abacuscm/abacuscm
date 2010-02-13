@@ -41,7 +41,13 @@ ActStandings::ActStandings()
 	typenames[USER_TYPE_NONCONTEST] = "Observer";
 }
 
-bool ActStandings::int_process(ClientConnection *cc, MessageBlock *rmb) {
+static string cell_name(int row, int col) {
+	ostringstream name;
+	name << "row_" << row << "_" << col;
+	return name.str();
+}
+
+bool ActStandings::int_process(ClientConnection *cc, MessageBlock *) {
 	StandingsSupportModule *standings = getStandingsSupportModule();
 	UserSupportModule *usm = getUserSupportModule();
 	if (!standings)
@@ -52,8 +58,6 @@ bool ActStandings::int_process(ClientConnection *cc, MessageBlock *rmb) {
 	uint32_t uType = cc->getProperty("user_type");
 	bool include_non_contest = uType != USER_TYPE_CONTESTANT;
 
-	include_non_contest &= (*rmb)["include_non_contest"] != "no";
-
 	StandingsSupportModule::StandingsPtr s = standings->getStandings(uType);
 
 	if (!s)
@@ -61,14 +65,17 @@ bool ActStandings::int_process(ClientConnection *cc, MessageBlock *rmb) {
 
 	MessageBlock mb("ok");
 
-	mb["row_0_0"] = "Team";
-
-	int ncols = 1;
-
-	if (include_non_contest) {
-		ncols = 2;
-		mb["row_0_1"] = "Type";
-	}
+	const int COLUMN_ID = 0;
+	const int COLUMN_TEAM = 1;
+	const int COLUMN_NAME = 2;
+	const int COLUMN_CONTESTANT = 3;
+	const int COLUMN_TIME = 4;
+	int ncols = 5;
+	mb[cell_name(0, COLUMN_ID)] = "ID";
+	mb[cell_name(0, COLUMN_TEAM)] = "Team";
+	mb[cell_name(0, COLUMN_NAME)] = "Name";
+	mb[cell_name(0, COLUMN_CONTESTANT)] = "Type";
+	mb[cell_name(0, COLUMN_TIME)] = "Time";
 
 	DbCon *db = DbCon::getInstance();
 	if(!db)
@@ -79,27 +86,16 @@ bool ActStandings::int_process(ClientConnection *cc, MessageBlock *rmb) {
 	ProblemList::iterator pi;
 
 	for(pi = probs.begin(); pi != probs.end(); ++pi) {
+		prob2col[*pi] = ncols;
 		AttributeList al = db->getProblemAttributes(*pi);
-
-		ostringstream col;
-		col << ncols;
-		prob2col[*pi] = ncols++;
-
-		mb["row_0_" + col.str()] = al["shortname"];
+		mb[cell_name(0, ncols)] = al["shortname"];
+		ncols++;
 	}
 
 	{
-		ostringstream col;
-		col << ncols++;
-		mb["row_0_" + col.str()] = "Solved";
-
-		col.str("");
-		col << ncols++;
-		mb["row_0_" + col.str()] = "Total time";
-
-		col.str("");
-		col << ncols;
-		mb["ncols"] = col.str();
+		ostringstream ncols_str;
+		ncols_str << ncols;
+		mb["ncols"] = ncols_str.str();
 	}
 
 	int r = 0;
@@ -110,50 +106,26 @@ bool ActStandings::int_process(ClientConnection *cc, MessageBlock *rmb) {
 			continue;
 		++r;
 
-		ostringstream headername;
 		ostringstream val;
-		char time_buffer[64];
-		headername << "row_" << r << "_0";
-		mb[headername.str()] = usm->displayname(i->user_id);
 
-		if (include_non_contest) {
-			headername.str("");
-			headername << "row_" << r << "_1";
-			TypesMap::const_iterator tn = typenames.find(i->user_type);
-			if (tn != typenames.end())
-				mb[headername.str()] = tn->second;
-			else
-				mb[headername.str()] = "Unknown";
-		}
-
-		headername.str("");
-		headername << "row_" << r << "_" << (ncols - 1);
-		sprintf(time_buffer, "%02d:%02d:%02d",
-			i->time / 3600,
-			(i->time / 60) % 60,
-			i->time % 60);
-		mb[headername.str()] = time_buffer;
-
-		headername.str("");
-		headername << "row_" << r << "_" << (ncols - 2);
 		val.str("");
-		val << i->correct;
-		mb[headername.str()] = val.str();
+		val << i->user_id;
+		mb[cell_name(r, COLUMN_ID)] = val.str();
+		mb[cell_name(r, COLUMN_TEAM)] = usm->username(i->user_id);
+		mb[cell_name(r, COLUMN_NAME)] = usm->friendlyname(i->user_id);
+		mb[cell_name(r, COLUMN_CONTESTANT)] = (i->user_type == USER_TYPE_CONTESTANT ? "1" : "0");
+
+		val.str("");
+		val << i->time;
+		mb[cell_name(r, COLUMN_TIME)] = val.str();
 
 		map<uint32_t, int32_t>::iterator pc;
 		for(pc = i->tries.begin(); pc != i->tries.end(); ++pc) {
 			int col = prob2col[pc->first];
 
-			headername.str("");
-			headername << "row_" << r << "_" << col;
-
 			val.str("");
-			if (pc->second > 0)
-				val << "(" << pc->second << ")  Yes";
-			else
-				val << "(" << -pc->second << ")";
-
-			mb[headername.str()] = val.str();
+			val << pc->second;
+			mb[cell_name(r, col)] = val.str();
 		}
 	}
 

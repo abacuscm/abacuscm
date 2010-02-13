@@ -73,29 +73,21 @@ uint32_t UserSupportModule::user_id(const string& username)
 	return 0;
 }
 
-string UserSupportModule::displayname(uint32_t user_id)
+string UserSupportModule::friendlyname(uint32_t user_id)
 {
 	DbCon *db = DbCon::getInstance();
 	if (!db)
 		return "";
 
 	ostringstream query;
-	query << "SELECT username, friendlyname FROM User WHERE user_id=" << user_id;
+	query << "SELECT friendlyname FROM User WHERE user_id=" << user_id;
 
 	QueryResultRow res = db->singleRowQuery(query.str());
 	db->release();
 
 	if (res.size())
-	{
-		string username = res[0];
-		string friendlyname = res[1];
-		if (friendlyname != "")
-			return username + " (" + friendlyname + ")";
-		else
-			return username;
-	}
-	else
-		return "";
+		return *res.begin();
+	return "";
 }
 
 uint32_t UserSupportModule::usertype(uint32_t user_id)

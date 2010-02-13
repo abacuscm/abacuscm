@@ -30,6 +30,7 @@ class Submit;
 class ClarificationRequestItem;
 class ClarificationItem;
 class SubmissionItem;
+class StandingItem;
 
 typedef struct {
 	int prio_level;
@@ -54,6 +55,7 @@ private:
 	std::map<uint32_t, ClarificationRequestItem *> clarificationRequestMap;
 	std::map<uint32_t, ClarificationItem *> clarificationMap;
 	std::map<uint32_t, SubmissionItem *> submissionMap;
+	std::map<uint32_t, StandingItem *> standingMap;
 
 	void triggerType(std::string type, bool status);
 	void switchType(std::string type);
@@ -95,6 +97,7 @@ public:
 	void serverDisconnect(const MessageBlock *mb = NULL);
 
 	// Overloads of functions in MainWindowBase
+	virtual void sortStandings();
 	virtual void updateStandings() { updateStandings(NULL); }
 	virtual void updateSubmissions() { updateSubmissions(NULL); }
 
