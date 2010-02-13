@@ -22,6 +22,7 @@
 #include <set>
 #include <string>
 #include <utility>
+#include <qiconset.h>
 
 class QCheckBox;
 class QListViewItem;
@@ -40,6 +41,8 @@ typedef struct {
 
 class MainWindow : public MainWindowBase {
 private:
+	QIconSet quietIcon, alertIcon;
+
 	LoginDialog _login_dialog;
 	Submit *_submit_dialog;
 	QFileDialog *_submit_file_dialog;
@@ -63,6 +66,11 @@ private:
 	void triggerType(std::string type, bool status);
 	void switchType(std::string type);
 
+	/* Indicate that a tab does/does not have new information */
+	void setAlert(QWidget *tab);
+	void setQuiet(QWidget *tab);
+
+	/* Find states requested for judge's submission filter */
 	std::set<int> getWantedStates() const;
 	/* Helpers to set information from either a bulk reply or an incremental
 	 * notification.

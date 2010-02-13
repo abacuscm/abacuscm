@@ -29,6 +29,8 @@
 #include "ui_compileroutputdialog.h"
 #include "misc.h"
 #include "score.h"
+#include "alert.xpm"
+#include "quiet.xpm"
 
 #include <qlineedit.h>
 #include <qmessagebox.h>
@@ -756,9 +758,18 @@ MainWindow::MainWindow() {
 	submissions->setSorting(1, FALSE);
 	standings->setSorting(0, TRUE);
 	standings->setShowSortIndicator(false);
+
 	standings->setColumnAlignment(StandingItem::COLUMN_PLACE, Qt::AlignRight);
 	standings->setColumnAlignment(StandingItem::COLUMN_TOTAL_SOLVED, Qt::AlignRight);
 	standings->setColumnAlignment(StandingItem::COLUMN_TOTAL_TIME, Qt::AlignRight);
+
+	quietIcon = QIconSet(QPixmap(quiet_xpm));
+	alertIcon = QIconSet(QPixmap(alert_xpm));
+	setQuiet(tabAbacus);
+	setQuiet(tabStandings);
+	setQuiet(tabClarificationRequests);
+	setQuiet(tabClarifications);
+	setQuiet(tabSubmissions);
 
 	GUIEvent::setReceiver(this);
 	register_log_listener(window_log);
@@ -774,6 +785,15 @@ MainWindow::MainWindow() {
 
 MainWindow::~MainWindow() {
 	ThreadSSL::cleanup();
+}
+
+void MainWindow::setQuiet(QWidget *tab) {
+	maintabs->setTabIconSet(tab, quietIcon);
+}
+
+void MainWindow::setAlert(QWidget *tab) {
+	if (maintabs->currentPage() != tab)
+		maintabs->setTabIconSet(tab, alertIcon);
 }
 
 void MainWindow::triggerType(std::string type, bool status) {
@@ -1235,15 +1255,7 @@ void MainWindow::doJudgeSubscribeToProblems() {
 }
 
 void MainWindow::tabChanged(QWidget* newtab) {
-	if(newtab == tabSubmissions) {
-		updateSubmissions();
-	} else if(newtab == tabStandings) {
-		updateStandings();
-	} else if(newtab == tabClarifications) {
-		updateClarifications();
-	} else if(newtab == tabClarificationRequests) {
-		updateClarificationRequests();
-	}
+	setQuiet(newtab);
 }
 
 void MainWindow::customEvent(QCustomEvent *ev) {
@@ -1317,9 +1329,6 @@ void MainWindow::sortStandings() {
 }
 
 void MainWindow::updateStandings(const MessageBlock *mb) {
-	if (maintabs->currentPage() != tabStandings)
-		return;
-
 	Grid data;
 	if (mb == NULL) {
 		data = _server_con.getStandings();
@@ -1355,6 +1364,7 @@ void MainWindow::updateStandings(const MessageBlock *mb) {
 	while (standings->columns() > table_col)
 		standings->removeColumn(standings->columns() - 1);
 
+	StandingItem *changed = NULL;
 	while(++row != data.end()) {
 		vector<string> raw(row->begin(), row->end());
 		uint32_t id = strtoul(raw[STANDING_RAW_ID].c_str(), NULL, 10);
@@ -1375,11 +1385,19 @@ void MainWindow::updateStandings(const MessageBlock *mb) {
 		if (item == NULL)
 			item = new StandingItem(standings);
 		/* Check that we have newer information, not something out-of-order */
-		if (Score::CompareAttempts()(*item, cur))
+		if (Score::CompareAttempts()(*item, cur)) {
 			*item = cur;
+			changed = item;
+		}
 	}
 
 	sortStandings();
+
+	/* See if anything that was updated is also visible, after sortStandings
+	 * has decided that.
+	 */
+	if (mb != NULL && changed != NULL && changed->isVisible())
+		setAlert(tabStandings);
 }
 
 template<typename T>
@@ -1438,9 +1456,6 @@ set<int> MainWindow::getWantedStates() const {
 }
 
 void MainWindow::updateSubmissions(const MessageBlock *mb) {
-	if (maintabs->currentPage() != tabSubmissions)
-		return;
-
 	std::map<string, bool> is_subscribed;
 	std::vector<ProblemInfo> problems;
 
@@ -1473,6 +1488,9 @@ void MainWindow::updateSubmissions(const MessageBlock *mb) {
 		if (item == NULL)
 			item = new SubmissionItem(submissions);
 		setSubmission(item, filter, wanted_states, *mb);
+
+		if (item->isVisible())
+			setAlert(tabSubmissions);
 	}
 
 	submissions->sort();
@@ -1647,14 +1665,7 @@ void MainWindow::updateClarifications(const MessageBlock *mb) {
 			item = new ClarificationItem(clarifications);
 
 		setClarification(item, *mb);
-		if (_active_type == "contestant" || _active_type == "observer") {
-			ViewClarificationReply dialog;
-
-			dialog.problem->setText(QString::fromUtf8(item->getProblem().c_str()));
-			dialog.question->setText(QString::fromUtf8(item->getQuestion().c_str()));
-			dialog.answer->setText(QString::fromUtf8(item->getAnswer().c_str()));
-			dialog.exec();
-		}
+		setAlert(tabClarifications);
 	}
 	clarifications->sort();
 	clarificationRequests->sort();
@@ -1679,9 +1690,6 @@ void MainWindow::setClarificationRequest(ClarificationRequestItem *item, T &cr) 
 }
 
 void MainWindow::updateClarificationRequests(const MessageBlock *mb) {
-	if (maintabs->currentPage() != tabClarificationRequests)
-		return;
-
 	if (mb == NULL) {
 		/* Full refresh */
 
@@ -1710,6 +1718,7 @@ void MainWindow::updateClarificationRequests(const MessageBlock *mb) {
 			item = new ClarificationRequestItem(clarificationRequests);
 
 		setClarificationRequest(item, *mb);
+		setAlert(tabClarificationRequests);
 	}
 	clarificationRequests->sort();
 }
