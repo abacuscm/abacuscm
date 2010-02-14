@@ -136,7 +136,7 @@ bool MarkMessage::process() const {
 
 	uint32_t user_id = db->submission2user_id(_submission_id);
 	ClientEventRegistry::getInstance().broadcastEvent("updatesubmissions",
-													  _result == JUDGE ? 0 : user_id,
+													  user_id,
 													  USER_MASK_JUDGE | USER_MASK_ADMIN,
 													  &mb);
 
