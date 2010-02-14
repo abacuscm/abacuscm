@@ -874,10 +874,7 @@ void MainWindow::doFileConnect() {
 				_server_con.registerEventCallback("updateclarifications", updateClarificationsFunctor, NULL);
 				_server_con.registerEventCallback("updateclock", updateStatusFunctor, NULL);
 				_server_con.subscribeTime();
-				updateStatus();
-				updateClarificationRequests();
-				updateStandings();
-				updateSubmissions();
+				doForceRefresh();
 			} else {
 				_server_con.deregisterEventCallback("close", server_disconnect);
 				_server_con.disconnect();
@@ -903,10 +900,7 @@ void MainWindow::doFileDisconnect() {
 	clarifyButton->setEnabled(false);
 
 	switchType("");
-	updateStatus();
-	updateClarificationRequests();
-	updateSubmissions();
-	updateStandings();
+	doForceRefresh();
 }
 
 void MainWindow::doChangePassword() {
@@ -1331,12 +1325,14 @@ void MainWindow::sortStandings() {
 void MainWindow::updateStandings(const MessageBlock *mb) {
 	Grid data;
 	if (mb == NULL) {
+		log(LOG_DEBUG, "Doing full standings update");
 		data = _server_con.getStandings();
 		for (map<uint32_t, StandingItem *>::iterator i = standingMap.begin(); i != standingMap.end(); ++i)
 			delete i->second;  // also clears out the list view
 		standingMap.clear();
 	}
 	else {
+		log(LOG_DEBUG, "Doing incremental standings update");
 		data = _server_con.gridFromMB(*mb);
 	}
 
@@ -1463,7 +1459,7 @@ void MainWindow::updateSubmissions(const MessageBlock *mb) {
 	set<int> wanted_states = getWantedStates();
 
 	if (mb == NULL || !mb->hasAttribute("submission_id")) {
-		/* Full update, or a legacy message that hasn't been updated */
+		log(LOG_DEBUG, "Doing full submissions update");
 		SubmissionList list;
 
 		if (_active_type != "") // first check that we're connected
@@ -1483,6 +1479,7 @@ void MainWindow::updateSubmissions(const MessageBlock *mb) {
 		}
 	}
 	else {
+		log(LOG_DEBUG, "Doing incremental submissions update");
 		uint32_t id = strtoul((*mb)["submission_id"].c_str(), NULL, 10);
 		SubmissionItem *&item = submissionMap[id];
 		if (item == NULL)
@@ -1644,7 +1641,7 @@ void MainWindow::setClarification(ClarificationItem *item, T &c) {
 
 void MainWindow::updateClarifications(const MessageBlock *mb) {
 	if (mb == NULL) {
-		/* Full refresh */
+		log(LOG_DEBUG, "Doing full clarifications update");
 		ClarificationList list = _server_con.getClarifications();
 
 		clarifications->clear();
@@ -1658,6 +1655,7 @@ void MainWindow::updateClarifications(const MessageBlock *mb) {
 		}
 	}
 	else {
+		log(LOG_DEBUG, "Doing incremental clarifications update");
 		/* Replace if already present, otherwise add */
 		uint32_t id = strtoull((*mb)["id"].c_str(), NULL, 10);
 		ClarificationItem *&item = clarificationMap[id];
@@ -1691,7 +1689,7 @@ void MainWindow::setClarificationRequest(ClarificationRequestItem *item, T &cr) 
 
 void MainWindow::updateClarificationRequests(const MessageBlock *mb) {
 	if (mb == NULL) {
-		/* Full refresh */
+		log(LOG_DEBUG, "Doing full clarification request update");
 
 		/* First update clarifications, since they're needed to figure out if
 		 * our queries have been answered
@@ -1711,6 +1709,7 @@ void MainWindow::updateClarificationRequests(const MessageBlock *mb) {
 		}
 	}
 	else {
+		log(LOG_DEBUG, "Doing incremental clarification request update");
 		/* Replace if already present, otherwise add */
 		uint32_t id = strtoull((*mb)["id"].c_str(), NULL, 10);
 		ClarificationRequestItem *&item = clarificationRequestMap[id];
@@ -1721,6 +1720,14 @@ void MainWindow::updateClarificationRequests(const MessageBlock *mb) {
 		setAlert(tabClarificationRequests);
 	}
 	clarificationRequests->sort();
+}
+
+void MainWindow::doForceRefresh() {
+	updateStatus();
+	updateStandings();
+	updateClarificationRequests();
+	/* updateClarificationRequests calls updateClarifications for us */
+	updateSubmissions();
 }
 
 void MainWindow::serverDisconnect(const MessageBlock *) {

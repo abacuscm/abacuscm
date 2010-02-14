@@ -84,6 +84,7 @@ protected:
 	virtual void doHelpAbout();
 	virtual void doFileConnect();
 	virtual void doFileDisconnect();
+	virtual void doForceRefresh();
 	virtual void doAdminCreateUser();
 	virtual void doAdminProblemConfig();
 	virtual void doAdminStartStop();
@@ -97,6 +98,8 @@ protected:
 	virtual void doJudgeSubscribeToProblems();
 	virtual void submissionHandler(QListViewItem *);
 	virtual void toggleBalloonPopups(bool);
+	virtual void sortStandings();
+	virtual void refilterSubmissions();
 
 	virtual void customEvent(QCustomEvent *ev);
 public:
@@ -114,9 +117,6 @@ public:
 	void updateStatus(const MessageBlock *mb = NULL);
 	void serverDisconnect(const MessageBlock *mb = NULL);
 
-	// Overloads of functions in MainWindowBase
-	virtual void sortStandings();
-	virtual void refilterSubmissions();
 	virtual void updateStandings() { updateStandings(NULL); }
 	virtual void updateSubmissions() { updateSubmissions(NULL); }
 

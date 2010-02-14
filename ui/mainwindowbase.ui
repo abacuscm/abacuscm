@@ -657,6 +657,7 @@
     <item text="&amp;Abacus" name="Abacus">
         <action name="fileConnectAction"/>
         <action name="fileDisconnectAction"/>
+        <action name="abacusForce_RefreshAction"/>
         <separator/>
         <action name="changePasswordAction"/>
         <separator/>
@@ -1068,6 +1069,17 @@
             <string>Include Non-Contestants in Standings</string>
         </property>
     </action>
+    <action>
+        <property name="name">
+            <cstring>abacusForce_RefreshAction</cstring>
+        </property>
+        <property name="text">
+            <string>Force refresh</string>
+        </property>
+        <property name="menuText">
+            <string>Force refresh</string>
+        </property>
+    </action>
 </actions>
 <images>
     <image name="image0">
@@ -1357,6 +1369,12 @@
         <receiver>MainWindowBase</receiver>
         <slot>sortStandings()</slot>
     </connection>
+    <connection>
+        <sender>abacusForce_RefreshAction</sender>
+        <signal>activated()</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>doForceRefresh()</slot>
+    </connection>
 </connections>
 <signals>
     <signal>signalAdminControls(bool)</signal>
@@ -1383,6 +1401,7 @@
     <slot access="protected" specifier="pure virtual">doAdminStartStop()</slot>
     <slot access="protected" specifier="pure virtual">doTimer()</slot>
     <slot access="protected" specifier="pure virtual">sortStandings()</slot>
+    <slot access="protected" specifier="pure virtual">doForceRefresh()</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>
