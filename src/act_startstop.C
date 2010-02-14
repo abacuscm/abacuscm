@@ -18,6 +18,7 @@
 #include "timedaction.h"
 #include "clienteventregistry.h"
 #include "timersupportmodule.h"
+#include "standingssupportmodule.h"
 
 #include <string>
 
@@ -208,12 +209,15 @@ bool MsgStartStop::process() const {
 		ClientEventRegistry::getInstance().triggerEvent("startstop", &mb);
 	}
 
-	if (new_valid && !old_valid || new_valid && new_next_time < old_next_time) {
+	if (new_valid && (!old_valid || new_next_time < old_next_time)) {
 		Server::putTimedAction(new StartStopAction(new_next_time, new_next_action));
 		MessageBlock mb("updateclock");
 		ClientEventRegistry::getInstance().triggerEvent("updateclock", &mb);
 	}
 
+	/* Starts and stops can change contest time, so standings may be invalid */
+	StandingsSupportModule *standings = getStandingsSupportModule();
+	standings->updateStandings(0, 0);
 	return true;
 }
 

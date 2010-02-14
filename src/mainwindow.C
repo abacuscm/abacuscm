@@ -1381,7 +1381,7 @@ void MainWindow::updateStandings(const MessageBlock *mb) {
 		if (item == NULL)
 			item = new StandingItem(standings);
 		/* Check that we have newer information, not something out-of-order */
-		if (Score::CompareAttempts()(*item, cur)) {
+		if (!Score::CompareAttempts()(cur, *item)) {
 			*item = cur;
 			changed = item;
 		}

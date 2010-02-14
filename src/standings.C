@@ -86,7 +86,7 @@ static void grid_to_standings(const Grid &grid) {
 			pos = scores.insert(pos, make_pair(s.getId(), s));
 			ordered.push_back(pos);
 		}
-		else if (Score::CompareAttempts()(pos->second, s)) {
+		else if (!Score::CompareAttempts()(s, pos->second)) {
 			/* Check above makes sure that we do the right thing even if we
 			 * get out-of-order updates
 			 */
