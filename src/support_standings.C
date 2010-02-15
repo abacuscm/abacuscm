@@ -231,7 +231,7 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 			MessageBlock mb("updatestandings");
 			if (getStandings(type, uid, mb)
 				&& mb["nrows"] != "0")
-				ClientEventRegistry::getInstance().broadcastEvent("updatestandings", 0, 1 << type, &mb);
+				ClientEventRegistry::getInstance().broadcastEvent(0, 1 << type, &mb);
 		}
 	}
 

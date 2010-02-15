@@ -68,10 +68,7 @@ public:
 	// Send message to all clients either in the broadcast mask, or with the
 	// given user id. If user_id is zero it is ignored. Note that clients do
 	// not need to register with the event to receive it.
-	void broadcastEvent(const std::string &eventname, uint32_t user_id, int mask, const MessageBlock *mb);
-
-	// Send message to all clients
-	void broadcastEvent(const MessageBlock *mb);
+	void broadcastEvent(uint32_t user_id, int mask, const MessageBlock *mb);
 
 	// Send message just to one user
 	void sendMessage(uint32_t user_id, const MessageBlock *mb);

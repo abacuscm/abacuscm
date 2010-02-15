@@ -135,8 +135,7 @@ bool MarkMessage::process() const {
 	submission->submissionToMB(db, s, mb, "");
 
 	uint32_t user_id = db->submission2user_id(_submission_id);
-	ClientEventRegistry::getInstance().broadcastEvent("updatesubmissions",
-													  user_id,
+	ClientEventRegistry::getInstance().broadcastEvent(user_id,
 													  USER_MASK_JUDGE | USER_MASK_ADMIN,
 													  &mb);
 

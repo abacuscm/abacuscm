@@ -119,33 +119,17 @@ void ClientEventRegistry::triggerEvent(const string &eventname, const MessageBlo
 		i->second->triggerEvent(mb);
 }
 
-void ClientEventRegistry::broadcastEvent(const MessageBlock *mb) {
+void ClientEventRegistry::broadcastEvent(uint32_t user_id, int mask, const MessageBlock *mb) {
 	pthread_mutex_lock(&_lock);
 	for(ClientMap::iterator i = _clients.begin(); i != _clients.end(); ++i) {
-		log(LOG_INFO, "broadcasting to client %p (with id %d)", i->second, i->first);
-		if (i->second != NULL)
-			i->second->sendMessageBlock(mb);
-	}
-	pthread_mutex_unlock(&_lock);
-}
-
-void ClientEventRegistry::broadcastEvent(const string &eventname, uint32_t user_id, int mask, const MessageBlock *mb) {
-	pthread_mutex_lock(&_lock);
-	EventMap::iterator i = _eventmap.find(eventname);
-	pthread_mutex_unlock(&_lock);
-	if(i == _eventmap.end())
-		log(LOG_ERR, "Attempt to trigger unknown event '%s'",
-				eventname.c_str());
-	else {
-		for(ClientMap::iterator j = _clients.begin(); j != _clients.end(); ++j) {
-			uint32_t user_type = j->second->getProperty("user_type");
-			if (j->first == user_id || ( (1 << user_type) & mask)) {
-				log(LOG_INFO, "broadcasting to client %p (with id %d)", j->second, j->first);
-				if (j->second != NULL)
-					j->second->sendMessageBlock(mb);
-			}
+		uint32_t user_type = i->second->getProperty("user_type");
+		if (i->first == user_id || ( (1 << user_type) & mask)) {
+			log(LOG_INFO, "broadcasting to client %p (with id %d)", i->second, i->first);
+			if (i->second != NULL)
+				i->second->sendMessageBlock(mb);
 		}
 	}
+	pthread_mutex_unlock(&_lock);
 }
 
 void ClientEventRegistry::sendMessage(uint32_t user_id, const MessageBlock *mb) {

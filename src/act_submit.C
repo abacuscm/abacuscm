@@ -277,7 +277,7 @@ bool SubmissionMessage::process() const {
 		else {
 			MessageBlock notify("updatesubmissions");
 			submission->submissionToMB(db, s, notify, "");
-			ClientEventRegistry::getInstance().broadcastEvent("updatesubmissions", _user_id, USER_MASK_JUDGE | USER_MASK_ADMIN, &notify);
+			ClientEventRegistry::getInstance().broadcastEvent(_user_id, USER_MASK_JUDGE | USER_MASK_ADMIN, &notify);
 
 		}
 		if(db->getServerAttribute(Server::getId(), "marker") == "yes")

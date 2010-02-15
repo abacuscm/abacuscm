@@ -261,7 +261,7 @@ bool ClarificationMessage::process() const {
 				AttributeList::iterator a;
 				for(a = req.begin(); a != req.end(); ++a)
 					notify[a->first] = a->second;
-				ClientEventRegistry::getInstance().broadcastEvent("updateclarificationrequests", _user_id,
+				ClientEventRegistry::getInstance().broadcastEvent(_user_id,
 																  USER_MASK_JUDGE | USER_MASK_ADMIN, &notify);
 			}
 		}
@@ -290,10 +290,9 @@ bool ClarificationMessage::process() const {
 				for(a = c.begin(); a != c.end(); ++a)
 					notify[a->first] = a->second;
 				if (pub)
-					ClientEventRegistry::getInstance().broadcastEvent("updateclarifications", 0,
-																	  USER_MASK_ALL & ~USER_MASK_MARKER, &notify);
+					ClientEventRegistry::getInstance().broadcastEvent(0, USER_MASK_ALL & ~USER_MASK_MARKER, &notify);
 				else
-					ClientEventRegistry::getInstance().broadcastEvent("updateclarifications", strtoul(req["user_id"].c_str(), NULL, 10),
+					ClientEventRegistry::getInstance().broadcastEvent(strtoul(req["user_id"].c_str(), NULL, 10),
 																	  USER_MASK_JUDGE | USER_MASK_ADMIN, &notify);
 			}
 		}
