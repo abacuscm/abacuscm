@@ -47,7 +47,7 @@ private:
 	enum StandingsFlag {
 		STANDINGS_FLAG_SEND = 1,       /* Get standings at all */
 		STANDINGS_FLAG_FINAL = 2,      /* See standings in last hour */
-		STANDINGS_FLAG_OBSERVER = 4  /* See standings for unofficial entrants */
+		STANDINGS_FLAG_OBSERVER = 4    /* See standings for unofficial entrants */
 	};
 
 	pthread_rwlock_t _lock;

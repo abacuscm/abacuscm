@@ -62,7 +62,6 @@ uint32_t StandingsSupportModule::getStandingsFlags(uint32_t user_type) {
 		return 0;
 	case USER_TYPE_CONTESTANT:
 		return STANDINGS_FLAG_SEND;
-		break;
 	case USER_TYPE_OBSERVER:
 	case USER_TYPE_JUDGE:
 	case USER_TYPE_ADMIN:
@@ -211,9 +210,9 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 				if (!teamdata[w].tries.empty()) {
 					pos = standings.find(t->first);
 					if (pos == standings.end()
-						|| pos->second.time != teamdata[0].time
-						|| pos->second.tries != teamdata[0].tries) {
-						standings[t->first] = teamdata[0];
+						|| pos->second.time != teamdata[w].time
+						|| pos->second.tries != teamdata[w].tries) {
+						standings[t->first] = teamdata[w];
 						have_update[w] = true;
 					}
 				}
