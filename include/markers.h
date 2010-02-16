@@ -20,6 +20,7 @@
 #include <string>
 #include <queue>
 #include <utility>
+#include <csignal>
 
 class ClientConnection;
 class MessageBlock;
@@ -35,7 +36,7 @@ private:
 	std::list<uint32_t> _problems;
 	std::priority_queue<std::pair<time_t, std::pair<ClientConnection*, uint32_t> > > _issue_times;
 	uint32_t _timeout;
-	bool _shouldTerminate;
+	volatile sig_atomic_t _shouldTerminate;
 
 	void issue(ClientConnection*, uint32_t);
 	void real_enqueueSubmission(uint32_t);

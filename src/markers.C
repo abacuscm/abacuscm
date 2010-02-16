@@ -32,6 +32,7 @@ void *checkForTimeoutsThread(void *) {
 
 Markers::Markers() {
 	pthread_mutex_init(&_lock, NULL);
+	_shouldTerminate = 0;
 }
 
 Markers::~Markers() {
@@ -215,16 +216,16 @@ void Markers::startTimeoutCheckingThread() {
 		return;
 	}
 
-	_shouldTerminate = false;
+	_shouldTerminate = 0;
 	pthread_create(&_timeout_checker, NULL, checkForTimeoutsThread, NULL);
 }
 
 bool Markers::shouldTerminate() {
-	return _shouldTerminate;
+	return (_shouldTerminate != 0);
 }
 
 void Markers::shutdown() {
-	_shouldTerminate = true;
+	_shouldTerminate = 1;
 
 	// Only join the timeout thread if we created it
 	if (_timeout > 0) {
