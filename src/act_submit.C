@@ -175,7 +175,9 @@ bool ActGetSubmissibleProblems::int_process(ClientConnection *cc, MessageBlock *
 	int c = 0;
 	for (p = probs.begin(); p != probs.end(); p++, c++) {
 		uint32_t problem_id = *p;
-		if (utype != USER_TYPE_ADMIN && !db->isSubmissionAllowed(user_id, problem_id)) {
+		if (utype != USER_TYPE_ADMIN && utype != USER_TYPE_JUDGE &&
+			!db->isSubmissionAllowed(user_id, problem_id))
+		{
 			c--;
 			continue;
 		}
