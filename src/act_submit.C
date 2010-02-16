@@ -161,6 +161,7 @@ bool ActGetProblems::int_process(ClientConnection *cc, MessageBlock *) {
 
 bool ActGetSubmissibleProblems::int_process(ClientConnection *cc, MessageBlock *) {
 	uint32_t user_id = cc->getProperty("user_id");
+	uint32_t utype = cc->getProperty("user_type");
 
 	DbCon *db = DbCon::getInstance();
 	if(!db)
@@ -174,7 +175,7 @@ bool ActGetSubmissibleProblems::int_process(ClientConnection *cc, MessageBlock *
 	int c = 0;
 	for (p = probs.begin(); p != probs.end(); p++, c++) {
 		uint32_t problem_id = *p;
-		if (!db->isSubmissionAllowed(user_id, problem_id)) {
+		if (utype != USER_TYPE_ADMIN && !db->isSubmissionAllowed(user_id, problem_id)) {
 			c--;
 			continue;
 		}
@@ -492,6 +493,8 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissionsource", &_act_get_submission_source);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getsubmissibleproblems", &_act_get_submissible_problems);
 	ClientAction::registerAction(USER_TYPE_OBSERVER, "getsubmissibleproblems", &_act_get_submissible_problems);
+	ClientAction::registerAction(USER_TYPE_JUDGE, "getsubmissibleproblems", &_act_get_submissible_problems);
+	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissibleproblems", &_act_get_submissible_problems);
 	Message::registerMessageFunctor(TYPE_ID_SUBMISSION, create_submission_msg);
 
 	ClientEventRegistry::getInstance().registerEvent("updatesubmissions");
