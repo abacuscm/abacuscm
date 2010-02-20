@@ -1285,7 +1285,6 @@ void MainWindow::customEvent(QCustomEvent *ev) {
 }
 
 void MainWindow::keepalive(const MessageBlock *) {
-	log(LOG_DEBUG, "Received keepalive");
 	keepaliveTimer->stop();
 	keepaliveTimer->start(KEEPALIVE_TIMEOUT, true);
 }
