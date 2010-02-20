@@ -101,8 +101,11 @@ bool ThreadSSL::postProcess(Status &stat, int fd, int len, Mode mode) {
 		return true;    // pass error up to caller
 	}
 
-	// We only get here if we need to poll
-	while (poll(pfds, _shutdown_notify_read != -1 ? 2 : 1, -1) < 0) {
+	/* We only get here if we need to poll. The timeout is just a
+	 * belt-and-braces to make sure that if we have a race condition in which
+	 * we miss the data arriving, we get another chance to go around again.
+	 */
+	while (poll(pfds, _shutdown_notify_read != -1 ? 2 : 1, 10000) < 0) {
 		if (errno != EINTR) {
 			stat.err = SSL_ERROR_SYSCALL;
 			return true;
