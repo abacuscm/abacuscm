@@ -3,7 +3,7 @@ moddir = modules
 peermessenger = udtcpmessenger
 dbconnector = dbmysql
 support = user,timer,submission,standings
-actions = auth,passwd,adduser,addserver,whatami,problemtypes,problemmanip,status,serverlist,submit,events,startstop,mark,problem_subscription,clarify,contesttime,standings
+actions = auth,passwd,adduser,addserver,whatami,problemtypes,problemmanip,status,serverlist,submit,events,startstop,mark,clarify,contesttime,standings
 problemtypes = testcasedriventype
 
 [udtcpmessenger]
