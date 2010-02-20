@@ -111,7 +111,7 @@ void real_lerror(const char*fname, int line_num, const char* prefix) {
 }
 
 void real_log_ssl_errors(const char* fname, int line_num, const char* prefix, unsigned ssl_err) {
-	log(LOG_ERR, "%s (%s:%d): OpenSSL error: 0x%x", ssl_err);
+	log(LOG_ERR, "%s (%s:%d): OpenSSL error: 0x%x", prefix, fname, line_num, ssl_err);
 	unsigned err = ERR_get_error();
 	if(!err) {
 		log(LOG_ERR, "%s (%s:%d): Unknown OpenSSL error!  This should _never_ happen!", prefix, fname, line_num);
