@@ -697,6 +697,12 @@ void MainWindowCaller::process(QWidget* wid) {
 }
 
 // Would've prefered a single function here ...
+
+static void keepaliveFunctor(const MessageBlock*, void*) {
+	GUIEvent *ev = new MainWindowCaller(&MainWindow::keepalive);
+	ev->post();
+}
+
 static void updateStatusFunctor(const MessageBlock*, void*) {
 	GUIEvent *ev = new MainWindowCaller(&MainWindow::updateStatus);
 	ev->post();
@@ -779,6 +785,9 @@ MainWindow::MainWindow() {
 	connect(timer, SIGNAL(timeout()), this, SLOT(doTimer()));
 	timer->start(1000, false); // Updates clock once per second
 
+	keepaliveTimer = new QTimer(this, "keepalive_timer");
+	connect(keepaliveTimer, SIGNAL(timeout()), this, SLOT(doCloseStaleConnection()));
+
 	_submit_dialog = NULL;
 	_submit_file_dialog = NULL;
 }
@@ -855,9 +864,6 @@ void MainWindow::doFileConnect() {
 			std::string uname = _login_dialog.username->text();
 			std::string pass = _login_dialog.password->text();
 			if(_server_con.auth(uname, pass)) {
-				QMessageBox("Connected", "You are now connected to the server",
-						QMessageBox::Information, QMessageBox::Ok,
-						QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
 				std::string type = _server_con.whatAmI();
 				switchType(type);
 				fileConnectAction->setEnabled(false);
@@ -873,8 +879,16 @@ void MainWindow::doFileConnect() {
 				_server_con.registerEventCallback("updateclarificationrequests", updateClarificationRequestsFunctor, NULL);
 				_server_con.registerEventCallback("updateclarifications", updateClarificationsFunctor, NULL);
 				_server_con.registerEventCallback("updateclock", updateStatusFunctor, NULL);
+				_server_con.registerEventCallback("keepalive", keepaliveFunctor, NULL);
 				_server_con.subscribeTime();
 				doForceRefresh();
+
+				// start our timer to monitor for keepalives
+				keepaliveTimer->start(KEEPALIVE_TIMEOUT, true);
+
+				QMessageBox("Connected", "You are now connected to the server",
+						QMessageBox::Information, QMessageBox::Ok,
+						QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
 			} else {
 				_server_con.deregisterEventCallback("close", server_disconnect);
 				_server_con.disconnect();
@@ -885,6 +899,16 @@ void MainWindow::doFileConnect() {
 					QMessageBox::Critical, QMessageBox::Ok, QMessageBox::NoButton,
 					QMessageBox::NoButton, this).exec();
 	}
+}
+
+void MainWindow::doCloseStaleConnection() {
+	// If we haven't seen a keepalive message for a while, then we forcibly close
+	// the connection to prevent future lockups in the client.
+	NotifyEvent *ne = new NotifyEvent("Server Disconnected", "Your connection to the server has timed out", QMessageBox::Critical);
+	ne->post();
+
+	GUIEvent *ev = new MainWindowCaller(&MainWindow::serverDisconnect);
+	ev->post();
 }
 
 void MainWindow::doFileDisconnect() {
@@ -1258,6 +1282,12 @@ void MainWindow::customEvent(QCustomEvent *ev) {
 		guiev->process(this);
 	else
 		log(LOG_DEBUG, "Unknown QCustomEvent!!!");
+}
+
+void MainWindow::keepalive(const MessageBlock *) {
+	log(LOG_DEBUG, "Received keepalive");
+	keepaliveTimer->stop();
+	keepaliveTimer->start(KEEPALIVE_TIMEOUT, true);
 }
 
 void MainWindow::updateStatus(const MessageBlock *) {

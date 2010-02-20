@@ -1400,6 +1400,7 @@
     <slot access="protected" specifier="pure virtual">doAdminCreateUser()</slot>
     <slot access="protected" specifier="pure virtual">doAdminStartStop()</slot>
     <slot access="protected" specifier="pure virtual">doTimer()</slot>
+    <slot access="protected" specified="pure virtual">doCloseStaleConnection()</slot>
     <slot access="protected" specifier="pure virtual">sortStandings()</slot>
     <slot access="protected" specifier="pure virtual">doForceRefresh()</slot>
 </slots>
