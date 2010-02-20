@@ -187,12 +187,25 @@ bool ServerConnection::disconnect() {
 void ServerConnection::processMB(MessageBlock *mb) {
 	if(mb->action() == "ok" || mb->action() == "err") {
 		pthread_mutex_lock(&_lock_response);
-		if(_response)
+		if(_response) {
 			log(LOG_WARNING, "Losing result - this could potentially cause problems");
-		_response = mb;
+			delete mb;
+		} else {
+			_response = mb;
+		}
 		pthread_cond_signal(&_cond_response);
 		pthread_mutex_unlock(&_lock_response);
 	} else {
+		if (mb->action() == "close") {
+			pthread_mutex_lock(&_lock_response);
+			if (_response == NULL) {
+				_response = new MessageBlock("err");
+				(*_response)["msg"] = "Connection terminated while processing request";
+			}
+			pthread_cond_signal(&_cond_response);
+			pthread_mutex_unlock(&_lock_response);
+		}
+
 		log(LOG_DEBUG, "Received event '%s'", mb->action().c_str());
 		// Handle clarification reply events that encode newlines
 		for (MessageHeaders::iterator i = mb->begin(); i != mb->end(); i++)
@@ -217,6 +230,10 @@ MessageBlock* ServerConnection::sendMB(MessageBlock *mb) {
 		return NULL;
 	}
 
+	pthread_mutex_lock(&_lock_response);
+	delete _response;
+	_response = NULL;
+	pthread_mutex_unlock(&_lock_response);
 	if(mb->writeToSSL(_ssl)) {
 		pthread_mutex_lock(&_lock_response);
 		while(!_response)
