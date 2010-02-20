@@ -42,13 +42,13 @@ ClientConnection::~ClientConnection() {
 		delete _message;
 
 	if(_ssl) {
-		log(LOG_DEBUG, "Shutting down (incomplete) connection");
+		log(LOG_DEBUG, "Shutting down (incomplete) connection %p", this);
 		SSL_shutdown(_ssl);
 		SSL_free(_ssl);
 		_ssl = NULL;
 	}
 	if(_tssl) {
-		log(LOG_DEBUG, "Shutting down connection");
+		log(LOG_DEBUG, "Shutting down connection %p", this);
 		delete _tssl;
 		_tssl = NULL;
 	}
