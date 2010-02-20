@@ -175,7 +175,7 @@ bool MessageBlock::writeBlockToSSL(const char *buffer, int length, ThreadSSL *ss
 	ThreadSSL::Status status = ssl->write(buffer, length, ThreadSSL::BLOCK_FULL);
 	if (status.err != SSL_ERROR_NONE)
 	{
-		log_ssl_errors("SSL_write");
+		log_ssl_errors_with_err("SSL_write", status.err);
 		return false;
 	}
 	assert(status.processed == length);
