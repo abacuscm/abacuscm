@@ -923,6 +923,9 @@ void MainWindow::doFileDisconnect() {
 	changePasswordAction->setEnabled(false);
 	clarifyButton->setEnabled(false);
 
+	// Stop the keepalive timer
+	keepaliveTimer->stop();
+
 	switchType("");
 	doForceRefresh();
 }
