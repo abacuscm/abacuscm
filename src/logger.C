@@ -110,10 +110,12 @@ void real_lerror(const char*fname, int line_num, const char* prefix) {
 	log(LOG_ERR, "%s (%s:%d): %s", prefix, fname, line_num, strerror(errno));
 }
 
-void real_log_ssl_errors(const char* fname, int line_num, const char* prefix) {
-	unsigned err = ERR_get_error();
+void real_log_ssl_errors(const char* fname, int line_num, const char* prefix, unsigned err) {
+	if (!err)
+		err = ERR_get_error();
 	if(!err) {
 		log(LOG_ERR, "%s (%s:%d): Unknown OpenSSL error!  This should _never_ happen!", prefix, fname, line_num);
+		log(LOG_ERR, "%s (%s:%d): %s", prefix, fname, line_num, strerror(errno));
 	} else 	while(err) {
 		log(LOG_ERR, "%s (%s:%d): %s (0x%x)", prefix, fname, line_num, ERR_reason_error_string(err), err);
 		err = ERR_get_error();

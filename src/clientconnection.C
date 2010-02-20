@@ -72,7 +72,7 @@ bool ClientConnection::initiate_ssl() {
 	}
 
 
-	switch(SSL_get_error(_ssl, SSL_accept(_ssl))) {
+	switch(unsigned err = SSL_get_error(_ssl, SSL_accept(_ssl))) {
 		case SSL_ERROR_NONE:
 			_tssl = new(nothrow) ThreadSSL(_ssl);
 			if (_tssl == NULL) {
@@ -85,7 +85,7 @@ bool ClientConnection::initiate_ssl() {
 		case SSL_ERROR_WANT_WRITE:
 			break;
 		default:
-			log_ssl_errors("SSL_accept");
+			log_ssl_errors_with_err("SSL_accept", err);
 			goto err;
 	}
 
@@ -138,7 +138,7 @@ bool ClientConnection::process_data() {
 			// connection shut down
 			return false;
 		default:
-			log_ssl_errors("SSL_read");
+			log_ssl_errors_with_err("SSL_read", status.err);
 			return false;
 	}
 }
