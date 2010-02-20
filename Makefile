@@ -71,6 +71,7 @@ TARGET_MODS += dbmysql \
 	support_submission \
 	support_timer \
 	support_user \
+	support_keepalive \
 	act_addserver \
 	act_adduser \
 	act_auth \
