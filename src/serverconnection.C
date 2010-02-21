@@ -77,7 +77,7 @@ bool ServerConnection::connect(string server, string service) {
 
 		if(!SSL_CTX_load_verify_locations(_ctx,
 					config["server"]["cacert"].c_str(), NULL)) {
-			log_ssl_errors("SSL_CTX_load_verify_locations");
+			log(LOG_ERR, "Failed to load certificate. Please check that your configuration file has the correct path in the 'cacert' line.");
 			SSL_CTX_free(_ctx);
 			_ctx = NULL;
 			goto err;
