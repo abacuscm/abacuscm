@@ -868,6 +868,7 @@ void MainWindow::doFileConnect() {
 				switchType(type);
 				fileConnectAction->setEnabled(false);
 				fileDisconnectAction->setEnabled(true);
+				abacusForce_RefreshAction->setEnabled(true);
 				changePasswordAction->setEnabled(true);
 				clarifyButton->setEnabled(true);
 
@@ -920,8 +921,14 @@ void MainWindow::doFileDisconnect() {
 
 	fileConnectAction->setEnabled(true);
 	fileDisconnectAction->setEnabled(false);
+	abacusForce_RefreshAction->setEnabled(false);
 	changePasswordAction->setEnabled(false);
 	clarifyButton->setEnabled(false);
+	setQuiet(tabAbacus);
+	setQuiet(tabStandings);
+	setQuiet(tabClarificationRequests);
+	setQuiet(tabClarifications);
+	setQuiet(tabSubmissions);
 
 	// Stop the keepalive timer
 	keepaliveTimer->stop();

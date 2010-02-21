@@ -1073,6 +1073,9 @@
         <property name="name">
             <cstring>abacusForce_RefreshAction</cstring>
         </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
         <property name="text">
             <string>Force refresh</string>
         </property>
