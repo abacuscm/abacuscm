@@ -13,7 +13,7 @@ RANLIB ?= ranlib
 CFLAGS ?= -W -Wall
 
 CFLAGS += -Iinclude
-LDFLAGS += -rdynamic -Llib
+LDFLAGS += -rdynamic -Llib -lrt
 
 ifneq ($(EXTRA_FLAGS),)
 CFLAGS += $(EXTRA_FLAGS)

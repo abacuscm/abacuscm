@@ -66,6 +66,11 @@ private:
 	pthread_cond_t _cond_response;
 	MessageBlock* _response;
 
+	pthread_t _keepalive_thread;
+	pthread_mutex_t _lock_keepalive;
+	pthread_cond_t _cond_keepalive;
+	bool _kill_keepalive_thread;
+
 	pthread_mutex_t _lock_eventmap;
 	EventMap _eventmap;
 
@@ -81,6 +86,8 @@ private:
 	MessageBlock *sendMB(MessageBlock *mb);
 	void* receive_thread();
 
+	void *keepalive_thread();
+
 	bool simpleAction(MessageBlock &mb);
 	std::vector<std::string> vectorAction(MessageBlock &mb, std::string prefix);
 	MultiValuedList multiVectorAction(MessageBlock &mb, std::list<std::string> attrs);
@@ -92,6 +99,7 @@ private:
 	static MultiValuedList multiListFromMB(MessageBlock &mb, std::list<std::string> attrlst);
 
 	static void* thread_spawner(void*);
+	static void* keepalive_spawner(void*);
 public:
 	ServerConnection();
 	~ServerConnection();

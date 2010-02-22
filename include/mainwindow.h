@@ -59,9 +59,6 @@ private:
 	QTimer *timer;
 	time_t projected_stop;
 
-	// Timer to make sure that the connection to the server is alive
-	QTimer *keepaliveTimer;
-
 	/* Look up internal data by ID */
 	std::map<uint32_t, ClarificationRequestItem *> clarificationRequestMap;
 	std::map<uint32_t, ClarificationItem *> clarificationMap;
@@ -88,7 +85,6 @@ private:
 protected:
 	virtual void doHelpAbout();
 	virtual void doFileConnect();
-	virtual void doCloseStaleConnection();
 	virtual void doFileDisconnect();
 	virtual void doForceRefresh();
 	virtual void doAdminCreateUser();
@@ -116,7 +112,6 @@ public:
 	// we can't cast member function pointers to void* - no idea
 	// why though - can probably memcpy them but that would be
 	// even uglier.
-	void keepalive(const MessageBlock *mb = NULL);
 	void updateStandings(const MessageBlock *mb);
 	void updateSubmissions(const MessageBlock *mb);
 	void updateClarificationRequests(const MessageBlock *mb = NULL);

@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <algorithm>
+#include <time.h>
 
 // 16K is the max size of an SSL block, thus
 // optimal in terms of speed, but memory intensive.
@@ -31,6 +32,8 @@
 
 // Character used to escape newlines
 #define NEWLINE_ESCAPE_CHAR ('\001')
+
+#define KEEPALIVE_INTERVAL 180
 
 using namespace std;
 
@@ -42,8 +45,10 @@ ServerConnection::ServerConnection() {
 
 	pthread_mutex_init(&_lock_response, NULL);
 	pthread_mutex_init(&_lock_eventmap, NULL);
+	pthread_mutex_init(&_lock_keepalive, NULL);
 
 	pthread_cond_init(&_cond_response, NULL);
+	pthread_cond_init(&_cond_keepalive, NULL);
 }
 
 ServerConnection::~ServerConnection() {
@@ -147,6 +152,12 @@ bool ServerConnection::connect(string server, string service) {
 		goto err;
 	}
 
+	if (pthread_create(&_keepalive_thread, NULL, keepalive_spawner, this) != 0)
+	{
+		log(LOG_ERR, "failed to create keepalive thread");
+		goto err;
+	}
+
 	return true;
 err:
 	if(ssl) {
@@ -176,6 +187,13 @@ bool ServerConnection::disconnect() {
 	_ssl->startShutdown();
 	pthread_join(_receiver_thread, NULL);
 
+	// Terminate the keepalive thread
+	pthread_mutex_lock(&_lock_keepalive);
+	_kill_keepalive_thread = true;
+	pthread_cond_signal(&_cond_keepalive);
+	pthread_mutex_unlock(&_lock_keepalive);
+	pthread_join(_keepalive_thread, NULL);
+
 	delete _ssl;
 	_ssl = NULL;
 	close(_sock);
@@ -196,7 +214,9 @@ void ServerConnection::processMB(MessageBlock *mb) {
 		pthread_cond_signal(&_cond_response);
 		pthread_mutex_unlock(&_lock_response);
 	} else {
-		if (mb->action() == "close") {
+		// If we are closing the connection or timing out, then make sure to
+		// wake up the GUI event if it's waiting for a response.
+		if (mb->action() == "close" || mb->action() == "timedout") {
 			pthread_mutex_lock(&_lock_response);
 			if (_response == NULL) {
 				_response = new MessageBlock("err");
@@ -204,6 +224,15 @@ void ServerConnection::processMB(MessageBlock *mb) {
 			}
 			pthread_cond_signal(&_cond_response);
 			pthread_mutex_unlock(&_lock_response);
+		}
+
+		if (mb->action() == "keepalive") {
+			// If we receive a keepalive, we let our keepalive thread know about it.
+			// We also pass the keepalive on to any event listeners, in case clients
+			// want to do something when keepalive messages are received.
+			pthread_mutex_lock(&_lock_keepalive);
+			pthread_cond_signal(&_cond_keepalive);
+			pthread_mutex_unlock(&_lock_keepalive);
 		}
 
 		log(LOG_DEBUG, "Received event '%s'", mb->action().c_str());
@@ -1097,8 +1126,36 @@ void* ServerConnection::receive_thread() {
 	return NULL;
 }
 
+void *ServerConnection::keepalive_thread() {
+	struct timespec triggerTime;
+
+	pthread_mutex_lock(&_lock_keepalive);
+	_kill_keepalive_thread = false;
+	while (!_kill_keepalive_thread) {
+		clock_gettime(CLOCK_REALTIME, &triggerTime);
+		triggerTime.tv_sec  += KEEPALIVE_INTERVAL;
+		// If the condition is triggered, then this means that we either received
+		// a keepalive, or are terminating. If there is an error then either
+		// something went horribly wrong or we timed out, in which case we should
+		// terminate.
+		if (pthread_cond_timedwait(&_cond_keepalive, &_lock_keepalive, &triggerTime) != 0) {
+			pthread_mutex_unlock(&_lock_keepalive);
+			_kill_keepalive_thread = true;
+			pthread_mutex_lock(&_lock_keepalive);
+			processMB(new MessageBlock("timedout"));
+		}
+	}
+	pthread_mutex_unlock(&_lock_keepalive);
+
+	return NULL;
+}
+
 void* ServerConnection::thread_spawner(void *p) {
 	return ((ServerConnection*)p)->receive_thread();
+}
+
+void* ServerConnection::keepalive_spawner(void *p) {
+	return ((ServerConnection*)p)->keepalive_thread();
 }
 
 static void init() __attribute__((constructor));
