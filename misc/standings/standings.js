@@ -103,13 +103,20 @@ function update_table(new_data)
 
 		html += '<tr class="' + classes + '">';
 		fields = [];
+		fieldclass = [];
 		fields[COLUMN_PLACE] = tie_place;
+		fieldclass[COLUMN_PLACE] = ' class="center"';
 		fields[COLUMN_USERNAME] = escapeHTML(data[row][STANDING_RAW_USERNAME]);
+		fieldclass[COLUMN_USERNAME] = '';
 		fields[COLUMN_FRIENDLYNAME] = escapeHTML(data[row][STANDING_RAW_FRIENDLYNAME]);
+		fieldclass[COLUMN_FRIENDLYNAME] = '';
 		fields[COLUMN_TOTAL_TIME] = escapeHTML(timeToString(data[row][STANDING_RAW_TOTAL_TIME]));
+		fieldclass[COLUMN_TOTAL_TIME] = '';
 		fields[COLUMN_TOTAL_SOLVED] = escapeHTML(data[row][STANDING_RAW_TOTAL_SOLVED]);
+		fieldclass[COLUMN_TOTAL_SOLVED] = ' class="center"';
 		for (i = STANDING_RAW_SOLVED; i < data[row].length; i++)
 		{
+			fieldclass.push(' class="center"');
 			if (data[row][i] > 1)
 				fields.push('<span class="correct">+' + (data[row][i] - 1) + '</span>');
 			else if (data[row][i] == 1)
@@ -120,7 +127,7 @@ function update_table(new_data)
 				fields.push('');
 		}
 		for (f in fields)
-			html += '<td>' + fields[f] + '</td>';
+			html += '<td' + fieldclass[f] + '>' + fields[f] + '</td>';
 		html += '</tr>';
 		parity++;
 
