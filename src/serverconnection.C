@@ -159,7 +159,7 @@ bool ServerConnection::connect(string server, string service) {
 	log(LOG_DEBUG, "TODO:  Check servername against cn of certificate");
 
 	pthread_mutex_lock(&_lock_keepalive);
-	_timed_out = false;
+	_kill_keepalive_thread = false;
 	pthread_mutex_unlock(&_lock_keepalive);
 	if (pthread_create(&_keepalive_thread, NULL, keepalive_spawner, this) != 0)
 	{
@@ -173,7 +173,7 @@ bool ServerConnection::connect(string server, string service) {
 
 		// Kill off the keepalive thread which we spawned earlier
 		pthread_mutex_lock(&_lock_keepalive);
-		_timed_out = true;
+		_kill_keepalive_thread = true;
 		pthread_cond_signal(&_cond_keepalive);
 		pthread_mutex_unlock(&_lock_keepalive);
 		pthread_join(_keepalive_thread, NULL);
@@ -211,7 +211,7 @@ bool ServerConnection::disconnect() {
 
 	// Terminate the keepalive thread
 	pthread_mutex_lock(&_lock_keepalive);
-	_timed_out = true;
+	_kill_keepalive_thread = true;
 	pthread_cond_signal(&_cond_keepalive);
 	pthread_mutex_unlock(&_lock_keepalive);
 	pthread_join(_keepalive_thread, NULL);
@@ -1152,7 +1152,7 @@ void* ServerConnection::receive_thread() {
 	}
 
 	pthread_mutex_lock(&_lock_keepalive);
-	timed_out = _timed_out;
+	timed_out = _kill_keepalive_thread;
 	pthread_mutex_unlock(&_lock_keepalive);
 
 	mb = new MessageBlock("close");
@@ -1172,7 +1172,7 @@ void *ServerConnection::keepalive_thread() {
 	struct timespec triggerTime;
 
 	pthread_mutex_lock(&_lock_keepalive);
-	while (!_timed_out) {
+	while (!_kill_keepalive_thread) {
 		clock_gettime(CLOCK_MONOTONIC, &triggerTime);
 		triggerTime.tv_sec  += KEEPALIVE_TIMEOUT;
 		// If the condition is triggered, then this means that we either received
@@ -1180,7 +1180,7 @@ void *ServerConnection::keepalive_thread() {
 		// something went horribly wrong or we timed out, in which case we should
 		// terminate.
 		if (pthread_cond_timedwait(&_cond_keepalive, &_lock_keepalive, &triggerTime) != 0) {
-			_timed_out = true;
+			_kill_keepalive_thread = true;
 			pthread_mutex_unlock(&_lock_keepalive);
 			startShutdown();
 			pthread_mutex_lock(&_lock_keepalive);

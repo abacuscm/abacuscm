@@ -69,7 +69,11 @@ private:
 	pthread_t _keepalive_thread;
 	pthread_mutex_t _lock_keepalive;
 	pthread_cond_t _cond_keepalive;
-	bool _timed_out;
+
+	/* While the receiver thread is live, this is also an indicator of whether
+	 * a keepalive timeout occurred.
+	 */
+	bool _kill_keepalive_thread;
 
 	pthread_mutex_t _lock_eventmap;
 	EventMap _eventmap;
