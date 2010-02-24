@@ -93,14 +93,21 @@ eval
 		}
 
 		my @out_fields = ('') x COLUMN_SOLVED;
+		my @out_classes = ('') x COLUMN_SOLVED;
 		$out_fields[COLUMN_PLACE] = $tie_place;
+		$out_classes[COLUMN_PLACE] = 'column_place';
 		$out_fields[COLUMN_USERNAME] = escapeHTML($fields[STANDING_RAW_USERNAME]);
+		$out_classes[COLUMN_USERNAME] = 'column_username';
 		$out_fields[COLUMN_FRIENDLYNAME] = escapeHTML($fields[STANDING_RAW_FRIENDLYNAME]);
+		$out_classes[COLUMN_FRIENDLYNAME] = 'column_friendlyname';
 		$out_fields[COLUMN_TOTAL_SOLVED] = $solved;
+		$out_classes[COLUMN_TOTAL_SOLVED] = 'column_total_solved';
 		$out_fields[COLUMN_TOTAL_TIME] = sprintf('%02d:%02d:%02d', $time / 3600, $time / 60 % 60, $time % 60);
+		$out_classes[COLUMN_TOTAL_TIME] = 'column_total_time';
 
 		foreach my $attempts (@fields[STANDING_RAW_SOLVED..$#fields])
 		{
+			push @out_classes, 'column_solved';
 			if ($attempts > 0)
 			{
 				my $base = ($attempts - 1);
@@ -119,7 +126,12 @@ eval
 		}
 
 		my $class = ($place & 1 ? "odd" : "even");
-		$replace{'BODY'} .= Tr({-class => $class}, td([@out_fields]));
+		my $row_html = '';
+		for (my $i = 0; $i < scalar(@out_fields); $i++)
+		{
+			$row_html .= td({class => $out_classes[$i]}, $out_fields[$i]);
+		}
+		$replace{'BODY'} .= Tr({-class => $class}, $row_html);
 	}
 	close(IN) or die("Error reading $standings_path: $!");
 

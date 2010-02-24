@@ -5,7 +5,12 @@ colgroup.problem col { width: 8ex; }
 tr.even { background-color: #eeeeee; }
 tr.search { background-color: #ffff88; }
 tr.even.search { background-color: #eeee88; }
-td.center { text-align: center; }
+td.column_place { text-align: center; }
+td.column_username { }
+td.column_friendlyname { }
+td.column_total_time { }
+td.column_total_solved { text-align: center; }
+td.column_solved { text-align: center; }
 td, th { border: 1px solid; }
 span.correct { font-weight: bold; color: green; }
 p.updated { font-size: small; }

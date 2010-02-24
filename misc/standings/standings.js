@@ -105,18 +105,18 @@ function update_table(new_data)
 		fields = [];
 		fieldclass = [];
 		fields[COLUMN_PLACE] = tie_place;
-		fieldclass[COLUMN_PLACE] = ' class="center"';
+		fieldclass[COLUMN_PLACE] = 'column_place';
 		fields[COLUMN_USERNAME] = escapeHTML(data[row][STANDING_RAW_USERNAME]);
-		fieldclass[COLUMN_USERNAME] = '';
+		fieldclass[COLUMN_USERNAME] = 'column_username';
 		fields[COLUMN_FRIENDLYNAME] = escapeHTML(data[row][STANDING_RAW_FRIENDLYNAME]);
-		fieldclass[COLUMN_FRIENDLYNAME] = '';
+		fieldclass[COLUMN_FRIENDLYNAME] = 'column_friendlyname';
 		fields[COLUMN_TOTAL_TIME] = escapeHTML(timeToString(data[row][STANDING_RAW_TOTAL_TIME]));
-		fieldclass[COLUMN_TOTAL_TIME] = '';
+		fieldclass[COLUMN_TOTAL_TIME] = 'column_total_time';
 		fields[COLUMN_TOTAL_SOLVED] = escapeHTML(data[row][STANDING_RAW_TOTAL_SOLVED]);
-		fieldclass[COLUMN_TOTAL_SOLVED] = ' class="center"';
+		fieldclass[COLUMN_TOTAL_SOLVED] = 'column_total_solved';
 		for (i = STANDING_RAW_SOLVED; i < data[row].length; i++)
 		{
-			fieldclass.push(' class="center"');
+			fieldclass.push('column_solved');
 			if (data[row][i] > 1)
 				fields.push('<span class="correct">+' + (data[row][i] - 1) + '</span>');
 			else if (data[row][i] == 1)
@@ -127,7 +127,7 @@ function update_table(new_data)
 				fields.push('');
 		}
 		for (f in fields)
-			html += '<td' + fieldclass[f] + '>' + fields[f] + '</td>';
+			html += '<td class="' + fieldclass[f] + '">' + fields[f] + '</td>';
 		html += '</tr>';
 		parity++;
 
