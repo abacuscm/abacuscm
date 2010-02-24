@@ -53,6 +53,7 @@ ServerConnection::ServerConnection() {
 	pthread_condattr_init(&keepalive_attr);
 	pthread_condattr_setclock(&keepalive_attr, CLOCK_MONOTONIC);
 	pthread_cond_init(&_cond_keepalive, &keepalive_attr);
+	pthread_condattr_destroy(&keepalive_attr);
 }
 
 ServerConnection::~ServerConnection() {
@@ -158,7 +159,7 @@ bool ServerConnection::connect(string server, string service) {
 	log(LOG_DEBUG, "TODO:  Check servername against cn of certificate");
 
 	pthread_mutex_lock(&_lock_keepalive);
-	_kill_keepalive_thread = false;
+	_timed_out = false;
 	pthread_mutex_unlock(&_lock_keepalive);
 	if (pthread_create(&_keepalive_thread, NULL, keepalive_spawner, this) != 0)
 	{
@@ -172,7 +173,7 @@ bool ServerConnection::connect(string server, string service) {
 
 		// Kill off the keepalive thread which we spawned earlier
 		pthread_mutex_lock(&_lock_keepalive);
-		_kill_keepalive_thread = true;
+		_timed_out = true;
 		pthread_cond_signal(&_cond_keepalive);
 		pthread_mutex_unlock(&_lock_keepalive);
 		pthread_join(_keepalive_thread, NULL);
@@ -210,7 +211,7 @@ bool ServerConnection::disconnect() {
 
 	// Terminate the keepalive thread
 	pthread_mutex_lock(&_lock_keepalive);
-	_kill_keepalive_thread = true;
+	_timed_out = true;
 	pthread_cond_signal(&_cond_keepalive);
 	pthread_mutex_unlock(&_lock_keepalive);
 	pthread_join(_keepalive_thread, NULL);
@@ -221,6 +222,23 @@ bool ServerConnection::disconnect() {
 	_sock = -1;
 
 	return true;
+}
+
+void ServerConnection::startShutdown() {
+	// If we are closing the connection or timing out, then make sure to
+	// wake up the GUI event if it's waiting for a response.
+	pthread_mutex_lock(&_lock_response);
+	if (_response == NULL) {
+		_response = new MessageBlock("err");
+		(*_response)["msg"] = "Connection terminated while processing request";
+	}
+	// In addition, we ensure that the connection is closed. This avoids a case where
+	// the GUI makes multiple requests to the server, and we timeout the connection
+	// in the middle of the first one.
+	_ssl->startShutdown();
+
+	pthread_cond_signal(&_cond_response);
+	pthread_mutex_unlock(&_lock_response);
 }
 
 void ServerConnection::processMB(MessageBlock *mb) {
@@ -237,20 +255,8 @@ void ServerConnection::processMB(MessageBlock *mb) {
 	} else {
 		// If we are closing the connection or timing out, then make sure to
 		// wake up the GUI event if it's waiting for a response.
-		if (mb->action() == "close" || mb->action() == "timedout") {
-			pthread_mutex_lock(&_lock_response);
-			if (_response == NULL) {
-				_response = new MessageBlock("err");
-				(*_response)["msg"] = "Connection terminated while processing request";
-			}
-			// In addition, we ensure that the connection is closed. This avoids a case where
-			// the GUI makes multiple requests to the server, and we timeout the connection
-			// in the middle of the first one.
-			_ssl->startShutdown();
-
-			pthread_cond_signal(&_cond_response);
-			pthread_mutex_unlock(&_lock_response);
-		}
+		if (mb->action() == "close")
+			startShutdown();
 
 		if (mb->action() == "keepalive") {
 			// If we receive a keepalive, we let our keepalive thread know about it.
@@ -1110,6 +1116,7 @@ bool ServerConnection::deregisterEventCallback(string event, EventCallback func)
 void* ServerConnection::receive_thread() {
 	char buffer[BFR_SIZE];
 	MessageBlock *mb = NULL;
+	bool timed_out;
 
 	log(LOG_DEBUG, "Starting ServerConnection receive_thread");
 	while(true) {
@@ -1121,7 +1128,6 @@ void* ServerConnection::receive_thread() {
 
 		char *pos = buffer;
 		if(res.err == SSL_ERROR_ZERO_RETURN) {
-			log(LOG_DEBUG, "Connection got shut down, terminating receive_thread");
 			break;
 		}
 		else while(res.processed > 0) {
@@ -1145,9 +1151,19 @@ void* ServerConnection::receive_thread() {
 		}
 	}
 
-	log(LOG_DEBUG, "Stopping ServerConnection receive_thread");
+	pthread_mutex_lock(&_lock_keepalive);
+	timed_out = _timed_out;
+	pthread_mutex_unlock(&_lock_keepalive);
 
-	processMB(new MessageBlock("close"));
+	mb = new MessageBlock("close");
+	(*mb)["timedout"] = (timed_out ? "1" : "0");
+	if (timed_out) {
+		log(LOG_DEBUG, "Connection timed out, terminating receive_thread");
+	}
+	else {
+		log(LOG_DEBUG, "Connection got shut down, terminating receive_thread");
+	}
+	processMB(mb);
 
 	return NULL;
 }
@@ -1156,7 +1172,7 @@ void *ServerConnection::keepalive_thread() {
 	struct timespec triggerTime;
 
 	pthread_mutex_lock(&_lock_keepalive);
-	while (!_kill_keepalive_thread) {
+	while (!_timed_out) {
 		clock_gettime(CLOCK_MONOTONIC, &triggerTime);
 		triggerTime.tv_sec  += KEEPALIVE_TIMEOUT;
 		// If the condition is triggered, then this means that we either received
@@ -1164,9 +1180,9 @@ void *ServerConnection::keepalive_thread() {
 		// something went horribly wrong or we timed out, in which case we should
 		// terminate.
 		if (pthread_cond_timedwait(&_cond_keepalive, &_lock_keepalive, &triggerTime) != 0) {
-			_kill_keepalive_thread = true;
+			_timed_out = true;
 			pthread_mutex_unlock(&_lock_keepalive);
-			processMB(new MessageBlock("timedout"));
+			startShutdown();
 			pthread_mutex_lock(&_lock_keepalive);
 		}
 	}

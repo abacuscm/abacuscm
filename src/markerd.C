@@ -19,7 +19,6 @@
 
 using namespace std;
 
-static ServerConnection _server_con;
 static Queue<MarkRequest*> _mark_requests;
 
 static void mark_request(const MessageBlock* mb, void*) {
@@ -44,6 +43,7 @@ int main(int argc, char **argv) {
 	log(LOG_DEBUG, "Loaded, proceeding to mark some code ...");
 
 	for (;;) {
+		ServerConnection _server_con;
 		if(!_server_con.connect(conf["server"]["address"], conf["server"]["service"]))
 			return -1;
 

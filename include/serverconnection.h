@@ -69,7 +69,7 @@ private:
 	pthread_t _keepalive_thread;
 	pthread_mutex_t _lock_keepalive;
 	pthread_cond_t _cond_keepalive;
-	bool _kill_keepalive_thread;
+	bool _timed_out;
 
 	pthread_mutex_t _lock_eventmap;
 	EventMap _eventmap;
@@ -100,6 +100,17 @@ private:
 
 	static void* receiver_spawner(void*);
 	static void* keepalive_spawner(void*);
+
+	/* Begin shutting down the connection. This should only be called by the
+	 * receiver thread on connection termination or the keepalive thread on a
+	 * timeout. It is safe to call it more than once.
+	 *
+	 * It will ensure that all threads waiting on SSL reads or writes are
+	 * interrupted, and will tell the main thread that something went wrong if
+	 * it is still expecting a response.
+	 */
+	void startShutdown();
+
 public:
 	ServerConnection();
 	~ServerConnection();
