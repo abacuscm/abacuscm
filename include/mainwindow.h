@@ -34,8 +34,6 @@ class ClarificationItem;
 class SubmissionItem;
 class StandingItem;
 
-#define KEEPALIVE_TIMEOUT 180000
-
 typedef struct {
 	int prio_level;
 	QString msg;

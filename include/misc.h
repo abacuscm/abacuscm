@@ -67,4 +67,8 @@ extern char *shortRunMessages[];
 
 #define NULL_TIME ((time_t) -1)
 
+// Keepalive constants
+#define KEEPALIVE_INTERVAL 120
+#define KEEPALIVE_TIMEOUT 180
+
 #endif

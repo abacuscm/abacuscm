@@ -33,8 +33,6 @@
 // Character used to escape newlines
 #define NEWLINE_ESCAPE_CHAR ('\001')
 
-#define KEEPALIVE_INTERVAL 180
-
 using namespace std;
 
 ServerConnection::ServerConnection() {
@@ -48,7 +46,13 @@ ServerConnection::ServerConnection() {
 	pthread_mutex_init(&_lock_keepalive, NULL);
 
 	pthread_cond_init(&_cond_response, NULL);
-	pthread_cond_init(&_cond_keepalive, NULL);
+
+	// When initialising the _cond_keepalive condition, we set it to use CLOCK_MONOTONIC for
+	// timed waits. This avoids any problems happening if the system clock changes.
+	pthread_condattr_t keepalive_attr;
+	pthread_condattr_init(&keepalive_attr);
+	pthread_condattr_setclock(&keepalive_attr, CLOCK_MONOTONIC);
+	pthread_cond_init(&_cond_keepalive, &keepalive_attr);
 }
 
 ServerConnection::~ServerConnection() {
@@ -56,6 +60,13 @@ ServerConnection::~ServerConnection() {
 		disconnect();
 	if(_ctx)
 		SSL_CTX_free(_ctx);
+
+	pthread_mutex_destroy(&_lock_response);
+	pthread_mutex_destroy(&_lock_eventmap);
+	pthread_mutex_destroy(&_lock_keepalive);
+
+	pthread_cond_destroy(&_cond_response);
+	pthread_cond_destroy(&_cond_keepalive);
 }
 
 bool ServerConnection::connect(string server, string service) {
@@ -146,15 +157,25 @@ bool ServerConnection::connect(string server, string service) {
 
 	log(LOG_DEBUG, "TODO:  Check servername against cn of certificate");
 
-	if (pthread_create(&_receiver_thread, NULL, thread_spawner, this) != 0)
-	{
-		log(LOG_ERR, "failed to create receiver thread");
-		goto err;
-	}
-
+	pthread_mutex_lock(&_lock_keepalive);
+	_kill_keepalive_thread = false;
+	pthread_mutex_unlock(&_lock_keepalive);
 	if (pthread_create(&_keepalive_thread, NULL, keepalive_spawner, this) != 0)
 	{
 		log(LOG_ERR, "failed to create keepalive thread");
+		goto err;
+	}
+
+	if (pthread_create(&_receiver_thread, NULL, receiver_spawner, this) != 0)
+	{
+		log(LOG_ERR, "failed to create receiver thread");
+
+		// Kill off the keepalive thread which we spawned earlier
+		pthread_mutex_lock(&_lock_keepalive);
+		_kill_keepalive_thread = true;
+		pthread_cond_signal(&_cond_keepalive);
+		pthread_mutex_unlock(&_lock_keepalive);
+		pthread_join(_keepalive_thread, NULL);
 		goto err;
 	}
 
@@ -222,6 +243,11 @@ void ServerConnection::processMB(MessageBlock *mb) {
 				_response = new MessageBlock("err");
 				(*_response)["msg"] = "Connection terminated while processing request";
 			}
+			// In addition, we ensure that the connection is closed. This avoids a case where
+			// the GUI makes multiple requests to the server, and we timeout the connection
+			// in the middle of the first one.
+			_ssl->startShutdown();
+
 			pthread_cond_signal(&_cond_response);
 			pthread_mutex_unlock(&_lock_response);
 		}
@@ -1130,19 +1156,18 @@ void *ServerConnection::keepalive_thread() {
 	struct timespec triggerTime;
 
 	pthread_mutex_lock(&_lock_keepalive);
-	_kill_keepalive_thread = false;
 	while (!_kill_keepalive_thread) {
-		clock_gettime(CLOCK_REALTIME, &triggerTime);
-		triggerTime.tv_sec  += KEEPALIVE_INTERVAL;
+		clock_gettime(CLOCK_MONOTONIC, &triggerTime);
+		triggerTime.tv_sec  += KEEPALIVE_TIMEOUT;
 		// If the condition is triggered, then this means that we either received
 		// a keepalive, or are terminating. If there is an error then either
 		// something went horribly wrong or we timed out, in which case we should
 		// terminate.
 		if (pthread_cond_timedwait(&_cond_keepalive, &_lock_keepalive, &triggerTime) != 0) {
-			pthread_mutex_unlock(&_lock_keepalive);
 			_kill_keepalive_thread = true;
-			pthread_mutex_lock(&_lock_keepalive);
+			pthread_mutex_unlock(&_lock_keepalive);
 			processMB(new MessageBlock("timedout"));
+			pthread_mutex_lock(&_lock_keepalive);
 		}
 	}
 	pthread_mutex_unlock(&_lock_keepalive);
@@ -1150,7 +1175,7 @@ void *ServerConnection::keepalive_thread() {
 	return NULL;
 }
 
-void* ServerConnection::thread_spawner(void *p) {
+void* ServerConnection::receiver_spawner(void *p) {
 	return ((ServerConnection*)p)->receive_thread();
 }
 

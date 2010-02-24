@@ -738,24 +738,23 @@ static void contestStartStop(const MessageBlock* mb, void*) {
 	ev->post();
 }
 
+volatile bool _timedOut = false;
+
 static void server_disconnect(const MessageBlock*, void*) {
-	NotifyEvent *ne = new NotifyEvent("Server Disconnected", "You have been disconnected from the server", QMessageBox::Critical);
+	NotifyEvent *ne;
+	if (_timedOut)
+		ne = new NotifyEvent("Server Disconnected", "Your connection to the server has timed out", QMessageBox::Critical);
+	else
+		ne = new NotifyEvent("Server Disconnected", "You have been disconnected from the server", QMessageBox::Critical);
 	ne->post();
 
 	GUIEvent *ev = new MainWindowCaller(&MainWindow::serverDisconnect);
 	ev->post();
 }
 
-static void timed_out(const MessageBlock *, void *) {
-	// If we haven't seen a keepalive message for a while, then we forcibly close
-	// the connection to prevent future lockups in the client.
-	NotifyEvent *ne = new NotifyEvent("Server Disconnected", "Your connection to the server has timed out", QMessageBox::Critical);
-	ne->post();
-
-	GUIEvent *ev = new MainWindowCaller(&MainWindow::serverDisconnect);
-	ev->post();
+static void timedOut(const MessageBlock*, void*) {
+	_timedOut = true;
 }
-
 
 /************************** MainWindow ******************************/
 MainWindow::MainWindow() {
@@ -876,6 +875,8 @@ void MainWindow::doFileConnect() {
 				changePasswordAction->setEnabled(true);
 				clarifyButton->setEnabled(true);
 
+				_timedOut = false;
+
 				_server_con.registerEventCallback("updatesubmissions", updateSubmissionsFunctor, NULL);
 				_server_con.registerEventCallback("updatestandings", updateStandingsFunctor, NULL);
 				_server_con.registerEventCallback("msg", event_msg, NULL);
@@ -884,7 +885,7 @@ void MainWindow::doFileConnect() {
 				_server_con.registerEventCallback("updateclarificationrequests", updateClarificationRequestsFunctor, NULL);
 				_server_con.registerEventCallback("updateclarifications", updateClarificationsFunctor, NULL);
 				_server_con.registerEventCallback("updateclock", updateStatusFunctor, NULL);
-				_server_con.registerEventCallback("timedout", timed_out, NULL);
+				_server_con.registerEventCallback("timedout", timedOut, NULL);
 				_server_con.subscribeTime();
 				doForceRefresh();
 

@@ -15,9 +15,8 @@
 #include "server.h"
 #include "clienteventregistry.h"
 #include "messageblock.h"
+#include "misc.h"
 #include <time.h>
-
-static const int KEEPALIVE_INTERVAL = 120;
 
 class KeepaliveSupportModule : public SupportModule {
 	DECLARE_SUPPORT_MODULE(KeepaliveSupportModule);

@@ -98,7 +98,7 @@ private:
 	static std::vector<std::string> vectorFromMB(MessageBlock &mb, std::string prefix);
 	static MultiValuedList multiListFromMB(MessageBlock &mb, std::list<std::string> attrlst);
 
-	static void* thread_spawner(void*);
+	static void* receiver_spawner(void*);
 	static void* keepalive_spawner(void*);
 public:
 	ServerConnection();
