@@ -43,50 +43,55 @@ int main(int argc, char **argv) {
 
 	log(LOG_DEBUG, "Loaded, proceeding to mark some code ...");
 
-	if(!_server_con.connect(conf["server"]["address"], conf["server"]["service"]))
-		return -1;
-
-	if(!_server_con.auth(conf["server"]["username"], conf["server"]["password"]))
-		return -1;
-
-	log(LOG_DEBUG, "Connected to server!");
-
-	_server_con.registerEventCallback("mark", mark_request, NULL);
-	_server_con.registerEventCallback("close", server_close, NULL);
-
-	if(!_server_con.becomeMarker())
-		return -1;
-
-	MarkRequest *mr;
-	while((mr = _mark_requests.dequeue()) != NULL) {
-		AttributeMap attrs;
-		if(!_server_con.getProblemAttributes(mr->prob_id, attrs)) {
-			log(LOG_CRIT, "Cannot function if we cannot retrieve problem attributes!");
+	for (;;) {
+		if(!_server_con.connect(conf["server"]["address"], conf["server"]["service"]))
 			return -1;
+
+		if(!_server_con.auth(conf["server"]["username"], conf["server"]["password"]))
+			return -1;
+
+		log(LOG_DEBUG, "Connected to server!");
+
+		_server_con.registerEventCallback("mark", mark_request, NULL);
+		_server_con.registerEventCallback("close", server_close, NULL);
+
+		if(!_server_con.becomeMarker())
+			return -1;
+
+		MarkRequest *mr;
+		while((mr = _mark_requests.dequeue()) != NULL) {
+			AttributeMap attrs;
+			if(!_server_con.getProblemAttributes(mr->prob_id, attrs)) {
+				log(LOG_CRIT, "Cannot function if we cannot retrieve problem attributes!");
+				return -1;
+			}
+
+			string problem_type = attrs["prob_type"];
+			ProblemMarker* marker = ProblemMarker::createMarker(problem_type);
+
+			if (!marker) {
+				log(LOG_CRIT, "Error locating marker for problem type '%s'.", attrs["prob_type"].c_str());
+				return -1;
+			}
+
+			marker->setServerCon(&_server_con);
+			marker->setMarkRequest(mr);
+			marker->setProblemAttributes(attrs);
+
+			marker->mark();
+			if(!marker->submitResult()) {
+				log(LOG_CRIT, "Great, failed to upload mark, bailing entirely ...");
+				return -1;
+			}
+
+			delete marker;
 		}
 
-		string problem_type = attrs["prob_type"];
-		ProblemMarker* marker = ProblemMarker::createMarker(problem_type);
+		log(LOG_INFO, "Server has disconnected. Sleeping for 10 seconds.");
 
-		if (!marker) {
-			log(LOG_CRIT, "Error locating marker for problem type '%s'.", attrs["prob_type"].c_str());
-			return -1;
-		}
-
-		marker->setServerCon(&_server_con);
-		marker->setMarkRequest(mr);
-		marker->setProblemAttributes(attrs);
-
-		marker->mark();
-		if(!marker->submitResult()) {
-			log(LOG_CRIT, "Great, failed to upload mark, bailing entirely ...");
-			return -1;
-		}
-
-		delete marker;
+		_server_con.disconnect();
+		sleep(10);
 	}
-
-	log(LOG_INFO, "Terminating");
 
 	return 0;
 }
