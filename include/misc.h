@@ -67,8 +67,4 @@ extern char *shortRunMessages[];
 
 #define NULL_TIME ((time_t) -1)
 
-// Keepalive times, in seconds
-#define KEEPALIVE_INTERVAL 120    // Interval at which server sends keepalives
-#define KEEPALIVE_TIMEOUT 180     // If no keepalive seen for this long, die
-
 #endif

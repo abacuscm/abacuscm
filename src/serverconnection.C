@@ -765,12 +765,24 @@ bool ServerConnection::submit(uint32_t prob_id, int fd, const string& lang) {
 	mb["lang"] = lang;
 
 	struct stat statbuf;
-	if(fstat(fd, &statbuf) < 0)
+	if(fstat(fd, &statbuf) < 0) {
+		lerror("fstat");
 		return false;
+	}
+
+	/* This is just to avoid sending a huge amount of data to the server, only
+	 * to have it reject it. The real check is in the server.
+	 */
+	if (statbuf.st_size > MAX_SUBMISSION_SIZE) {
+		log(LOG_ERR, "Your submission is too large (max %d bytes)", MAX_SUBMISSION_SIZE);
+		return false;
+	}
 
 	void *ptr = mmap(NULL, statbuf.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-	if(!ptr)
+	if(!ptr) {
+		lerror("mmap");
 		return false;
+	}
 	mb.setContent((char*)ptr, statbuf.st_size);
 	munmap(ptr, statbuf.st_size);
 

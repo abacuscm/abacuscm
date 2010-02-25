@@ -19,6 +19,7 @@
 #include "markers.h"
 #include "timersupportmodule.h"
 #include "submissionsupportmodule.h"
+#include "acmconfig.h"
 
 #include <sstream>
 #include <time.h>
@@ -80,6 +81,12 @@ public:
 bool ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
 	if(getTimerSupportModule()->contestStatus(Server::getId()) != TIMER_STATUS_STARTED)
 		return cc->sendError("You cannot submit solutions unless the contest is running");
+
+	if(mb->content_size() > MAX_SUBMISSION_SIZE) {
+		std::ostringstream msg;
+		msg << "Your submission is too large (max " << MAX_SUBMISSION_SIZE << " bytes)";
+		return cc->sendError(msg.str());
+	}
 
 	uint32_t user_id = cc->getProperty("user_id");
 	char *errptr;

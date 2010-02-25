@@ -1177,6 +1177,9 @@ void MainWindow::doSubmit() {
 		uint32_t prob_id = probs[_submit_dialog->problemSelection->currentItem()].id;
 		std::string lang = _submit_dialog->language->currentText();
 
+		/* The error paths here each log an error, so we don't need to check
+		 * the return value.
+		 */
 		_server_con.submit(prob_id, fd, lang);
 		::close(fd);
 	}
