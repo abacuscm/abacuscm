@@ -502,7 +502,7 @@ bool ActGetSubmissionSource::int_process(ClientConnection *cc, MessageBlock *mb)
 static vector<string> split_list(const string &s) {
 	vector<string> ans;
 	string::size_type start = 0;
-	while (start < s.size()) {
+	while (start < s.length()) {
 		string::size_type end = s.find_first_of(",", start);
 		if (end == string::npos)
 			end = s.length();
