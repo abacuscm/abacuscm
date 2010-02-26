@@ -951,10 +951,9 @@ void MainWindow::doChangePassword() {
 			QMessageBox("Password changed!", "Password successfully changed",
 					QMessageBox::Information, QMessageBox::Ok,
 					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
-		else
-			QMessageBox("Failed to change password!", "Something went wrong while changing password...",
-					QMessageBox::Critical, QMessageBox::Ok,
-					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+
+		// No need to report an error - the server will have sent us a more
+		// specific error
 	}
 }
 
