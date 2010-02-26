@@ -487,6 +487,12 @@ bool ServerConnection::startStop(bool global, bool start, time_t time) {
 	return simpleAction(mb);
 }
 
+vector<string> ServerConnection::getLanguages() {
+	MessageBlock mb("getlanguages");
+
+	return vectorAction(mb, "language");
+}
+
 vector<string> ServerConnection::getProblemTypes() {
 	MessageBlock mb("getprobtypes");
 

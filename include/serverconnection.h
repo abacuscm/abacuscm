@@ -132,6 +132,7 @@ public:
 
 	bool startStop(bool global, bool start, time_t time);
 
+	std::vector<std::string> getLanguages();
 	std::vector<std::string> getProblemTypes();
 	std::vector<ProblemInfo> getProblems();
 	std::vector<ProblemInfo> getSubmissibleProblems();

@@ -21,8 +21,13 @@
 #include "submissionsupportmodule.h"
 #include "acmconfig.h"
 
+#include <algorithm>
 #include <sstream>
+#include <vector>
+#include <string>
 #include <time.h>
+
+using namespace std;
 
 class ActSubmit : public ClientAction {
 protected:
@@ -54,6 +59,25 @@ protected:
 	bool int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
+class ActGetLanguages : public ClientAction {
+private:
+	vector<string> _languages;
+protected:
+	bool int_process(ClientConnection *cc, MessageBlock *mb);
+public:
+	ActGetLanguages();
+
+	const vector<string> &getLanguages();
+};
+
+static ActSubmit _act_submit;
+static ActGetProblems _act_getproblems;
+static ActGetSubmissions _act_getsubs;
+static ActSubmissionFileFetcher _act_submission_file_fetcher;
+static ActGetSubmissionSource _act_get_submission_source;
+static ActGetSubmissibleProblems _act_get_submissible_problems;
+static ActGetLanguages _act_get_languages;
+
 class SubmissionMessage : public Message {
 private:
 	uint32_t _submission_id;
@@ -63,14 +87,14 @@ private:
 	uint32_t _server_id;
 	uint32_t _content_size;
 	char* _content;
-	std::string _language;
+	string _language;
 protected:
 	virtual uint32_t storageRequired();
 	virtual uint32_t store(uint8_t* buffer, uint32_t size);
 	virtual uint32_t load(const uint8_t* buffer, uint32_t size);
 public:
 	SubmissionMessage();
-	SubmissionMessage(uint32_t sub_id, uint32_t prob_id, uint32_t user_id, const char* content, uint32_t content_size, std::string language);
+	SubmissionMessage(uint32_t sub_id, uint32_t prob_id, uint32_t user_id, const char* content, uint32_t content_size, string language);
 	virtual ~SubmissionMessage();
 
 	virtual bool process() const;
@@ -83,7 +107,7 @@ bool ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
 		return cc->sendError("You cannot submit solutions unless the contest is running");
 
 	if(mb->content_size() > MAX_SUBMISSION_SIZE) {
-		std::ostringstream msg;
+		ostringstream msg;
 		msg << "Your submission is too large (max " << MAX_SUBMISSION_SIZE << " bytes)";
 		return cc->sendError(msg.str());
 	}
@@ -119,10 +143,9 @@ bool ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
 
 	db->release();db=NULL;
 
-	std::string lang = (*mb)["lang"];
-
-	// TODO:  Proper check - this will do for now:
-	if(lang != "C" && lang != "C++" && lang != "Java" && lang != "Python")
+	string lang = (*mb)["lang"];
+	const vector<string> &languages = _act_get_languages.getLanguages();
+	if(find(languages.begin(), languages.end(), lang) == languages.end())
 		return cc->sendError("You have not specified the language");
 
 	uint32_t sub_id = Server::nextSubmissionId();
@@ -149,9 +172,9 @@ bool ActGetProblems::int_process(ClientConnection *cc, MessageBlock *) {
 	ProblemList::iterator p;
 	int c = 0;
 	for(p = probs.begin(); p != probs.end(); ++p, ++c) {
-		std::ostringstream ostrstrm;
+		ostringstream ostrstrm;
 		ostrstrm << c;
-		std::string cstr = ostrstrm.str();
+		string cstr = ostrstrm.str();
 		ostrstrm.str("");
 		ostrstrm << *p;
 
@@ -189,9 +212,9 @@ bool ActGetSubmissibleProblems::int_process(ClientConnection *cc, MessageBlock *
 			continue;
 		}
 
-		std::ostringstream ostrstrm;
+		ostringstream ostrstrm;
 		ostrstrm << c;
-		std::string cstr = ostrstrm.str();
+		string cstr = ostrstrm.str();
 		ostrstrm.str("");
 		ostrstrm << *p;
 
@@ -229,9 +252,9 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 	SubmissionList::iterator s;
 	int c = 0;
 	for(s = lst.begin(); s != lst.end(); ++s, ++c) {
-		std::ostringstream tmp;
+		ostringstream tmp;
 		tmp << c;
-		std::string cntr = tmp.str();
+		string cntr = tmp.str();
 
 		submission->submissionToMB(db, *s, mb, cntr);
 	}
@@ -251,7 +274,7 @@ SubmissionMessage::SubmissionMessage() {
 	_language = "";
 }
 
-SubmissionMessage::SubmissionMessage(uint32_t sub_id, uint32_t prob_id, uint32_t user_id, const char* content, uint32_t content_size, std::string language) {
+SubmissionMessage::SubmissionMessage(uint32_t sub_id, uint32_t prob_id, uint32_t user_id, const char* content, uint32_t content_size, string language) {
 	_submission_id = sub_id;
 	_time = ::time(NULL);
 	_user_id = user_id;
@@ -296,7 +319,7 @@ bool SubmissionMessage::process() const {
 
 	if (!result) {
 		AttributeList lst = db->getProblemAttributes(_prob_id);
-		std::string problem = lst["shortname"];
+		string problem = lst["shortname"];
 
 		MessageBlock mb("submission");
 		mb["msg"] = "Your submission for '" + problem + "' has failed - please notify the contest administrator";
@@ -386,7 +409,7 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
 	uint32_t uid = cc->getProperty("user_id");
 	uint32_t utype = cc->getProperty("user_type");
 
-	std::string request = (*mb)["request"];
+	string request = (*mb)["request"];
 	uint32_t submission_id = strtoll((*mb)["submission_id"].c_str(), NULL, 0);
 
 	MessageBlock result_mb("ok");
@@ -396,7 +419,7 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
 		// and that the submission belongs to this contestant
 		RunResult resinfo;
 		uint32_t utype;
-		std::string comment;
+		string comment;
 
 		if(db->getSubmissionState(
 								  submission_id,
@@ -422,13 +445,13 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
 
 	if (request == "count") {
 		uint32_t count = db->countMarkFiles(submission_id);
-		std::ostringstream str("");
+		ostringstream str("");
 		str << count;
 		result_mb["count"] = str.str();
 	}
 	else if (request == "data") {
 		uint32_t index = strtoll((*mb)["index"].c_str(), NULL, 0);
-		std::string name;
+		string name;
 		char *data;
 		uint32_t length;
 		bool result = db->getMarkFile(submission_id, index, name, &data, length);
@@ -440,7 +463,7 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
 		}
 
 		result_mb["name"] = name;
-		std::ostringstream str("");
+		ostringstream str("");
 		str << length;
 		result_mb["length"] = str.str();
 		result_mb.setContent((char *) data, length);
@@ -460,7 +483,7 @@ bool ActGetSubmissionSource::int_process(ClientConnection *cc, MessageBlock *mb)
 	uint32_t submission_id = strtoll((*mb)["submission_id"].c_str(), NULL, 0);
 	char* content;
 	int length;
-	std::string language;
+	string language;
 	uint32_t prob_id;
 
 	bool has_data = db->retrieveSubmission(submission_id, &content, &length, language, &prob_id);
@@ -475,12 +498,62 @@ bool ActGetSubmissionSource::int_process(ClientConnection *cc, MessageBlock *mb)
 	return cc->sendMessageBlock(&result_mb);
 }
 
-static ActSubmit _act_submit;
-static ActGetProblems _act_getproblems;
-static ActGetSubmissions _act_getsubs;
-static ActSubmissionFileFetcher _act_submission_file_fetcher;
-static ActGetSubmissionSource _act_get_submission_source;
-static ActGetSubmissibleProblems _act_get_submissible_problems;
+// Splits a comma-separated list into a vector
+static vector<string> split_list(const string &s) {
+	vector<string> ans;
+	string::size_type start = 0;
+	while (start < s.size()) {
+		string::size_type end = s.find_first_of(",", start);
+		if (end == string::npos)
+			end = s.length();
+		string item = s.substr(start, end - start);
+		if (count(ans.begin(), ans.end(), item) != 0)
+			log(LOG_WARNING, "Language '%s' listed twice, ignoring", item.c_str());
+		else
+			ans.push_back(item);
+		start = end + 1;
+	}
+	return ans;
+}
+
+ActGetLanguages::ActGetLanguages() {
+	const char * const all_languages = "C,C++,Python,Java";
+	vector<string> all = split_list(all_languages);
+
+	Config &conf = Config::getConfig();
+	string language_set = conf["contest"]["languages"];
+	if (language_set == "") {
+		log(LOG_WARNING, "Languages are not set, defaulting to all");
+		_languages = all;
+	} else {
+		_languages = split_list(language_set);
+		size_t i = 0;
+		while (i < _languages.size()) {
+			if (find(all.begin(), all.end(), _languages[i]) == all.end()) {
+				log(LOG_WARNING, "Ignoring unknown language '%s'", _languages[i].c_str());
+				_languages.erase(_languages.begin() + i);
+			} else
+				i++;
+		}
+		sort(_languages.begin(), _languages.end());
+	}
+}
+
+const vector<string> &ActGetLanguages::getLanguages() {
+	return _languages;
+}
+
+bool ActGetLanguages::int_process(ClientConnection *cc, MessageBlock *) {
+	MessageBlock result_mb("ok");
+
+	for (size_t i = 0; i < _languages.size(); i++) {
+		ostringstream header;
+		header << "language" << i;
+		result_mb[header.str()] = _languages[i];
+	}
+
+	return cc->sendMessageBlock(&result_mb);
+}
 
 static void init() __attribute__((constructor));
 static void init() {
@@ -504,6 +577,10 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_OBSERVER, "getsubmissibleproblems", &_act_get_submissible_problems);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "getsubmissibleproblems", &_act_get_submissible_problems);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissibleproblems", &_act_get_submissible_problems);
+	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getlanguages", &_act_get_languages);
+	ClientAction::registerAction(USER_TYPE_OBSERVER, "getlanguages", &_act_get_languages);
+	ClientAction::registerAction(USER_TYPE_JUDGE, "getlanguages", &_act_get_languages);
+	ClientAction::registerAction(USER_TYPE_ADMIN, "getlanguages", &_act_get_languages);
 	Message::registerMessageFunctor(TYPE_ID_SUBMISSION, create_submission_msg);
 
 	ClientEventRegistry::getInstance().registerEvent("updatesubmissions");

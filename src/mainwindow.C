@@ -1138,6 +1138,11 @@ void MainWindow::doSubmit() {
 		QMessageBox::critical(this, "Error", "There are no active problems to submit solutions for!", "O&k");
 		return;
 	}
+	vector<string> languages = _server_con.getLanguages();
+	if (languages.empty()) {
+		QMessageBox::critical(this, "Error", "There are no legal languages to submit in", "O&k");
+		return;
+	}
 
 	if (!_submit_dialog)
 	{
@@ -1163,6 +1168,17 @@ void MainWindow::doSubmit() {
 		if (text == old_text) new_item = i - probs.begin();
 	}
 	_submit_dialog->problemSelection->setCurrentItem(new_item);
+
+	old_text = _submit_dialog->language->currentText();
+	new_item = 0;
+
+	_submit_dialog->language->clear();
+	vector<string>::iterator j;
+	for(j = languages.begin(); j != languages.end(); ++j) {
+		_submit_dialog->language->insertItem(*j);
+		if (*j == old_text) new_item = j - languages.begin();
+	}
+	_submit_dialog->language->setCurrentItem(new_item);
 
 	if(_submit_dialog->exec()) {
 		// Do _NOT_ drop the ::s here - Qt has at least a close() function

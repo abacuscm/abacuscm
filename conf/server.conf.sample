@@ -54,4 +54,5 @@ udppeerport = 7368
 marker = yes
 
 [contest]
-duration=18000
+duration = 18000
+languages = C,C++,Python,Java
