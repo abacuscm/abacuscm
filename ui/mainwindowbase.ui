@@ -565,6 +565,20 @@
                             </spacer>
                             <widget class="QPushButton">
                                 <property name="name">
+                                    <cstring>submissionClarificationButton</cstring>
+                                </property>
+                                <property name="enabled">
+                                    <bool>false</bool>
+                                </property>
+                                <property name="text">
+                                    <string>Request &amp;Clarification</string>
+                                </property>
+                                <property name="accel">
+                                    <string>Alt+C</string>
+                                </property>
+                            </widget>
+                            <widget class="QPushButton">
+                                <property name="name">
                                     <cstring>submissionButton</cstring>
                                 </property>
                                 <property name="enabled">
@@ -1139,6 +1153,12 @@
         <slot>doSubmit()</slot>
     </connection>
     <connection>
+        <sender>submissionClarificationButton</sender>
+        <signal>clicked()</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>doRequestSubmissionClarification()</slot>
+    </connection>
+    <connection>
         <sender>MainWindowBase</sender>
         <signal>signalAdminControls(bool)</signal>
         <receiver>adminAdd_ServerAction</receiver>
@@ -1169,6 +1189,12 @@
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalContestantControls(bool)</signal>
+        <receiver>submissionClarificationButton</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
         <sender>maintabs</sender>
         <signal>currentChanged(QWidget*)</signal>
         <receiver>MainWindowBase</receiver>
@@ -1184,6 +1210,12 @@
         <sender>MainWindowBase</sender>
         <signal>signalJudgeControls(bool)</signal>
         <receiver>judgesSubscribeToProblemsAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalJudgeControls(bool)</signal>
+        <receiver>submissionClarificationButton</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
@@ -1315,6 +1347,12 @@
     <connection>
         <sender>MainWindowBase</sender>
         <signal>signalObserverControls(bool)</signal>
+        <receiver>submissionClarificationButton</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalObserverControls(bool)</signal>
         <receiver>nonContestInStandingsAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
@@ -1393,6 +1431,7 @@
     <slot access="protected" specifier="pure virtual">doAdminProblemConfig()</slot>
     <slot access="protected" specifier="pure virtual">doFileDisconnect()</slot>
     <slot access="protected" specifier="pure virtual">doSubmit()</slot>
+    <slot access="protected" specifier="pure virtual">doRequestSubmissionClarification()</slot>
     <slot access="protected" specifier="pure virtual">tabChanged( QWidget * newtab )</slot>
     <slot access="protected" specifier="pure virtual">doJudgeSubscribeToProblems()</slot>
     <slot access="protected" specifier="pure virtual">submissionHandler( QListViewItem * )</slot>

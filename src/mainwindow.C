@@ -1200,7 +1200,10 @@ void MainWindow::doSubmit() {
 	}
 }
 
-void MainWindow::doClarificationRequest() {
+// Generalised clarification request form handler. If prob_id is specified, then we automatically
+// choose the correct problem id from the list. If submission_id is specified, then we automatically
+// populate the request's text with a header that includes the submission id.
+void MainWindow::clarificationRequest(uint32_t submission_id, uint32_t prob_id) {
 	vector<ProblemInfo> probs = _server_con.getSubmissibleProblems();
 
 	ClarificationRequest cr;
@@ -1209,6 +1212,19 @@ void MainWindow::doClarificationRequest() {
 	cr.problemSelection->insertItem("General");
 	for(i = probs.begin(); i != probs.end(); ++i) {
 		cr.problemSelection->insertItem(i->code + ": " + i->name);
+		if (i->id == prob_id) {
+			// This is the problem id we have been passed, so set this entry
+			// as the current selection.
+			cr.problemSelection->setCurrentItem(cr.problemSelection->count() - 1);
+		}
+	}
+
+	if (submission_id != ~0U) {
+		// We have been given a submission ID, so use this to populate some default
+		// text in the clarification request.
+		ostringstream s;
+		s << "[Submission " << submission_id << "]\n";
+		cr.question->setText(s.str());
 	}
 
 	if(cr.exec()) {
@@ -1217,6 +1233,27 @@ void MainWindow::doClarificationRequest() {
 
 		_server_con.clarificationRequest(prob_id, (const char *) cr.question->text().utf8());
 	}
+}
+
+void MainWindow::doRequestSubmissionClarification() {
+	// The user has asked for a clarification request from the submissions window. If
+	// they have a submission selected, then we use that information to populate the
+	// initial information in the request.
+	QListViewItem *submission = submissions->selectedItem();
+	if (submission == NULL) {
+		// Nothing selected? Display the default clarification request form.
+		clarificationRequest(~0U, ~0U);
+	}
+	else {
+		SubmissionItem *item = (SubmissionItem *) submission;
+		clarificationRequest(item->getId(), item->getProblemId());
+	}
+}
+
+void MainWindow::doClarificationRequest() {
+	// For a regular clarification request, we have no specific submission or problem id
+	// that we should set default values for.
+	clarificationRequest(~0U, ~0U);
 }
 
 void MainWindow::doShowClarificationRequest(QListViewItem *item) {

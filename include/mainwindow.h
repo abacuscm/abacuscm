@@ -80,6 +80,8 @@ private:
 	template<typename T> void setSubmission(SubmissionItem *item, bool filter,
 											const std::set<int> &wanted_states,
 											T &submission);
+	void clarificationRequest(uint32_t submission_id, uint32_t prob_id);
+
 protected:
 	virtual void doHelpAbout();
 	virtual void doFileConnect();
@@ -89,6 +91,7 @@ protected:
 	virtual void doAdminProblemConfig();
 	virtual void doAdminStartStop();
 	virtual void doSubmit();
+	virtual void doRequestSubmissionClarification();
 	virtual void doClarificationRequest();
 	virtual void doShowClarificationRequest(QListViewItem*);
 	virtual void doShowClarificationReply(QListViewItem*);
