@@ -9,7 +9,7 @@
  */
 #include "misc.h"
 
-char *runMessages[6] = {
+const char *runMessages[6] = {
 	"Correct answer",
 	"Wrong answer",
 	"Time limit exceeded",
@@ -18,7 +18,7 @@ char *runMessages[6] = {
 	"Other - contact a judge"
 };
 
-char *shortRunMessages[6] = {
+const char *shortRunMessages[6] = {
 	"CORRECT",
 	"WRONG",
 	"TIME LIMIT",

@@ -62,8 +62,8 @@ static const int USER_MASK_MARKER = 1 << USER_TYPE_MARKER;
 static const int USER_MASK_OBSERVER = 1 << USER_TYPE_OBSERVER;
 static const int USER_MASK_ALL = USER_MASK_ADMIN | USER_MASK_JUDGE | USER_MASK_CONTESTANT | USER_MASK_MARKER | USER_MASK_OBSERVER;
 
-extern char *runMessages[];
-extern char *shortRunMessages[];
+extern const char *runMessages[];
+extern const char *shortRunMessages[];
 
 #define NULL_TIME ((time_t) -1)
 

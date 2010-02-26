@@ -43,6 +43,7 @@ int main(int argc, char **argv) {
 	log(LOG_DEBUG, "Loaded, proceeding to mark some code ...");
 
 	for (;;) {
+		MarkRequest *mr = NULL;
 		ServerConnection _server_con;
 		if(!_server_con.connect(conf["server"]["address"], conf["server"]["service"]))
 			goto retry;
@@ -65,7 +66,6 @@ int main(int argc, char **argv) {
 			goto disconnect;
 		}
 
-		MarkRequest *mr;
 		while((mr = _mark_requests.dequeue()) != NULL) {
 			AttributeMap attrs;
 			if(!_server_con.getProblemAttributes(mr->prob_id, attrs)) {
@@ -88,6 +88,8 @@ int main(int argc, char **argv) {
 			marker->mark();
 			if(!marker->submitResult()) {
 				log(LOG_CRIT, "Great, failed to upload mark, bailing entirely ...");
+				delete marker;
+				mr = NULL; // the ProblemMarker destructor frees the MarkRequest
 				goto disconnect;
 			}
 
@@ -96,10 +98,21 @@ int main(int argc, char **argv) {
 
 		log(LOG_INFO, "Server has disconnected");
 
-		disconnect:;
+		disconnect:
 		_server_con.disconnect();
 
-		retry:;
+		// Clean up any allocated MarkRequest instances, and clear the mark requests
+		// queue.
+		if (mr != NULL)
+			delete mr;
+
+		while (!_mark_requests.empty()) {
+			mr = _mark_requests.dequeue();
+			if (mr != NULL)
+				delete mr;
+		}
+
+		retry:
 		log(LOG_INFO, "Sleeping for 10 seconds");
 		sleep(10);
 	}
