@@ -53,7 +53,7 @@ static pthread_t thread_message_resender;
 static pthread_t thread_timed_actions;
 
 // This variable indicates that we are still running.
-static volatile bool abacusd_running = true;
+static volatile sig_atomic_t abacusd_running = true;
 
 // All the various Queue<>s
 static Queue<Message*> message_queue;

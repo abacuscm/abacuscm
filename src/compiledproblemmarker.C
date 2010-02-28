@@ -61,7 +61,7 @@ void CompiledProblemMarker::mark() {
 		log(LOG_ERR, "Failed to determine class name for user program.");
 		setResult(COMPILE_FAILED);
 		return;
-	};
+	}
 
 	fname = wdir + "/" + fname;
 
