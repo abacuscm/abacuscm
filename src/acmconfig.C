@@ -77,7 +77,7 @@ bool Config::load(const string& fname) {
 			while(p2 < len && conf_line[p2] != '=')
 				p2++;
 			int p3 = p2;
-			while(p3 && isspace(conf_line[--p3]));
+			while(p3 && isspace(conf_line[--p3])) {}
 			if(p3 < 0) {
 				cerr << "Ignoring invalid config on line " << line_num << ": " << conf_line << '\n';
 				continue;
