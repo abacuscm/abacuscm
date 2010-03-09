@@ -16,6 +16,7 @@
 #include "messageblock.h"
 
 #include <iostream>
+#include <cstdlib>
 
 using namespace std;
 
@@ -35,6 +36,9 @@ static void server_close(const MessageBlock*, void*) {
 }
 
 int main(int argc, char **argv) {
+	/* Guarantee a standard style of error messages from tools */
+	setenv("LC_ALL", "C", 1);
+
 	Config &conf = Config::getConfig();
 	conf.load(DEFAULT_MARKER_CONFIG);
 	if(argc > 1)
