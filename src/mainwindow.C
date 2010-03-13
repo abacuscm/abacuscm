@@ -174,7 +174,7 @@ static string summary_string(const string &s)
 		}
 		cut++;
 	}
-	if (cut < s.size()) {
+	if (cut < ans.size()) {
 		ans.erase(cut);
 		clipped = true;
 	}
