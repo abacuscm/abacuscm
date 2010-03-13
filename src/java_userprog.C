@@ -93,7 +93,7 @@ string Java_UserProg::sourceFilename(const Buffer& src) {
 	int i;
 	string sourcename = "";
 	regex_t reg_pkg;
-	if((i = regcomp(&reg_pkg, "^[[:space:]]*package[[:space:]]+([A-Za-z_$][A-Za-z0-9_$]*(\\.[A-Za-z_][A-Za-z0-9_$]*)*)[[:space:]]*;", REG_EXTENDED)) != 0) {
+	if((i = regcomp(&reg_pkg, "(^|[[:space:]])package[[:space:]]+([A-Za-z_$][A-Za-z0-9_$]*(\\.[A-Za-z_][A-Za-z0-9_$]*)*)[[:space:]]*;", REG_EXTENDED)) != 0) {
 		char err[1024];
 		regerror(i, &reg_pkg, err, 1024);
 		log(LOG_CRIT, "Error compiling java package name regex: %s", err);
@@ -108,13 +108,13 @@ string Java_UserProg::sourceFilename(const Buffer& src) {
 		return "";
 	}
 
-	regmatch_t pkg_match[3];
+	regmatch_t pkg_match[4];
 	regmatch_t cls_match[3];
 
 
 	char* source = strndup((char*)src.data(), src.size());
-	if(regexec(&reg_pkg, source, 3, pkg_match, 0) == 0) {
-		char *tmp = strndup(source + pkg_match[1].rm_so, pkg_match[1].rm_eo - pkg_match[1].rm_so);
+	if(regexec(&reg_pkg, source, 4, pkg_match, 0) == 0) {
+		char *tmp = strndup(source + pkg_match[2].rm_so, pkg_match[2].rm_eo - pkg_match[2].rm_so);
 		_classname = tmp;
 		_classname += ".";
 		free(tmp);
