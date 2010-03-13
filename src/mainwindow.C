@@ -634,7 +634,7 @@ int StandingItem::compare(QListViewItem *other, int col, bool ascending) const {
 		return QListViewItem::compare(other, col, ascending);
 
 	const StandingItem *i = static_cast<const StandingItem *>(other);
-	Score::CompareRanking ranking;
+	Score::CompareRankingStable ranking;
 	switch (col) {
 	case COLUMN_PLACE:
 		if (ranking(*this, *i))

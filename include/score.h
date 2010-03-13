@@ -50,6 +50,21 @@ public:
 		}
 	};
 
+	/* Like CompareRanking, but forces ties to break in a deterministic but
+	 * arbitrary way - used to sort standings to make them stable when there
+	 * are lots of teams on zero.
+	 */
+	struct CompareRankingStable {
+		bool operator()(const Score &a, const Score &b) const {
+			if (a._total_solved != b._total_solved)
+				return a._total_solved > b._total_solved;
+			else if (a._total_time < b._total_time)
+				return a._total_time < b._total_time;
+			else
+				return a._username < b._username;  // stabilise the sort
+		}
+	};
+
 	/* Identifies which score for a contestant is earlier in time */
 	struct CompareAttempts {
 		bool operator()(const Score &a, const Score &b) const {

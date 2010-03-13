@@ -50,7 +50,7 @@ typedef map<uint32_t, Standing> StandingMap;
 
 struct CompareStanding {
 	bool operator()(StandingMap::const_iterator a, StandingMap::const_iterator b) const {
-		return Score::CompareRanking()(a->second, b->second);
+		return Score::CompareRankingStable()(a->second, b->second);
 	}
 };
 
