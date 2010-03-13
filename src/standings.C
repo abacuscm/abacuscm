@@ -40,6 +40,8 @@ public:
 
 Standing::Standing(const list<string> &row) : _raw(row.begin(), row.end()) {
 	setId(strtoul(_raw[STANDING_RAW_ID].c_str(), NULL, 10));
+	setUsername(_raw[STANDING_RAW_USERNAME]);
+	setFriendlyname(_raw[STANDING_RAW_FRIENDLYNAME]);
 	setContestant(strtoul(_raw[STANDING_RAW_CONTESTANT].c_str(), NULL, 10) != 0);
 	setTotalTime(strtoull(_raw[STANDING_RAW_TOTAL_TIME].c_str(), NULL, 10));
 	for (size_t i = STANDING_RAW_SOLVED; i < _raw.size(); i++)
