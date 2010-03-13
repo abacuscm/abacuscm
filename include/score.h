@@ -58,7 +58,7 @@ public:
 		bool operator()(const Score &a, const Score &b) const {
 			if (a._total_solved != b._total_solved)
 				return a._total_solved > b._total_solved;
-			else if (a._total_time < b._total_time)
+			else if (a._total_time != b._total_time)
 				return a._total_time < b._total_time;
 			else
 				return a._username < b._username;  // stabilise the sort
