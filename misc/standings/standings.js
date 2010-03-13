@@ -78,7 +78,7 @@ function update_table(new_data)
 	var last_time;
 	var tie_place = 1;
 	var row;
-	var parity = 0;
+	var parity = 1;
 	for (row = 0; row < data.length; row++)
 	{
 		var classes = (parity & 1) ? 'odd' : 'even';
