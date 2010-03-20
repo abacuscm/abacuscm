@@ -1640,33 +1640,20 @@ void MainWindow::submissionHandler(QListViewItem *item) {
 			judgeDecisionDialog.FileSelector->insertItem("Contestant source");
 		}
 
-		int result = judgeDecisionDialog.exec();
+		RunResult result = static_cast<RunResult>(judgeDecisionDialog.exec());
 		switch (result) {
-		case 1:
+		case JUDGE:
 			// deferred
 			// in this case, we just do nothing
 			log(LOG_INFO, "Judge deferred marking of submission %u", submission_id);
-			return;
-		case 2:
+			break;
+		default:
 			// correct
 			// need to mark the problem as being correct
-			if (_server_con.mark(submission_id, CORRECT, "Correct answer", AttributeMap())) {
-				log(LOG_INFO, "Judge marked submission %u as correct", submission_id);
+			if (_server_con.mark(submission_id, result, runMessages[result], AttributeMap())) {
+				log(LOG_INFO, "Judge marked submission %u as %s", submission_id, runMessages[result]);
 			}
-			return;
-		case 3:
-			// wrong
-			// need to mark the problem as being wrong
-			if (_server_con.mark(submission_id, WRONG, "Wrong answer", AttributeMap())) {
-				log(LOG_INFO, "Judge marked submission %u as wrong", submission_id);
-			}
-			return;
-		case 4:
-			// format error
-			if (_server_con.mark(submission_id, FORMAT_ERROR, "Format error", AttributeMap())) {
-				log(LOG_INFO, "Judge marked submission %u as format error", submission_id);
-			}
-			return;
+			break;
 		}
 	}
 	else if (_active_type == "contestant" || _active_type == "observer") {

@@ -24,12 +24,12 @@ typename std::list<_Type>::iterator list_find(std::list<_Type>& l, const _Type& 
 typedef enum {
 	PENDING = -1,
 	CORRECT = 0,
-	FORMAT_ERROR = 1,
-	WRONG = 2,
-	TIME_EXCEEDED = 3,
-	ABNORMAL = 4,
-	COMPILE_FAILED = 5,
-	JUDGE = 6,
+	WRONG = 1,
+	TIME_EXCEEDED = 2,
+	ABNORMAL = 3,
+	COMPILE_FAILED = 4,
+	JUDGE = 5,
+	FORMAT_ERROR = 6,
 	OTHER = 7,
 } RunResult;
 

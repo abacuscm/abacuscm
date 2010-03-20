@@ -11,6 +11,7 @@
 *****************************************************************************/
 
 #include "logger.h"
+#include "misc.h"
 
 void JudgeDecisionDialog::FileSelector_activated( const QString &key )
 {
@@ -35,21 +36,21 @@ void JudgeDecisionDialog::FileSelector_activated( const QString &key )
 
 void JudgeDecisionDialog::deferred()
 {
-    done(1);
+    done(JUDGE);
 }
 
 void JudgeDecisionDialog::correct()
 {
-    done(2);
+    done(CORRECT);
 }
 
 void JudgeDecisionDialog::wrong()
 {
-    done(3);
+    done(WRONG);
 }
 
 
 void JudgeDecisionDialog::formatError()
 {
-    done(4);
+    done(FORMAT_ERROR);
 }

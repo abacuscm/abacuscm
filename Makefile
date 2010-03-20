@@ -9,7 +9,8 @@ TARGET_LIBS :=
 
 ifneq ($(filter client,$(mods)),)
 TARGET_BINS += abacus
-MODS_abacus = abacus serverconnection messageblock logger sigsegv acmconfig threadssl \
+MODS_abacus = abacus serverconnection messageblock logger \
+	sigsegv acmconfig threadssl misc \
 	guievent score \
 	ui_mainwindowbase moc_ui_mainwindowbase mainwindow \
 	ui_adduser moc_ui_adduser \
@@ -25,8 +26,7 @@ MODS_abacus = abacus serverconnection messageblock logger sigsegv acmconfig thre
 	ui_logindialog moc_ui_logindialog \
 	ui_viewclarificationrequest moc_ui_viewclarificationrequest viewclarificationrequestsub \
 	ui_clarificationreply moc_ui_clarificationreply \
-	ui_viewclarificationreply moc_ui_viewclarificationreply \
-
+	ui_viewclarificationreply moc_ui_viewclarificationreply
 
 LIBS_abacus = ssl pthread
 NEED_QT3=1

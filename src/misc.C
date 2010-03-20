@@ -11,11 +11,11 @@
 
 const char * const runMessages[OTHER + 1] = {
 	"Correct answer",
-	"Format error",
 	"Wrong answer",
 	"Time limit exceeded",
 	"Abnormal termination of program",
 	"Compilation failed",
 	"Defered to judge",
+	"Format error",
 	"Other - contact a judge"
 };
