@@ -24,12 +24,13 @@ typename std::list<_Type>::iterator list_find(std::list<_Type>& l, const _Type& 
 typedef enum {
 	PENDING = -1,
 	CORRECT = 0,
-	WRONG = 1,
-	TIME_EXCEEDED = 2,
-	ABNORMAL = 3,
-	COMPILE_FAILED = 4,
-	JUDGE = 5,
-	OTHER = 6,
+	FORMAT_ERROR = 1,
+	WRONG = 2,
+	TIME_EXCEEDED = 3,
+	ABNORMAL = 4,
+	COMPILE_FAILED = 5,
+	JUDGE = 6,
+	OTHER = 7,
 } RunResult;
 
 typedef enum {
@@ -62,8 +63,7 @@ static const int USER_MASK_MARKER = 1 << USER_TYPE_MARKER;
 static const int USER_MASK_OBSERVER = 1 << USER_TYPE_OBSERVER;
 static const int USER_MASK_ALL = USER_MASK_ADMIN | USER_MASK_JUDGE | USER_MASK_CONTESTANT | USER_MASK_MARKER | USER_MASK_OBSERVER;
 
-extern const char *runMessages[];
-extern const char *shortRunMessages[];
+extern const char * const runMessages[OTHER + 1];
 
 #define NULL_TIME ((time_t) -1)
 

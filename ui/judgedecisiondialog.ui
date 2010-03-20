@@ -104,6 +104,14 @@
                         <string>Wrong</string>
                     </property>
                 </widget>
+                <widget class="QPushButton">
+                    <property name="name">
+                        <cstring>FormatErrorButton</cstring>
+                    </property>
+                    <property name="text">
+                        <string>Format Error</string>
+                    </property>
+                </widget>
                 <spacer>
                     <property name="name">
                         <cstring>spacer4_2</cstring>
@@ -150,6 +158,12 @@
         <receiver>JudgeDecisionDialog</receiver>
         <slot>wrong()</slot>
     </connection>
+    <connection>
+        <sender>FormatErrorButton</sender>
+        <signal>pressed()</signal>
+        <receiver>JudgeDecisionDialog</receiver>
+        <slot>formatError()</slot>
+    </connection>
 </connections>
 <includes>
     <include location="local" impldecl="in implementation">judgedecisiondialog.ui.h</include>
@@ -162,6 +176,7 @@
     <slot access="protected">deferred()</slot>
     <slot access="protected">correct()</slot>
     <slot access="protected">wrong()</slot>
+    <slot access="protected">formatError()</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

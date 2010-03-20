@@ -9,20 +9,13 @@
  */
 #include "misc.h"
 
-const char *runMessages[6] = {
+const char * const runMessages[OTHER + 1] = {
 	"Correct answer",
+	"Format error",
 	"Wrong answer",
 	"Time limit exceeded",
 	"Abnormal termination of program",
 	"Compilation failed",
+	"Defered to judge",
 	"Other - contact a judge"
-};
-
-const char *shortRunMessages[6] = {
-	"CORRECT",
-	"WRONG",
-	"TIME LIMIT",
-	"ABNORMAL",
-	"COMPILE FAILED",
-	"OTHER",
 };

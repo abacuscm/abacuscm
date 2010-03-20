@@ -693,6 +693,7 @@
             <action name="stateFilterUnmarkedAction"/>
             <action name="stateFilterJudgeAction"/>
             <action name="stateFilterWrongAction"/>
+            <action name="stateFilterFormatErrorAction"/>
             <action name="stateFilterCorrectAction"/>
             <action name="stateFilterTimeExceededAction"/>
             <action name="stateFilterCompileAction"/>
@@ -1097,6 +1098,23 @@
             <string>Force refresh</string>
         </property>
     </action>
+    <action>
+        <property name="name">
+            <cstring>stateFilterFormatErrorAction</cstring>
+        </property>
+        <property name="toggleAction">
+            <bool>true</bool>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>Format Error</string>
+        </property>
+        <property name="menuText">
+            <string>Format Error</string>
+        </property>
+    </action>
 </actions>
 <images>
     <image name="image0">
@@ -1293,6 +1311,12 @@
     <connection>
         <sender>MainWindowBase</sender>
         <signal>signalJudgeControls(bool)</signal>
+        <receiver>stateFilterFormatErrorAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalJudgeControls(bool)</signal>
         <receiver>stateFilterCorrectAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
@@ -1358,6 +1382,12 @@
     </connection>
     <connection>
         <sender>stateFilterAbnormalAction</sender>
+        <signal>toggled(bool)</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>refilterSubmissions()</slot>
+    </connection>
+    <connection>
+        <sender>stateFilterFormatErrorAction</sender>
         <signal>toggled(bool)</signal>
         <receiver>MainWindowBase</receiver>
         <slot>refilterSubmissions()</slot>

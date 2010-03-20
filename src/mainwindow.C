@@ -1504,6 +1504,9 @@ set<int> MainWindow::getWantedStates() const {
 	if (stateFilterWrongAction->isOn())
 		wanted_states.insert(WRONG);
 
+	if (stateFilterFormatErrorAction->isOn())
+		wanted_states.insert(FORMAT_ERROR);
+
 	if (stateFilterCorrectAction->isOn())
 		wanted_states.insert(CORRECT);
 
@@ -1656,6 +1659,12 @@ void MainWindow::submissionHandler(QListViewItem *item) {
 			// need to mark the problem as being wrong
 			if (_server_con.mark(submission_id, WRONG, "Wrong answer", AttributeMap())) {
 				log(LOG_INFO, "Judge marked submission %u as wrong", submission_id);
+			}
+			return;
+		case 4:
+			// format error
+			if (_server_con.mark(submission_id, FORMAT_ERROR, "Format error", AttributeMap())) {
+				log(LOG_INFO, "Judge marked submission %u as format error", submission_id);
 			}
 			return;
 		}

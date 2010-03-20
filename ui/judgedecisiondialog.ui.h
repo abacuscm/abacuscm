@@ -47,3 +47,9 @@ void JudgeDecisionDialog::wrong()
 {
     done(3);
 }
+
+
+void JudgeDecisionDialog::formatError()
+{
+    done(4);
+}
