@@ -88,7 +88,8 @@ TARGET_MODS += dbmysql \
 	act_status \
 	act_submit \
 	act_whatami \
-	prob_testcasedriventype
+	prob_testcasedriventype \
+	prob_interactivetype
 
 MODLIBS_dbmysql = mysqlclient_r
 endif
@@ -112,7 +113,8 @@ MODS_markerd += userprog \
 	c_cpp_userprog \
 	python_userprog \
 	compiledproblemmarker \
-	testcaseproblemmarker
+	testcaseproblemmarker \
+	interactiveproblemmarker
 LIBS_markerd = ssl pthread
 endif
 

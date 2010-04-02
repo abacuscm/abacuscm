@@ -29,7 +29,7 @@ protected:
 	 * In the simplest of cases you can call this to supply an input file,
 	 * spec where the output file and runlimit files goes.
 	 */
-	int run(const char* infile, const char* outfile, const char* errfile, const char* runfile);
+	int run(const char* infile, const char* outfile, const char* errfile, const char* runfile, const char *evaluator = "");
 
 	/**
 	 * If you prefer, you can supply the Input Buffer and receive back an

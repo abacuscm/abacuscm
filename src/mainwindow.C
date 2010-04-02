@@ -1622,7 +1622,11 @@ void MainWindow::submissionHandler(QListViewItem *item) {
 			// now add other files
 			char *expectedOutput;
 			uint32_t expectedOutputLength;
-			if (_server_con.getProblemFile(problemId, "testcase.output", &expectedOutput, &expectedOutputLength)) {
+			// If the problem has expected output, show that too
+			AttributeMap attrs;
+			if (_server_con.getProblemAttributes(problemId, attrs)
+				&& attrs.count("testcase.output") > 0
+				&& _server_con.getProblemFile(problemId, "testcase.output", &expectedOutput, &expectedOutputLength)) {
 				// got it
 				judgeDecisionDialog.data["Expected output"] = string(expectedOutput, expectedOutputLength);
 				delete[] expectedOutput;

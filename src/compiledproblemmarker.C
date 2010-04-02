@@ -113,7 +113,7 @@ void CompiledProblemMarker::mark() {
 	log(LOG_DEBUG, "All done with the marking process!");
 }
 
-int CompiledProblemMarker::run(const char* infile, const char* outfile, const char* errfile,  const char* runfile) {
+int CompiledProblemMarker::run(const char* infile, const char* outfile, const char* errfile,  const char* runfile, const char *evaluator) {
 	int fd_in = open(infile, O_RDONLY);
 	if(fd_in < 0) {
 		lerror("open(infile)");
@@ -143,7 +143,7 @@ int CompiledProblemMarker::run(const char* infile, const char* outfile, const ch
 		lerror("fork");
 		return -1;
 	} else if(pid == 0) {
-		_uprog->exec(fd_in, fd_out, fd_err, fd_run);
+		_uprog->exec(fd_in, fd_out, fd_err, fd_run, evaluator);
 	} else {
 		close(fd_in);
 		close(fd_out);
