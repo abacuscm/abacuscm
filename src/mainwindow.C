@@ -25,7 +25,7 @@
 #include "problemconfig.h"
 #include "guievent.h"
 #include "messageblock.h"
-#include "ui_judgedecisiondialog.h"
+#include "judgedecisiondialog.h"
 #include "ui_compileroutputdialog.h"
 #include "misc.h"
 #include "score.h"
@@ -1640,20 +1640,11 @@ void MainWindow::submissionHandler(QListViewItem *item) {
 			judgeDecisionDialog.FileSelector->insertItem("Contestant source");
 		}
 
-		RunResult result = static_cast<RunResult>(judgeDecisionDialog.exec());
-		switch (result) {
-		case JUDGE:
-			// deferred
-			// in this case, we just do nothing
-			log(LOG_INFO, "Judge deferred marking of submission %u", submission_id);
-			break;
-		default:
-			// correct
-			// need to mark the problem as being correct
+		if (judgeDecisionDialog.exec()) {
+			RunResult result = judgeDecisionDialog.getResult();
 			if (_server_con.mark(submission_id, result, runMessages[result], AttributeMap())) {
 				log(LOG_INFO, "Judge marked submission %u as %s", submission_id, runMessages[result]);
 			}
-			break;
 		}
 	}
 	else if (_active_type == "contestant" || _active_type == "observer") {

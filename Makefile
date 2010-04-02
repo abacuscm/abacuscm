@@ -21,7 +21,7 @@ MODS_abacus = abacus serverconnection messageblock logger \
 	ui_startstopdialog moc_ui_startstopdialog \
 	ui_problemconfigbase moc_ui_problemconfigbase problemconfig \
 	ui_aboutdialog moc_ui_aboutdialog \
-	ui_judgedecisiondialog moc_ui_judgedecisiondialog \
+	ui_judgedecisiondialogbase moc_ui_judgedecisiondialogbase \
 	ui_submit moc_ui_submit \
 	ui_logindialog moc_ui_logindialog \
 	ui_viewclarificationrequest moc_ui_viewclarificationrequest viewclarificationrequestsub \
