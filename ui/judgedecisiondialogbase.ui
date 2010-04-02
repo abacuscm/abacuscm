@@ -169,7 +169,7 @@
     <variable access="public">std::map&lt;std::string, std::string&gt; data;</variable>
 </variables>
 <slots>
-    <slot>FileSelector_activated( const QString &amp; key )</slot>
+    <slot access="protected" specifier="pure virtual">FileSelector_activated( const QString &amp; key )</slot>
     <slot access="protected" specifier="pure virtual">deferred()</slot>
     <slot access="protected" specifier="pure virtual">correct()</slot>
     <slot access="protected" specifier="pure virtual">wrong()</slot>
