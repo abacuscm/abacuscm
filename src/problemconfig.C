@@ -167,13 +167,13 @@ QGridLayout *ProblemConfig::createCompoundGrid(std::string desc, QWidget *parent
 bool ProblemConfig::setProblemDescription(std::string descript, std::vector<std::string> existing_problems) {
 	std::string desc = descript;
 	if (existing_problems.size() > 0) {
-        desc += ", dependencies [";
+		desc += ", dependencies [";
 		for (size_t i = 0; i < existing_problems.size(); i++) {
 			if (i > 0)
 				desc += ",";
 			desc += existing_problems[i];
 		}
-        desc += "]";
+		desc += "]";
 	}
 
 	return createCompoundGrid(desc, prop_data) != NULL;

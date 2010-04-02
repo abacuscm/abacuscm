@@ -134,8 +134,10 @@ bool ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
 
 	bool solved = db->hasSolved(user_id, prob_id);
 	if(solved) {
-		db->release(); db = NULL;
-		return cc->sendError("You have already solved this problem, you may no longer submit solutions for it");
+		if (db->getProblemAttributes(prob_id)["multi_submit"] != "Yes") {
+			db->release(); db = NULL;
+			return cc->sendError("You have already solved this problem, you may no longer submit solutions for it");
+		}
 	}
 
 	if (!db->isSubmissionAllowed(user_id, prob_id))
