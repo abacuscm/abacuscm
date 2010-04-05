@@ -64,6 +64,7 @@ static const int USER_MASK_OBSERVER = 1 << USER_TYPE_OBSERVER;
 static const int USER_MASK_ALL = USER_MASK_ADMIN | USER_MASK_JUDGE | USER_MASK_CONTESTANT | USER_MASK_MARKER | USER_MASK_OBSERVER;
 
 extern const char * const runMessages[OTHER + 1];
+extern const char * const runCodes[OTHER + 1];
 
 #define NULL_TIME ((time_t) -1)
 

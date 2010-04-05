@@ -19,3 +19,14 @@ const char * const runMessages[OTHER + 1] = {
 	"Format error",
 	"Other - contact a judge"
 };
+
+const char * const runCodes[OTHER + 1] = {
+	"CORRECT",
+	"WRONG",
+	"TIME_EXCEEDED",
+	"ABNORMAL",
+	"COMPILE_FAILED",
+	"JUDGE",
+	"FORMAT_ERROR",
+	"OTHER"
+};
