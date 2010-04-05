@@ -135,7 +135,7 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 		string comment;
 
 		if(db->getSubmissionState(sub_id, state, utype, comment)) {
-			if(state != COMPILE_FAILED && state != JUDGE) { // we ignore compile failures, and judge deferals.
+			if(state != COMPILE_FAILED && state != JUDGE && state != OTHER) { // we ignore compile failures, and judge deferals.
 				SubData tmp;
 
 				uint32_t team_id = db->submission2user_id(sub_id);
