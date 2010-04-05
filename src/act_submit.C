@@ -49,6 +49,11 @@ protected:
 	bool int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
+class ActGetSubmissionsForUser : public ClientAction {
+protected:
+	bool int_process(ClientConnection *cc, MessageBlock *mb);
+};
+
 class ActSubmissionFileFetcher : public ClientAction {
 protected:
 	bool int_process(ClientConnection *cc, MessageBlock *mb);
@@ -73,6 +78,7 @@ public:
 static ActSubmit _act_submit;
 static ActGetProblems _act_getproblems;
 static ActGetSubmissions _act_getsubs;
+static ActGetSubmissionsForUser _act_getsubs_for_user;
 static ActSubmissionFileFetcher _act_submission_file_fetcher;
 static ActGetSubmissionSource _act_get_submission_source;
 static ActGetSubmissibleProblems _act_get_submissible_problems;
@@ -263,6 +269,42 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 	db->release();db=NULL;
 
 	return cc->sendMessageBlock(&mb);
+}
+
+bool ActGetSubmissionsForUser::int_process(ClientConnection *cc, MessageBlock *mb) {
+	DbCon *db = DbCon::getInstance();
+	if(!db)
+		return cc->sendError("Error connecting to database");
+	SubmissionSupportModule *submission = getSubmissionSupportModule();
+	if (!submission)
+		return cc->sendError("Error getting submission support module");
+
+	uint32_t uid = cc->getProperty("user_id");
+	uint32_t utype = cc->getProperty("user_type");
+
+	uint32_t user_id = strtoul((*mb)["user_id"].c_str(), NULL, 0);
+
+	SubmissionList lst;
+
+	if(utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_OBSERVER)
+		lst = db->getSubmissions(uid);
+	else
+		lst = db->getSubmissions(user_id);
+
+	MessageBlock result_mb("ok");
+
+	SubmissionList::iterator s;
+	int c = 0;
+	for(s = lst.begin(); s != lst.end(); ++s, ++c) {
+		ostringstream tmp;
+		tmp << c;
+		string cntr = tmp.str();
+
+		submission->submissionToMB(db, *s, result_mb, cntr);
+	}
+	db->release();db=NULL;
+
+	return cc->sendMessageBlock(&result_mb);
 }
 
 SubmissionMessage::SubmissionMessage() {
@@ -569,6 +611,7 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_OBSERVER, "getsubmissions", &_act_getsubs);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissions", &_act_getsubs);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "getsubmissions", &_act_getsubs);
+	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissions_for_user", &_act_getsubs_for_user);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "fetchfile", &_act_submission_file_fetcher);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "fetchfile", &_act_submission_file_fetcher);
 	ClientAction::registerAction(USER_TYPE_OBSERVER, "fetchfile", &_act_submission_file_fetcher);

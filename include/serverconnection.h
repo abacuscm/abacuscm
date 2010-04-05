@@ -152,6 +152,7 @@ public:
 	bool clarificationRequest(uint32_t prob_id, const std::string& question);
 	bool clarificationReply(uint32_t clarification_req_id, bool pub, const std::string& answer);
 	SubmissionList getSubmissions();
+	SubmissionList getSubmissionsForUser(uint32_t user_id);
 	ClarificationList getClarifications();
 	ClarificationRequestList getClarificationRequests();
 	Grid getStandings();

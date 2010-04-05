@@ -850,6 +850,28 @@ SubmissionList ServerConnection::getSubmissions() {
 	return multiVectorAction(mb, attrs);
 }
 
+SubmissionList ServerConnection::getSubmissionsForUser(uint32_t user_id) {
+	if(!_ssl)
+		return SubmissionList();
+
+	ostringstream ostrstrm;
+	ostrstrm << user_id;
+
+	MessageBlock mb("getsubmissions_for_user");
+	mb["user_id"] = ostrstrm.str();
+	list<string> attrs;
+	attrs.push_back("submission_id");
+	attrs.push_back("contestant");
+	attrs.push_back("time");
+	attrs.push_back("contesttime");
+	attrs.push_back("problem");
+	attrs.push_back("result");
+	attrs.push_back("comment");
+	attrs.push_back("prob_id");
+
+	return multiVectorAction(mb, attrs);
+}
+
 ClarificationList ServerConnection::getClarifications() {
 	if (!_ssl)
 		return ClarificationList();
