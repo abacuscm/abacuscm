@@ -119,7 +119,7 @@ LIBS_markerd = ssl pthread
 endif
 
 ifneq ($(filter admintools,$(mods)),)
-TARGET_BINS += balloon adduser addproblem standings batch extract_source
+TARGET_BINS += balloon adduser addproblem standings batch extract_source make_submission
 
 MODS_balloon = balloon serverconnection messageblock logger sigsegv acmconfig threadssl
 LIBS_balloon = ssl pthread
@@ -138,6 +138,9 @@ LIBS_standings = ssl pthread
 
 MODS_extract_source = extract_source serverconnection messageblock logger sigsegv acmconfig threadssl
 LIBS_extract_source = ssl pthread
+
+MODS_make_submission = make_submission serverconnection messageblock logger sigsegv acmconfig threadssl
+LIBS_make_submission = ssl pthread
 endif
 
 ifeq ($(builddocs),yes)
