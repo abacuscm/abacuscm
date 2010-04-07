@@ -342,7 +342,7 @@ public:
 	/**
 	 * Retrieve Submission content (and language).
 	 */
-	virtual bool retrieveSubmission(uint32_t submission_id, char** buffer, int *length, std::string& language, uint32_t* prob_id) = 0;
+	virtual bool retrieveSubmission(uint32_t user_id, uint32_t submission_id, char** buffer, int *length, std::string& language, uint32_t* prob_id) = 0;
 
 	virtual IdList getUnmarked(uint32_t server_id = 0) = 0;
 

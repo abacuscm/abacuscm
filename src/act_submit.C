@@ -530,7 +530,12 @@ bool ActGetSubmissionSource::int_process(ClientConnection *cc, MessageBlock *mb)
 	string language;
 	uint32_t prob_id;
 
-	bool has_data = db->retrieveSubmission(submission_id, &content, &length, language, &prob_id);
+        uint32_t uid = cc->getProperty("user_id");
+	uint32_t utype = cc->getProperty("user_type");
+        if (utype == USER_TYPE_ADMIN || utype == USER_TYPE_JUDGE) {
+            uid = 0;
+        }
+	bool has_data = db->retrieveSubmission(uid, submission_id, &content, &length, language, &prob_id);
 	db->release();db=NULL;
 
 	if (!has_data)
@@ -618,6 +623,8 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "fetchfile", &_act_submission_file_fetcher);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "getsubmissionsource", &_act_get_submission_source);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissionsource", &_act_get_submission_source);
+	ClientAction::registerAction(USER_TYPE_OBSERVER, "getsubmissionsource", &_act_get_submission_source);
+	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getsubmissionsource", &_act_get_submission_source);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getsubmissibleproblems", &_act_get_submissible_problems);
 	ClientAction::registerAction(USER_TYPE_OBSERVER, "getsubmissibleproblems", &_act_get_submissible_problems);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "getsubmissibleproblems", &_act_get_submissible_problems);

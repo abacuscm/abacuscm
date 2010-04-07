@@ -107,7 +107,7 @@ public:
 					  uint32_t user_id, uint32_t time,
 					  uint32_t server_id, uint32_t pub,
 					  const std::string& answer);
-	virtual bool retrieveSubmission(uint32_t sub_id, char** buffer, int *length,
+	virtual bool retrieveSubmission(uint32_t user_id, uint32_t sub_id, char** buffer, int *length,
 			string& language, uint32_t* prob_id);
 	virtual IdList getUnmarked(uint32_t server_id);
 	virtual bool putMark(uint32_t submission_id, uint32_t marker_id,
@@ -1070,10 +1070,12 @@ bool MySQL::putClarification(uint32_t cr_id, uint32_t c_id,
 	return true;
 }
 
-bool MySQL::retrieveSubmission(uint32_t sub_id, char** buffer, int *length, string& language, uint32_t* prob_id) {
+bool MySQL::retrieveSubmission(uint32_t user_id, uint32_t sub_id, char** buffer, int *length, string& language, uint32_t* prob_id) {
 	ostringstream query;
 	query << "SELECT content, LENGTH(content), language, prob_id FROM Submission WHERE "
 		"submission_id = " << sub_id;
+        if (user_id != 0)
+            query << " AND user_id = " << user_id;
 
 	*buffer = NULL;
 

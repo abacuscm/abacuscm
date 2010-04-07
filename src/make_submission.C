@@ -88,7 +88,29 @@ int main(int argc, char **argv) {
             return 1;
         }
 
+        // Make sure that we can read the source before we try to
+        // submit.
         int fd = open(filename.c_str(), O_RDONLY);
+        struct stat st;
+        if (fstat(fd, &st) != 0)
+        {
+            log(LOG_ERR, "Unable to determine source file size");
+            log(LOG_ERR, "Error %d: %s", errno, strerror(errno));
+            _server_con.disconnect();
+            return 1;
+        }
+        uint32_t srcLength = st.st_size;
+        char *src = new char[srcLength];
+        int bytesRead;
+        if ((bytesRead = read(fd, src, srcLength)) != (int) srcLength)
+        {
+            log(LOG_ERR, "Failed to read entire source file; read %d bytes instead of %u", bytesRead, srcLength);
+            _server_con.disconnect();
+            return 1;
+        }
+        close(fd);
+
+        fd = open(filename.c_str(), O_RDONLY);
         if (fd == -1)
         {
             log(LOG_ERR, "Unable to open file '%s' for reading", filename.c_str());
@@ -104,34 +126,68 @@ int main(int argc, char **argv) {
             return 1;
         }
 
-        sleep(1);
+        close(fd);
 
-        // Let's get the submission ID for this submission. This is a little
-        // flaky right now since it ignores race conditions, but if we assume
-        // that submissions for a single team are happening from a single
+        // Let's try to work out the submission ID for this submission. This is
+        // a little flaky right now since it ignores race conditions, but if we
+        // assume that submissions for a single team are happening from a single
         // client connection (which we currently hold) then this is safe.
-        SubmissionList submissions = _server_con.getSubmissions();
-        uint32_t time = 0;
+        //
+        // We have 5 attempts at this before giving up (to cater for any really
+        // big delays in getting our submission into the database).
         uint32_t submission_id = 0;
-        for (typeof(submissions.begin()) it = submissions.begin();
-             it != submissions.end();
-             it++)
+        for (int tries = 0; tries < 5; tries++)
         {
-            uint32_t s_problem_id = strtoul((*it)["prob_id"].c_str(), NULL, 10);
-            uint32_t s_submission_id = strtoul((*it)["submission_id"].c_str(), NULL, 10);
-            uint32_t s_time = strtoul((*it)["time"].c_str(), NULL, 10);
+            // We need to sleep after submitting to give the Abacus server
+            // a chance to add our submission to the database.
+            sleep(1);
 
-            if (s_problem_id != problem_id)
-                continue;
-
-            if (s_time > time)
+            SubmissionList submissions = _server_con.getSubmissions();
+            uint32_t time = 0;
+            for (typeof(submissions.begin()) it = submissions.begin();
+                 it != submissions.end();
+                 it++)
             {
-                time = s_time;
-                submission_id = s_submission_id;
+                uint32_t s_problem_id = strtoul((*it)["prob_id"].c_str(), NULL, 10);
+                uint32_t s_submission_id = strtoul((*it)["submission_id"].c_str(), NULL, 10);
+                uint32_t s_time = strtoul((*it)["time"].c_str(), NULL, 10);
+
+                if (s_problem_id != problem_id)
+                    continue;
+
+                if (s_time > time)
+                {
+                    time = s_time;
+                    submission_id = s_submission_id;
+                }
             }
+
+            // We think we have the correct submission. Let's compare it to
+            // what we actually have in the file.
+            uint32_t sourceLength;
+            char *source;
+            log(LOG_DEBUG, "Retrieving source for submission %u", submission_id);
+            if (!_server_con.getSubmissionSource(submission_id, &source, &sourceLength))
+            {
+                log(LOG_ERR, "Failed to retrieve source for submission %u", submission_id);
+                _server_con.disconnect();
+                return 1;
+            }
+
+            // Check that the source matches
+            if (sourceLength == srcLength &&
+                memcmp(source, src, sourceLength) == 0)
+            {
+                // We've found it!
+                log(LOG_DEBUG, "Submission id is %u", submission_id);
+                break;
+            }
+            else
+                submission_id = 0;
         }
 
-        log(LOG_DEBUG, "Probable submission id is %u", submission_id);
+        if (submission_id == 0)
+            log(LOG_ERR, "Submitted, but unable to determine submission id");
 
 	_server_con.disconnect();
 	return 0;
