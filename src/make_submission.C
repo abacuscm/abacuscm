@@ -13,8 +13,9 @@
 #include "messageblock.h"
 
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <string>
-#include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <time.h>
@@ -88,33 +89,23 @@ int main(int argc, char **argv) {
             return 1;
         }
 
-        // Make sure that we can read the source before we try to
-        // submit.
-        int fd = open(filename.c_str(), O_RDONLY);
-        struct stat st;
-        if (fstat(fd, &st) != 0)
+        ifstream in(filename.c_str());
+        if (!in)
         {
-            log(LOG_ERR, "Unable to determine source file size");
-            log(LOG_ERR, "Error %d: %s", errno, strerror(errno));
+            log(LOG_ERR, "Unable to open file '%s'", filename.c_str());
             _server_con.disconnect();
             return 1;
         }
-        uint32_t srcLength = st.st_size;
-        char *src = new char[srcLength];
-        int bytesRead;
-        if ((bytesRead = read(fd, src, srcLength)) != (int) srcLength)
-        {
-            log(LOG_ERR, "Failed to read entire source file; read %d bytes instead of %u", bytesRead, srcLength);
-            _server_con.disconnect();
-            return 1;
-        }
-        close(fd);
+        ostringstream is;
+        is << in.rdbuf();
+        in.close();
+        string src = is.str();
 
-        fd = open(filename.c_str(), O_RDONLY);
+        int fd = open(filename.c_str(), O_RDONLY);
         if (fd == -1)
         {
             log(LOG_ERR, "Unable to open file '%s' for reading", filename.c_str());
-            log(LOG_ERR, "Error %d: %s", errno, strerror(errno));
+            lerror("open failed");
             _server_con.disconnect();
             return 1;
         }
@@ -144,7 +135,7 @@ int main(int argc, char **argv) {
 
             SubmissionList submissions = _server_con.getSubmissions();
             uint32_t time = 0;
-            for (typeof(submissions.begin()) it = submissions.begin();
+            for (SubmissionList::iterator it = submissions.begin();
                  it != submissions.end();
                  it++)
             {
@@ -175,8 +166,8 @@ int main(int argc, char **argv) {
             }
 
             // Check that the source matches
-            if (sourceLength == srcLength &&
-                memcmp(source, src, sourceLength) == 0)
+            if (sourceLength == src.length() &&
+                memcmp(source, src.c_str(), sourceLength) == 0)
             {
                 // We've found it!
                 log(LOG_DEBUG, "Submission id is %u", submission_id);
@@ -184,6 +175,7 @@ int main(int argc, char **argv) {
             }
             else
                 submission_id = 0;
+            delete[] source;
         }
 
         if (submission_id == 0)
