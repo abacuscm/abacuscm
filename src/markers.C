@@ -121,7 +121,7 @@ void Markers::issue(ClientConnection* cc, uint32_t sd) {
 	std::string language;
 	uint32_t prob_id;
 
-	bool has_data = db->retrieveSubmission(sd, &content, &length, language, &prob_id);
+	bool has_data = db->retrieveSubmission(0, sd, &content, &length, language, &prob_id);
 	db->release();db=NULL;
 
 	if(!has_data) {
