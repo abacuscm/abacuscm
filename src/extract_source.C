@@ -140,7 +140,7 @@ int main(int argc, char **argv) {
             return 1;
         }
 
-        cout << source;
+        cout << string(source, sourceLength);
 
 	_server_con.disconnect();
 	return 0;
