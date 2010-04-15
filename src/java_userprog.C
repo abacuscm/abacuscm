@@ -97,7 +97,7 @@ string Java_UserProg::sourceFilename(const Buffer& src) {
 	}
 
 	regex_t reg_cls;
-	if((i = regcomp(&reg_cls, "(^|[[:space:]])class[[:space:]]+([A-Za-z_$][A-Za-z0-9_$]*)[[:space:]{]", REG_EXTENDED)) != 0) {
+	if((i = regcomp(&reg_cls, "(^|[[:space:]])public[[:space:]]+class[[:space:]]+([A-Za-z_$][A-Za-z0-9_$]*)[[:space:]{]", REG_EXTENDED)) != 0) {
 		char err[1024];
 		regerror(i, &reg_cls, err, 1024);
 		log(LOG_CRIT, "Error compiling java class name regex: %s", err);
