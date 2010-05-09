@@ -1,8 +1,8 @@
 <!DOCTYPE UI><UI version="3.3" stdsetdef="1">
-<class>JudgeDecisionDialog</class>
+<class>JudgeDecisionDialogBase</class>
 <widget class="QDialog">
     <property name="name">
-        <cstring>JudgeDecisionDialog</cstring>
+        <cstring>JudgeDecisionDialogBase</cstring>
     </property>
     <property name="geometry">
         <rect>
@@ -104,6 +104,14 @@
                         <string>Wrong</string>
                     </property>
                 </widget>
+                <widget class="QPushButton">
+                    <property name="name">
+                        <cstring>FormatErrorButton</cstring>
+                    </property>
+                    <property name="text">
+                        <string>Format Error</string>
+                    </property>
+                </widget>
                 <spacer>
                     <property name="name">
                         <cstring>spacer4_2</cstring>
@@ -129,39 +137,43 @@
     <connection>
         <sender>FileSelector</sender>
         <signal>activated(const QString&amp;)</signal>
-        <receiver>JudgeDecisionDialog</receiver>
+        <receiver>JudgeDecisionDialogBase</receiver>
         <slot>FileSelector_activated(const QString&amp;)</slot>
     </connection>
     <connection>
         <sender>DeferButton</sender>
         <signal>pressed()</signal>
-        <receiver>JudgeDecisionDialog</receiver>
+        <receiver>JudgeDecisionDialogBase</receiver>
         <slot>deferred()</slot>
     </connection>
     <connection>
         <sender>CorrectButton</sender>
         <signal>pressed()</signal>
-        <receiver>JudgeDecisionDialog</receiver>
+        <receiver>JudgeDecisionDialogBase</receiver>
         <slot>correct()</slot>
     </connection>
     <connection>
         <sender>WrongButton</sender>
         <signal>pressed()</signal>
-        <receiver>JudgeDecisionDialog</receiver>
+        <receiver>JudgeDecisionDialogBase</receiver>
         <slot>wrong()</slot>
     </connection>
+    <connection>
+        <sender>FormatErrorButton</sender>
+        <signal>pressed()</signal>
+        <receiver>JudgeDecisionDialogBase</receiver>
+        <slot>formatError()</slot>
+    </connection>
 </connections>
-<includes>
-    <include location="local" impldecl="in implementation">judgedecisiondialog.ui.h</include>
-</includes>
 <variables>
     <variable access="public">std::map&lt;std::string, std::string&gt; data;</variable>
 </variables>
 <slots>
-    <slot>FileSelector_activated( const QString &amp; key )</slot>
-    <slot access="protected">deferred()</slot>
-    <slot access="protected">correct()</slot>
-    <slot access="protected">wrong()</slot>
+    <slot access="protected" specifier="pure virtual">FileSelector_activated( const QString &amp; key )</slot>
+    <slot access="protected" specifier="pure virtual">deferred()</slot>
+    <slot access="protected" specifier="pure virtual">correct()</slot>
+    <slot access="protected" specifier="pure virtual">wrong()</slot>
+    <slot access="protected" specifier="pure virtual">formatError()</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

@@ -42,13 +42,13 @@ ClientConnection::~ClientConnection() {
 		delete _message;
 
 	if(_ssl) {
-		log(LOG_DEBUG, "Shutting down (incomplete) connection");
+		log(LOG_DEBUG, "Shutting down (incomplete) connection %p", this);
 		SSL_shutdown(_ssl);
 		SSL_free(_ssl);
 		_ssl = NULL;
 	}
 	if(_tssl) {
-		log(LOG_DEBUG, "Shutting down connection");
+		log(LOG_DEBUG, "Shutting down connection %p", this);
 		delete _tssl;
 		_tssl = NULL;
 	}
@@ -72,7 +72,7 @@ bool ClientConnection::initiate_ssl() {
 	}
 
 
-	switch(SSL_get_error(_ssl, SSL_accept(_ssl))) {
+	switch(unsigned err = SSL_get_error(_ssl, SSL_accept(_ssl))) {
 		case SSL_ERROR_NONE:
 			_tssl = new(nothrow) ThreadSSL(_ssl);
 			if (_tssl == NULL) {
@@ -85,7 +85,7 @@ bool ClientConnection::initiate_ssl() {
 		case SSL_ERROR_WANT_WRITE:
 			break;
 		default:
-			log_ssl_errors("SSL_accept");
+			log_ssl_errors_with_err("SSL_accept", err);
 			goto err;
 	}
 
@@ -135,10 +135,10 @@ bool ClientConnection::process_data() {
 		case SSL_ERROR_WANT_WRITE:
 			return true;
 		case SSL_ERROR_ZERO_RETURN:
-			// clean shut down.
+			// connection shut down
 			return false;
 		default:
-			log_ssl_errors("SSL_read");
+			log_ssl_errors_with_err("SSL_read", status.err);
 			return false;
 	}
 }

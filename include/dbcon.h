@@ -175,6 +175,11 @@ public:
 	virtual uint32_t maxClarificationId() = 0;
 
 	/**
+	 * Used to retrieve the max Problem Id. See maxUserId.
+	 */
+	virtual uint32_t maxProblemId() = 0;
+
+	/**
 	 * Used to authenticate a user.  Return values should be as follows:
 	 * <0	Error
 	 * 0	Authentication failed
@@ -259,9 +264,49 @@ public:
 			uint8_t **dataptr, uint32_t *lenptr) = 0;
 
 	/**
-	 * Retrieve all submissions for a specific user.
+	 * Removes the dependency of one problem on another being solved first.
+	 */
+	virtual bool delProblemDependency(uint32_t problem_id, uint32_t dependent_problem_id) = 0;
+
+	/**
+	 * Adds a dependency to a problem of another being solved first.
+	 */
+	virtual bool addProblemDependency(uint32_t problem_id, uint32_t dependent_problem_id) = 0;
+
+	/**
+	 * Retrieves the list of problems that must be solved before a
+	 * solution to the given problem can be submitted.
+     */
+	virtual ProblemList getProblemDependencies(uint32_t problem_id) = 0;
+
+	/**
+	 * Retrieves the list of problems that the given user still needs to
+	 * solve before they are permitted to submit a solution to the given
+	 * problems.
+     */
+	virtual ProblemList getDependentProblemsPending(uint32_t user_id, uint32_t problem_id) = 0;
+
+	/**
+	 * Returns whether or not the given user may submit a solution to the
+	 * given problem.
+     */
+	virtual bool isSubmissionAllowed(uint32_t user_id, uint32_t problem_id) = 0;
+
+	/**
+	 * Retrieve all submissions for a specific user (or all users if no id).
 	 */
 	virtual SubmissionList getSubmissions(uint32_t user_id = 0) = 0;
+
+	/**
+	 * Retrieve a single submission
+	 */
+	virtual AttributeList getSubmission(uint32_t submission_id) = 0;
+
+	/**
+	 * Retrieves clarification with given ID. Returns empty list on
+	 * failure.
+	 */
+	virtual AttributeList getClarification(uint32_t c_id) = 0;
 
 	/**
 	 * Retrieves all clarifications relevant to a specific user.
@@ -269,7 +314,7 @@ public:
 	virtual ClarificationList getClarifications(uint32_t user_id = 0) = 0;
 
 	/**
-	 * Retrieves clarification with given ID. Returns empty list on
+	 * Retrieves clarification request with given ID. Returns empty list on
 	 * failure.
 	 */
 	virtual AttributeList getClarificationRequest(uint32_t req_id) = 0;
@@ -297,7 +342,7 @@ public:
 	/**
 	 * Retrieve Submission content (and language).
 	 */
-	virtual bool retrieveSubmission(uint32_t submission_id, char** buffer, int *length, std::string& language, uint32_t* prob_id) = 0;
+	virtual bool retrieveSubmission(uint32_t user_id, uint32_t submission_id, char** buffer, int *length, std::string& language, uint32_t* prob_id) = 0;
 
 	virtual IdList getUnmarked(uint32_t server_id = 0) = 0;
 

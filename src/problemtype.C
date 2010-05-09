@@ -20,6 +20,7 @@ ProblemType::TypeMap ProblemType::_problem_type_map;
 ProblemType::ProblemType() {
 	_attr_list.push_back("shortname S");
 	_attr_list.push_back("longname S");
+	_attr_list.push_back("multi_submit {No,Yes}");
 }
 
 ProblemType::~ProblemType() {

@@ -9,8 +9,9 @@ TARGET_LIBS :=
 
 ifneq ($(filter client,$(mods)),)
 TARGET_BINS += abacus
-MODS_abacus = abacus serverconnection messageblock logger sigsegv acmconfig threadssl \
-	guievent \
+MODS_abacus = abacus serverconnection messageblock logger \
+	sigsegv acmconfig threadssl misc \
+	guievent score \
 	ui_mainwindowbase moc_ui_mainwindowbase mainwindow \
 	ui_adduser moc_ui_adduser \
 	ui_compileroutputdialog moc_ui_compileroutputdialog \
@@ -20,13 +21,12 @@ MODS_abacus = abacus serverconnection messageblock logger sigsegv acmconfig thre
 	ui_startstopdialog moc_ui_startstopdialog \
 	ui_problemconfigbase moc_ui_problemconfigbase problemconfig \
 	ui_aboutdialog moc_ui_aboutdialog \
-	ui_judgedecisiondialog moc_ui_judgedecisiondialog \
+	ui_judgedecisiondialogbase moc_ui_judgedecisiondialogbase \
 	ui_submit moc_ui_submit \
 	ui_logindialog moc_ui_logindialog \
 	ui_viewclarificationrequest moc_ui_viewclarificationrequest viewclarificationrequestsub \
 	ui_clarificationreply moc_ui_clarificationreply \
-	ui_viewclarificationreply moc_ui_viewclarificationreply \
-
+	ui_viewclarificationreply moc_ui_viewclarificationreply
 
 LIBS_abacus = ssl pthread
 NEED_QT3=1
@@ -60,7 +60,9 @@ LIBMODS_abacus = socket \
 	clienteventregistry \
 	problemtype \
 	timedaction \
-	threadssl
+	threadssl \
+	score \
+	hashpw
 
 TARGET_MODS += dbmysql \
 	udtcpmessenger \
@@ -69,6 +71,7 @@ TARGET_MODS += dbmysql \
 	support_submission \
 	support_timer \
 	support_user \
+	support_keepalive \
 	act_addserver \
 	act_adduser \
 	act_auth \
@@ -77,7 +80,6 @@ TARGET_MODS += dbmysql \
 	act_events \
 	act_mark \
 	act_passwd \
-	act_problem_subscription \
 	act_problemmanip \
 	act_problemtypes \
 	act_serverlist \
@@ -86,7 +88,8 @@ TARGET_MODS += dbmysql \
 	act_status \
 	act_submit \
 	act_whatami \
-	prob_testcasedriventype
+	prob_testcasedriventype \
+	prob_interactivetype
 
 MODLIBS_dbmysql = mysqlclient_r
 endif
@@ -108,13 +111,15 @@ MODS_markerd = markerd \
 MODS_markerd += userprog \
 	java_userprog \
 	c_cpp_userprog \
+	python_userprog \
 	compiledproblemmarker \
-	testcaseproblemmarker
+	testcaseproblemmarker \
+	interactiveproblemmarker
 LIBS_markerd = ssl pthread
 endif
 
 ifneq ($(filter admintools,$(mods)),)
-TARGET_BINS += balloon adduser standings
+TARGET_BINS += balloon adduser addproblem standings batch extract_source make_submission
 
 MODS_balloon = balloon serverconnection messageblock logger sigsegv acmconfig threadssl
 LIBS_balloon = ssl pthread
@@ -122,8 +127,20 @@ LIBS_balloon = ssl pthread
 MODS_adduser = createuser serverconnection messageblock logger sigsegv acmconfig threadssl
 LIBS_adduser = ssl pthread
 
-MODS_standings = standings serverconnection messageblock logger sigsegv acmconfig threadssl
+MODS_addproblem = createproblem serverconnection messageblock logger sigsegv acmconfig threadssl
+LIBS_addproblem = ssl pthread
+
+MODS_batch = batch serverconnection messageblock logger sigsegv acmconfig threadssl
+LIBS_batch = ssl pthread
+
+MODS_standings = standings serverconnection messageblock logger sigsegv acmconfig threadssl score
 LIBS_standings = ssl pthread
+
+MODS_extract_source = extract_source serverconnection messageblock logger sigsegv acmconfig threadssl
+LIBS_extract_source = ssl pthread
+
+MODS_make_submission = make_submission serverconnection messageblock logger sigsegv acmconfig threadssl
+LIBS_make_submission = ssl pthread
 endif
 
 ifeq ($(builddocs),yes)

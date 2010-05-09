@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ * Copyright (c) 2005 - 2006, 2010 Kroon Infomation Systems,
  *  with contributions from various authors.
  *
  * This file is distributed under GPLv2, please see
@@ -19,14 +19,20 @@
 #include "serverconnection.h"
 
 #include <map>
+#include <set>
 #include <string>
 #include <utility>
+#include <qiconset.h>
 
 class QCheckBox;
 class QListViewItem;
 class QTimer;
 class QFileDialog;
 class Submit;
+class ClarificationRequestItem;
+class ClarificationItem;
+class SubmissionItem;
+class StandingItem;
 
 typedef struct {
 	int prio_level;
@@ -35,6 +41,8 @@ typedef struct {
 
 class MainWindow : public MainWindowBase {
 private:
+	QIconSet quietIcon, alertIcon;
+
 	LoginDialog _login_dialog;
 	Submit *_submit_dialog;
 	QFileDialog *_submit_file_dialog;
@@ -43,26 +51,47 @@ private:
 
 	std::string _active_type;
 
+	std::set<uint32_t> _subscribed_problems;
+
 	/* Clock-related stuff */
 	QTimer *timer;
 	time_t projected_stop;
 
-	/* Clarification stuff. The list box holds just the summary, so
-	 * we need to map the ID to the full text in each case.
-	 */
-	std::map<std::string, std::string> fullClarificationRequests;
-	std::map<std::string, std::pair<std::string, std::string> > fullClarifications;
+	/* Look up internal data by ID */
+	std::map<uint32_t, ClarificationRequestItem *> clarificationRequestMap;
+	std::map<uint32_t, ClarificationItem *> clarificationMap;
+	std::map<uint32_t, SubmissionItem *> submissionMap;
+	std::map<uint32_t, StandingItem *> standingMap;
 
 	void triggerType(std::string type, bool status);
 	void switchType(std::string type);
+
+	/* Indicate that a tab does/does not have new information */
+	void setAlert(QWidget *tab);
+	void setQuiet(QWidget *tab);
+
+	/* Find states requested for judge's submission filter */
+	std::set<int> getWantedStates() const;
+	/* Helpers to set information from either a bulk reply or an incremental
+	 * notification.
+	 */
+	template<typename T> void setClarificationRequest(ClarificationRequestItem *item, T &cr);
+	template<typename T> void setClarification(ClarificationItem *item, T &cr);
+	template<typename T> void setSubmission(SubmissionItem *item, bool filter,
+											const std::set<int> &wanted_states,
+											T &submission);
+	void clarificationRequest(uint32_t submission_id, uint32_t prob_id);
+
 protected:
 	virtual void doHelpAbout();
 	virtual void doFileConnect();
 	virtual void doFileDisconnect();
+	virtual void doForceRefresh();
 	virtual void doAdminCreateUser();
 	virtual void doAdminProblemConfig();
 	virtual void doAdminStartStop();
 	virtual void doSubmit();
+	virtual void doRequestSubmissionClarification();
 	virtual void doClarificationRequest();
 	virtual void doShowClarificationRequest(QListViewItem*);
 	virtual void doShowClarificationReply(QListViewItem*);
@@ -72,6 +101,8 @@ protected:
 	virtual void doJudgeSubscribeToProblems();
 	virtual void submissionHandler(QListViewItem *);
 	virtual void toggleBalloonPopups(bool);
+	virtual void sortStandings();
+	virtual void refilterSubmissions();
 
 	virtual void customEvent(QCustomEvent *ev);
 public:
@@ -82,12 +113,15 @@ public:
 	// we can't cast member function pointers to void* - no idea
 	// why though - can probably memcpy them but that would be
 	// even uglier.
-	void updateStandings();
-	virtual void updateSubmissions();
-	void updateClarificationRequests();
-	void updateClarifications();
-	void updateStatus();
-	void serverDisconnect();
+	void updateStandings(const MessageBlock *mb);
+	void updateSubmissions(const MessageBlock *mb);
+	void updateClarificationRequests(const MessageBlock *mb = NULL);
+	void updateClarifications(const MessageBlock *mb = NULL);
+	void updateStatus(const MessageBlock *mb = NULL);
+	void serverDisconnect(const MessageBlock *mb = NULL);
+
+	virtual void updateStandings() { updateStandings(NULL); }
+	virtual void updateSubmissions() { updateSubmissions(NULL); }
 
 	std::string getActiveType();
 };

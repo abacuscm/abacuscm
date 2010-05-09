@@ -16,10 +16,10 @@
 #include "messageblock.h"
 
 #include <iostream>
+#include <cstdlib>
 
 using namespace std;
 
-static ServerConnection _server_con;
 static Queue<MarkRequest*> _mark_requests;
 
 static void mark_request(const MessageBlock* mb, void*) {
@@ -36,6 +36,9 @@ static void server_close(const MessageBlock*, void*) {
 }
 
 int main(int argc, char **argv) {
+	/* Guarantee a standard style of error messages from tools */
+	setenv("LC_ALL", "C", 1);
+
 	Config &conf = Config::getConfig();
 	conf.load(DEFAULT_MARKER_CONFIG);
 	if(argc > 1)
@@ -43,50 +46,80 @@ int main(int argc, char **argv) {
 
 	log(LOG_DEBUG, "Loaded, proceeding to mark some code ...");
 
-	if(!_server_con.connect(conf["server"]["address"], conf["server"]["service"]))
-		return -1;
+	for (;;) {
+		MarkRequest *mr = NULL;
+		ServerConnection _server_con;
+		if(!_server_con.connect(conf["server"]["address"], conf["server"]["service"]))
+			goto retry;
 
-	if(!_server_con.auth(conf["server"]["username"], conf["server"]["password"]))
-		return -1;
-
-	log(LOG_DEBUG, "Connected to server!");
-
-	_server_con.registerEventCallback("mark", mark_request, NULL);
-	_server_con.registerEventCallback("close", server_close, NULL);
-
-	if(!_server_con.becomeMarker())
-		return -1;
-
-	MarkRequest *mr;
-	while((mr = _mark_requests.dequeue()) != NULL) {
-		AttributeMap attrs;
-		if(!_server_con.getProblemAttributes(mr->prob_id, attrs)) {
-			log(LOG_CRIT, "Cannot function if we cannot retrieve problem attributes!");
-			return -1;
+		if(!_server_con.auth(conf["server"]["username"], conf["server"]["password"])) {
+			// Perhaps the server hasn't been populated with the correct user credentials
+			// yet. Let's sleep and then have another go...
+			goto disconnect;
 		}
 
-		string problem_type = attrs["prob_type"];
-		ProblemMarker* marker = ProblemMarker::createMarker(problem_type);
+		log(LOG_DEBUG, "Connected to server!");
 
-		if (!marker) {
-			log(LOG_CRIT, "Error locating marker for problem type '%s'.", attrs["prob_type"].c_str());
-			return -1;
+		_server_con.registerEventCallback("mark", mark_request, NULL);
+		_server_con.registerEventCallback("close", server_close, NULL);
+
+		if(!_server_con.becomeMarker()) {
+			// More severe than failing to login, but again perhaps there's just a glitch
+			// on the server with our user setup. Sleep and have another go...
+			log(LOG_DEBUG, "Failed to become a marker");
+			goto disconnect;
 		}
 
-		marker->setServerCon(&_server_con);
-		marker->setMarkRequest(mr);
-		marker->setProblemAttributes(attrs);
+		while((mr = _mark_requests.dequeue()) != NULL) {
+			AttributeMap attrs;
+			if(!_server_con.getProblemAttributes(mr->prob_id, attrs)) {
+				log(LOG_CRIT, "Cannot function if we cannot retrieve problem attributes!");
+				goto disconnect;
+			}
 
-		marker->mark();
-		if(!marker->submitResult()) {
-			log(LOG_CRIT, "Great, failed to upload mark, bailing entirely ...");
-			return -1;
+			string problem_type = attrs["prob_type"];
+			ProblemMarker* marker = ProblemMarker::createMarker(problem_type);
+
+			if (!marker) {
+				log(LOG_CRIT, "Error locating marker for problem type '%s'.", attrs["prob_type"].c_str());
+				goto disconnect;
+			}
+
+			marker->setServerCon(&_server_con);
+			marker->setMarkRequest(mr);
+			marker->setProblemAttributes(attrs);
+
+			marker->mark();
+			if(!marker->submitResult()) {
+				log(LOG_CRIT, "Great, failed to upload mark, bailing entirely ...");
+				delete marker;
+				mr = NULL; // the ProblemMarker destructor frees the MarkRequest
+				goto disconnect;
+			}
+
+			delete marker;
 		}
 
-		delete marker;
+		log(LOG_INFO, "Server has disconnected");
+
+		disconnect:
+		_server_con.disconnect();
+
+		// Clean up any allocated MarkRequest instances, and clear the mark requests
+		// queue.
+		if (mr != NULL)
+			delete mr;
+
+		while (!_mark_requests.empty()) {
+			mr = _mark_requests.dequeue();
+			if (mr != NULL)
+				delete mr;
+		}
+
+		retry:
+		log(LOG_INFO, "Sleeping for 10 seconds");
+		sleep(10);
 	}
-
-	log(LOG_INFO, "Terminating");
 
 	return 0;
 }

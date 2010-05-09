@@ -84,6 +84,13 @@ public:
 		}
 		pthread_mutex_unlock(&_m);
 	}
+
+	bool empty() {
+		pthread_mutex_lock(&_m);
+		bool result = _q.empty();
+		pthread_mutex_unlock(&_m);
+		return result;
+	}
 };
 
 #endif

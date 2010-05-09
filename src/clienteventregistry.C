@@ -35,17 +35,20 @@ void ClientEventRegistry::registerClient(ClientConnection *cc) {
 	}
 	uint32_t user_id = cc->getProperty("user_id");
 	pthread_mutex_lock(&_lock);
-	_clients[user_id] = cc;
+	_clients.insert(make_pair(user_id, cc));
 	pthread_mutex_unlock(&_lock);
 };
 
-bool ClientEventRegistry::registerClient(string eventname, ClientConnection *cc) {
+bool ClientEventRegistry::registerClient(const string &eventname, ClientConnection *cc) {
+	pthread_mutex_lock(&_lock);
 	EventMap::iterator i = _eventmap.find(eventname);
 	if(i == _eventmap.end()) {
 		log(LOG_INFO, "Attempt to register for non-existant event '%s' from user %u.", eventname.c_str(), cc->getProperty("user_id"));
+		pthread_mutex_unlock(&_lock);
 		return false;
 	}
 	i->second->registerClient(cc);
+	pthread_mutex_unlock(&_lock);
 	return true;
 }
 
@@ -57,44 +60,58 @@ void ClientEventRegistry::deregisterClient(ClientConnection *cc) {
 	for(e = _eventmap.begin(); e != _eventmap.end(); ++e)
 		e->second->deregisterClient(cc);
 
-	ClientMap::iterator c = _clients.find(user_id);
-	if(c != _clients.end())
-		_clients.erase(c);
+	pair<ClientMap::iterator, ClientMap::iterator> range = _clients.equal_range(user_id);
+	ClientMap::iterator c = range.first;
+	while (c != range.second) {
+		ClientMap::iterator next = c;
+		++next;
+		if (c->second == cc)
+			_clients.erase(c);
+		c = next;
+	}
 	pthread_mutex_unlock(&_lock);
 }
 
-void ClientEventRegistry::deregisterClient(string eventname, ClientConnection *cc) {
-	Event* ev = _eventmap[eventname];
+void ClientEventRegistry::deregisterClient(const string &eventname, ClientConnection *cc) {
+	pthread_mutex_lock(&_lock);
 	log(LOG_DEBUG, "Deregistering from event '%s'", eventname.c_str());
-	if(!ev)
+	EventMap::iterator i = _eventmap.find(eventname);
+	if(i == _eventmap.end())
 		log(LOG_INFO, "Attempt by user %d to deregister from non-existant event '%s'", cc->getProperty("user_id"), eventname.c_str());
 	else
-		ev->deregisterClient(cc);
+		i->second->deregisterClient(cc);
+	pthread_mutex_unlock(&_lock);
 }
 
-bool ClientEventRegistry::isClientRegistered(string eventname, ClientConnection *cc) {
+bool ClientEventRegistry::isClientRegistered(const string &eventname, ClientConnection *cc) {
+	bool ans;
+	pthread_mutex_lock(&_lock);
+
 	EventMap::iterator i = _eventmap.find(eventname);
 	if(i == _eventmap.end()) {
-	log(LOG_INFO, "Attempt by user %d to check registration for non-existant event '%s'", cc->getProperty("user_id"), eventname.c_str());
-	return false;
+		log(LOG_INFO, "Attempt by user %d to check registration for non-existant event '%s'", cc->getProperty("user_id"), eventname.c_str());
+		ans = false;
 	}
 	else
-		return i->second->isClientRegistered(cc);
+		ans = i->second->isClientRegistered(cc);
+	pthread_mutex_unlock(&_lock);
+	return ans;
 }
 
-void ClientEventRegistry::registerEvent(string eventname) {
-	// Yes, I know here is a race condition, but most (if not all)
-	// events will only register once at startup whilst we aren't
-	// multi-threading yet.
+void ClientEventRegistry::registerEvent(const string &eventname) {
+	pthread_mutex_lock(&_lock);
 	Event* ev = _eventmap[eventname];
 	if(ev)
 		log(LOG_NOTICE, "Attempt to re-register event '%s'", eventname.c_str());
 	else
 		_eventmap[eventname] = new Event();
+	pthread_mutex_unlock(&_lock);
 }
 
-void ClientEventRegistry::triggerEvent(string eventname, const MessageBlock *mb) {
+void ClientEventRegistry::triggerEvent(const string &eventname, const MessageBlock *mb) {
+	pthread_mutex_lock(&_lock);
 	EventMap::iterator i = _eventmap.find(eventname);
+	pthread_mutex_unlock(&_lock);
 	if(i == _eventmap.end())
 		log(LOG_ERR, "Attempt to trigger unknown event '%s'",
 				eventname.c_str());
@@ -102,20 +119,23 @@ void ClientEventRegistry::triggerEvent(string eventname, const MessageBlock *mb)
 		i->second->triggerEvent(mb);
 }
 
-void ClientEventRegistry::broadcastEvent(const MessageBlock *mb) {
+void ClientEventRegistry::broadcastEvent(uint32_t user_id, int mask, const MessageBlock *mb) {
 	pthread_mutex_lock(&_lock);
 	for(ClientMap::iterator i = _clients.begin(); i != _clients.end(); ++i) {
-		log(LOG_INFO, "broadcasting to client %p (with id %d)", i->second, i->first);
-		if (i->second != NULL)
-			i->second->sendMessageBlock(mb);
+		uint32_t user_type = i->second->getProperty("user_type");
+		if (i->first == user_id || ( (1 << user_type) & mask)) {
+			log(LOG_INFO, "broadcasting to client %p (with id %d)", i->second, i->first);
+			if (i->second != NULL)
+				i->second->sendMessageBlock(mb);
+		}
 	}
 	pthread_mutex_unlock(&_lock);
 }
 
 void ClientEventRegistry::sendMessage(uint32_t user_id, const MessageBlock *mb) {
 	pthread_mutex_lock(&_lock);
-	ClientMap::iterator i = _clients.find(user_id);
-	if (i != _clients.end()) {
+	pair<ClientMap::const_iterator, ClientMap::const_iterator> range = _clients.equal_range(user_id);
+	for (ClientMap::const_iterator i = range.first; i != range.second; ++i) {
 		ClientConnection *cc = i->second;
 		if(cc)
 			cc->sendMessageBlock(mb);

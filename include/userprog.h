@@ -76,8 +76,10 @@ public:
 	 * fd_{in,out,err} == The fds to use as stdin, stdout and stderr.
 	 *
 	 * The process should _not_ fork, the call MUST NOT return.
+	 * If evaluator is not "" then it is used as the command to run, in
+	 * front of runlimit.
 	 */
-	int exec(int fd_in, int fd_out, int fd_err, int fd_run) __attribute__((noreturn));
+	int exec(int fd_in, int fd_out, int fd_err, int fd_run, const std::string &evaluator = "") __attribute__((noreturn));
 
 	/**
 	 * Register a language.

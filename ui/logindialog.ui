@@ -6,10 +6,10 @@
     </property>
     <property name="geometry">
         <rect>
-            <x>1</x>
-            <y>0</y>
-            <width>382</width>
-            <height>182</height>
+            <x>7</x>
+            <y>9</y>
+            <width>368</width>
+            <height>163</height>
         </rect>
     </property>
     <property name="sizePolicy">
@@ -50,20 +50,6 @@
                 <property name="spacing">
                     <number>6</number>
                 </property>
-                <widget class="QPushButton">
-                    <property name="name">
-                        <cstring>buttonHelp</cstring>
-                    </property>
-                    <property name="text">
-                        <string>&amp;Help</string>
-                    </property>
-                    <property name="accel">
-                        <string>F1</string>
-                    </property>
-                    <property name="autoDefault">
-                        <bool>true</bool>
-                    </property>
-                </widget>
                 <spacer>
                     <property name="name">
                         <cstring>Horizontal Spacing2</cstring>
@@ -192,13 +178,12 @@
     </connection>
 </connections>
 <tabstops>
+    <tabstop>serverName</tabstop>
+    <tabstop>service</tabstop>
     <tabstop>username</tabstop>
     <tabstop>password</tabstop>
     <tabstop>buttonOk</tabstop>
     <tabstop>buttonCancel</tabstop>
-    <tabstop>serverName</tabstop>
-    <tabstop>service</tabstop>
-    <tabstop>buttonHelp</tabstop>
 </tabstops>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

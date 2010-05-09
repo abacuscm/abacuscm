@@ -7,6 +7,7 @@
  *
  * $Id$
  */
+#include "acmconfig.h"
 #include "markers.h"
 #include "messageblock.h"
 #include "clientconnection.h"
@@ -18,8 +19,20 @@
 
 Markers Markers::_instance;
 
+void *checkForTimeoutsThread(void *) {
+	while (!Markers::getInstance().shouldTerminate()) {
+		Markers::getInstance().checkForTimeouts();
+
+		// Sleep for 1 second and then have another look
+		sleep(1);
+	}
+
+	return NULL;
+}
+
 Markers::Markers() {
 	pthread_mutex_init(&_lock, NULL);
+	_shouldTerminate = 0;
 }
 
 Markers::~Markers() {
@@ -44,16 +57,18 @@ void Markers::enqueueMarker(ClientConnection* cc) {
 }
 
 void Markers::preemptMarker(ClientConnection* cc) {
-	log(LOG_DEBUG, "Removing %p from available markers", cc);
 	pthread_mutex_lock(&_lock);
 
 	std::list<ClientConnection*>::iterator i1;
 	std::map<ClientConnection*, uint32_t>::iterator i2;
 
-	if((i1 = list_find(_markers, cc)) != _markers.end())
+	if((i1 = list_find(_markers, cc)) != _markers.end()) {
+		log(LOG_DEBUG, "Removing %p from available markers - was not issued anything", cc);
 		_markers.erase(i1);
+	}
 	else if((i2 = _issued.find(cc)) != _issued.end()) {
 		uint32_t tmp = i2->second;
+		log(LOG_DEBUG, "Removing %p from available markers - was issued %u", cc, tmp);
 		_issued.erase(i2);
 		real_enqueueSubmission(tmp);
 	}
@@ -74,6 +89,7 @@ void Markers::real_enqueueSubmission(uint32_t sd) {
 }
 
 void Markers::real_enqueueMarker(ClientConnection* cc) {
+	log(LOG_DEBUG, "Enqueuing marker %p", cc);
 	if(_problems.empty()) {
 		_markers.push_back(cc);
 	} else {
@@ -105,7 +121,7 @@ void Markers::issue(ClientConnection* cc, uint32_t sd) {
 	std::string language;
 	uint32_t prob_id;
 
-	bool has_data = db->retrieveSubmission(sd, &content, &length, language, &prob_id);
+	bool has_data = db->retrieveSubmission(0, sd, &content, &length, language, &prob_id);
 	db->release();db=NULL;
 
 	if(!has_data) {
@@ -128,10 +144,15 @@ void Markers::issue(ClientConnection* cc, uint32_t sd) {
 	mb.setContent(content, length);
 	delete []content;
 
+	log(LOG_DEBUG, "About to issue %u to %p", sd, cc);
 	if(cc->sendMessageBlock(&mb)) {
 		_issued[cc] = sd;
-	} else
+		_issue_times.push(std::make_pair(time(NULL), std::make_pair(cc, sd)));
+		log(LOG_DEBUG, "Issued submission %u to %p", sd, cc);
+	} else {
 		enqueueSubmission(sd);
+		log(LOG_DEBUG, "Submission of %u to %p failed; returning submission to queue", sd, cc);
+	}
 }
 
 uint32_t Markers::hasIssued(ClientConnection*cc) {
@@ -160,7 +181,56 @@ void Markers::notifyMarked(ClientConnection* cc, uint32_t submission_id) {
 
 		// chuck the submission_id - it has now been marked.
 		// re-enqueue the ClientConnection.
+		log(LOG_DEBUG, "Adding marker %p back to queue after successful mark of submission %u", cc, submission_id);
 		real_enqueueMarker(cc);
 	}
 	pthread_mutex_unlock(&_lock);
 }
+
+void Markers::checkForTimeouts() {
+	pthread_mutex_lock(&_lock);
+
+	while (!_issue_times.empty() && ((time(NULL) - _issue_times.top().first) > (time_t) _timeout)) {
+		// The earliest submitted marking job has timed out
+		ClientConnection *cc = _issue_times.top().second.first;
+		uint32_t submission_id = _issue_times.top().second.second;
+		_issue_times.pop();
+
+		std::map<ClientConnection*, uint32_t>::iterator i = _issued.find(cc);
+		if (i == _issued.end() || i->second != submission_id)
+			continue;
+
+		log(LOG_WARNING, "Marker %p timed out in marking submission %u, re-enqueuing submission and dropping marker client connection from pool", cc, submission_id);
+
+		_issued.erase(i);
+		real_enqueueSubmission(submission_id);
+	}
+
+	pthread_mutex_unlock(&_lock);
+}
+
+void Markers::startTimeoutCheckingThread() {
+	_timeout = atoll(Config::getConfig()["markers"]["timeout"].c_str());
+	if (_timeout == 0) {
+		// Disable timeout checking if the timeout is 0
+		return;
+	}
+
+	_shouldTerminate = 0;
+	pthread_create(&_timeout_checker, NULL, checkForTimeoutsThread, NULL);
+}
+
+bool Markers::shouldTerminate() {
+	return (_shouldTerminate != 0);
+}
+
+void Markers::shutdown() {
+	_shouldTerminate = 1;
+
+	// Only join the timeout thread if we created it
+	if (_timeout > 0) {
+		pthread_join(_timeout_checker, NULL);
+	}
+}
+
+

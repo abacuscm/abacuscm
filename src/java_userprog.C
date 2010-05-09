@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sstream>
+#include <fstream>
 
 using namespace std;
 
@@ -48,14 +49,9 @@ Java_UserProg::~Java_UserProg() {
 list<string> Java_UserProg::getProgramArgv() {
 	list<string> argv;
 	string runtime = Config::getConfig()["java"]["runtime"];
-	string policy = Config::getConfig()["java"]["policy"];
 	if(runtime == "") {
 		log(LOG_INFO, "[java][runtime] not set, defaulting to /usr/bin/java");
 		runtime = "/usr/bin/java";
-	}
-	if(policy == "") {
-		log(LOG_WARNING, "[java][runtime] not set, defaulting to conf/java.policy");
-		policy = "conf/java.policy";
 	}
 
 	argv.push_back(runtime);
@@ -69,7 +65,7 @@ list<string> Java_UserProg::getProgramArgv() {
 		argv.push_back("-Xmx" + tmp.str());
 	}
 	argv.push_back("-Djava.security.manager");
-	argv.push_back("-Djava.security.policy==" + policy);
+	argv.push_back("-Djava.security.policy==" + _cp_dir + "/java.policy");
 
 	argv.push_back(_classname);
 	return argv;
@@ -93,7 +89,7 @@ string Java_UserProg::sourceFilename(const Buffer& src) {
 	int i;
 	string sourcename = "";
 	regex_t reg_pkg;
-	if((i = regcomp(&reg_pkg, "^[[:space:]]*package[[:space:]]+([^[:space:];]+)[[:space:]]*;", REG_EXTENDED)) != 0) {
+	if((i = regcomp(&reg_pkg, "(^|[[:space:]])package[[:space:]]+([A-Za-z_$][A-Za-z0-9_$]*(\\.[A-Za-z_][A-Za-z0-9_$]*)*)[[:space:]]*;", REG_EXTENDED)) != 0) {
 		char err[1024];
 		regerror(i, &reg_pkg, err, 1024);
 		log(LOG_CRIT, "Error compiling java package name regex: %s", err);
@@ -101,26 +97,26 @@ string Java_UserProg::sourceFilename(const Buffer& src) {
 	}
 
 	regex_t reg_cls;
-	if((i = regcomp(&reg_cls, "class[[:space:]]+([^[:space:]{]+)[[:space:]{]", REG_EXTENDED)) != 0) {
+	if((i = regcomp(&reg_cls, "(^|[[:space:]])public[[:space:]]+class[[:space:]]+([A-Za-z_$][A-Za-z0-9_$]*)[[:space:]{]", REG_EXTENDED)) != 0) {
 		char err[1024];
 		regerror(i, &reg_cls, err, 1024);
 		log(LOG_CRIT, "Error compiling java class name regex: %s", err);
 		return "";
 	}
 
-	regmatch_t pkg_match[2];
-	regmatch_t cls_match[2];
+	regmatch_t pkg_match[4];
+	regmatch_t cls_match[3];
 
 
 	char* source = strndup((char*)src.data(), src.size());
-	if(regexec(&reg_pkg, source, 2, pkg_match, 0) == 0) {
-		char *tmp = strndup(source + pkg_match[1].rm_so, pkg_match[1].rm_eo - pkg_match[1].rm_so);
+	if(regexec(&reg_pkg, source, 4, pkg_match, 0) == 0) {
+		char *tmp = strndup(source + pkg_match[2].rm_so, pkg_match[2].rm_eo - pkg_match[2].rm_so);
 		_classname = tmp;
 		_classname += ".";
 		free(tmp);
 	}
-	if(regexec(&reg_cls, source, 2, cls_match, 0) == 0) {
-		char *tmp = strndup(source + cls_match[1].rm_so, cls_match[1].rm_eo - cls_match[1].rm_so);
+	if(regexec(&reg_cls, source, 3, cls_match, 0) == 0) {
+		char *tmp = strndup(source + cls_match[2].rm_so, cls_match[2].rm_eo - cls_match[2].rm_so);
 		sourcename = tmp;
 		sourcename += ".java";
 		_classname += tmp;
@@ -140,6 +136,39 @@ bool Java_UserProg::compile(string infile, string compiler_log, string outdir) {
 	if(compiler == "") {
 		log(LOG_INFO, "[java][compiler] not set, defaulting to /usr/bin/javac");
 		compiler = "/usr/bin/javac";
+	}
+
+	string policy = Config::getConfig()["java"]["policy"];
+	if(policy == "") {
+		log(LOG_WARNING, "[java][policy] not set, defaulting to conf/java.policy");
+		policy = "conf/java.policy";
+	}
+	ifstream policy_in(policy.c_str());
+	if (!policy_in)
+	{
+		ofstream err(compiler_log.c_str());
+		err << "Could not read policy file " << policy << ".\n";
+		err << "Please contact a judge.\n";
+		return false;
+	}
+	string policy_out_fname = outdir + "/java.policy";
+	ofstream policy_out(policy_out_fname.c_str());
+	if (!policy_out)
+	{
+		ofstream err(compiler_log.c_str());
+		err << "Could not write policy file " << policy_out_fname << "\n";
+		err << "Please contact a judge.\n";
+		return false;
+	}
+	policy_out << policy_in.rdbuf();
+	policy_in.close();
+	policy_out.close();
+	if (!policy_out)
+	{
+		ofstream err(compiler_log.c_str());
+		err << "Error copying " << policy << " to " << policy_out_fname << "\n";
+		err << "Please contact a judge.\n";
+		return false;
 	}
 
 	list<string> argv;

@@ -29,7 +29,8 @@ typedef enum {
 	ABNORMAL = 3,
 	COMPILE_FAILED = 4,
 	JUDGE = 5,
-	OTHER = 6,
+	FORMAT_ERROR = 6,
+	OTHER = 7,
 } RunResult;
 
 typedef enum {
@@ -38,10 +39,33 @@ typedef enum {
 	USER_TYPE_JUDGE = 2,
 	USER_TYPE_CONTESTANT = 3,
 	USER_TYPE_MARKER = 4,
-	USER_TYPE_NONCONTEST = 5,
+	USER_TYPE_OBSERVER = 5,
 } UserType;
 
-extern char *runMessages[];
-extern char *shortRunMessages[];
+/* Column numbering for standings client-server messages. Note: if you
+ * update this, be sure to update the corresponding enumerations in
+ * standings.pl and standings.js.
+ */
+typedef enum {
+	STANDING_RAW_ID = 0,
+	STANDING_RAW_USERNAME = 1,
+	STANDING_RAW_FRIENDLYNAME = 2,
+	STANDING_RAW_CONTESTANT = 3,
+	STANDING_RAW_TOTAL_SOLVED = 4,
+	STANDING_RAW_TOTAL_TIME = 5,
+	STANDING_RAW_SOLVED = 6
+} StandingColumnRaw;
+
+static const int USER_MASK_ADMIN = 1 << USER_TYPE_ADMIN;
+static const int USER_MASK_JUDGE = 1 << USER_TYPE_JUDGE;
+static const int USER_MASK_CONTESTANT = 1 << USER_TYPE_CONTESTANT;
+static const int USER_MASK_MARKER = 1 << USER_TYPE_MARKER;
+static const int USER_MASK_OBSERVER = 1 << USER_TYPE_OBSERVER;
+static const int USER_MASK_ALL = USER_MASK_ADMIN | USER_MASK_JUDGE | USER_MASK_CONTESTANT | USER_MASK_MARKER | USER_MASK_OBSERVER;
+
+extern const char * const runMessages[OTHER + 1];
+extern const char * const runCodes[OTHER + 1];
+
+#define NULL_TIME ((time_t) -1)
 
 #endif

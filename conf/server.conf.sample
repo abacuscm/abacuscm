@@ -2,8 +2,8 @@
 moddir = modules
 peermessenger = udtcpmessenger
 dbconnector = dbmysql
-support = user,timer,submission,standings
-actions = auth,passwd,adduser,addserver,whatami,problemtypes,problemmanip,status,serverlist,submit,events,startstop,mark,problem_subscription,clarify,contesttime,standings
+support = user,timer,submission,standings,keepalive
+actions = auth,passwd,adduser,addserver,whatami,problemtypes,problemmanip,status,serverlist,submit,events,startstop,mark,clarify,contesttime,standings
 problemtypes = testcasedriventype
 
 [udtcpmessenger]
@@ -40,6 +40,7 @@ ciphers = HIGH
 [initialisation]
 type=master
 name=chimera
+admin_password = admin
 
 [workers]
 min_idle=5
@@ -53,4 +54,5 @@ udppeerport = 7368
 marker = yes
 
 [contest]
-duration=18000
+duration = 18000
+languages = C,C++,Python,Java

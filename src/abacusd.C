@@ -26,6 +26,7 @@
 #include "server.h"
 #include "dbcon.h"
 #include "threadssl.h"
+#include "hashpw.h"
 #include "socket.h"
 #include "clientlistener.h"
 #include "clientconnection.h"
@@ -52,7 +53,7 @@ static pthread_t thread_message_resender;
 static pthread_t thread_timed_actions;
 
 // This variable indicates that we are still running.
-static volatile bool abacusd_running = true;
+static volatile sig_atomic_t abacusd_running = true;
 
 // All the various Queue<>s
 static Queue<Message*> message_queue;
@@ -206,7 +207,13 @@ static bool initialise() {
 		for(i = config["init_attribs"].begin(); i != config["init_attribs"].end(); ++i)
 			init->addAttribute(i->first, i->second);
 
-		Message_CreateUser *admin = new Message_CreateUser("admin", "Administrator", "f6fdffe48c908deb0f4c3bd36c032e72", 1, USER_TYPE_ADMIN);
+		string initial_pw = config["initialisation"]["admin_password"];
+		if (initial_pw == "") {
+			log(LOG_DEBUG, "No initial password set, using default");
+			initial_pw = "admin";
+		}
+		string initial_hashpw = hashpw("admin", initial_pw);
+		Message_CreateUser *admin = new Message_CreateUser("admin", "Administrator", initial_hashpw, 1, USER_TYPE_ADMIN);
 
 		if(init->makeMessage() && admin->makeMessage()) {
 			message_queue.enqueue(init);
@@ -236,18 +243,6 @@ static bool initialise() {
 	message_queue.enqueue(msglist.begin(), msglist.end());
 	for(IdList::iterator i = sublist.begin(); i != sublist.end(); ++i)
 		Markers::getInstance().enqueueSubmission(*i);
-
-	db = DbCon::getInstance();
-	if(db) {
-		ProblemList problst = db->getProblems();
-		for(ProblemList::iterator j = problst.begin(); j != problst.end(); ++j) {
-			AttributeList prob = db->getProblemAttributes(*j);
-			ClientEventRegistry::getInstance().registerEvent("judge_" + prob["shortname"]);
-		}
-		ClientEventRegistry::getInstance().registerEvent("judgesubmission");
-		db->release();db=NULL;
-	} else
-		log(LOG_ERR, "Error obtaining DbCon to load existing problems");
 
 	return true;
 }
@@ -567,10 +562,14 @@ void* timed_actions(void*) {
 			next = timed_queue.dequeue();
 	}
 
-	timed_queue.enqueue(NULL);
-	while(next) {
+	delete next;
+	timed_queue.enqueue(NULL);  // ensures that the loop below won't block
+	while((next = timed_queue.dequeue()) != NULL) {
 		delete next;
-		next = timed_queue.dequeue();
+	}
+	while (!heap.empty()) {
+		delete heap.back();
+		heap.pop_back();
 	}
 
 	return NULL;
@@ -597,6 +596,8 @@ int main(int argc, char ** argv) {
 	Server::setTimedQueue(&timed_queue);
 	Server::setSocketQueue(&wait_queue);
 	Server::setSocketPool(&socket_pool);
+
+	Markers::getInstance().startTimeoutCheckingThread();
 
 	ModuleLoader module_loader;
 	/* The ModuleLoader object uses scope to clean up on destruction. It
@@ -628,6 +629,8 @@ int main(int argc, char ** argv) {
 	// is easier right now than figuring out sigprocmask and sigwait.
 	while (abacusd_running)
 		pause();
+
+	Markers::getInstance().shutdown();
 
 	PeerMessenger::getMessenger()->shutdown();
 

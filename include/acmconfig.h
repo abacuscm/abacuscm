@@ -22,6 +22,13 @@
 #define DEFAULT_UDPRECEIVER_PORT	7368
 #define DEFAULT_MODULE_DIR			SYSLIBDIR  "/abacusd/modules"
 
+// Keepalive times, in seconds
+#define KEEPALIVE_INTERVAL 120    // Interval at which server sends keepalives
+#define KEEPALIVE_TIMEOUT 180     // If no keepalive seen for this long, die
+
+// In bytes
+#define MAX_SUBMISSION_SIZE (100 * 1024)
+
 typedef std::map<std::string, std::string> ConfigSection;
 typedef std::map<std::string, ConfigSection> ConfigMap;
 

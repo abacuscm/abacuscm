@@ -12,6 +12,7 @@
 #include "acmconfig.h"
 #include "message.h"
 #include "server.h"
+#include "hashpw.h"
 
 #include <mysql/mysql.h>
 #include <sstream>
@@ -69,6 +70,7 @@ public:
 	virtual uint32_t maxSubmissionId();
 	virtual uint32_t maxClarificationReqId();
 	virtual uint32_t maxClarificationId();
+	virtual uint32_t maxProblemId();
 	virtual ProblemList getProblems();
 	virtual time_t getProblemUpdateTime(uint32_t problem_id);
 	virtual bool setProblemUpdateTime(uint32_t problem_id, time_t time);
@@ -84,11 +86,18 @@ public:
 	virtual bool delProblemAttribute(uint32_t problem_id, std::string attr);
 	virtual bool getProblemFileData(uint32_t problem_id, std::string attr,
 			uint8_t **dataptr, uint32_t *lenptr);
+	virtual bool delProblemDependency(uint32_t problem_id, uint32_t dependent_problem_id);
+	virtual bool addProblemDependency(uint32_t problem_id, uint32_t dependent_problem_id);
+	virtual ProblemList getProblemDependencies(uint32_t problem_id);
+	virtual ProblemList getDependentProblemsPending(uint32_t user_id, uint32_t problem_id);
+	virtual bool isSubmissionAllowed(uint32_t user_id, uint32_t problem_id);
 	virtual bool putSubmission(uint32_t submission_id, uint32_t user_id, uint32_t prob_id,
 			uint32_t time, uint32_t server_id, char* content,
 			uint32_t content_size, std::string language);
 	virtual SubmissionList getSubmissions(uint32_t uid);
+	virtual AttributeList getSubmission(uint32_t submission_id);
 	virtual ClarificationList getClarifications(uint32_t uid);
+	virtual AttributeList getClarification(uint32_t c_id);
 	virtual ClarificationRequestList getClarificationRequests(uint32_t uid);
 	virtual AttributeList getClarificationRequest(uint32_t req_id);
 	virtual bool putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t prob_id,
@@ -98,7 +107,7 @@ public:
 					  uint32_t user_id, uint32_t time,
 					  uint32_t server_id, uint32_t pub,
 					  const std::string& answer);
-	virtual bool retrieveSubmission(uint32_t sub_id, char** buffer, int *length,
+	virtual bool retrieveSubmission(uint32_t user_id, uint32_t sub_id, char** buffer, int *length,
 			string& language, uint32_t* prob_id);
 	virtual IdList getUnmarked(uint32_t server_id);
 	virtual bool putMark(uint32_t submission_id, uint32_t marker_id,
@@ -217,7 +226,7 @@ QueryResultRow MySQL::singleRowQuery(const std::string& query) {
 			resrow.push_back(string(row[i], lens[i]));
 
 		// have to flush the entire result.
-		while(mysql_fetch_row(res));
+		while(mysql_fetch_row(res)) {}
 	}
 
 	mysql_free_result(res);
@@ -452,7 +461,8 @@ bool MySQL::addServer(const string& name, uint32_t id) {
 int MySQL::authenticate(const std::string& uname, const std::string& pass, uint32_t *user_id, uint32_t *user_type) {
 	ostringstream query;
 
-	query << "SELECT user_id, type FROM User WHERE username='" << escape_string(uname) << "' AND password=MD5('" << escape_string(uname) << escape_string(pass) << "')";
+	string hash = hashpw(uname, pass);
+	query << "SELECT user_id, type FROM User WHERE username='" << escape_string(uname) << "' AND password='" << escape_string(hash) << "'";
 
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();
@@ -696,6 +706,30 @@ uint32_t MySQL::maxClarificationId() {
 	return max_user_id;
 }
 
+uint32_t MySQL::maxProblemId() {
+	uint32_t max_problem_id = ~0U;
+	ostringstream query;
+	query << "SELECT MAX(problem_id) FROM Problem WHERE problem_id & " << (ID_GRANULARITY - 1) << " = " << Server::getId();
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return ~0U;
+	}
+
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if(res) {
+		MYSQL_ROW row = mysql_fetch_row(res);
+		if(row) {
+			if(row[0])
+				max_problem_id = atol(row[0]);
+			else
+				max_problem_id = 0;
+		}
+		mysql_free_result(res);
+	}
+
+	return max_problem_id;
+}
+
 ProblemList MySQL::getProblems() {
 	ProblemList result;
 	if(mysql_query(&_mysql, "SELECT * FROM Problem"))
@@ -732,6 +766,67 @@ time_t MySQL::getProblemUpdateTime(uint32_t problem_id) {
 	}
 }
 
+bool MySQL::delProblemDependency(uint32_t problem_id, uint32_t dependent_problem_id) {
+	ostringstream query;
+	query << "DELETE FROM ProblemDependencies WHERE problem_id=" << problem_id << " AND dependent_problem_id=" << dependent_problem_id;
+	if (mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	} else {
+		return true;
+	}
+}
+
+bool MySQL::addProblemDependency(uint32_t problem_id, uint32_t dependent_problem_id) {
+	ostringstream query;
+	query << "INSERT INTO ProblemDependencies (problem_id, dependent_problem_id) VALUES (" << problem_id << ", " << dependent_problem_id << ")";
+	if (mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return false;
+	} else {
+		return true;
+	}
+}
+
+ProblemList MySQL::getProblemDependencies(uint32_t problem_id) {
+	ostringstream query;
+	query << "SELECT Problem.problem_id FROM Problem,ProblemDependencies WHERE ProblemDependencies.problem_id=" << problem_id << " AND Problem.problem_id=ProblemDependencies.dependent_problem_id";
+
+    ProblemList result;
+	if (mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+	}
+	else {
+		MYSQL_RES *res = mysql_use_result(&_mysql);
+		if(res) {
+			MYSQL_ROW row;
+			while((row = mysql_fetch_row(res)) != 0) {
+				result.push_back(atol(row[0]));
+			}
+			mysql_free_result(res);
+		}
+	}
+	return result;
+}
+
+ProblemList MySQL::getDependentProblemsPending(uint32_t user_id, uint32_t problem_id) {
+	ProblemList result;
+	ProblemList dependent_problems = getProblemDependencies(problem_id);
+	for (ProblemList::iterator it = dependent_problems.begin(); it != dependent_problems.end(); it++)
+	{
+        uint32_t dependent_problem_id = *it;
+		if (!hasSolved(user_id, dependent_problem_id)) {
+			result.push_back(dependent_problem_id);
+		}
+	}
+    return result;
+}
+
+bool MySQL::isSubmissionAllowed(uint32_t user_id, uint32_t problem_id) {
+	ProblemList dependent_problems_pending = getDependentProblemsPending(user_id, problem_id);
+	return dependent_problems_pending.size() == 0;
+}
+
 bool MySQL::putSubmission(uint32_t submission_id, uint32_t user_id, uint32_t prob_id, uint32_t time, uint32_t server_id, char* content, uint32_t content_size, std::string language) {
 	ostringstream query;
 	query << "INSERT INTO Submission (submission_id, user_id, prob_id, time, server_id, content, language) VALUES(" << submission_id << ", " << user_id << ", " << prob_id << ", " << time << ", " << server_id << ", '" << escape_buffer((uint8_t*)content, content_size) << "', '" << escape_string(language) << "')";
@@ -742,6 +837,34 @@ bool MySQL::putSubmission(uint32_t submission_id, uint32_t user_id, uint32_t pro
 	}
 
 	return true;
+}
+
+AttributeList MySQL::getSubmission(uint32_t submission_id) {
+	ostringstream query;
+	query << "SELECT submission_id, time, value, Submission.prob_id FROM User, ProblemAttributes, Submission WHERE User.user_id = Submission.user_id AND Submission.prob_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute = 'shortname'";
+	query << " AND submission_id = " << submission_id;
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return AttributeList();
+	}
+
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if (!res) {
+		log_mysql_error();
+		return AttributeList();
+	}
+	MYSQL_ROW row;
+	AttributeList attrs;
+	while((row = mysql_fetch_row(res)) != 0) {
+		attrs["submission_id"] = row[0];
+		attrs["time"] = row[1];
+		attrs["problem"] = row[2];
+		attrs["prob_id"] = row[3];
+	}
+	mysql_free_result(res);
+
+	return attrs;
 }
 
 SubmissionList MySQL::getSubmissions(uint32_t uid) {
@@ -780,9 +903,42 @@ SubmissionList MySQL::getSubmissions(uint32_t uid) {
 	return lst;
 }
 
+AttributeList MySQL::getClarification(uint32_t c_id) {
+	ostringstream query;
+	query << "SELECT Clarification.clarification_id, Clarification.clarification_req_id, username, value, Clarification.time, ClarificationRequest.text, Clarification.text FROM Clarification LEFT JOIN ClarificationRequest USING(clarification_req_id) LEFT JOIN User ON Clarification.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ProblemAttributes.problem_id = ClarificationRequest.problem_id AND ProblemAttributes.attribute = 'shortname'";
+	query << " WHERE Clarification.clarification_id = " << c_id;
+
+	if(mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return AttributeList();
+	}
+
+	AttributeList attrs;
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if (!res) {
+		log_mysql_error();
+		return AttributeList();
+	}
+	MYSQL_ROW row = mysql_fetch_row(res);
+	if (row)
+	{
+		attrs["id"] = row[0];
+		attrs["req_id"] = row[1];
+		/* Leave out Judge for now; can be added as row[2] later */
+		attrs["problem"] = row[3] ? row[3] : "General";
+		attrs["time"] = row[4];
+		attrs["question"] = row[5];
+		attrs["answer"] = row[6];
+		while (mysql_fetch_row(res)) {}
+	}
+	mysql_free_result(res);
+
+	return attrs;
+}
+
 ClarificationList MySQL::getClarifications(uint32_t uid) {
 	ostringstream query;
-	query << "SELECT Clarification.clarification_id, username, value, Clarification.time, ClarificationRequest.text, Clarification.text FROM Clarification LEFT JOIN ClarificationRequest USING(clarification_req_id) LEFT JOIN User ON Clarification.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ProblemAttributes.problem_id = ClarificationRequest.problem_id AND ProblemAttributes.attribute = 'shortname'";
+	query << "SELECT Clarification.clarification_id, Clarification.clarification_req_id, username, value, Clarification.time, ClarificationRequest.text, Clarification.text FROM Clarification LEFT JOIN ClarificationRequest USING(clarification_req_id) LEFT JOIN User ON Clarification.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ProblemAttributes.problem_id = ClarificationRequest.problem_id AND ProblemAttributes.attribute = 'shortname'";
 	if (uid)
 		query << " WHERE Clarification.public != 0 OR ClarificationRequest.user_id = " << uid;
 	query << " ORDER BY TIME";
@@ -802,11 +958,12 @@ ClarificationList MySQL::getClarifications(uint32_t uid) {
 	while ((row = mysql_fetch_row(res)) != 0) {
 		AttributeList attrs;
 		attrs["id"] = row[0];
-		/* Leave out Judge for now; can be added as row[1] later */
-		attrs["problem"] = row[2] ? row[2] : "General";
-		attrs["time"] = row[3];
-		attrs["question"] = row[4];
-		attrs["answer"] = row[5];
+		attrs["req_id"] = row[1];
+		/* Leave out Judge for now; can be added as row[2] later */
+		attrs["problem"] = row[3] ? row[3] : "General";
+		attrs["time"] = row[4];
+		attrs["question"] = row[5];
+		attrs["answer"] = row[6];
 
 		lst.push_back(attrs);
 	}
@@ -817,9 +974,8 @@ ClarificationList MySQL::getClarifications(uint32_t uid) {
 
 AttributeList MySQL::getClarificationRequest(uint32_t req_id) {
 	ostringstream query;
-	query << "SELECT ClarificationRequest.clarification_req_id, ClarificationRequest.user_id, username, value, ClarificationRequest.time, ClarificationRequest.text AS question, COUNT(clarification_id) AS answers FROM ClarificationRequest LEFT OUTER JOIN Clarification USING(clarification_req_id) LEFT JOIN User ON ClarificationRequest.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ClarificationRequest.problem_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute='shortname'";
+	query << "SELECT ClarificationRequest.clarification_req_id, ClarificationRequest.user_id, username, value, ClarificationRequest.time, ClarificationRequest.text AS question FROM ClarificationRequest LEFT JOIN User ON ClarificationRequest.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ClarificationRequest.problem_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute='shortname'";
 	query << " WHERE ClarificationRequest.clarification_req_id = " << req_id;
-	query << " GROUP BY ClarificationRequest.clarification_req_id";
 
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();
@@ -841,8 +997,7 @@ AttributeList MySQL::getClarificationRequest(uint32_t req_id) {
 		attrs["problem"] = row[3] ? row[3] : "General";
 		attrs["time"] = row[4];
 		attrs["question"] = row[5];
-		attrs["status"] = atoi(row[6]) ? "answered" : "pending";
-		while (mysql_fetch_row(res));
+		while (mysql_fetch_row(res)) {}
 	}
 	mysql_free_result(res);
 
@@ -852,9 +1007,9 @@ AttributeList MySQL::getClarificationRequest(uint32_t req_id) {
 ClarificationRequestList MySQL::getClarificationRequests(uint32_t uid) {
 	ostringstream query;
 
-	query << "SELECT ClarificationRequest.clarification_req_id, ClarificationRequest.user_id, username, value, ClarificationRequest.time, ClarificationRequest.text AS question, COUNT(clarification_id) AS answers FROM ClarificationRequest LEFT OUTER JOIN Clarification USING(clarification_req_id) LEFT JOIN User ON ClarificationRequest.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ClarificationRequest.problem_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute='shortname'";
+	query << "SELECT ClarificationRequest.clarification_req_id, ClarificationRequest.user_id, username, value, ClarificationRequest.time, ClarificationRequest.text AS question FROM ClarificationRequest LEFT JOIN User ON ClarificationRequest.user_id = User.user_id LEFT OUTER JOIN ProblemAttributes ON ClarificationRequest.problem_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute='shortname'";
 	if (uid) query << " WHERE ClarificationRequest.user_id = " << uid;
-	query << " GROUP BY ClarificationRequest.clarification_req_id ORDER BY ClarificationRequest.time";
+	query << " ORDER BY ClarificationRequest.time";
 
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();
@@ -876,7 +1031,6 @@ ClarificationRequestList MySQL::getClarificationRequests(uint32_t uid) {
 		attrs["problem"] = row[3] ? row[3] : "General";
 		attrs["time"] = row[4];
 		attrs["question"] = row[5];
-		attrs["status"] = atoi(row[6]) ? "answered" : "pending";
 
 		lst.push_back(attrs);
 	}
@@ -916,10 +1070,12 @@ bool MySQL::putClarification(uint32_t cr_id, uint32_t c_id,
 	return true;
 }
 
-bool MySQL::retrieveSubmission(uint32_t sub_id, char** buffer, int *length, string& language, uint32_t* prob_id) {
+bool MySQL::retrieveSubmission(uint32_t user_id, uint32_t sub_id, char** buffer, int *length, string& language, uint32_t* prob_id) {
 	ostringstream query;
 	query << "SELECT content, LENGTH(content), language, prob_id FROM Submission WHERE "
 		"submission_id = " << sub_id;
+        if (user_id != 0)
+            query << " AND user_id = " << user_id;
 
 	*buffer = NULL;
 

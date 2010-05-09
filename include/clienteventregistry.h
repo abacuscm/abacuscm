@@ -15,6 +15,7 @@
 #include <set>
 #include <map>
 #include <string>
+#include "misc.h"
 
 class ClientConnection;
 class MessageBlock;
@@ -40,7 +41,7 @@ private:
 	};
 
 	typedef std::map<std::string, Event*> EventMap;
-	typedef std::map<uint32_t, ClientConnection*> ClientMap;
+	typedef std::multimap<uint32_t, ClientConnection*> ClientMap;
 
 	EventMap _eventmap;
 	ClientMap _clients;
@@ -52,15 +53,24 @@ private:
 	static ClientEventRegistry _instance;
 public:
 	void registerClient(ClientConnection *cc);
-	bool registerClient(std::string eventname, ClientConnection *cc);
+	bool registerClient(const std::string &eventname, ClientConnection *cc);
 	void deregisterClient(ClientConnection *cc);
-	void deregisterClient(std::string eventname, ClientConnection *cc);
-	bool isClientRegistered(std::string eventname, ClientConnection *cc);
+	void deregisterClient(const std::string &eventname, ClientConnection *cc);
+	bool isClientRegistered(const std::string &eventname, ClientConnection *cc);
 
-	void registerEvent(std::string eventname);
-	void triggerEvent(std::string eventname, const MessageBlock *mb);
-	void broadcastEvent(const MessageBlock *mb); /* To ALL clients */
-//	void triggerOne(std::string eventname, const MessageBlock*mb, bool remove);
+	// Creates an event, and determines which users should always receive
+	// notifications sent via the event-specific broadcastEvent.
+	void registerEvent(const std::string &eventname);
+
+	// Send message to clients registered via registerClient for the event
+	void triggerEvent(const std::string &eventname, const MessageBlock *mb);
+
+	// Send message to all clients either in the broadcast mask, or with the
+	// given user id. If user_id is zero it is ignored. Note that clients do
+	// not need to register with the event to receive it.
+	void broadcastEvent(uint32_t user_id, int mask, const MessageBlock *mb);
+
+	// Send message just to one user
 	void sendMessage(uint32_t user_id, const MessageBlock *mb);
 
 	static ClientEventRegistry& getInstance();

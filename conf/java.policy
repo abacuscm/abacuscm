@@ -7,7 +7,10 @@ grant codeBase "file:${java.home}/lib/ext/*" {
 
 // default permissions granted to all domains
 
-grant { 
+grant {
+	// added for Abacus interactive problems that use stdio for I/O
+	permission java.lang.RuntimePermission "setIO";
+
 	// Allows any thread to stop itself using the java.lang.Thread.stop()
 	// method that takes no argument.
 	// Note that this permission is granted by default only to remain

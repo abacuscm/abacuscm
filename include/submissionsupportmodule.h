@@ -14,8 +14,13 @@
 # include <config.h>
 #endif
 #include "supportmodule.h"
+#include "dbcon.h"
 
 #include <stdint.h>
+#include <string>
+
+class MessageBlock;
+class DbCon;
 
 class SubmissionSupportModule : public SupportModule {
 	DECLARE_SUPPORT_MODULE(SubmissionSupportModule);
@@ -38,6 +43,12 @@ public:
 			uint32_t time, uint32_t server_id, char* content,
 			uint32_t content_size, std::string language);
 
+	/* Take information about a submission from the DB and fill in the details to
+	 * a messageblock, including extra information like contest time.
+	 * suffix is a piece of text to append to fields for multi-element messages.
+	 * Returns true on success.
+	 */
+	bool submissionToMB(DbCon *db, AttributeList &s, MessageBlock &mb, const std::string &suffix);
 };
 
 DEFINE_SUPPORT_MODULE_GETTER(SubmissionSupportModule);

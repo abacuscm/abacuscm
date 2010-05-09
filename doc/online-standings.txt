@@ -10,16 +10,20 @@ It will write to the file specified on the command line (defaulting to
 ./standings.txt) every time there is an update.
 
 
-The second part is the Perl script misc/standings.pl. Copy it to a
-cgi-bin directory, changing the hard-coded path to the standings.txt
-file. No modules beyond CGI (quite standard) are required. There is
-also a CSS file in misc/abacuscm.css.
+The second part is the web-related files in misc/standings:
 
-You can also supply a file to make team IDs to team names; just modify
-the hard-coded path in standings.pl. The file format is
+1. Copy standings.pl to a cgi-bin directory (if you have cgi-bin rights).
+2. Copy the other files to a normal web server directory.
+3. Tweak the settings at the top of standings.pl.
+4. Make any tweaks to the HTML layout or the .css file to your taste (leave in
+the magic HTML comments, which are used by the Perl script to fill in
+content).
+5. Ensure that the /path/to/standings.txt above is next to the non-CGI files.
 
-teamid<tab>team name
-teamid<tab>team name
-.
-.
-.
+Then point people at either the .pl file or the .html file. The .pl file
+requires CGI, but has the advantage that it will work even without Javascript
+enabled (but will not auto-update or have any nice animations). If you use the
+.pl file, then the .html file is needed only to provide a template.
+
+Note that the files in misc/standings/js are third-party and contains their
+own licenses.

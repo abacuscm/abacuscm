@@ -56,7 +56,9 @@ int UserProg::execcompiler(list<string> p_argv, string compiler_log) {
 		}
 		execv(*argv, argv);
 		lerror("execv");
-		exit(-1);
+		/* Note: not 'exit', since that would call all our destructors
+		 */
+		_exit(-1);
 	} else { // parent
 		int status;
 		while(waitpid(pid, &status, 0) < 0)
@@ -127,12 +129,14 @@ string UserProg::sourceFilename(const Buffer&) {
 	return "source";
 }
 
-int UserProg::exec(int fd_in, int fd_out, int fd_err, int fd_run) {
+int UserProg::exec(int fd_in, int fd_out, int fd_err, int fd_run, const string &evaluator) {
 	list<string> prog_argv = getProgramArgv();
 
-	char ** argv = new char*[_runlimit_args.size() + prog_argv.size() + 3];
+	char ** argv = new char*[_runlimit_args.size() + prog_argv.size() + 4];
 	char ** ptr = argv;
 
+	if (evaluator != "")
+		*ptr++ = strdup(evaluator.c_str());
 	*ptr++ = strdup(Config::getConfig()["marker"]["runlimit"].c_str());
 
 	list<string>::iterator i;
@@ -169,5 +173,5 @@ int UserProg::exec(int fd_in, int fd_out, int fd_err, int fd_run) {
 	execv(*argv, argv);
 
 	lerror("execv");
-	exit(-1);
+	_exit(-1);
 }

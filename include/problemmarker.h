@@ -45,6 +45,7 @@ private:
 	ServerConnection* _server_con;
 	std::string _workdir;
 
+	void cleanWorkdir(const std::string &wdir);  // Removes the working directory
 protected:
 	Buffer* getProblemFile(std::string attrib);
 	std::string attrib(std::string);

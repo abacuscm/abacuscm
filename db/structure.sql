@@ -26,7 +26,7 @@ CREATE TABLE `Clarification` (
   `user_id` int(11) NOT NULL default '0',
   `time` int(11) NOT NULL default '0',
   `public` tinyint(1) default NULL,
-  `text` text,
+  `text` text CHARACTER SET utf8,
   PRIMARY KEY  (`clarification_id`),
   KEY `clarification_req_id` (`clarification_req_id`),
   KEY `user_id` (`user_id`),
@@ -44,7 +44,7 @@ CREATE TABLE `ClarificationRequest` (
   `user_id` int(11) NOT NULL default '0',
   `time` int(11) NOT NULL default '0',
   `problem_id` int(11) default NULL,
-  `text` text,
+  `text` text CHARACTER SET utf8,
   PRIMARY KEY  (`clarification_req_id`),
   KEY `user_id` (`user_id`),
   KEY `problem_id` (`problem_id`),
@@ -123,6 +123,19 @@ CREATE TABLE `ProblemAttributes` (
   `value` varchar(255) default NULL,
   PRIMARY KEY  (`problem_id`,`attribute`),
   CONSTRAINT `ProblemAttributes_ibfk_1` FOREIGN KEY (`problem_id`) REFERENCES `Problem` (`problem_id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `ProblemDependencies`
+--
+
+DROP TABLE IF EXISTS `ProblemDependencies`;
+CREATE TABLE `ProblemDependencies` (
+  `problem_id` int(11) NOT NULL default '0',
+  `dependent_problem_id` int(11) NOT NULL default '0',
+  PRIMARY KEY (`problem_id`,`dependent_problem_id`),
+  CONSTRAINT `ProblemDependencies_ibfk_1` FOREIGN KEY (`problem_id`) REFERENCES `Problem` (`problem_id`) ON UPDATE CASCADE,
+  CONSTRAINT `ProblemDependencies_ibfk_2` FOREIGN KEY (`dependent_problem_id`) REFERENCES `Problem` (`problem_id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
@@ -225,6 +238,7 @@ DROP TABLE IF EXISTS `User`;
 CREATE TABLE `User` (
   `user_id` int(11) NOT NULL default '0',
   `username` varchar(16) NOT NULL default '',
+  `friendlyname` varchar(128) CHARACTER SET utf8 NOT NULL default '',
   `password` varchar(32) NOT NULL default '',
   `type` int(11) NOT NULL default '0',
   PRIMARY KEY  (`user_id`),

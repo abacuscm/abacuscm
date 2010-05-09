@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <algorithm>
+#include <time.h>
 
 // 16K is the max size of an SSL block, thus
 // optimal in terms of speed, but memory intensive.
@@ -42,8 +43,17 @@ ServerConnection::ServerConnection() {
 
 	pthread_mutex_init(&_lock_response, NULL);
 	pthread_mutex_init(&_lock_eventmap, NULL);
+	pthread_mutex_init(&_lock_keepalive, NULL);
 
 	pthread_cond_init(&_cond_response, NULL);
+
+	// When initialising the _cond_keepalive condition, we set it to use CLOCK_MONOTONIC for
+	// timed waits. This avoids any problems happening if the system clock changes.
+	pthread_condattr_t keepalive_attr;
+	pthread_condattr_init(&keepalive_attr);
+	pthread_condattr_setclock(&keepalive_attr, CLOCK_MONOTONIC);
+	pthread_cond_init(&_cond_keepalive, &keepalive_attr);
+	pthread_condattr_destroy(&keepalive_attr);
 }
 
 ServerConnection::~ServerConnection() {
@@ -51,6 +61,13 @@ ServerConnection::~ServerConnection() {
 		disconnect();
 	if(_ctx)
 		SSL_CTX_free(_ctx);
+
+	pthread_mutex_destroy(&_lock_response);
+	pthread_mutex_destroy(&_lock_eventmap);
+	pthread_mutex_destroy(&_lock_keepalive);
+
+	pthread_cond_destroy(&_cond_response);
+	pthread_cond_destroy(&_cond_keepalive);
 }
 
 bool ServerConnection::connect(string server, string service) {
@@ -77,7 +94,7 @@ bool ServerConnection::connect(string server, string service) {
 
 		if(!SSL_CTX_load_verify_locations(_ctx,
 					config["server"]["cacert"].c_str(), NULL)) {
-			log_ssl_errors("SSL_CTX_load_verify_locations");
+			log(LOG_ERR, "Failed to load certificate. Please check that your configuration file has the correct path in the 'cacert' line.");
 			SSL_CTX_free(_ctx);
 			_ctx = NULL;
 			goto err;
@@ -141,9 +158,25 @@ bool ServerConnection::connect(string server, string service) {
 
 	log(LOG_DEBUG, "TODO:  Check servername against cn of certificate");
 
-	if (pthread_create(&_receiver_thread, NULL, thread_spawner, this) != 0)
+	pthread_mutex_lock(&_lock_keepalive);
+	_kill_keepalive_thread = false;
+	pthread_mutex_unlock(&_lock_keepalive);
+	if (pthread_create(&_keepalive_thread, NULL, keepalive_spawner, this) != 0)
+	{
+		log(LOG_ERR, "failed to create keepalive thread");
+		goto err;
+	}
+
+	if (pthread_create(&_receiver_thread, NULL, receiver_spawner, this) != 0)
 	{
 		log(LOG_ERR, "failed to create receiver thread");
+
+		// Kill off the keepalive thread which we spawned earlier
+		pthread_mutex_lock(&_lock_keepalive);
+		_kill_keepalive_thread = true;
+		pthread_cond_signal(&_cond_keepalive);
+		pthread_mutex_unlock(&_lock_keepalive);
+		pthread_join(_keepalive_thread, NULL);
 		goto err;
 	}
 
@@ -176,6 +209,13 @@ bool ServerConnection::disconnect() {
 	_ssl->startShutdown();
 	pthread_join(_receiver_thread, NULL);
 
+	// Terminate the keepalive thread
+	pthread_mutex_lock(&_lock_keepalive);
+	_kill_keepalive_thread = true;
+	pthread_cond_signal(&_cond_keepalive);
+	pthread_mutex_unlock(&_lock_keepalive);
+	pthread_join(_keepalive_thread, NULL);
+
 	delete _ssl;
 	_ssl = NULL;
 	close(_sock);
@@ -184,15 +224,49 @@ bool ServerConnection::disconnect() {
 	return true;
 }
 
+void ServerConnection::startShutdown() {
+	// If we are closing the connection or timing out, then make sure to
+	// wake up the GUI event if it's waiting for a response.
+	pthread_mutex_lock(&_lock_response);
+	if (_response == NULL) {
+		_response = new MessageBlock("err");
+		(*_response)["msg"] = "Connection terminated while processing request";
+	}
+	// In addition, we ensure that the connection is closed. This avoids a case where
+	// the GUI makes multiple requests to the server, and we timeout the connection
+	// in the middle of the first one.
+	_ssl->startShutdown();
+
+	pthread_cond_signal(&_cond_response);
+	pthread_mutex_unlock(&_lock_response);
+}
+
 void ServerConnection::processMB(MessageBlock *mb) {
 	if(mb->action() == "ok" || mb->action() == "err") {
 		pthread_mutex_lock(&_lock_response);
-		if(_response)
+		if(_response) {
 			log(LOG_WARNING, "Losing result - this could potentially cause problems");
-		_response = mb;
+			delete mb;
+		} else {
+			_response = mb;
+		}
 		pthread_cond_signal(&_cond_response);
 		pthread_mutex_unlock(&_lock_response);
 	} else {
+		// If we are closing the connection or timing out, then make sure to
+		// wake up the GUI event if it's waiting for a response.
+		if (mb->action() == "close")
+			startShutdown();
+
+		if (mb->action() == "keepalive") {
+			// If we receive a keepalive, we let our keepalive thread know about it.
+			// We also pass the keepalive on to any event listeners, in case clients
+			// want to do something when keepalive messages are received.
+			pthread_mutex_lock(&_lock_keepalive);
+			pthread_cond_signal(&_cond_keepalive);
+			pthread_mutex_unlock(&_lock_keepalive);
+		}
+
 		log(LOG_DEBUG, "Received event '%s'", mb->action().c_str());
 		// Handle clarification reply events that encode newlines
 		for (MessageHeaders::iterator i = mb->begin(); i != mb->end(); i++)
@@ -217,6 +291,10 @@ MessageBlock* ServerConnection::sendMB(MessageBlock *mb) {
 		return NULL;
 	}
 
+	pthread_mutex_lock(&_lock_response);
+	delete _response;
+	_response = NULL;
+	pthread_mutex_unlock(&_lock_response);
 	if(mb->writeToSSL(_ssl)) {
 		pthread_mutex_lock(&_lock_response);
 		while(!_response)
@@ -289,22 +367,29 @@ Grid ServerConnection::gridAction(MessageBlock &mb) {
 			log(LOG_ERR, "%s", (*ret)["msg"].c_str());
 			delete ret;
 		}
-		return grid;
+		return Grid();
 	}
 
-	int ncols = strtoll((*ret)["ncols"].c_str(), NULL, 0);
-	int nrows = strtoll((*ret)["nrows"].c_str(), NULL, 0);
+	Grid resp(gridFromMB(*ret));
+	delete ret;
+	return resp;
+}
+
+Grid ServerConnection::gridFromMB(const MessageBlock &mb) {
+	Grid grid;
+
+	int ncols = strtoll(mb["ncols"].c_str(), NULL, 0);
+	int nrows = strtoll(mb["nrows"].c_str(), NULL, 0);
 
 	for(int r = 0; r < nrows; ++r) {
 		list<string> row;
 		for(int c = 0; c < ncols; ++c) {
 			ostringstream hdrname;
 			hdrname << "row_" << r << "_" << c;
-			row.push_back((*ret)[hdrname.str()]);
+			row.push_back(mb[hdrname.str()]);
 		}
 		grid.push_back(row);
 	}
-
 	return grid;
 }
 
@@ -360,10 +445,11 @@ string ServerConnection::whatAmI() {
 	return stringAction(mb, "type");
 }
 
-bool ServerConnection::createuser(string username, string password, string type) {
+bool ServerConnection::createuser(string username, string friendlyname, string password, string type) {
 	MessageBlock mb("adduser");
 
 	mb["username"] = username;
+	mb["friendlyname"] = friendlyname;
 	mb["passwd"] = password;
 	mb["type"] = type;
 
@@ -401,6 +487,12 @@ bool ServerConnection::startStop(bool global, bool start, time_t time) {
 	return simpleAction(mb);
 }
 
+vector<string> ServerConnection::getLanguages() {
+	MessageBlock mb("getlanguages");
+
+	return vectorAction(mb, "language");
+}
+
 vector<string> ServerConnection::getProblemTypes() {
 	MessageBlock mb("getprobtypes");
 
@@ -421,7 +513,8 @@ string ServerConnection::getProblemDescription(string type) {
 }
 
 bool ServerConnection::setProblemAttributes(uint32_t prob_id, std::string type,
-			const AttributeMap& normal, const AttributeMap& file) {
+                       const AttributeMap& normal, const AttributeMap& file,
+		               ProblemList dependencies) {
 	ostringstream ostrstrm;
 	AttributeMap::const_iterator i;
 	MessageBlock mb("setprobattrs");
@@ -481,7 +574,7 @@ bool ServerConnection::setProblemAttributes(uint32_t prob_id, std::string type,
 				for( ; fd_ptr != fds.end(); ++fd_ptr)
 					close(*fd_ptr);
 				delete []filedata;
-				return false;
+		    	return false;
 			}
 			st_stat.st_size -= res;
 			pos += res;
@@ -495,6 +588,17 @@ bool ServerConnection::setProblemAttributes(uint32_t prob_id, std::string type,
 	for(i = normal.begin(); i != normal.end(); ++i) {
 		mb[i->first] = i->second;
 	}
+
+	std::ostringstream deps;
+	bool done_one = false;
+	for (ProblemList::iterator i = dependencies.begin(); i != dependencies.end(); i++) {
+		if (done_one)
+			deps << ",";
+		deps << *i;
+		done_one = true;
+	}
+
+	mb["prob_dependencies"] = deps.str();
 
 //	mb.dump();
 
@@ -576,8 +680,16 @@ bool ServerConnection::getSubmissionSource(uint32_t submission_id, char **buffer
 }
 
 vector<ProblemInfo> ServerConnection::getProblems() {
+	return _getProblems("getproblems");
+}
+
+vector<ProblemInfo> ServerConnection::getSubmissibleProblems() {
+	return _getProblems("getsubmissibleproblems");
+}
+
+vector<ProblemInfo> ServerConnection::_getProblems(std::string query) {
 	vector<ProblemInfo> response;
-	MessageBlock mb("getproblems");
+	MessageBlock mb(query);
 
 	MessageBlock *res = sendMB(&mb);
 	if(!res)
@@ -650,41 +762,6 @@ vector<UserInfo> ServerConnection::getUsers() {
 	return response;
 }
 
-vector<bool> ServerConnection::getSubscriptions(vector<ProblemInfo> problems) {
-	vector<bool> response;
-	for (unsigned int p = 0; p < problems.size(); p++) {
-		MessageBlock mb("problem_subscription");
-		mb["action"] = "is_subscribed";
-		mb["event"] = string("judge_") + problems[p].code;
-
-		MessageBlock *res = sendMB(&mb);
-		if(res && res->action() == "ok")
-			response.push_back((*res)["subscribed"] == "yes");
-		else {
-			if(res)
-				log(LOG_ERR, "%s", (*res)["msg"].c_str());
-			else
-				log(LOG_ERR, "Unknown error retrieving subscription status");
-			return response;
-		}
-	}
-	return response;
-}
-
-bool ServerConnection::subscribeToProblem(ProblemInfo info) {
-	MessageBlock mb("problem_subscription");
-	mb["action"] = "subscribe";
-	mb["event"] = string("judge_") + info.code;
-	return simpleAction(mb);
-}
-
-bool ServerConnection::unsubscribeToProblem(ProblemInfo info) {
-	MessageBlock mb("problem_subscription");
-	mb["action"] = "unsubscribe";
-	mb["event"] = string("judge_") + info.code;
-	return simpleAction(mb);
-}
-
 bool ServerConnection::submit(uint32_t prob_id, int fd, const string& lang) {
 	ostringstream str_prob_id;
 	str_prob_id << prob_id;
@@ -694,12 +771,24 @@ bool ServerConnection::submit(uint32_t prob_id, int fd, const string& lang) {
 	mb["lang"] = lang;
 
 	struct stat statbuf;
-	if(fstat(fd, &statbuf) < 0)
+	if(fstat(fd, &statbuf) < 0) {
+		lerror("fstat");
 		return false;
+	}
+
+	/* This is just to avoid sending a huge amount of data to the server, only
+	 * to have it reject it. The real check is in the server.
+	 */
+	if (statbuf.st_size > MAX_SUBMISSION_SIZE) {
+		log(LOG_ERR, "Your submission is too large (max %d bytes)", MAX_SUBMISSION_SIZE);
+		return false;
+	}
 
 	void *ptr = mmap(NULL, statbuf.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-	if(!ptr)
+	if(!ptr) {
+		lerror("mmap");
 		return false;
+	}
 	mb.setContent((char*)ptr, statbuf.st_size);
 	munmap(ptr, statbuf.st_size);
 
@@ -756,6 +845,29 @@ SubmissionList ServerConnection::getSubmissions() {
 	attrs.push_back("problem");
 	attrs.push_back("result");
 	attrs.push_back("comment");
+	attrs.push_back("prob_id");
+
+	return multiVectorAction(mb, attrs);
+}
+
+SubmissionList ServerConnection::getSubmissionsForUser(uint32_t user_id) {
+	if(!_ssl)
+		return SubmissionList();
+
+	ostringstream ostrstrm;
+	ostrstrm << user_id;
+
+	MessageBlock mb("getsubmissions_for_user");
+	mb["user_id"] = ostrstrm.str();
+	list<string> attrs;
+	attrs.push_back("submission_id");
+	attrs.push_back("contestant");
+	attrs.push_back("time");
+	attrs.push_back("contesttime");
+	attrs.push_back("problem");
+	attrs.push_back("result");
+	attrs.push_back("comment");
+	attrs.push_back("prob_id");
 
 	return multiVectorAction(mb, attrs);
 }
@@ -767,6 +879,7 @@ ClarificationList ServerConnection::getClarifications() {
 	MessageBlock mb("getclarifications");
 	list<string> attrs;
 	attrs.push_back("id");
+	attrs.push_back("req_id");
 	attrs.push_back("time");
 	attrs.push_back("problem");
 	attrs.push_back("question");
@@ -789,7 +902,6 @@ ClarificationRequestList ServerConnection::getClarificationRequests() {
 	attrs.push_back("time");
 	attrs.push_back("problem");
 	attrs.push_back("question");
-	attrs.push_back("status");
 
 	ClarificationRequestList l = multiVectorAction(mb, attrs);
 	for (ClarificationRequestList::iterator i = l.begin(); i != l.end(); i++)
@@ -798,12 +910,11 @@ ClarificationRequestList ServerConnection::getClarificationRequests() {
 	return l;
 }
 
-Grid ServerConnection::getStandings(bool non_contest) {
+Grid ServerConnection::getStandings() {
 	if(!_ssl)
 		return Grid();
 
 	MessageBlock mb("standings");
-	mb["include_non_contest"] = non_contest ? "yes" : "no";
 
 	return gridAction(mb);
 }
@@ -815,14 +926,6 @@ bool ServerConnection::watchBalloons(bool yesno) {
 		mb["action"] = "subscribe";
 	else
 		mb["action"] = "unsubscribe";
-
-	return simpleAction(mb);
-}
-
-bool ServerConnection::watchJudgeSubmissions() {
-	MessageBlock mb("problem_subscription");
-	mb["action"] = "subscribe";
-	mb["event"] = "judgesubmission";
 
 	return simpleAction(mb);
 }
@@ -1053,6 +1156,7 @@ bool ServerConnection::deregisterEventCallback(string event, EventCallback func)
 void* ServerConnection::receive_thread() {
 	char buffer[BFR_SIZE];
 	MessageBlock *mb = NULL;
+	bool timed_out;
 
 	log(LOG_DEBUG, "Starting ServerConnection receive_thread");
 	while(true) {
@@ -1064,11 +1168,7 @@ void* ServerConnection::receive_thread() {
 
 		char *pos = buffer;
 		if(res.err == SSL_ERROR_ZERO_RETURN) {
-			log(LOG_DEBUG, "Connection got shut down, terminating receive_thread");
 			break;
-		}
-		else if(res.err != SSL_ERROR_NONE) {
-			log_ssl_errors("SSL_read");
 		}
 		else while(res.processed > 0) {
 			if(!mb)
@@ -1091,15 +1191,52 @@ void* ServerConnection::receive_thread() {
 		}
 	}
 
-	log(LOG_DEBUG, "Stopping ServerConnection receive_thread");
+	pthread_mutex_lock(&_lock_keepalive);
+	timed_out = _kill_keepalive_thread;
+	pthread_mutex_unlock(&_lock_keepalive);
 
-	processMB(new MessageBlock("close"));
+	mb = new MessageBlock("close");
+	(*mb)["timedout"] = (timed_out ? "1" : "0");
+	if (timed_out) {
+		log(LOG_DEBUG, "Connection timed out, terminating receive_thread");
+	}
+	else {
+		log(LOG_DEBUG, "Connection got shut down, terminating receive_thread");
+	}
+	processMB(mb);
 
 	return NULL;
 }
 
-void* ServerConnection::thread_spawner(void *p) {
+void *ServerConnection::keepalive_thread() {
+	struct timespec triggerTime;
+
+	pthread_mutex_lock(&_lock_keepalive);
+	while (!_kill_keepalive_thread) {
+		clock_gettime(CLOCK_MONOTONIC, &triggerTime);
+		triggerTime.tv_sec  += KEEPALIVE_TIMEOUT;
+		// If the condition is triggered, then this means that we either received
+		// a keepalive, or are terminating. If there is an error then either
+		// something went horribly wrong or we timed out, in which case we should
+		// terminate.
+		if (pthread_cond_timedwait(&_cond_keepalive, &_lock_keepalive, &triggerTime) != 0) {
+			_kill_keepalive_thread = true;
+			pthread_mutex_unlock(&_lock_keepalive);
+			startShutdown();
+			pthread_mutex_lock(&_lock_keepalive);
+		}
+	}
+	pthread_mutex_unlock(&_lock_keepalive);
+
+	return NULL;
+}
+
+void* ServerConnection::receiver_spawner(void *p) {
 	return ((ServerConnection*)p)->receive_thread();
+}
+
+void* ServerConnection::keepalive_spawner(void *p) {
+	return ((ServerConnection*)p)->keepalive_thread();
 }
 
 static void init() __attribute__((constructor));

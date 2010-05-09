@@ -19,6 +19,7 @@
 #include "clienteventregistry.h"
 #include "standingssupportmodule.h"
 #include "usersupportmodule.h"
+#include "submissionsupportmodule.h"
 
 #include <string>
 #include <list>
@@ -109,6 +110,9 @@ bool MarkMessage::process() const {
 	UserSupportModule* usm = getUserSupportModule();
 	if (!usm)
 		return false;
+	SubmissionSupportModule *submission = getSubmissionSupportModule();
+	if (!submission)
+		return false;
 
 	DbCon *db = DbCon::getInstance();
 	if(!db)
@@ -126,25 +130,24 @@ bool MarkMessage::process() const {
 	}
 
 
-	if (_result != JUDGE) {
-		MessageBlock mb("submission");
-		mb["msg"] = "You have newly marked information available under submissions";
+	MessageBlock mb("updatesubmissions");
+	AttributeList s = db->getSubmission(_submission_id);
+	submission->submissionToMB(db, s, mb, "");
 
-		ClientEventRegistry::getInstance().sendMessage(db->submission2user_id(_submission_id), &mb);
-	}
-
-	MessageBlock mb("submission");
-	ClientEventRegistry::getInstance().triggerEvent("judgesubmission", &mb);
+	uint32_t user_id = db->submission2user_id(_submission_id);
+	ClientEventRegistry::getInstance().broadcastEvent(user_id,
+													  USER_MASK_JUDGE | USER_MASK_ADMIN,
+													  &mb);
 
 	StandingsSupportModule *standings = getStandingsSupportModule();
-	if(standings)
-		standings->notifySolution(0); // TODO: problem time here.
+	if(standings && _result != JUDGE)
+		standings->updateStandings(user_id, 0);
 
 	if(_result == CORRECT) {
 		MessageBlock bl("balloon");
 		bl["server"] = Server::servername(db->submission2server_id(_submission_id));
-		bl["contestant"] = usm->username(db->submission2user_id(_submission_id));
-		bl["problem"] = db->submission2problem(_submission_id);
+		bl["contestant"] = usm->username(user_id);
+		bl["problem"] = mb["problem"];
 
 		ClientEventRegistry::getInstance().triggerEvent("balloon", &bl);
 	}
@@ -358,7 +361,7 @@ static void init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "mark", &_act_place_mark);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "balloonnotify", &_act_balloon);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "balloonnotify", &_act_balloon);
-	ClientAction::registerAction(USER_TYPE_NONCONTEST, "balloonnotify", &_act_balloon);
+	ClientAction::registerAction(USER_TYPE_OBSERVER, "balloonnotify", &_act_balloon);
 	Message::registerMessageFunctor(TYPE_ID_SUBMISSION_MARK, create_mark_message);
 	ClientEventRegistry::getInstance().registerEvent("balloon");
 }

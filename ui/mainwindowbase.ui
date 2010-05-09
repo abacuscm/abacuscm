@@ -171,6 +171,61 @@
                         <cstring>unnamed</cstring>
                     </property>
                     <widget class="QListView">
+                        <column>
+                            <property name="text">
+                                <string>Pos</string>
+                            </property>
+                            <property name="clickable">
+                                <bool>true</bool>
+                            </property>
+                            <property name="resizable">
+                                <bool>true</bool>
+                            </property>
+                        </column>
+                        <column>
+                            <property name="text">
+                                <string>Team</string>
+                            </property>
+                            <property name="clickable">
+                                <bool>true</bool>
+                            </property>
+                            <property name="resizable">
+                                <bool>true</bool>
+                            </property>
+                        </column>
+                        <column>
+                            <property name="text">
+                                <string>Name</string>
+                            </property>
+                            <property name="clickable">
+                                <bool>true</bool>
+                            </property>
+                            <property name="resizable">
+                                <bool>true</bool>
+                            </property>
+                        </column>
+                        <column>
+                            <property name="text">
+                                <string>Solved</string>
+                            </property>
+                            <property name="clickable">
+                                <bool>true</bool>
+                            </property>
+                            <property name="resizable">
+                                <bool>true</bool>
+                            </property>
+                        </column>
+                        <column>
+                            <property name="text">
+                                <string>Time</string>
+                            </property>
+                            <property name="clickable">
+                                <bool>true</bool>
+                            </property>
+                            <property name="resizable">
+                                <bool>true</bool>
+                            </property>
+                        </column>
                         <property name="name">
                             <cstring>standings</cstring>
                         </property>
@@ -510,6 +565,20 @@
                             </spacer>
                             <widget class="QPushButton">
                                 <property name="name">
+                                    <cstring>submissionClarificationButton</cstring>
+                                </property>
+                                <property name="enabled">
+                                    <bool>false</bool>
+                                </property>
+                                <property name="text">
+                                    <string>Request &amp;Clarification</string>
+                                </property>
+                                <property name="accel">
+                                    <string>Alt+C</string>
+                                </property>
+                            </widget>
+                            <widget class="QPushButton">
+                                <property name="name">
                                     <cstring>submissionButton</cstring>
                                 </property>
                                 <property name="enabled">
@@ -602,6 +671,7 @@
     <item text="&amp;Abacus" name="Abacus">
         <action name="fileConnectAction"/>
         <action name="fileDisconnectAction"/>
+        <action name="abacusForce_RefreshAction"/>
         <separator/>
         <action name="changePasswordAction"/>
         <separator/>
@@ -614,17 +684,16 @@
         <action name="adminContestAction"/>
         <item text="&amp;Contest" name="popupMenu_10" accel="">
             <action name="adminContestStartAction"/>
-            <action name="adminContestPauseAction"/>
-            <action name="adminContestResumeAction"/>
         </item>
     </item>
     <item text="&amp;Judges" name="Judges">
         <action name="judgesSubscribeToProblemsAction"/>
         <action name="Action"/>
-        <item text="Submission States" name="popupMenu_15" accel="">
+        <item text="Submission States" name="popupMenu_13" accel="">
             <action name="stateFilterUnmarkedAction"/>
             <action name="stateFilterJudgeAction"/>
             <action name="stateFilterWrongAction"/>
+            <action name="stateFilterFormatErrorAction"/>
             <action name="stateFilterCorrectAction"/>
             <action name="stateFilterTimeExceededAction"/>
             <action name="stateFilterCompileAction"/>
@@ -786,34 +855,6 @@
         </property>
         <property name="menuText">
             <string>&amp;Start/Stop times</string>
-        </property>
-    </action>
-    <action>
-        <property name="name">
-            <cstring>adminContestPauseAction</cstring>
-        </property>
-        <property name="enabled">
-            <bool>false</bool>
-        </property>
-        <property name="text">
-            <string>&amp;Pause</string>
-        </property>
-        <property name="menuText">
-            <string>&amp;Pause</string>
-        </property>
-    </action>
-    <action>
-        <property name="name">
-            <cstring>adminContestResumeAction</cstring>
-        </property>
-        <property name="enabled">
-            <bool>false</bool>
-        </property>
-        <property name="text">
-            <string>&amp;Resume</string>
-        </property>
-        <property name="menuText">
-            <string>&amp;Resume</string>
         </property>
     </action>
     <action>
@@ -1043,6 +1084,37 @@
             <string>Include Non-Contestants in Standings</string>
         </property>
     </action>
+    <action>
+        <property name="name">
+            <cstring>abacusForce_RefreshAction</cstring>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>Force refresh</string>
+        </property>
+        <property name="menuText">
+            <string>Force refresh</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>stateFilterFormatErrorAction</cstring>
+        </property>
+        <property name="toggleAction">
+            <bool>true</bool>
+        </property>
+        <property name="enabled">
+            <bool>false</bool>
+        </property>
+        <property name="text">
+            <string>Format Error</string>
+        </property>
+        <property name="menuText">
+            <string>Format Error</string>
+        </property>
+    </action>
 </actions>
 <images>
     <image name="image0">
@@ -1099,6 +1171,12 @@
         <slot>doSubmit()</slot>
     </connection>
     <connection>
+        <sender>submissionClarificationButton</sender>
+        <signal>clicked()</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>doRequestSubmissionClarification()</slot>
+    </connection>
+    <connection>
         <sender>MainWindowBase</sender>
         <signal>signalAdminControls(bool)</signal>
         <receiver>adminAdd_ServerAction</receiver>
@@ -1108,18 +1186,6 @@
         <sender>MainWindowBase</sender>
         <signal>signalAdminControls(bool)</signal>
         <receiver>adminCreate_UserAction</receiver>
-        <slot>setEnabled(bool)</slot>
-    </connection>
-    <connection>
-        <sender>MainWindowBase</sender>
-        <signal>signalAdminControls(bool)</signal>
-        <receiver>adminContestPauseAction</receiver>
-        <slot>setEnabled(bool)</slot>
-    </connection>
-    <connection>
-        <sender>MainWindowBase</sender>
-        <signal>signalAdminControls(bool)</signal>
-        <receiver>adminContestResumeAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
@@ -1141,6 +1207,12 @@
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalContestantControls(bool)</signal>
+        <receiver>submissionClarificationButton</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
         <sender>maintabs</sender>
         <signal>currentChanged(QWidget*)</signal>
         <receiver>MainWindowBase</receiver>
@@ -1156,6 +1228,12 @@
         <sender>MainWindowBase</sender>
         <signal>signalJudgeControls(bool)</signal>
         <receiver>judgesSubscribeToProblemsAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalJudgeControls(bool)</signal>
+        <receiver>submissionClarificationButton</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
@@ -1186,7 +1264,7 @@
         <sender>judgesShowOnlySubscribedSubmissionsAction</sender>
         <signal>toggled(bool)</signal>
         <receiver>MainWindowBase</receiver>
-        <slot>updateSubmissions()</slot>
+        <slot>refilterSubmissions()</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
@@ -1233,6 +1311,12 @@
     <connection>
         <sender>MainWindowBase</sender>
         <signal>signalJudgeControls(bool)</signal>
+        <receiver>stateFilterFormatErrorAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalJudgeControls(bool)</signal>
         <receiver>stateFilterCorrectAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
@@ -1267,84 +1351,129 @@
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
-        <sender>nonContestInStandingsAction</sender>
-        <signal>toggled(bool)</signal>
-        <receiver>MainWindowBase</receiver>
-        <slot>updateStandings()</slot>
+        <sender>MainWindowBase</sender>
+        <signal>signalObserverControls(bool)</signal>
+        <receiver>nonContestInStandingsAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalObserverControls(bool)</signal>
+        <receiver>judgesNotify_about_Correct_SubmissionsAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalObserverControls(bool)</signal>
+        <receiver>submissionButton</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalObserverControls(bool)</signal>
+        <receiver>submissionClarificationButton</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalObserverControls(bool)</signal>
+        <receiver>nonContestInStandingsAction</receiver>
+        <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>stateFilterAbnormalAction</sender>
         <signal>toggled(bool)</signal>
         <receiver>MainWindowBase</receiver>
-        <slot>updateSubmissions()</slot>
+        <slot>refilterSubmissions()</slot>
+    </connection>
+    <connection>
+        <sender>stateFilterFormatErrorAction</sender>
+        <signal>toggled(bool)</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>refilterSubmissions()</slot>
     </connection>
     <connection>
         <sender>stateFilterCompileAction</sender>
         <signal>toggled(bool)</signal>
         <receiver>MainWindowBase</receiver>
-        <slot>updateSubmissions()</slot>
+        <slot>refilterSubmissions()</slot>
     </connection>
     <connection>
         <sender>stateFilterCorrectAction</sender>
         <signal>toggled(bool)</signal>
         <receiver>MainWindowBase</receiver>
-        <slot>updateSubmissions()</slot>
+        <slot>refilterSubmissions()</slot>
     </connection>
     <connection>
         <sender>stateFilterJudgeAction</sender>
         <signal>toggled(bool)</signal>
         <receiver>MainWindowBase</receiver>
-        <slot>updateSubmissions()</slot>
+        <slot>refilterSubmissions()</slot>
     </connection>
     <connection>
         <sender>stateFilterOtherAction</sender>
         <signal>toggled(bool)</signal>
         <receiver>MainWindowBase</receiver>
-        <slot>updateSubmissions()</slot>
+        <slot>refilterSubmissions()</slot>
     </connection>
     <connection>
         <sender>stateFilterTimeExceededAction</sender>
         <signal>toggled(bool)</signal>
         <receiver>MainWindowBase</receiver>
-        <slot>updateSubmissions()</slot>
+        <slot>refilterSubmissions()</slot>
     </connection>
     <connection>
         <sender>stateFilterUnmarkedAction</sender>
         <signal>toggled(bool)</signal>
         <receiver>MainWindowBase</receiver>
-        <slot>updateSubmissions()</slot>
+        <slot>refilterSubmissions()</slot>
     </connection>
     <connection>
         <sender>stateFilterWrongAction</sender>
         <signal>toggled(bool)</signal>
         <receiver>MainWindowBase</receiver>
-        <slot>updateSubmissions()</slot>
+        <slot>refilterSubmissions()</slot>
+    </connection>
+    <connection>
+        <sender>nonContestInStandingsAction</sender>
+        <signal>toggled(bool)</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>sortStandings()</slot>
+    </connection>
+    <connection>
+        <sender>abacusForce_RefreshAction</sender>
+        <signal>activated()</signal>
+        <receiver>MainWindowBase</receiver>
+        <slot>doForceRefresh()</slot>
     </connection>
 </connections>
 <signals>
     <signal>signalAdminControls(bool)</signal>
     <signal>signalJudgeControls(bool)</signal>
     <signal>signalContestantControls(bool)</signal>
+    <signal>signalObserverControls(bool)</signal>
 </signals>
 <slots>
     <slot access="protected" specifier="pure virtual">doHelpAbout()</slot>
     <slot access="protected" specifier="pure virtual">doFileConnect()</slot>
     <slot access="protected" specifier="pure virtual">doChangePassword()</slot>
-    <slot access="protected" specifier="pure virtual">toggleBalloonPopups(bool)</slot>
+    <slot access="protected" specifier="pure virtual">toggleBalloonPopups( bool )</slot>
     <slot access="protected" specifier="pure virtual">doAdminProblemConfig()</slot>
     <slot access="protected" specifier="pure virtual">doFileDisconnect()</slot>
     <slot access="protected" specifier="pure virtual">doSubmit()</slot>
+    <slot access="protected" specifier="pure virtual">doRequestSubmissionClarification()</slot>
     <slot access="protected" specifier="pure virtual">tabChanged( QWidget * newtab )</slot>
     <slot access="protected" specifier="pure virtual">doJudgeSubscribeToProblems()</slot>
-    <slot specifier="pure virtual">submissionHandler(QListViewItem *)</slot>
-    <slot access="protected" specifier="pure virtual">doShowClarificationRequest(QListViewItem *item)</slot>
-    <slot access="protected" specifier="pure virtual">doShowClarificationReply(QListViewItem *item)</slot>
+    <slot access="protected" specifier="pure virtual">submissionHandler( QListViewItem * )</slot>
+    <slot access="protected" specifier="pure virtual">doShowClarificationRequest( QListViewItem * item )</slot>
+    <slot access="protected" specifier="pure virtual">doShowClarificationReply( QListViewItem * item )</slot>
     <slot access="protected" specifier="pure virtual">doClarificationRequest()</slot>
-    <slot>updateSubmissions()</slot>
-    <slot>updateStandings()</slot>
+    <slot access="protected" specifier="pure virtual">refilterSubmissions()</slot>
     <slot access="protected" specifier="pure virtual">doAdminCreateUser()</slot>
     <slot access="protected" specifier="pure virtual">doAdminStartStop()</slot>
     <slot access="protected" specifier="pure virtual">doTimer()</slot>
+    <slot access="protected" specifier="pure virtual">sortStandings()</slot>
+    <slot access="protected" specifier="pure virtual">doForceRefresh()</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

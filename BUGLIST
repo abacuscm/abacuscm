@@ -3,12 +3,11 @@ BUGLIST
 
 This file contains a list of BUGS and or nice to haves (wishlist).
 
-* race conditions on generating problem IDs
-	For most IDs, the next value is kept internally and protected by a lock.
-	However, problem IDs are simply taken from time(). If problems are added
-	faster than once a second it will go wrong.
-
-	PRIORITY: medium
+* UTF-8 support
+	Currently only the friendly-name field uses UTF-8 encoding. The
+	clarification request and reply fields should also be UTF-8 encoded. Also
+	there are potentially problems if the username contains Latin-1
+	characters, since it is appended with the friendly-name for the standings.
 
 * build system doesn't show errors with broken #include's
 	When I misspelt the name of a local #include, the build system had very
@@ -16,13 +15,6 @@ This file contains a list of BUGS and or nice to haves (wishlist).
 	fact it had neglected to build certain objects and their dependencies.
 	This persists even after every attempt to clean. When trying to build the
 	missing objects by name, there was no output from make.
-
-	PRIORITY: low
-
-* username vs realname
-	A user should have both a username and a real-name.  The username can be
-	used to log in whilst the real-name can be used for display in standings
-	or clarification requests.
 
 	PRIORITY: low
 

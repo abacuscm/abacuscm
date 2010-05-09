@@ -15,6 +15,7 @@
 #include "message_createuser.h"
 #include "usersupportmodule.h"
 #include "misc.h"
+#include "hashpw.h"
 
 #include <map>
 
@@ -35,8 +36,8 @@ ActAddUser::ActAddUser() {
 	_typemap["judge"] = USER_TYPE_JUDGE;
 	_typemap["contestant"] = USER_TYPE_CONTESTANT;
 	_typemap["marker"] = USER_TYPE_MARKER;
-	_typemap["noncontest"] = USER_TYPE_NONCONTEST;
-	_typemap["observer"] = USER_TYPE_NONCONTEST;
+	_typemap["noncontest"] = USER_TYPE_OBSERVER;
+	_typemap["observer"] = USER_TYPE_OBSERVER;
 }
 
 bool ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
@@ -59,7 +60,7 @@ bool ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
 	if(new_passwd == "")
 		return cc->sendError("Cannot set a blank password");
 
-	if ((new_passwd = usm->hashpw(new_username, new_passwd)) == "")
+	if ((new_passwd = hashpw(new_username, new_passwd)) == "")
 		return cc->sendError("Password hashing error");
 
 	if (new_friendlyname == "")

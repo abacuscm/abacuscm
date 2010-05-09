@@ -44,7 +44,7 @@ ServerEventRegistry::~ServerEventRegistry()
 
 	for (i = _eventlist.begin(); i != _eventlist.end(); ++i) {
 		if (i->second.listeners.size())
-			log(LOG_WARNING, "Event '%s' has %lu registered subscribers at shutdown left.", i->first.c_str(), i->second.listeners.size());
+			log(LOG_WARNING, "Event '%s' has %lu registered subscribers at shutdown left.", i->first.c_str(), (unsigned long) i->second.listeners.size());
 		pthread_mutex_destroy(&i->second.lock);
 	}
 

@@ -101,8 +101,11 @@ bool ThreadSSL::postProcess(Status &stat, int fd, int len, Mode mode) {
 		return true;    // pass error up to caller
 	}
 
-	// We only get here if we need to poll
-	while (poll(pfds, _shutdown_notify_read != -1 ? 2 : 1, -1) < 0) {
+	/* We only get here if we need to poll. The timeout is just a
+	 * belt-and-braces to make sure that if we have a race condition in which
+	 * we miss the data arriving, we get another chance to go around again.
+	 */
+	while (poll(pfds, _shutdown_notify_read != -1 ? 2 : 1, 10000) < 0) {
 		if (errno != EINTR) {
 			stat.err = SSL_ERROR_SYSCALL;
 			return true;
@@ -126,7 +129,14 @@ ThreadSSL::Status ThreadSSL::read(void *buf, int len, Mode mode) {
 			return stat;
 		}
 		ret = SSL_read(_ssl, buffer + stat.processed, len - stat.processed);
-		stat.err = SSL_get_error(_ssl, ret);
+		if (ret == 0) {
+			/* We don't particularly care about the difference between
+			 * clean and unclean shutdown, so claim it was clean.
+			 */
+			stat.err = SSL_ERROR_ZERO_RETURN;
+		}
+		else
+			stat.err = SSL_get_error(_ssl, ret);
 		fd = SSL_get_fd(_ssl);
 		pthread_mutex_unlock(&_lock);
 
@@ -156,7 +166,14 @@ ThreadSSL::Status ThreadSSL::write(const void *buf, int len, Mode mode)
 			return stat;
 		}
 		ret = SSL_write(_ssl, buffer + stat.processed, len - stat.processed);
-		stat.err = SSL_get_error(_ssl, ret);
+		if (ret == 0) {
+			/* We don't particularly care about the difference between
+			 * clean and unclean shutdown, so claim it was clean.
+			 */
+			stat.err = SSL_ERROR_ZERO_RETURN;
+		}
+		else
+			stat.err = SSL_get_error(_ssl, ret);
 		fd = SSL_get_fd(_ssl);
 		pthread_mutex_unlock(&_lock);
 

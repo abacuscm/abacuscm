@@ -1,0 +1,25 @@
+# Run this one after batch1. It logs in as a contestant and submits some
+# solutions.
+
+auth
+user:test1
+pass:test1
+
+whatami
+
+submit
+prob_id:1
+lang:C++
+<tests/bad_solutions/empty.cpp
+
+submit
+prob_id:1
+lang:Java
+<tests/bad_solutions/spin_forever.java
+
+submit
+prob_id:1
+lang:Python
+<tests/bad_solutions/exception.py
+
+getsubmissibleproblems

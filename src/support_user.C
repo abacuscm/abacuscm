@@ -10,6 +10,7 @@
 #include "usersupportmodule.h"
 #include "dbcon.h"
 #include "server.h"
+#include "hashpw.h"
 
 #include <stdlib.h>
 #include <sstream>
@@ -70,6 +71,23 @@ uint32_t UserSupportModule::user_id(const string& username)
 	if (res.size())
 		return strtoul(res.begin()->c_str(), NULL, 10);
 	return 0;
+}
+
+string UserSupportModule::friendlyname(uint32_t user_id)
+{
+	DbCon *db = DbCon::getInstance();
+	if (!db)
+		return "";
+
+	ostringstream query;
+	query << "SELECT friendlyname FROM User WHERE user_id=" << user_id;
+
+	QueryResultRow res = db->singleRowQuery(query.str());
+	db->release();
+
+	if (res.size())
+		return *res.begin();
+	return "";
 }
 
 uint32_t UserSupportModule::usertype(uint32_t user_id)
@@ -136,35 +154,10 @@ err:
 
 string UserSupportModule::hashpw(uint32_t user_id, const string& pw)
 {
-	DbCon *db = DbCon::getInstance();
-	if (!db)
-		return "";
+	string username = this->username(user_id);
+	if (username == "") return "";
 
-	ostringstream query;
-	query << "SELECT MD5(CONCAT(username, '" << db->escape_string(pw)
-		<< "')) FROM User WHERE user_id=" << user_id;
-	QueryResultRow res = db->singleRowQuery(query.str());
-	db->release();
-
-	if (res.size())
-		return *res.begin();
-	return "";
-}
-
-string UserSupportModule::hashpw(const string& uname, const string& pw)
-{
-	DbCon *db = DbCon::getInstance();
-	if (!db)
-		return "";
-
-	ostringstream query;
-	query << "SELECT MD5('" << db->escape_string(uname + pw) << "')";
-	QueryResultRow res = db->singleRowQuery(query.str());
-	db->release();
-
-	if (res.size())
-		return *res.begin();
-	return "";
+	return ::hashpw(username, pw);
 }
 
 bool UserSupportModule::addUser(uint32_t user_id, const std::string& username, const std::string& friendlyname, const std::string& password, uint32_t type)
@@ -174,7 +167,7 @@ bool UserSupportModule::addUser(uint32_t user_id, const std::string& username, c
 		return false;
 
 	ostringstream query;
-	query << "INSERT INTO User (user_id, username, password, type) VALUES (" << user_id << ", '" << db->escape_string(username) << "', '" << db->escape_string(password) << "', " << type << ")";
+	query << "INSERT INTO User (user_id, username, friendlyname, password, type) VALUES (" << user_id << ", '" << db->escape_string(username) << "', '" << db->escape_string(friendlyname) << "', '" << db->escape_string(password) << "', " << type << ")";
 
 	bool r = db->executeQuery(query.str());
 	db->release();

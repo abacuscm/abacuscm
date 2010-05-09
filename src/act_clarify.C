@@ -80,7 +80,7 @@ bool ActGetClarifications::int_process(ClientConnection *cc, MessageBlock *) {
 
 	ClarificationList lst;
 
-	if(utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_NONCONTEST)
+	if(utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_OBSERVER)
 		lst = db->getClarifications(uid);
 	else
 		lst = db->getClarifications();
@@ -118,7 +118,7 @@ bool ActGetClarificationRequests::int_process(ClientConnection *cc, MessageBlock
 
 	ClarificationRequestList lst;
 
-	if(utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_NONCONTEST)
+	if(utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_OBSERVER)
 		lst = db->getClarificationRequests(uid);
 	else
 		lst = db->getClarificationRequests();
@@ -249,30 +249,53 @@ bool ClarificationMessage::process() const {
 							 _time,
 							 _server_id,
 							 _text);
-		MessageBlock notify("updateclarificationrequests");
-		ClientEventRegistry::getInstance().broadcastEvent(&notify);
+		if (result) {
+			/* FIXME: this is a nasty hack to get back the information about
+			 * problem names etc.
+			 */
+			AttributeList req = db->getClarificationRequest(_clarification_request_id);
+			if (req.empty())
+				result = false;
+			else {
+				MessageBlock notify("updateclarificationrequests");
+				AttributeList::iterator a;
+				for(a = req.begin(); a != req.end(); ++a)
+					notify[a->first] = a->second;
+				ClientEventRegistry::getInstance().broadcastEvent(_user_id,
+																  USER_MASK_JUDGE | USER_MASK_ADMIN, &notify);
+			}
+		}
 	}
 	else
 	{
+		int pub = _prob_id;   /* _prob_id field is overloaded for public */
 		AttributeList req = db->getClarificationRequest(_clarification_request_id);
 		result = db->putClarification(_clarification_request_id,
 						  _clarification_id,
 						  _user_id,
 						  _time,
 						  _server_id,
-						  _prob_id, /* Actually pub */
+						  pub,
 						  _text);
-		MessageBlock update("updateclarifications");
-		ClientEventRegistry::getInstance().broadcastEvent(&update);
-
-		MessageBlock notify("newclarification");
-		notify["problem"] = req["problem"];
-		notify["question"] = req["question"];
-		notify["answer"] = _text;
-		if (_prob_id) /* public */
-			ClientEventRegistry::getInstance().broadcastEvent(&notify);
-		else
-			ClientEventRegistry::getInstance().sendMessage(atol(req["user_id"].c_str()), &notify);
+		if (result) {
+			/* FIXME: this is a nasty hack to get back the information about
+			 * problem names etc.
+			 */
+			AttributeList c = db->getClarification(_clarification_id);
+			if (req.empty())
+				result = false;
+			else {
+				MessageBlock notify("updateclarifications");
+				AttributeList::iterator a;
+				for(a = c.begin(); a != c.end(); ++a)
+					notify[a->first] = a->second;
+				if (pub)
+					ClientEventRegistry::getInstance().broadcastEvent(0, USER_MASK_ALL & ~USER_MASK_MARKER, &notify);
+				else
+					ClientEventRegistry::getInstance().broadcastEvent(strtoul(req["user_id"].c_str(), NULL, 10),
+																	  USER_MASK_JUDGE | USER_MASK_ADMIN, &notify);
+			}
+		}
 	}
 	db->release();db=NULL;
 	return result;
@@ -356,14 +379,17 @@ static ActClarification _act_clarification;
 static void init() __attribute__((constructor));
 static void init() {
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getclarifications", &_act_getclarifications);
+	ClientAction::registerAction(USER_TYPE_OBSERVER, "getclarifications", &_act_getclarifications);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "getclarifications", &_act_getclarifications);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getclarifications", &_act_getclarifications);
 
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getclarificationrequests", &_act_getclarificationrequests);
+	ClientAction::registerAction(USER_TYPE_OBSERVER, "getclarificationrequests", &_act_getclarificationrequests);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "getclarificationrequests", &_act_getclarificationrequests);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getclarificationrequests", &_act_getclarificationrequests);
 
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "clarificationrequest", &_act_clarificationrequest);
+	ClientAction::registerAction(USER_TYPE_OBSERVER, "clarificationrequest", &_act_clarificationrequest);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "clarificationrequest", &_act_clarificationrequest);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "clarificationrequest", &_act_clarificationrequest);
 

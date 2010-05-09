@@ -18,6 +18,7 @@
 #include <qspinbox.h>
 #include <qcombobox.h>
 #include <qfiledialog.h>
+#include <qlistbox.h>
 
 #include <sstream>
 
@@ -88,6 +89,21 @@ bool ProblemConfig::addAttribute(QGridLayout *g, std::string attr_name, std::str
 			control = combo;
 			_enums[attr_name] = combo;
 		}; break;
+	case '[':
+		{
+			QListBox *list = new QListBox(prop_data);
+			size_t i = 1;
+			while (i < type.length()) {
+				size_t epos = type.find(',', i);
+				if (epos == std::string::npos)
+					epos = type.length() - 1;
+				list->insertItem(type.substr(i, epos - i));
+				i = epos + 1;
+			}
+			list->setSelectionMode(QListBox::Multi);
+			control = list;
+			_lists[attr_name] = list;
+		}; break;
 	case '*':
 		NOT_IMPLEMENTED();
 		return true;
@@ -119,10 +135,12 @@ QGridLayout *ProblemConfig::createCompoundGrid(std::string desc, QWidget *parent
 			switch(desc[epos]) {
 			case '(':
 			case '{':
+			case '[':
 				bcount ++;
 				break;
 			case ')':
 			case '}':
+			case ']':
 				bcount --;
 				break;
 			}
@@ -146,14 +164,26 @@ QGridLayout *ProblemConfig::createCompoundGrid(std::string desc, QWidget *parent
 	return grid;
 }
 
-bool ProblemConfig::setProblemDescription(std::string descript) {
-	return createCompoundGrid(descript, prop_data) != NULL;
+bool ProblemConfig::setProblemDescription(std::string descript, std::vector<std::string> existing_problems) {
+	std::string desc = descript;
+	if (existing_problems.size() > 0) {
+		desc += ", dependencies [";
+		for (size_t i = 0; i < existing_problems.size(); i++) {
+			if (i > 0)
+				desc += ",";
+			desc += existing_problems[i];
+		}
+		desc += "]";
+	}
+
+	return createCompoundGrid(desc, prop_data) != NULL;
 }
 
 bool ProblemConfig::getProblemAttributes(AttributeMap &normal, AttributeMap &files) {
 	StringAttrsMap::const_iterator s;
 	ComboAttrsMap::const_iterator c;
 	IntAttrsMap::const_iterator i;
+	ListAttrsMap::const_iterator l;
 
 	for(s = _files.begin(); s != _files.end(); ++s) {
 		std::string val = s->second->text().ascii();
@@ -172,5 +202,32 @@ bool ProblemConfig::getProblemAttributes(AttributeMap &normal, AttributeMap &fil
 	for(i = _ints.begin(); i != _ints.end(); ++i)
 		normal[i->first] = i->second->cleanText().ascii();
 
+	for (l = _lists.begin(); l != _lists.end(); ++l) {
+		bool got_one = false;
+		std::ostringstream value;
+        QListBox *list = l->second;
+		for (size_t j = 0; j < list->count(); j++)
+			if (list->isSelected(j)) {
+				if (got_one)
+					value << ",";
+				value << list->text(j);
+				got_one = true;
+			}
+		normal[l->first] = value.str();
+	}
+
 	return true;
+}
+
+std::vector<std::string> ProblemConfig::getDependencies()
+{
+	std::vector<std::string> deps;
+	ListAttrsMap::iterator it = _lists.find("dependencies");
+	if (it != _lists.end()) {
+        QListBox *dependencies = it->second;
+		for (size_t i = 0; i < dependencies->count(); i++)
+			if (dependencies->isSelected(i))
+				deps.push_back(dependencies->text(i));
+	}
+	return deps;
 }

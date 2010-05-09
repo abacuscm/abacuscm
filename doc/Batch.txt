@@ -1,0 +1,48 @@
+The tool bin/batch is intended primarily for testing abacus itself, although
+it can be used to automate tasks that would normally be done through the GUI,
+and for which there is currently no command-line tool. It is invoked as
+
+bin/batch <configfile> [<batchfile>]
+
+The configfile is a client config file, as would be used by the abacus client.
+The batchfile contains messages to send to the server. If omitted, standard
+input is used instead.
+
+Messages are specified in the form
+
+type
+key:value
+key:value
+.
+.
+.
+
+There may optionally be a blank line between messages, but NOT within a
+message. A blank line also flushes the current message, which may be
+convenient if using it interactively. Lines beginning with a # are ignored.
+
+The valid types and their required
+key-value pairs are not currently documented, but can generally be inferred
+from the code in src/serverconnection.C. As an example, the first message will
+generally be
+
+auth
+user:username
+pass:password
+
+in order to log in.
+
+It is also possible to set content to send with messages. This can be done in
+two ways:
+
+1. Add a line of the form "<filename". This file will be sucked in and
+appended to the content block of the message. This is suitable for use with
+the submit message type.
+
+2. Add a line of the form "key<filename". The file will again be sucked in an
+appended to the content block, but a header line for "key" will also be
+generated to indicate the location within the content block and the base
+filename. This is suitable for use with the setprobattrs message type.
+
+Note that if the file could not be read, it will be skipped, but the message
+will still be sent.

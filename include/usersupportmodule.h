@@ -49,11 +49,11 @@ public:
 	UserList list();
 	uint32_t __attribute__((pure)) user_id(const std::string& username);
 	std::string __attribute__((pure)) username(uint32_t user_id);
+	std::string __attribute__((pure)) friendlyname(uint32_t user_id);
 	uint32_t __attribute__((pure)) usertype(uint32_t user_id);
 	uint32_t nextId();
 
 	std::string __attribute__((pure)) hashpw(uint32_t user_id, const std::string& pw);
-	std::string __attribute__((pure)) hashpw(const std::string& uname, const std::string& pw);
 };
 
 DEFINE_SUPPORT_MODULE_GETTER(UserSupportModule);

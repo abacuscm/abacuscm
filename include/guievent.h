@@ -16,12 +16,18 @@
 
 #include <qevent.h>
 
+struct MessageBlock;
+
 class GUIEvent : public QCustomEvent {
 private:
 	static QWidget* _receiver;
+
+	MessageBlock *_mb;
 public:
-	GUIEvent();
+	explicit GUIEvent(const MessageBlock *mb = NULL);
 	virtual ~GUIEvent();
+
+	const MessageBlock *getMB() const { return _mb; }
 
 	void post();
 

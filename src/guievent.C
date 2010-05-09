@@ -8,16 +8,25 @@
  * $Id$
  */
 #include "guievent.h"
+#include "messageblock.h"
 
 #include <qapplication.h>
 #include <qevent.h>
 
 QWidget* GUIEvent::_receiver;
 
-GUIEvent::GUIEvent() : QCustomEvent(QEvent::User) {
+GUIEvent::GUIEvent(const MessageBlock *mb) : QCustomEvent(QEvent::User) {
+	/* The callback happens asynchronously after the ServerConnection has
+	 * freed the memory, so we need to keep a copy.
+	 */
+	if (mb)
+		_mb = new MessageBlock(*mb);
+	else
+		_mb = NULL;
 }
 
 GUIEvent::~GUIEvent() {
+	delete _mb;
 }
 
 void GUIEvent::post() {

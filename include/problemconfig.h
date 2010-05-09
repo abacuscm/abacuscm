@@ -18,23 +18,27 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 class QWidget;
 class QGridLayout;
 class QLineEdit;
 class QSpinBox;
 class QComboBox;
+class QListBox;
 
 class ProblemConfig : public ProblemConfigBase {
 private:
 	typedef std::map<std::string, QLineEdit*> StringAttrsMap;
 	typedef std::map<std::string, QComboBox*> ComboAttrsMap;
 	typedef std::map<std::string, QSpinBox*> IntAttrsMap;
+	typedef std::map<std::string, QListBox*> ListAttrsMap;
 
 	StringAttrsMap _strings;
 	ComboAttrsMap _enums;
 	StringAttrsMap _files;
 	IntAttrsMap _ints;
+	ListAttrsMap _lists;
 
 	bool addAttribute(QGridLayout *g, std::string attr_name, std::string type);
 	QGridLayout *createCompoundGrid(std::string comp, QWidget *parent = NULL,
@@ -43,8 +47,9 @@ public:
 	ProblemConfig(QWidget *parent);
 	~ProblemConfig();
 
-	bool setProblemDescription(std::string descript);
+	bool setProblemDescription(std::string descript, std::vector<std::string> existing_problems);
 	bool getProblemAttributes(AttributeMap &normal, AttributeMap &files);
+	std::vector<std::string> getDependencies();
 };
 
 #endif

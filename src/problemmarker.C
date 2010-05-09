@@ -13,6 +13,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 using namespace std;
@@ -33,6 +34,8 @@ ProblemMarker::~ProblemMarker() {
 		delete _mr;
 	if(_run_info)
 		delete _run_info;
+	if(_workdir != "")
+		cleanWorkdir(_workdir);
 
 	// leave _server_con alone.
 }
@@ -142,4 +145,49 @@ string ProblemMarker::workdir() {
 	log(LOG_INFO, "Using working directory: %s", _workdir.c_str());
 
 	return _workdir;
+}
+
+/* Similar to system(), but bypasses the shell (more like exec)
+ * It also reports any non-zero exit status
+ */
+static int safe_system(const char *filename, const char * const * argv) {
+	pid_t pid;
+	int status = -1;
+
+	pid = fork();
+	if (pid == -1) {
+		lerror("fork");
+		return -1;
+	} else if (pid == 0) {
+		/* Child */
+		execv(filename, (char * const *) argv);
+		_exit(127); /* Only get here on error */
+	} else {
+		/* Parent */
+		pid_t result;
+		result = waitpid(pid, &status, 0);
+		if (result == -1)
+			lerror("waitpid");
+
+		if (WIFEXITED(status)) {
+			if (WEXITSTATUS(status) != 0) {
+				log(LOG_WARNING, "%s exited with status %d", filename, WEXITSTATUS(status));
+			}
+		} else if (WIFSIGNALED(status)) {
+			log(LOG_WARNING, "%s exited with signal %d", filename, WTERMSIG(status));
+		} else {
+			log(LOG_WARNING, "%s returned exit code %d", filename, status);
+		}
+	}
+	return status;
+}
+
+void ProblemMarker::cleanWorkdir(const string &wdir) {
+	/* If the user has taken away all permissions on a subdirectory, rm -rf
+	 * will refuse to remove it. Force everything to be writable first.
+	 */
+	const char * const chmod_argv[] = {"/bin/chmod", "u+rwX", "--", wdir.c_str(), NULL};
+	const char * const rm_argv[] = {"/bin/rm", "-rf", "--", wdir.c_str(), NULL};
+	safe_system("/bin/chmod", chmod_argv);
+	safe_system("/bin/rm", rm_argv);
 }
