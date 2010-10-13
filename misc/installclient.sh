@@ -1,6 +1,8 @@
 #! /bin/sh
 
-mkdir -p /etc/abacus
+DESTDIR=${DESTDIR-/}
 
-cp bin/abacus /usr/local/bin
-cp conf/client.conf.sample /etc/abacus/client.conf
+mkdir -p ${DESTDIR}etc/abacus
+
+install bin/abacus ${DESTDIR}usr/local/bin
+install conf/client.conf.sample ${DESTDIR}etc/abacus/client.conf
