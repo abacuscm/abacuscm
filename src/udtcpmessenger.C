@@ -632,6 +632,8 @@ const struct addrinfo* UDTCPPeerMessenger::getSockAddr(uint32_t server_id) {
 			struct addrinfo *adinf = NULL;
 			int e;
 
+			memset(&hints, 0, sizeof(hints));
+
 			if ((e = getaddrinfo(ip.c_str(), port.c_str(), &hints, &adinf)) != 0) {
 				log(LOG_ERR, "Error obtaining sockaddr data for %s:%s: %s.", ip.c_str(), port.c_str(), gai_strerror(e));
 				return NULL;
