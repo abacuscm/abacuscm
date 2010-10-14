@@ -287,19 +287,21 @@ bool UDTCPPeerMessenger::TCPRetriever::process()
 		str.str(""); str << pos;
 		mb["skip"] = str.str();
 
+		int opt = 30;
 		uint32_t try_server_id = _sq.dequeue();
 		_sq.enqueue(try_server_id); // requeue for retry.
 
 		// THIS IS A BUG: tcppeerport == udppeerport ... shouldn't be required.
 		const struct addrinfo* serv_addr = _messenger->getSockAddr(try_server_id);
+		if (!serv_addr)
+			goto err;
 		sock = socket(serv_addr->ai_family, SOCK_STREAM, 0);
 
 		if (sock < 0) {
 			lerror("socket");
-			break;
+			goto err;
 		}
 
-		int opt = 30;
 		setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &opt, sizeof(int));
 		setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &opt, sizeof(int));
 
@@ -710,6 +712,8 @@ void UDTCPPeerMessenger::sendAck(uint32_t server_id, uint32_t message_id) {
 	vector<uint32_t>::iterator i;
 	for(i = servers.begin(); i != servers.end(); ++i) {
 		const addrinfo * dest = getSockAddr(*i);
+		if (!dest)
+			return;
 		if (!sendFrame(&frame, sizeof(st_frame), dest))
 			log(LOG_WARNING, "Error sending ACK for (%u,%u) to %u.",
 					server_id, message_id, *i);
@@ -722,6 +726,8 @@ void UDTCPPeerMessenger::sendAck(uint32_t server_id, uint32_t message_id, uint32
 
 	st_frame frame;
 	const addrinfo * dest = getSockAddr(to_server);
+	if (!dest)
+		return;
 
 	makeACK(&frame, server_id, message_id);
 
