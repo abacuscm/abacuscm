@@ -630,11 +630,10 @@ const struct addrinfo* UDTCPPeerMessenger::getSockAddr(uint32_t server_id) {
 		}else {
 			struct addrinfo hints;
 			struct addrinfo *adinf = NULL;
+			int e;
 
-
-			if (getaddrinfo(ip.c_str(), port.c_str(), &hints, &adinf)) {
-				lerror("getaddrinfo");
-				log(LOG_ERR, "Error obtaining sockaddr data for %s:%s.", ip.c_str(), port.c_str());
+			if ((e = getaddrinfo(ip.c_str(), port.c_str(), &hints, &adinf)) != 0) {
+				log(LOG_ERR, "Error obtaining sockaddr data for %s:%s: %s.", ip.c_str(), port.c_str(), gai_strerror(e));
 				return NULL;
 			}
 
