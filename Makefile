@@ -115,7 +115,7 @@ MODS_markerd += userprog \
 	compiledproblemmarker \
 	testcaseproblemmarker \
 	interactiveproblemmarker
-LIBS_markerd = ssl crypto pthread
+LIBS_markerd = ssl crypto pthread sigsegv
 endif
 
 ifneq ($(filter admintools,$(mods)),)
