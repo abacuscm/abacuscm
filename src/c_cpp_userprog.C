@@ -60,7 +60,7 @@ bool C_CPP_UserProg::compile(string infile, string compiler_log, string outdir) 
 	argv.push_back(compiler());
 	argv.push_back("-lm");
 	argv.push_back("-static");
-	argv.push_back("-s");
+	// argv.push_back("-s"); http://www.mail-archive.com/bug-binutils@gnu.org/msg07558.html
 	argv.push_back("-O2");
 	argv.push_back("-o");
 	argv.push_back(outdir + "/" + _progname);

@@ -27,7 +27,7 @@ class ClientConnection : public Socket {
 private:
 	typedef std::map<std::string, uint32_t> ClientProps;
 
-	static SSL_METHOD *_method;
+	static const SSL_METHOD *_method;
 	static SSL_CTX *_context;
 
 	/* The connection is a state machine:

@@ -28,7 +28,7 @@ MODS_abacus = abacus serverconnection messageblock logger \
 	ui_clarificationreply moc_ui_clarificationreply \
 	ui_viewclarificationreply moc_ui_viewclarificationreply
 
-LIBS_abacus = ssl pthread
+LIBS_abacus = ssl crypto pthread
 NEED_QT3=1
 bin/abacus : LDFLAGS += $(QT_LDFLAGS)
 bin/abacus : CFLAGS += $(QT_CFLAGS)
@@ -38,7 +38,7 @@ ifneq ($(filter server,$(mods)),)
 TARGET_BINS += abacusd
 TARGET_LIBS += abacus
 MODS_abacusd = abacusd
-LIBS_abacusd = ssl pthread abacus
+LIBS_abacusd = ssl crypto pthread abacus
 
 LIBMODS_abacus = socket \
 	clientlistener \
@@ -115,32 +115,32 @@ MODS_markerd += userprog \
 	compiledproblemmarker \
 	testcaseproblemmarker \
 	interactiveproblemmarker
-LIBS_markerd = ssl pthread
+LIBS_markerd = ssl crypto pthread sigsegv
 endif
 
 ifneq ($(filter admintools,$(mods)),)
 TARGET_BINS += balloon adduser addproblem standings batch extract_source make_submission
 
 MODS_balloon = balloon serverconnection messageblock logger sigsegv acmconfig threadssl
-LIBS_balloon = ssl pthread
+LIBS_balloon = ssl crypto pthread
 
 MODS_adduser = createuser serverconnection messageblock logger sigsegv acmconfig threadssl
-LIBS_adduser = ssl pthread
+LIBS_adduser = ssl crypto pthread
 
 MODS_addproblem = createproblem serverconnection messageblock logger sigsegv acmconfig threadssl
-LIBS_addproblem = ssl pthread
+LIBS_addproblem = ssl crypto pthread
 
 MODS_batch = batch serverconnection messageblock logger sigsegv acmconfig threadssl
-LIBS_batch = ssl pthread
+LIBS_batch = ssl crypto pthread
 
 MODS_standings = standings serverconnection messageblock logger sigsegv acmconfig threadssl score
-LIBS_standings = ssl pthread
+LIBS_standings = ssl crypto pthread
 
 MODS_extract_source = extract_source serverconnection messageblock logger sigsegv acmconfig threadssl
-LIBS_extract_source = ssl pthread
+LIBS_extract_source = ssl crypto pthread
 
 MODS_make_submission = make_submission serverconnection messageblock logger sigsegv acmconfig threadssl
-LIBS_make_submission = ssl pthread
+LIBS_make_submission = ssl crypto pthread
 endif
 
 ifeq ($(builddocs),yes)

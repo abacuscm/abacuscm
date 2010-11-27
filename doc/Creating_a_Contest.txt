@@ -157,3 +157,47 @@ registered users (only 'admin' by default), you can now change the user
 password.
 
 From here you can control the server as you would expect.
+
+10. Setting up a marker
+***********************
+
+I recommend using the adduser tool to create a new user for the marker, something like:
+
+bin/adduser ${HOME}/.abacus admin adminpass marker "Marker A" markme marker
+
+This will create a new user called 'marker' with password markme.
+
+Now you should copy the marker.conf.sample for each intended marker, I
+recommend using filenames such as marker.${username}.conf, so for the above:
+
+cp conf/marker.conf.sample conf/marker.marker.conf
+
+You will need to update at least the following config options (double check the
+other settings too):
+
+In the [server] section:
+address=
+username=
+password=
+
+In the [marker] section.
+user=
+group=
+
+This is especially important if you run multiple markers on the same machine.
+Note that it should be different from the user running the actual markerd
+process (which should also not be root).
+
+Now you need to update bin/runlimit to be suid root (it needs access to
+seteuid, setegid, setuid, setgid and chroot, so if you prefer to use
+capabilities check the man pages for what you require).
+
+From here you simply need to run the markerd with something like:
+
+while true; do bin/markerd conf/marker.marker.conf; done
+
+This will restart the markerd in the unlikely event of a crash.
+
+You can also put all common marker options (everything except the username and
+password in [server] and the user and group in [marker] presumably) in a common
+config file in /etc/abacus/marker.conf.

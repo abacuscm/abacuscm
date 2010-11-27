@@ -1556,12 +1556,12 @@ static void thread_deinit(void* initialised)
 static void init() __attribute__((constructor));
 static void init() {
 	pthread_key_create(&_called_thread_init, thread_deinit);
-	mysql_server_init(0, NULL, NULL);
+	mysql_library_init(0, NULL, NULL);
 	DbCon::registerFunctor(MySQLFunctor);
 	pthread_setspecific(_called_thread_init, MYSQL_THREAD_STATE_SERVER_INIT);
 }
 
 static void deinit() __attribute__((destructor));
 static void deinit() {
-	mysql_server_end();
+	mysql_library_end();
 }

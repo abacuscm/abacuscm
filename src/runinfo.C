@@ -35,6 +35,9 @@ RunInfo::RunInfo(const char *filename) {
 		if (strncmp(line, "RUNERR", 6)  == 0) {
 			log(LOG_ERR, "%s", line + 7);
 		}
+		else if (strncmp(line, "RUNDBG", 6)  == 0) {
+			log(LOG_DEBUG, "%s", line + 7);
+		}
 		else if (strncmp(line, "RUNINF", 6) == 0) {
 			const char *sub = line + 7;
 			if (strncmp(sub, "TIME", 4) == 0) {

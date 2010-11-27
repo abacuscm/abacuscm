@@ -23,7 +23,7 @@
 
 using namespace std;
 
-SSL_METHOD *ClientConnection::_method = NULL;
+const SSL_METHOD *ClientConnection::_method = NULL;
 SSL_CTX *ClientConnection::_context = NULL;
 
 ClientConnection::ClientConnection(int sock) {
