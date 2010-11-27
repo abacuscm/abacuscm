@@ -14,6 +14,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <algorithm>
+#include <memory>
 
 #include "acmconfig.h"
 #include "logger.h"
@@ -183,6 +184,8 @@ static bool initialise() {
 
 	// it would be nicer to have these in their appropriate source files - but they
 	// insist on segfaulting there.
+	// TODO: revisit now that module init is done with a specific function
+	// instead of a constructor.
 	Message::registerMessageFunctor(TYPE_ID_CREATESERVER, create_msg_createserver);
 	Message::registerMessageFunctor(TYPE_ID_CREATEUSER, create_msg_createuser);
 
@@ -599,12 +602,12 @@ int main(int argc, char ** argv) {
 
 	Markers::getInstance().startTimeoutCheckingThread();
 
-	ModuleLoader module_loader;
+	auto_ptr<ModuleLoader> module_loader(new ModuleLoader());
 	/* The ModuleLoader object uses scope to clean up on destruction. It
 	 * also grabs config during initialisation, so the above line should not
 	 * be moved above the configuration loading.
 	 */
-	if(!load_modules(module_loader))
+	if(!load_modules(*module_loader))
 		return -1;
 
 	if(!PeerMessenger::getMessenger())
@@ -660,6 +663,8 @@ int main(int argc, char ** argv) {
 	DbCon::cleanup();
 	ThreadSSL::cleanup();
 
+	/* Close down all the modules */
+	module_loader.reset();
 	log(LOG_INFO, "abacusd is shut down.");
 	return 0;
 }

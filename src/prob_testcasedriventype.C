@@ -51,7 +51,6 @@ vector<string> TCProblemType::getAttributeList() const {
 
 TCProblemType _tc_prob_type;
 
-static void init() __attribute__((constructor));
-static void init() {
+extern "C" void abacuscm_mod_init() {
 	ProblemType::registerProblemType(&_tc_prob_type);
 }

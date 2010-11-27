@@ -83,7 +83,6 @@ bool ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
 
 static ActAddUser _act_adduser;
 
-static void init() __attribute__((constructor));
-static void init() {
+extern "C" void abacuscm_mod_init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "adduser", &_act_adduser);
 }

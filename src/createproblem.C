@@ -314,6 +314,7 @@ int main(int argc, const char **argv) {
 	string username = argv[2];
 	string password = argv[3];
 
+	ServerConnection::init();
 	ServerConnection _server_con;
 
 	Config &conf = Config::getConfig();

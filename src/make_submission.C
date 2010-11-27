@@ -37,6 +37,7 @@ int main(int argc, char **argv) {
         string language = argv[5];
         string filename = argv[6];
 
+	ServerConnection::init();
 	ServerConnection _server_con;
 
 	Config &conf = Config::getConfig();

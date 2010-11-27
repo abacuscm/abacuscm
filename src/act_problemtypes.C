@@ -64,8 +64,7 @@ bool ActGetProbDescript::int_process(ClientConnection *cc, MessageBlock *mb) {
 static ActGetProbTypes _act_get_prob_types;
 static ActGetProbDescript _act_get_prob_desc;
 
-static void init() __attribute__((constructor));
-static void init() {
+extern "C" void abacuscm_mod_init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getprobtypes", &_act_get_prob_types);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getprobdescript", &_act_get_prob_desc);
 }

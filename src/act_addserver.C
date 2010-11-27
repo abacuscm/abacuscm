@@ -57,7 +57,6 @@ bool ActAddServer::int_process(ClientConnection* cc, MessageBlock* mb) {
 
 static ActAddServer _act_addserver;
 
-static void init() __attribute__((constructor));
-static void init() {
+extern "C" void abacuscm_mod_init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "addserver", &_act_addserver);
 }

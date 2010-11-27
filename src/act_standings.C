@@ -60,8 +60,7 @@ bool ActStandings::int_process(ClientConnection *cc, MessageBlock *) {
 
 static ActStandings _act_standings;
 
-static void init() __attribute__((constructor));
-static void init() {
+extern "C" void abacuscm_mod_init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "standings", &_act_standings);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "standings", &_act_standings);
 	ClientAction::registerAction(USER_TYPE_OBSERVER, "standings", &_act_standings);

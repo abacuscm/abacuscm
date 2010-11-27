@@ -171,6 +171,7 @@ int main(int argc, char **argv) {
 	string username;
 	string password;
 	const char *fname = "standings.txt";
+	ServerConnection::init();
 
 	register_log_listener(log_function);
 

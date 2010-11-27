@@ -353,8 +353,7 @@ static Message* create_mark_message() {
 	return new MarkMessage();
 }
 
-static void init() __attribute__((constructor));
-static void init() {
+extern "C" void abacuscm_mod_init() {
 	ClientAction::registerAction(USER_TYPE_MARKER, "subscribemark", &_act_subscribe_mark);
 	ClientAction::registerAction(USER_TYPE_MARKER, "mark", &_act_place_mark);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "mark", &_act_place_mark);

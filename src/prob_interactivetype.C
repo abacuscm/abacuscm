@@ -34,8 +34,7 @@ std::vector<std::string> InteractiveProblemType::getAttributeList() const {
 	return result;
 }
 
-static void init() __attribute__((constructor));
-static void init() {
+extern "C" void abacuscm_mod_init() {
 	static InteractiveProblemType _interactive_prob_type;
 	ProblemType::registerProblemType(&_interactive_prob_type);
 }

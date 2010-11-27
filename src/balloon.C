@@ -67,6 +67,7 @@ static void server_close(const MessageBlock*, void*) {
 int main(int argc, char **argv) {
 	string username;
 	string password;
+	ServerConnection::init();
 	ServerConnection _server_con;
 
 	register_log_listener(log_function);

@@ -167,8 +167,7 @@ static Message* create_passwd_msg() {
 	return new PasswdMessage();
 }
 
-static void init() __attribute__((constructor));
-static void init() {
+extern "C" void abacuscm_mod_init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "passwd", &_act_passwd);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "passwd", &_act_passwd);
 	ClientAction::registerAction(USER_TYPE_OBSERVER, "passwd", &_act_passwd);

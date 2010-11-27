@@ -249,8 +249,7 @@ static Message* StartStopFunctor() {
 	return new MsgStartStop();
 }
 
-static void init() __attribute__((constructor));
-static void init() {
+extern "C" void abacuscm_mod_init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "startstop", &_act_startstop);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "subscribetime", &_act_subscribetime);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "subscribetime", &_act_subscribetime);

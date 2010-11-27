@@ -35,6 +35,7 @@ int main(int argc, char** argv) {
 
 	log(LOG_INFO, "abacus config loaded, preparing to start abacus.");
 
+	ServerConnection::init();
 	ServerConnection servercon;
 
 	QApplication application(argc, argv);

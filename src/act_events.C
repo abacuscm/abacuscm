@@ -39,8 +39,7 @@ bool Act_ClientEventRegistry::int_process(ClientConnection* cc, MessageBlock* mb
 
 static Act_ClientEventRegistry _act_eventreg;
 
-static void init() __attribute__((constructor));
-static void init() {
+extern "C" void abacuscm_mod_init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "eventmap", &_act_eventreg);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "eventmap", &_act_eventreg);
 	ClientAction::registerAction(USER_TYPE_OBSERVER, "eventmap", &_act_eventreg);

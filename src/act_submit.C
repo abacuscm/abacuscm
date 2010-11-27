@@ -604,8 +604,7 @@ bool ActGetLanguages::int_process(ClientConnection *cc, MessageBlock *) {
 	return cc->sendMessageBlock(&result_mb);
 }
 
-static void init() __attribute__((constructor));
-static void init() {
+extern "C" void abacuscm_mod_init() {
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "submit", &_act_submit);
 	ClientAction::registerAction(USER_TYPE_OBSERVER, "submit", &_act_submit);
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getproblems", &_act_getproblems);

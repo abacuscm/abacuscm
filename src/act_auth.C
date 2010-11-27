@@ -46,7 +46,6 @@ bool ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
 
 static ActAuth _act_auth;
 
-static void init() __attribute__((constructor));
-static void init() {
+extern "C" void abacuscm_mod_init() {
 	ClientAction::registerAction(USER_TYPE_NONE, "auth", &_act_auth);
 }

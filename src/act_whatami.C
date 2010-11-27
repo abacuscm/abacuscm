@@ -45,8 +45,7 @@ bool ActWhatAmI::int_process(ClientConnection *cc, MessageBlock *) {
 
 static ActWhatAmI _act_whatami;
 
-static void init() __attribute__((constructor));
-static void init() {
+extern "C" void abacuscm_mod_init() {
 	ClientAction::registerAction(USER_TYPE_NONE, "whatami", &_act_whatami);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "whatami", &_act_whatami);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "whatami", &_act_whatami);

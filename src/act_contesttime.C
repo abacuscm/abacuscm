@@ -45,8 +45,7 @@ bool ActContesttime::int_process(ClientConnection* cc, MessageBlock*) {
 
 static ActContesttime _act_contesttime;
 
-static void init() __attribute__((constructor));
-static void init() {
+extern "C" void abacuscm_mod_init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "contesttime", &_act_contesttime);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "contesttime", &_act_contesttime);
 	ClientAction::registerAction(USER_TYPE_OBSERVER, "contesttime", &_act_contesttime);

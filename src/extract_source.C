@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
             problem_shortname = argv[5];
         }
 
+	ServerConnection::init();
 	ServerConnection _server_con;
 
 	Config &conf = Config::getConfig();

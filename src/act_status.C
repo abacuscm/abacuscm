@@ -31,8 +31,7 @@ bool ActRunning::int_process(ClientConnection *cc, MessageBlock*) {
 
 static ActRunning _act_running;
 
-static void init() __attribute__((constructor));
-static void init() {
+extern "C" void abacuscm_mod_init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "conteststatus", &_act_running);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "conteststatus", &_act_running);
 	ClientAction::registerAction(USER_TYPE_OBSERVER, "conteststatus", &_act_running);

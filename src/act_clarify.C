@@ -376,8 +376,7 @@ static ActGetClarificationRequests _act_getclarificationrequests;
 static ActClarificationRequest _act_clarificationrequest;
 static ActClarification _act_clarification;
 
-static void init() __attribute__((constructor));
-static void init() {
+extern "C" void abacuscm_mod_init() {
 	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getclarifications", &_act_getclarifications);
 	ClientAction::registerAction(USER_TYPE_OBSERVER, "getclarifications", &_act_getclarifications);
 	ClientAction::registerAction(USER_TYPE_JUDGE, "getclarifications", &_act_getclarifications);

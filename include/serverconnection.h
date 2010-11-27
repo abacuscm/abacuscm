@@ -173,6 +173,8 @@ public:
 	bool registerEventCallback(std::string event, EventCallback func, void *custom);
 	bool deregisterEventCallback(std::string event, EventCallback func);
 
+	static void init();
+
 private:
 	std::vector<ProblemInfo> _getProblems(std::string query);
 };

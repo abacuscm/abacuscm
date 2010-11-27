@@ -635,8 +635,7 @@ static Message* create_prob_message() {
 	return new ProbMessage();
 }
 
-static void init() __attribute__((constructor));
-static void init() {
+extern "C" void abacuscm_mod_init() {
 	ClientAction::registerAction(USER_TYPE_ADMIN, "setprobattrs", &_act_setprobattrs);
 	ClientAction::registerAction(USER_TYPE_ADMIN, "getprobattrs", &_act_getprobattrs);
 	ClientAction::registerAction(USER_TYPE_MARKER, "getprobattrs", &_act_getprobattrs);

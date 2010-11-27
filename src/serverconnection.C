@@ -1239,8 +1239,7 @@ void* ServerConnection::keepalive_spawner(void *p) {
 	return ((ServerConnection*)p)->keepalive_thread();
 }
 
-static void init() __attribute__((constructor));
-static void init() {
+void ServerConnection::init() {
 	SSL_library_init();
 	SSL_load_error_strings();
 	RAND_load_file("/dev/urandom", 4096);

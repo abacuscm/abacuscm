@@ -15,16 +15,18 @@
 #endif
 
 #include <string>
+#include <vector>
 
 class ModuleLoader {
 private:
 	std::string moddir;
+	std::vector<void *> modules;
 public:
 	ModuleLoader();
 	~ModuleLoader();
 
-	bool loadModule(std::string module_name, bool global = false);
-	bool loadModuleSet(std::string prefix, std::string set, bool global = false);
+	bool loadModule(const std::string &module_name, bool global = false);
+	bool loadModuleSet(const std::string &prefix, const std::string &set, bool global = false);
 };
 
 #endif
