@@ -39,11 +39,6 @@ protected:
 	virtual bool int_process(ClientConnection*, MessageBlock* mb);
 };
 
-class ActBalloon : public ClientAction {
-protected:
-	virtual bool int_process(ClientConnection*, MessageBlock* mb);
-};
-
 class MarkMessage : public Message {
 private:
 	struct File {
@@ -135,9 +130,8 @@ bool MarkMessage::process() const {
 	submission->submissionToMB(db, s, mb, "");
 
 	uint32_t user_id = db->submission2user_id(_submission_id);
-	ClientEventRegistry::getInstance().broadcastEvent(user_id,
-													  USER_MASK_JUDGE | USER_MASK_ADMIN,
-													  &mb);
+	ClientEventRegistry::getInstance().broadcastEvent(
+		user_id, PERMISSION_SEE_ALL_SUBMISSIONS, &mb);
 
 	StandingsSupportModule *standings = getStandingsSupportModule();
 	if(standings && _result != JUDGE)
@@ -260,10 +254,32 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 		return cc->sendError("Invalid submission_id");
 	}
 
-	if (cc->getProperty("user_type") == USER_TYPE_MARKER && Markers::getInstance().hasIssued(cc) != submission_id)
-		return cc->sendError("Markers may only mark submissions issued to them");
+	/* Permission checks. As soon as any validity condition is found, legal
+	 * is set to true. If a permission is found but some other condition
+	 * prevents it from making the mark legal, msg is set to an explanation.
+	 * It is possible to msg to be set multiple times, but that can only
+	 * happen when a user has both PERMISSION_MARK and PERMISSION_JUDGE, which
+	 * is not expected. It is also possible to msg to be set and legal to later
+	 * be set to true.
+	 */
+	Permissions *perms = Permissions::getInstance();
+	bool legal = false;
+	string msg = "";
 
-	if (cc->getProperty("user_type") == USER_TYPE_JUDGE || cc->getProperty("user_type") == USER_TYPE_ADMIN) {
+	if (perms->hasPermission(cc, PERMISSION_JUDGE_OVERRIDE)) {
+		legal = true;
+	}
+	else if (perms->hasPermission(cc, PERMISSION_MARK)) {
+		if (Markers::getInstance().hasIssued(cc) == submission_id)
+		{
+			legal = true;
+		}
+		else
+		{
+			msg = "Markers may only mark submissions issued to them";
+		}
+	}
+	else if (perms->hasPermission(cc, PERMISSION_JUDGE)) {
 		// extra code to avoid race conditions for judge marking
 		RunResult resinfo;
 		uint32_t utype;
@@ -278,17 +294,26 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 		bool res = db->getSubmissionState( submission_id, resinfo, utype, comment);
 		db->release();db=NULL;
 
-		if (!res)
-			return cc->sendError("This hasn't been compiled or even run: you really think I'm going to let you fiddle with the marks?");
-
-		if (cc->getProperty("user_type") == USER_TYPE_JUDGE) {
-			if (utype == USER_TYPE_JUDGE) {
-				return cc->sendError("Another judge has already this submission, sorry!");
-			}
-			if (resinfo != JUDGE) {
-				return cc->sendError("You cannot change the status of this submission: the decision was black and white; no human required ;-)");
-			}
+		if (!res) {
+			msg = "This hasn't been compiled or even run: you really think I'm going to let you fiddle with the marks?";
 		}
+		else if (perms->hasPermission(static_cast<UserType>(utype), PERMISSION_JUDGE))
+		{
+			msg = cc->sendError("Another judge has already this submission, sorry!");
+		}
+		else if (resinfo != JUDGE) {
+			msg = "You cannot change the status of this submission: the decision was black and white; no human required.";
+		}
+		else {
+			legal = true;
+		}
+	}
+
+	if (!legal) {
+		if (msg == "") {
+			msg = "You do not have permission to do this";
+		}
+		return cc->sendError(msg);
 	}
 
 	uint32_t result = strtoll((*mb)["result"].c_str(), &errpnt, 0);
@@ -302,9 +327,9 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 	// This should be based on whether we defer to judges on automated
 	// wrong answers, not hard coded.  In fact, this should be handled
 	// in the marker daemon entirely. TODO
-	if (result == WRONG && cc->getProperty("user_type") == USER_TYPE_MARKER) {
+	if (result == WRONG && !perms->hasPermission(cc, PERMISSION_MARK)) {
 		result = JUDGE;
-		comment = "Defered to judge";
+		comment = "Deferred to judge";
 	}
 
 	MarkMessage *markmsg = new MarkMessage(submission_id, cc->getProperty("user_id"), cc->getProperty("user_type"), result, comment);
@@ -335,32 +360,19 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 	return triggerMessage(cc, markmsg);
 }
 
-bool ActBalloon::int_process(ClientConnection* cc, MessageBlock* mb) {
-	if((*mb)["action"] == "subscribe") {
-		if(!ClientEventRegistry::getInstance().registerClient("balloon", cc))
-			return cc->sendError("Error subscribing to balloon events.");
-	} else {
-		ClientEventRegistry::getInstance().deregisterClient("balloon", cc);
-	}
-	return cc->reportSuccess();
-}
-
 static ActSubscribeMark _act_subscribe_mark;
 static ActPlaceMark _act_place_mark;
-static ActBalloon _act_balloon;
 
 static Message* create_mark_message() {
 	return new MarkMessage();
 }
 
 extern "C" void abacuscm_mod_init() {
-	ClientAction::registerAction(USER_TYPE_MARKER, "subscribemark", &_act_subscribe_mark);
-	ClientAction::registerAction(USER_TYPE_MARKER, "mark", &_act_place_mark);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "mark", &_act_place_mark);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "mark", &_act_place_mark);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "balloonnotify", &_act_balloon);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "balloonnotify", &_act_balloon);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "balloonnotify", &_act_balloon);
+	ClientAction::registerAction("subscribemark", PERMISSION_MARK, &_act_subscribe_mark);
+	ClientAction::registerAction("mark",
+		PERMISSION_MARK || PERMISSION_JUDGE, &_act_place_mark);
 	Message::registerMessageFunctor(TYPE_ID_SUBMISSION_MARK, create_mark_message);
-	ClientEventRegistry::getInstance().registerEvent("balloon");
+	ClientEventRegistry::getInstance().registerEvent(
+		"balloon", 
+		PERMISSION_SEE_FINAL_STANDINGS && PERMISSION_SEE_ALL_STANDINGS);
 }

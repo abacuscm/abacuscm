@@ -168,12 +168,8 @@ static Message* create_passwd_msg() {
 }
 
 extern "C" void abacuscm_mod_init() {
-	ClientAction::registerAction(USER_TYPE_ADMIN, "passwd", &_act_passwd);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "passwd", &_act_passwd);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "passwd", &_act_passwd);
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "passwd", &_act_passwd);
-	ClientAction::registerAction(USER_TYPE_MARKER, "passwd", &_act_passwd);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "id_passwd", &_act_id_passwd);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "getusers", &_act_get_users);
+	ClientAction::registerAction("passwd", PERMISSION_CHANGE_PASSWORD, &_act_passwd);
+	ClientAction::registerAction("id_passwd", PERMISSION_USER_ADMIN, &_act_id_passwd);
+	ClientAction::registerAction("getusers", PERMISSION_USER_ADMIN, &_act_get_users);
 	Message::registerMessageFunctor(TYPE_ID_UPDATEPASS, create_passwd_msg);
 }

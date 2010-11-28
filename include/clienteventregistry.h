@@ -16,6 +16,7 @@
 #include <map>
 #include <string>
 #include "misc.h"
+#include "permissions.h"
 
 class ClientConnection;
 class MessageBlock;
@@ -28,15 +29,19 @@ private:
 
 		ClientConnectionPool _clients;
 		ClientConnection* _next_single;
+		PermissionSet _ps;
 		pthread_mutex_t _lock;
 	public:
-		Event();
+		explicit Event(const PermissionSet &ps);
 		~Event();
 
 		void triggerEvent(const MessageBlock* mb);
 		void triggerOne(const MessageBlock*mb, bool remove);
-		void registerClient(ClientConnection *);
-		void deregisterClient(ClientConnection *);
+
+		// registerClient and deregisterClient return true on success, and
+		// false if the client is not permitted to register for this event.
+		bool registerClient(ClientConnection *);
+		bool deregisterClient(ClientConnection *);
 		bool isClientRegistered(ClientConnection *);
 	};
 
@@ -55,20 +60,20 @@ public:
 	void registerClient(ClientConnection *cc);
 	bool registerClient(const std::string &eventname, ClientConnection *cc);
 	void deregisterClient(ClientConnection *cc);
-	void deregisterClient(const std::string &eventname, ClientConnection *cc);
+	bool deregisterClient(const std::string &eventname, ClientConnection *cc);
 	bool isClientRegistered(const std::string &eventname, ClientConnection *cc);
 
-	// Creates an event, and determines which users should always receive
-	// notifications sent via the event-specific broadcastEvent.
-	void registerEvent(const std::string &eventname);
+	// Creates an event, and determines which users should be allowed to
+	// subscribe to it.
+	void registerEvent(const std::string &eventname, const PermissionSet &ps);
 
 	// Send message to clients registered via registerClient for the event
 	void triggerEvent(const std::string &eventname, const MessageBlock *mb);
 
-	// Send message to all clients either in the broadcast mask, or with the
+	// Send message to all clients either with the given permissions, or with the
 	// given user id. If user_id is zero it is ignored. Note that clients do
 	// not need to register with the event to receive it.
-	void broadcastEvent(uint32_t user_id, int mask, const MessageBlock *mb);
+	void broadcastEvent(uint32_t user_id, const PermissionSet &ps, const MessageBlock *mb);
 
 	// Send message just to one user
 	void sendMessage(uint32_t user_id, const MessageBlock *mb);

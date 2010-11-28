@@ -236,8 +236,16 @@ uint32_t ClientConnection::setProperty(const std::string& prop, uint32_t val) {
 	return oldval;
 }
 
-uint32_t ClientConnection::getProperty(const std::string& prop) {
-	return _props[prop];
+uint32_t ClientConnection::getProperty(const std::string& prop) const {
+	ClientProps::const_iterator it = _props.find(prop);
+	if (it == _props.end())
+	{
+		return 0;
+	}
+	else
+	{
+		return it->second;
+	}
 }
 
 uint32_t ClientConnection::delProperty(const std::string& prop) {

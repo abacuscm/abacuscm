@@ -18,6 +18,7 @@
 #include <string>
 
 #include "queue.h"
+#include "permissions.h"
 
 class ClientConnection;
 class MessageBlock;
@@ -25,12 +26,18 @@ class Message;
 
 class ClientAction {
 private:
-	static Queue<Message*> *_message_queue;
-	static std::map<int, std::map<std::string, ClientAction*> > actionmap;
+	struct Info
+	{
+		PermissionSet ps;  // permissions required to use this action
+		ClientAction *action;
 
-	// Gets the ClientAction object from actionmap, returning NULL if it is
-	// not a known action
-	static ClientAction* getAction(int user_type, const std::string &action);
+		Info() : ps(), action(NULL) {}
+		Info(PermissionSet ps, ClientAction *action) : ps(ps), action(action) {}
+	};
+
+	static Queue<Message*> *_message_queue;
+	static std::map<std::string, Info> _actionmap;
+
 protected:
 	bool triggerMessage(ClientConnection *cc, Message*);
 	virtual bool int_process(ClientConnection *cc, MessageBlock *mb) = 0;
@@ -39,7 +46,7 @@ public:
 	virtual ~ClientAction();
 
 	static void setMessageQueue(Queue<Message*> *message_queue);
-	static bool registerAction(int user_type, std::string action, ClientAction *ca);
+	static bool registerAction(const std::string &name, const PermissionSet &ps, ClientAction *ca);
 	static bool process(ClientConnection *cc, MessageBlock *mb);
 };
 

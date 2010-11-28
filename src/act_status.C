@@ -32,8 +32,5 @@ bool ActRunning::int_process(ClientConnection *cc, MessageBlock*) {
 static ActRunning _act_running;
 
 extern "C" void abacuscm_mod_init() {
-	ClientAction::registerAction(USER_TYPE_ADMIN, "conteststatus", &_act_running);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "conteststatus", &_act_running);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "conteststatus", &_act_running);
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "conteststatus", &_act_running);
+	ClientAction::registerAction("conteststatus", PERMISSION_AUTH, &_act_running);
 }

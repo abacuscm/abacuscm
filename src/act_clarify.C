@@ -76,11 +76,10 @@ bool ActGetClarifications::int_process(ClientConnection *cc, MessageBlock *) {
 		return cc->sendError("Error connecting to database");
 
 	uint32_t uid = cc->getProperty("user_id");
-	uint32_t utype = cc->getProperty("user_type");
 
 	ClarificationList lst;
 
-	if(utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_OBSERVER)
+	if(!Permissions::getInstance()->hasPermission(cc, PERMISSION_SEE_ALL_CLARIFICATIONS))
 		lst = db->getClarifications(uid);
 	else
 		lst = db->getClarifications();
@@ -114,11 +113,10 @@ bool ActGetClarificationRequests::int_process(ClientConnection *cc, MessageBlock
 		return cc->sendError("Error connecting to database");
 
 	uint32_t uid = cc->getProperty("user_id");
-	uint32_t utype = cc->getProperty("user_type");
 
 	ClarificationRequestList lst;
 
-	if(utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_OBSERVER)
+	if(!Permissions::getInstance()->hasPermission(cc, PERMISSION_SEE_ALL_CLARIFICATION_REQUESTS))
 		lst = db->getClarificationRequests(uid);
 	else
 		lst = db->getClarificationRequests();
@@ -261,8 +259,10 @@ bool ClarificationMessage::process() const {
 				AttributeList::iterator a;
 				for(a = req.begin(); a != req.end(); ++a)
 					notify[a->first] = a->second;
-				ClientEventRegistry::getInstance().broadcastEvent(_user_id,
-																  USER_MASK_JUDGE | USER_MASK_ADMIN, &notify);
+				ClientEventRegistry::getInstance().broadcastEvent(
+					_user_id,
+					PERMISSION_SEE_ALL_CLARIFICATION_REQUESTS,
+					&notify);
 			}
 		}
 	}
@@ -290,10 +290,13 @@ bool ClarificationMessage::process() const {
 				for(a = c.begin(); a != c.end(); ++a)
 					notify[a->first] = a->second;
 				if (pub)
-					ClientEventRegistry::getInstance().broadcastEvent(0, USER_MASK_ALL & ~USER_MASK_MARKER, &notify);
+					ClientEventRegistry::getInstance().broadcastEvent(
+						0, PERMISSION_AUTH, &notify);
 				else
-					ClientEventRegistry::getInstance().broadcastEvent(strtoul(req["user_id"].c_str(), NULL, 10),
-																	  USER_MASK_JUDGE | USER_MASK_ADMIN, &notify);
+					ClientEventRegistry::getInstance().broadcastEvent(
+						strtoul(req["user_id"].c_str(), NULL, 10),
+						PERMISSION_SEE_ALL_CLARIFICATIONS,
+						&notify);
 			}
 		}
 	}
@@ -377,26 +380,13 @@ static ActClarificationRequest _act_clarificationrequest;
 static ActClarification _act_clarification;
 
 extern "C" void abacuscm_mod_init() {
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getclarifications", &_act_getclarifications);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "getclarifications", &_act_getclarifications);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "getclarifications", &_act_getclarifications);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "getclarifications", &_act_getclarifications);
-
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getclarificationrequests", &_act_getclarificationrequests);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "getclarificationrequests", &_act_getclarificationrequests);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "getclarificationrequests", &_act_getclarificationrequests);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "getclarificationrequests", &_act_getclarificationrequests);
-
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "clarificationrequest", &_act_clarificationrequest);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "clarificationrequest", &_act_clarificationrequest);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "clarificationrequest", &_act_clarificationrequest);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "clarificationrequest", &_act_clarificationrequest);
-
-	ClientAction::registerAction(USER_TYPE_JUDGE, "clarification", &_act_clarification);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "clarification", &_act_clarification);
+	ClientAction::registerAction("getclarifications", PERMISSION_AUTH, &_act_getclarifications);
+	ClientAction::registerAction("getclarificationrequests", PERMISSION_AUTH, &_act_getclarificationrequests);
+	ClientAction::registerAction("clarificationrequest", PERMISSION_CLARIFICATION_REQUEST, &_act_clarificationrequest);
+	ClientAction::registerAction("clarification", PERMISSION_CLARIFICATION_REPLY, &_act_clarification);
 
 	Message::registerMessageFunctor(TYPE_ID_CLARIFICATION, create_clarification_msg);
 
-	ClientEventRegistry::getInstance().registerEvent("updateclarifications");
-	ClientEventRegistry::getInstance().registerEvent("updateclarificationrequests");
+	ClientEventRegistry::getInstance().registerEvent("updateclarifications", PERMISSION_AUTH);
+	ClientEventRegistry::getInstance().registerEvent("updateclarificationrequests", PERMISSION_AUTH);
 }

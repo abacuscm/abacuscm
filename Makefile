@@ -62,6 +62,7 @@ LIBMODS_abacus = socket \
 	timedaction \
 	threadssl \
 	score \
+	permissions \
 	hashpw
 
 TARGET_MODS += dbmysql \

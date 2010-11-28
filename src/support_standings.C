@@ -56,23 +56,6 @@ StandingsSupportModule::~StandingsSupportModule()
 {
 }
 
-uint32_t StandingsSupportModule::getStandingsFlags(uint32_t user_type) {
-	switch (user_type) {
-	case USER_TYPE_MARKER:
-		return 0;
-	case USER_TYPE_CONTESTANT:
-		return STANDINGS_FLAG_SEND;
-	case USER_TYPE_OBSERVER:
-		return STANDINGS_FLAG_SEND | STANDINGS_FLAG_OBSERVER;
-	case USER_TYPE_JUDGE:
-	case USER_TYPE_ADMIN:
-		return STANDINGS_FLAG_SEND | STANDINGS_FLAG_FINAL | STANDINGS_FLAG_OBSERVER;
-	default:
-		assert(false);
-		return 0;
-	}
-}
-
 typedef struct
 {
 	time_t time;
@@ -173,10 +156,11 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 	for(t = problemdata.begin(); t != problemdata.end(); ++t) {
 		// 0/1 indices are for contestants/final standings
 		StandingsData teamdata[2];
+		UserType user_type = static_cast<UserType>(usm->usertype(t->first));
 		teamdata[0].time = 0;
-		teamdata[0].user_type = usm->usertype(t->first);
+		teamdata[0].in_standings = Permissions::getInstance()->hasPermission(user_type, PERMISSION_IN_STANDINGS);
 		teamdata[1].time = 0;
-		teamdata[1].user_type = teamdata[0].user_type;
+		teamdata[1].in_standings = teamdata[0].in_standings;
 		map<uint32_t, vector<SubData> >::iterator p;
 		for(p = t->second.begin(); p != t->second.end(); ++p) {
 			int tries = 0;
@@ -222,18 +206,26 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 	}
 	pthread_rwlock_unlock(&_lock);
 
-	for (uint32_t type = USER_TYPE_ADMIN; type <= USER_TYPE_OBSERVER; type++) {
-		uint32_t flags = getStandingsFlags(type);
-		if (!(flags & STANDINGS_FLAG_SEND))
-			continue;
-		int w = (flags & STANDINGS_FLAG_FINAL) ? 1 : 0;
+	for (int w = 0; w < 2; w++)
 		if (have_update[w]) {
-			MessageBlock mb("updatestandings");
-			if (getStandings(type, uid, mb)
-				&& mb["nrows"] != "0")
-				ClientEventRegistry::getInstance().broadcastEvent(0, 1 << type, &mb);
+			for (int see_all = 0; see_all < 2; see_all++) {
+				PermissionSet ps = PERMISSION_SEE_STANDINGS;
+				if (w)
+					ps = ps && PERMISSION_SEE_FINAL_STANDINGS;
+				else
+					ps = ps && !PERMISSION_SEE_FINAL_STANDINGS;
+
+				if (see_all)
+					ps = ps && PERMISSION_SEE_ALL_STANDINGS;
+				else
+					ps = ps && !PERMISSION_SEE_ALL_STANDINGS;
+
+				MessageBlock mb("updatestandings");
+				if (getStandings(uid, w, see_all, mb)
+					&& mb["nrows"] != "0")
+					ClientEventRegistry::getInstance().broadcastEvent(0, ps, &mb);
+			}
 		}
-	}
 
 	return true;
 }
@@ -244,10 +236,8 @@ static string cell_name(int row, int col) {
 	return name.str();
 }
 
-bool StandingsSupportModule::getStandings(uint32_t user_type, uint32_t uid, MessageBlock &mb)
+bool StandingsSupportModule::getStandings(uint32_t uid, bool final, bool see_all, MessageBlock &mb)
 {
-	uint32_t flags = getStandingsFlags(user_type);
-
 	UserSupportModule *usm = getUserSupportModule();
 	if (!usm) {
 		log(LOG_CRIT, "Error obtaining UserSupportModule.");
@@ -287,7 +277,7 @@ bool StandingsSupportModule::getStandings(uint32_t user_type, uint32_t uid, Mess
 
 	pthread_rwlock_rdlock(&_lock);
 	const Standings &standings = 
-		(flags & STANDINGS_FLAG_FINAL) ? _final_standings : _contestant_standings;
+		final ? _final_standings : _contestant_standings;
 
 	int r = 0;
 
@@ -301,8 +291,7 @@ bool StandingsSupportModule::getStandings(uint32_t user_type, uint32_t uid, Mess
 		last = standings.end();
 	}
 	for(i = first; i != last; ++i) {
-		if (i->second.user_type != USER_TYPE_CONTESTANT
-			&& !(flags & STANDINGS_FLAG_OBSERVER))
+		if (!see_all && !i->second.in_standings)
 			continue;
 		++r;
 
@@ -313,7 +302,7 @@ bool StandingsSupportModule::getStandings(uint32_t user_type, uint32_t uid, Mess
 		mb[cell_name(r, STANDING_RAW_ID)] = val.str();
 		mb[cell_name(r, STANDING_RAW_USERNAME)] = usm->username(i->first);
 		mb[cell_name(r, STANDING_RAW_FRIENDLYNAME)] = usm->friendlyname(i->first);
-		mb[cell_name(r, STANDING_RAW_CONTESTANT)] = (i->second.user_type == USER_TYPE_CONTESTANT ? "1" : "0");
+		mb[cell_name(r, STANDING_RAW_CONTESTANT)] = (i->second.in_standings ? "1" : "0");
 
 		val.str("");
 		val << i->second.time;
@@ -375,6 +364,6 @@ void StandingsSupportModule::init() {
 	if (blinds > duration / 2)
 		log(LOG_WARNING, "Blinds is longer than half the contest - this is most likely wrong.");
 
-	ClientEventRegistry::getInstance().registerEvent("updatestandings");
+	ClientEventRegistry::getInstance().registerEvent("updatestandings", PERMISSION_SEE_STANDINGS);
 	updateStandings(0, 0);
 }

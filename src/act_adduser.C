@@ -84,5 +84,5 @@ bool ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
 static ActAddUser _act_adduser;
 
 extern "C" void abacuscm_mod_init() {
-	ClientAction::registerAction(USER_TYPE_ADMIN, "adduser", &_act_adduser);
+	ClientAction::registerAction("adduser", PERMISSION_USER_ADMIN, &_act_adduser);
 }

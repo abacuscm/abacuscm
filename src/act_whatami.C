@@ -29,6 +29,7 @@ ActWhatAmI::ActWhatAmI() {
 	_typemap[USER_TYPE_JUDGE] = "judge";
 	_typemap[USER_TYPE_CONTESTANT] = "contestant";
 	_typemap[USER_TYPE_OBSERVER] = "observer";
+	_typemap[USER_TYPE_MARKER] = "marker";
 }
 
 bool ActWhatAmI::int_process(ClientConnection *cc, MessageBlock *) {
@@ -46,9 +47,5 @@ bool ActWhatAmI::int_process(ClientConnection *cc, MessageBlock *) {
 static ActWhatAmI _act_whatami;
 
 extern "C" void abacuscm_mod_init() {
-	ClientAction::registerAction(USER_TYPE_NONE, "whatami", &_act_whatami);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "whatami", &_act_whatami);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "whatami", &_act_whatami);
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "whatami", &_act_whatami);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "whatami", &_act_whatami);
+	ClientAction::registerAction("whatami", PERMISSION_ANY, &_act_whatami);
 }

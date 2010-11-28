@@ -56,7 +56,7 @@ public:
 	bool sendMessageBlock(const MessageBlock *mb);
 
 	uint32_t setProperty(const std::string& prop, uint32_t value);
-	uint32_t getProperty(const std::string& prop); // const ... (fails)
+	uint32_t getProperty(const std::string& prop) const;
 	uint32_t delProperty(const std::string& prop);
 
 	static bool init();

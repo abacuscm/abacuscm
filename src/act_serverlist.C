@@ -41,5 +41,5 @@ bool ServerListAct::int_process(ClientConnection *cc, MessageBlock *) {
 static ServerListAct _act_servlist;
 
 extern "C" void abacuscm_mod_init() {
-	ClientAction::registerAction(USER_TYPE_ADMIN, "getserverlist", &_act_servlist);
+	ClientAction::registerAction("getserverlist", PERMISSION_SERVER_ADMIN, &_act_servlist);
 }

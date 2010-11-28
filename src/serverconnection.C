@@ -920,8 +920,9 @@ Grid ServerConnection::getStandings() {
 }
 
 bool ServerConnection::watchBalloons(bool yesno) {
-	MessageBlock mb("balloonnotify");
+	MessageBlock mb("eventmap");
 
+	mb["event"] = "balloon";
 	if(yesno)
 		mb["action"] = "subscribe";
 	else

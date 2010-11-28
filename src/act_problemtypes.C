@@ -65,6 +65,6 @@ static ActGetProbTypes _act_get_prob_types;
 static ActGetProbDescript _act_get_prob_desc;
 
 extern "C" void abacuscm_mod_init() {
-	ClientAction::registerAction(USER_TYPE_ADMIN, "getprobtypes", &_act_get_prob_types);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "getprobdescript", &_act_get_prob_desc);
+	ClientAction::registerAction("getprobtypes", PERMISSION_PROBLEM_ADMIN, &_act_get_prob_types);
+	ClientAction::registerAction("getprobdescript", PERMISSION_PROBLEM_ADMIN, &_act_get_prob_desc);
 }

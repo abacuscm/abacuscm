@@ -30,7 +30,7 @@ ClientEventRegistry::~ClientEventRegistry() {
 
 void ClientEventRegistry::registerClient(ClientConnection *cc) {
 	if (cc == NULL) {
-		log(LOG_ERR, "F**K!!!! A NULL ClientConnection!!!");
+		log(LOG_ERR, "A NULL ClientConnection!!!");
 		return;
 	}
 	uint32_t user_id = cc->getProperty("user_id");
@@ -40,16 +40,17 @@ void ClientEventRegistry::registerClient(ClientConnection *cc) {
 };
 
 bool ClientEventRegistry::registerClient(const string &eventname, ClientConnection *cc) {
+	bool success = false;
 	pthread_mutex_lock(&_lock);
 	EventMap::iterator i = _eventmap.find(eventname);
-	if(i == _eventmap.end()) {
-		log(LOG_INFO, "Attempt to register for non-existant event '%s' from user %u.", eventname.c_str(), cc->getProperty("user_id"));
-		pthread_mutex_unlock(&_lock);
-		return false;
-	}
-	i->second->registerClient(cc);
+	if(i == _eventmap.end())
+		log(LOG_INFO, "Attempt to register for non-existent event '%s' from user %u.", eventname.c_str(), cc->getProperty("user_id"));
+	else if (!i->second->registerClient(cc))
+		log(LOG_INFO, "Attempt to register for non-permitted event '%s' from user %u.", eventname.c_str(), cc->getProperty("user_id"));
+	else
+		success = true;
 	pthread_mutex_unlock(&_lock);
-	return true;
+	return success;
 }
 
 void ClientEventRegistry::deregisterClient(ClientConnection *cc) {
@@ -72,15 +73,19 @@ void ClientEventRegistry::deregisterClient(ClientConnection *cc) {
 	pthread_mutex_unlock(&_lock);
 }
 
-void ClientEventRegistry::deregisterClient(const string &eventname, ClientConnection *cc) {
+bool ClientEventRegistry::deregisterClient(const string &eventname, ClientConnection *cc) {
+	bool success = false;
 	pthread_mutex_lock(&_lock);
 	log(LOG_DEBUG, "Deregistering from event '%s'", eventname.c_str());
 	EventMap::iterator i = _eventmap.find(eventname);
 	if(i == _eventmap.end())
-		log(LOG_INFO, "Attempt by user %d to deregister from non-existant event '%s'", cc->getProperty("user_id"), eventname.c_str());
+		log(LOG_INFO, "Attempt by user %u to deregister from non-existent event '%s'", cc->getProperty("user_id"), eventname.c_str());
+	else if (!i->second->deregisterClient(cc))
+		log(LOG_INFO, "Attempt by user %u to deregister from non-existent event '%s'", cc->getProperty("user_id"), eventname.c_str());
 	else
-		i->second->deregisterClient(cc);
+		success = true;
 	pthread_mutex_unlock(&_lock);
+	return success;
 }
 
 bool ClientEventRegistry::isClientRegistered(const string &eventname, ClientConnection *cc) {
@@ -98,13 +103,13 @@ bool ClientEventRegistry::isClientRegistered(const string &eventname, ClientConn
 	return ans;
 }
 
-void ClientEventRegistry::registerEvent(const string &eventname) {
+void ClientEventRegistry::registerEvent(const string &eventname, const PermissionSet &ps) {
 	pthread_mutex_lock(&_lock);
 	Event* ev = _eventmap[eventname];
 	if(ev)
 		log(LOG_NOTICE, "Attempt to re-register event '%s'", eventname.c_str());
 	else
-		_eventmap[eventname] = new Event();
+		_eventmap[eventname] = new Event(ps);
 	pthread_mutex_unlock(&_lock);
 }
 
@@ -119,14 +124,12 @@ void ClientEventRegistry::triggerEvent(const string &eventname, const MessageBlo
 		i->second->triggerEvent(mb);
 }
 
-void ClientEventRegistry::broadcastEvent(uint32_t user_id, int mask, const MessageBlock *mb) {
+void ClientEventRegistry::broadcastEvent(uint32_t user_id, const PermissionSet &ps, const MessageBlock *mb) {
 	pthread_mutex_lock(&_lock);
 	for(ClientMap::iterator i = _clients.begin(); i != _clients.end(); ++i) {
-		uint32_t user_type = i->second->getProperty("user_type");
-		if (i->first == user_id || ( (1 << user_type) & mask)) {
+		if (i->first == user_id || Permissions::getInstance()->hasPermission(i->second, ps)) {
 			log(LOG_INFO, "broadcasting to client %p (with id %d)", i->second, i->first);
-			if (i->second != NULL)
-				i->second->sendMessageBlock(mb);
+			i->second->sendMessageBlock(mb);
 		}
 	}
 	pthread_mutex_unlock(&_lock);
@@ -147,7 +150,7 @@ ClientEventRegistry& ClientEventRegistry::getInstance() {
 	return _instance;
 }
 
-ClientEventRegistry::Event::Event() {
+ClientEventRegistry::Event::Event(const PermissionSet &ps) : _ps(ps) {
 	pthread_mutex_init(&_lock, NULL);
 }
 
@@ -163,18 +166,26 @@ void ClientEventRegistry::Event::triggerEvent(const MessageBlock *mb) {
 	pthread_mutex_unlock(&_lock);
 }
 
-void ClientEventRegistry::Event::registerClient(ClientConnection *cc) {
+bool ClientEventRegistry::Event::registerClient(ClientConnection *cc) {
+	if (!Permissions::getInstance()->hasPermission(cc, _ps)) {
+		return false;
+	}
 	pthread_mutex_lock(&_lock);
 	_clients.insert(cc);
 	pthread_mutex_unlock(&_lock);
+	return true;
 }
 
-void ClientEventRegistry::Event::deregisterClient(ClientConnection *cc) {
+bool ClientEventRegistry::Event::deregisterClient(ClientConnection *cc) {
+	if (!Permissions::getInstance()->hasPermission(cc, _ps)) {
+		return false;
+	}
 	pthread_mutex_lock(&_lock);
 	ClientConnectionPool::iterator i = _clients.find(cc);
 	if(i != _clients.end())
 		_clients.erase(i);
 	pthread_mutex_unlock(&_lock);
+	return true;
 }
 
 bool ClientEventRegistry::Event::isClientRegistered(ClientConnection *cc) {

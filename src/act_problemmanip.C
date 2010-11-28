@@ -636,12 +636,8 @@ static Message* create_prob_message() {
 }
 
 extern "C" void abacuscm_mod_init() {
-	ClientAction::registerAction(USER_TYPE_ADMIN, "setprobattrs", &_act_setprobattrs);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "getprobattrs", &_act_getprobattrs);
-	ClientAction::registerAction(USER_TYPE_MARKER, "getprobattrs", &_act_getprobattrs);
-	ClientAction::registerAction(USER_TYPE_MARKER, "getprobfile", &_act_getprobfile);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "getprobattrs", &_act_getprobattrs);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "getprobfile", &_act_getprobfile);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "getprobfile", &_act_getprobfile);
+	ClientAction::registerAction("setprobattrs", PERMISSION_PROBLEM_ADMIN, &_act_setprobattrs);
+	ClientAction::registerAction("getprobattrs", PERMISSION_SEE_PROBLEM_DETAILS, &_act_getprobattrs);
+	ClientAction::registerAction("getprobfile",  PERMISSION_SEE_PROBLEM_DETAILS, &_act_getprobfile);
 	Message::registerMessageFunctor(TYPE_ID_PROBLEMUPDATE, create_prob_message);
 }

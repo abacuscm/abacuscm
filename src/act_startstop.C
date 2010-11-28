@@ -250,14 +250,11 @@ static Message* StartStopFunctor() {
 }
 
 extern "C" void abacuscm_mod_init() {
-	ClientAction::registerAction(USER_TYPE_ADMIN, "startstop", &_act_startstop);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "subscribetime", &_act_subscribetime);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "subscribetime", &_act_subscribetime);
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "subscribetime", &_act_subscribetime);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "subscribetime", &_act_subscribetime);
+	ClientAction::registerAction("startstop", PERMISSION_START_STOP, &_act_startstop);
+	ClientAction::registerAction("subscribetime", PERMISSION_AUTH, &_act_subscribetime);
 	Message::registerMessageFunctor(TYPE_ID_STARTSTOP, StartStopFunctor);
-	ClientEventRegistry::getInstance().registerEvent("startstop");
-	ClientEventRegistry::getInstance().registerEvent("updateclock");
+	ClientEventRegistry::getInstance().registerEvent("startstop", PERMISSION_AUTH);
+	ClientEventRegistry::getInstance().registerEvent("updateclock", PERMISSION_AUTH);
 
 	initialise_startstop_events();
 }

@@ -941,7 +941,7 @@ static void log_ciphers(const OBJ_NAME *name, void*) {
 static UDTCPPeerMessenger _udtcpPeerMessenger;
 
 extern "C" void abacuscm_mod_init() {
-	ClientAction::registerAction(USER_TYPE_NONE, "udtcppeermessageget", &_act_getmsg);
+	ClientAction::registerAction("udtcppeermessageget", !PERMISSION_AUTH, &_act_getmsg);
 	// double check that gcc actually did the right thing with the __attribute__ ((packed)).
 	// If we don't register the messenger abacusd will detect it and abort.
 	if(sizeof(st_frame) != ST_FRAME_SIZE)

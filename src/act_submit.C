@@ -19,6 +19,7 @@
 #include "markers.h"
 #include "timersupportmodule.h"
 #include "submissionsupportmodule.h"
+#include "permissions.h"
 #include "acmconfig.h"
 
 #include <algorithm>
@@ -199,12 +200,12 @@ bool ActGetProblems::int_process(ClientConnection *cc, MessageBlock *) {
 
 bool ActGetSubmissibleProblems::int_process(ClientConnection *cc, MessageBlock *) {
 	uint32_t user_id = cc->getProperty("user_id");
-	uint32_t utype = cc->getProperty("user_type");
 
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return cc->sendError("Error connecting to database");
 
+	Permissions *perms = Permissions::getInstance();
 	ProblemList probs = db->getProblems();
 
 	MessageBlock mb("ok");
@@ -213,7 +214,7 @@ bool ActGetSubmissibleProblems::int_process(ClientConnection *cc, MessageBlock *
 	int c = 0;
 	for (p = probs.begin(); p != probs.end(); p++, c++) {
 		uint32_t problem_id = *p;
-		if (utype != USER_TYPE_ADMIN && utype != USER_TYPE_JUDGE &&
+		if (!perms->hasPermission(cc, PERMISSION_SEE_ALL_PROBLEMS) &&
 			!db->isSubmissionAllowed(user_id, problem_id))
 		{
 			c--;
@@ -246,11 +247,11 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 		return cc->sendError("Error getting submission support module");
 
 	uint32_t uid = cc->getProperty("user_id");
-	uint32_t utype = cc->getProperty("user_type");
 
+	Permissions *perms = Permissions::getInstance();
 	SubmissionList lst;
 
-	if(utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_OBSERVER)
+	if(!perms->hasPermission(cc, PERMISSION_SEE_ALL_SUBMISSIONS))
 		lst = db->getSubmissions(uid);
 	else
 		lst = db->getSubmissions();
@@ -280,13 +281,13 @@ bool ActGetSubmissionsForUser::int_process(ClientConnection *cc, MessageBlock *m
 		return cc->sendError("Error getting submission support module");
 
 	uint32_t uid = cc->getProperty("user_id");
-	uint32_t utype = cc->getProperty("user_type");
 
 	uint32_t user_id = strtoul((*mb)["user_id"].c_str(), NULL, 0);
 
 	SubmissionList lst;
 
-	if(utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_OBSERVER)
+	Permissions *perms = Permissions::getInstance();
+	if(!perms->hasPermission(cc, PERMISSION_SEE_ALL_SUBMISSIONS))
 		lst = db->getSubmissions(uid);
 	else
 		lst = db->getSubmissions(user_id);
@@ -354,7 +355,8 @@ bool SubmissionMessage::process() const {
 		else {
 			MessageBlock notify("updatesubmissions");
 			submission->submissionToMB(db, s, notify, "");
-			ClientEventRegistry::getInstance().broadcastEvent(_user_id, USER_MASK_JUDGE | USER_MASK_ADMIN, &notify);
+			ClientEventRegistry::getInstance().broadcastEvent(
+				_user_id, PERMISSION_SEE_ALL_SUBMISSIONS, &notify);
 
 		}
 		if(db->getServerAttribute(Server::getId(), "marker") == "yes")
@@ -451,14 +453,14 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
 		return cc->sendError("Error connecting to database");
 
 	uint32_t uid = cc->getProperty("user_id");
-	uint32_t utype = cc->getProperty("user_type");
 
 	string request = (*mb)["request"];
 	uint32_t submission_id = strtoll((*mb)["submission_id"].c_str(), NULL, 0);
 
+	Permissions *perms = Permissions::getInstance();
 	MessageBlock result_mb("ok");
 
-	if (utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_OBSERVER) {
+	if (!perms->hasPermission(cc, PERMISSION_SEE_SUBMISSION_DETAILS)) {
 		// make sure that this is a compilation failed type of error
 		// and that the submission belongs to this contestant
 		RunResult resinfo;
@@ -480,7 +482,9 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
 			db->release(); db = NULL;
 			return cc->sendError("This submission hasn't been marked yet, please be patient :-)");
 		}
+	}
 
+	if (!perms->hasPermission(cc, PERMISSION_SEE_ALL_SUBMISSIONS)) {
 		if (db->submission2user_id(submission_id) != uid) {
 			db->release();db=NULL;
 			return cc->sendError("This submission doesn't belong to you; I can't let you look at it");
@@ -530,11 +534,10 @@ bool ActGetSubmissionSource::int_process(ClientConnection *cc, MessageBlock *mb)
 	string language;
 	uint32_t prob_id;
 
-        uint32_t uid = cc->getProperty("user_id");
-	uint32_t utype = cc->getProperty("user_type");
-        if (utype == USER_TYPE_ADMIN || utype == USER_TYPE_JUDGE) {
-            uid = 0;
-        }
+	uint32_t uid = cc->getProperty("user_id");
+	if (Permissions::getInstance()->hasPermission(cc, PERMISSION_SEE_ALL_SUBMISSIONS)) {
+		uid = 0;
+	}
 	bool has_data = db->retrieveSubmission(uid, submission_id, &content, &length, language, &prob_id);
 	db->release();db=NULL;
 
@@ -605,34 +608,16 @@ bool ActGetLanguages::int_process(ClientConnection *cc, MessageBlock *) {
 }
 
 extern "C" void abacuscm_mod_init() {
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "submit", &_act_submit);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "submit", &_act_submit);
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getproblems", &_act_getproblems);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "getproblems", &_act_getproblems);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "getproblems", &_act_getproblems);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "getproblems", &_act_getproblems);
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getsubmissions", &_act_getsubs);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "getsubmissions", &_act_getsubs);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissions", &_act_getsubs);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "getsubmissions", &_act_getsubs);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissions_for_user", &_act_getsubs_for_user);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "fetchfile", &_act_submission_file_fetcher);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "fetchfile", &_act_submission_file_fetcher);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "fetchfile", &_act_submission_file_fetcher);
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "fetchfile", &_act_submission_file_fetcher);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "getsubmissionsource", &_act_get_submission_source);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissionsource", &_act_get_submission_source);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "getsubmissionsource", &_act_get_submission_source);
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getsubmissionsource", &_act_get_submission_source);
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getsubmissibleproblems", &_act_get_submissible_problems);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "getsubmissibleproblems", &_act_get_submissible_problems);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "getsubmissibleproblems", &_act_get_submissible_problems);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "getsubmissibleproblems", &_act_get_submissible_problems);
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getlanguages", &_act_get_languages);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "getlanguages", &_act_get_languages);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "getlanguages", &_act_get_languages);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "getlanguages", &_act_get_languages);
+	ClientAction::registerAction("submit",              PERMISSION_SUBMIT, &_act_submit);
+	ClientAction::registerAction("getproblems",         PERMISSION_AUTH, &_act_getproblems);
+	ClientAction::registerAction("getsubmissions",      PERMISSION_AUTH, &_act_getsubs);
+	ClientAction::registerAction("getsubmissions_for_user",
+		PERMISSION_SEE_ALL_SUBMISSIONS && PERMISSION_SEE_USER_ID, &_act_getsubs_for_user);
+	ClientAction::registerAction("fetchfile",           PERMISSION_AUTH, &_act_submission_file_fetcher);
+	ClientAction::registerAction("getsubmissionsource", PERMISSION_AUTH, &_act_get_submission_source);
+	ClientAction::registerAction("getsubmissibleproblems", PERMISSION_AUTH, &_act_get_submissible_problems);
+	ClientAction::registerAction("getlanguages",        PERMISSION_AUTH, &_act_get_languages);
 	Message::registerMessageFunctor(TYPE_ID_SUBMISSION, create_submission_msg);
 
-	ClientEventRegistry::getInstance().registerEvent("updatesubmissions");
+	ClientEventRegistry::getInstance().registerEvent("updatesubmissions", PERMISSION_AUTH);
 }

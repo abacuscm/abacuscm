@@ -29,10 +29,12 @@ bool Act_ClientEventRegistry::int_process(ClientConnection* cc, MessageBlock* mb
 		if(evReg.registerClient(event, cc))
 			return cc->reportSuccess();
 		else
-			return cc->sendError("No such event");
+			return cc->sendError("No such event or permission denied");
 	} else if(action == "unsubscribe") {
-		evReg.deregisterClient(event, cc);
-		return cc->reportSuccess();
+		if (evReg.deregisterClient(event, cc))
+			return cc->reportSuccess();
+		else
+			return cc->sendError("No such event or permission denied");
 	} else
 		return cc->sendError("Unknown action");
 }
@@ -40,8 +42,6 @@ bool Act_ClientEventRegistry::int_process(ClientConnection* cc, MessageBlock* mb
 static Act_ClientEventRegistry _act_eventreg;
 
 extern "C" void abacuscm_mod_init() {
-	ClientAction::registerAction(USER_TYPE_ADMIN, "eventmap", &_act_eventreg);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "eventmap", &_act_eventreg);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "eventmap", &_act_eventreg);
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "eventmap", &_act_eventreg);
+	// No permissions required because each event specifies who may register
+	ClientAction::registerAction("eventmap", PERMISSION_ANY, &_act_eventreg);
 }
