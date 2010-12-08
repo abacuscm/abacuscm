@@ -19,6 +19,7 @@
 #include "timedaction.h"
 #include "server.h"
 #include "misc.h"
+#include "permissionmap.h"
 
 #include <string>
 #include <cassert>
@@ -157,8 +158,9 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 		// 0/1 indices are for contestants/final standings
 		StandingsData teamdata[2];
 		UserType user_type = static_cast<UserType>(usm->usertype(t->first));
+		const PermissionSet &user_perms = PermissionMap::getInstance()->getPermissions(user_type);
 		teamdata[0].time = 0;
-		teamdata[0].in_standings = Permissions::getInstance()->hasPermission(user_type, PERMISSION_IN_STANDINGS);
+		teamdata[0].in_standings = user_perms[PERMISSION_IN_STANDINGS];
 		teamdata[1].time = 0;
 		teamdata[1].in_standings = teamdata[0].in_standings;
 		map<uint32_t, vector<SubData> >::iterator p;
@@ -209,21 +211,21 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 	for (int w = 0; w < 2; w++)
 		if (have_update[w]) {
 			for (int see_all = 0; see_all < 2; see_all++) {
-				PermissionSet ps = PERMISSION_SEE_STANDINGS;
+				PermissionTest pt = PERMISSION_SEE_STANDINGS;
 				if (w)
-					ps = ps && PERMISSION_SEE_FINAL_STANDINGS;
+					pt = pt && PERMISSION_SEE_FINAL_STANDINGS;
 				else
-					ps = ps && !PERMISSION_SEE_FINAL_STANDINGS;
+					pt = pt && !PERMISSION_SEE_FINAL_STANDINGS;
 
 				if (see_all)
-					ps = ps && PERMISSION_SEE_ALL_STANDINGS;
+					pt = pt && PERMISSION_SEE_ALL_STANDINGS;
 				else
-					ps = ps && !PERMISSION_SEE_ALL_STANDINGS;
+					pt = pt && !PERMISSION_SEE_ALL_STANDINGS;
 
 				MessageBlock mb("updatestandings");
 				if (getStandings(uid, w, see_all, mb)
 					&& mb["nrows"] != "0")
-					ClientEventRegistry::getInstance().broadcastEvent(0, ps, &mb);
+					ClientEventRegistry::getInstance().broadcastEvent(0, pt, &mb);
 			}
 		}
 

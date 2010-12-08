@@ -230,30 +230,18 @@ err:
 	return false;
 }
 
-uint32_t ClientConnection::setProperty(const std::string& prop, uint32_t val) {
-	uint32_t oldval = _props[prop];
-	_props[prop] = val;
-	return oldval;
+void ClientConnection::setUserId(uint32_t id) {
+	_user_id = id;
 }
 
-uint32_t ClientConnection::getProperty(const std::string& prop) const {
-	ClientProps::const_iterator it = _props.find(prop);
-	if (it == _props.end())
-	{
-		return 0;
-	}
-	else
-	{
-		return it->second;
-	}
+uint32_t ClientConnection::getUserId() const {
+	return _user_id;
 }
 
-uint32_t ClientConnection::delProperty(const std::string& prop) {
-	uint32_t oldval = 0;
-	ClientProps::iterator i = _props.find(prop);
-	if(i != _props.end()) {
-		oldval = i->second;
-		_props.erase(i);
-	}
-	return oldval;
+PermissionSet &ClientConnection::permissions() {
+	return _permissions;
+}
+
+const PermissionSet &ClientConnection::permissions() const {
+	return _permissions;
 }

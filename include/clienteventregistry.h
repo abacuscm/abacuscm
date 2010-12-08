@@ -29,10 +29,10 @@ private:
 
 		ClientConnectionPool _clients;
 		ClientConnection* _next_single;
-		PermissionSet _ps;
+		PermissionTest _pt;
 		pthread_mutex_t _lock;
 	public:
-		explicit Event(const PermissionSet &ps);
+		explicit Event(const PermissionTest &pt);
 		~Event();
 
 		void triggerEvent(const MessageBlock* mb);
@@ -65,7 +65,7 @@ public:
 
 	// Creates an event, and determines which users should be allowed to
 	// subscribe to it.
-	void registerEvent(const std::string &eventname, const PermissionSet &ps);
+	void registerEvent(const std::string &eventname, const PermissionTest &pt);
 
 	// Send message to clients registered via registerClient for the event
 	void triggerEvent(const std::string &eventname, const MessageBlock *mb);
@@ -73,7 +73,7 @@ public:
 	// Send message to all clients either with the given permissions, or with the
 	// given user id. If user_id is zero it is ignored. Note that clients do
 	// not need to register with the event to receive it.
-	void broadcastEvent(uint32_t user_id, const PermissionSet &ps, const MessageBlock *mb);
+	void broadcastEvent(uint32_t user_id, const PermissionTest &pt, const MessageBlock *mb);
 
 	// Send message just to one user
 	void sendMessage(uint32_t user_id, const MessageBlock *mb);

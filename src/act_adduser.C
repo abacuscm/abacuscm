@@ -36,13 +36,12 @@ ActAddUser::ActAddUser() {
 	_typemap["judge"] = USER_TYPE_JUDGE;
 	_typemap["contestant"] = USER_TYPE_CONTESTANT;
 	_typemap["marker"] = USER_TYPE_MARKER;
-	_typemap["noncontest"] = USER_TYPE_OBSERVER;
 	_typemap["observer"] = USER_TYPE_OBSERVER;
 }
 
 bool ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
 	UserSupportModule *usm = getUserSupportModule();
-	uint32_t user_id = cc->getProperty("user_id");
+	uint32_t user_id = cc->getUserId();
 	string new_username = (*mb)["username"];
 	string new_friendlyname = (*mb)["friendlyname"];
 	string new_passwd = (*mb)["passwd"];

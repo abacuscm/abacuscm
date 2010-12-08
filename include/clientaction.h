@@ -28,11 +28,11 @@ class ClientAction {
 private:
 	struct Info
 	{
-		PermissionSet ps;  // permissions required to use this action
+		PermissionTest pt;  // permissions required to use this action
 		ClientAction *action;
 
-		Info() : ps(), action(NULL) {}
-		Info(PermissionSet ps, ClientAction *action) : ps(ps), action(action) {}
+		Info() : pt(), action(NULL) {}
+		Info(PermissionTest pt, ClientAction *action) : pt(pt), action(action) {}
 	};
 
 	static Queue<Message*> *_message_queue;
@@ -46,7 +46,7 @@ public:
 	virtual ~ClientAction();
 
 	static void setMessageQueue(Queue<Message*> *message_queue);
-	static bool registerAction(const std::string &name, const PermissionSet &ps, ClientAction *ca);
+	static bool registerAction(const std::string &name, const PermissionTest &pt, ClientAction *ca);
 	static bool process(ClientConnection *cc, MessageBlock *mb);
 };
 

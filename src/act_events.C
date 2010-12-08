@@ -43,5 +43,5 @@ static Act_ClientEventRegistry _act_eventreg;
 
 extern "C" void abacuscm_mod_init() {
 	// No permissions required because each event specifies who may register
-	ClientAction::registerAction("eventmap", PERMISSION_ANY, &_act_eventreg);
+	ClientAction::registerAction("eventmap", PermissionTest::ANY, &_act_eventreg);
 }

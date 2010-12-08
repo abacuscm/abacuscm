@@ -13,6 +13,7 @@
 #include "logger.h"
 #include "dbcon.h"
 #include "clienteventregistry.h"
+#include "permissionmap.h"
 
 class ActAuth : public ClientAction {
 protected:
@@ -37,8 +38,8 @@ bool ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
 		return cc->sendError("Authentication failed.  Invalid username and/or password.");
 	else {
 		log(LOG_INFO, "User '%s' successfully logged in on client connection %p.", (*mb)["user"].c_str(), cc);
-		cc->setProperty("user_id", user_id);
-		cc->setProperty("user_type", user_type);
+		cc->setUserId(user_id);
+		cc->permissions() = PermissionMap::getInstance()->getPermissions(static_cast<UserType>(user_type));
 		ClientEventRegistry::getInstance().registerClient(cc);
 		return cc->reportSuccess();
 	}

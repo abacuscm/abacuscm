@@ -20,6 +20,7 @@
 #include "standingssupportmodule.h"
 #include "usersupportmodule.h"
 #include "submissionsupportmodule.h"
+#include "permissionmap.h"
 
 #include <string>
 #include <list>
@@ -51,7 +52,6 @@ private:
 	uint32_t _result;
 	uint32_t _time;
 	uint32_t _marker;
-	uint32_t _type;
 	uint32_t _server_id;
 
 	std::string _comment;
@@ -63,7 +63,7 @@ protected:
 	virtual uint32_t load(const uint8_t *buffer, uint32_t size);
 public:
 	MarkMessage();
-	MarkMessage(uint32_t submission_id, uint32_t marker, uint32_t type, uint32_t result, std::string comment);
+	MarkMessage(uint32_t submission_id, uint32_t marker, uint32_t result, std::string comment);
 	virtual ~MarkMessage();
 
 	virtual bool process() const;
@@ -75,10 +75,9 @@ public:
 MarkMessage::MarkMessage() {
 }
 
-MarkMessage::MarkMessage(uint32_t submission_id, uint32_t marker, uint32_t type, uint32_t result, std::string comment) {
+MarkMessage::MarkMessage(uint32_t submission_id, uint32_t marker, uint32_t result, std::string comment) {
 	_submission_id = submission_id;
 	_marker = marker;
-	_type = type;
 	_result = result;
 	_comment = comment;
 	_server_id = Server::getId();
@@ -262,14 +261,13 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 	 * is not expected. It is also possible to msg to be set and legal to later
 	 * be set to true.
 	 */
-	Permissions *perms = Permissions::getInstance();
 	bool legal = false;
 	string msg = "";
 
-	if (perms->hasPermission(cc, PERMISSION_JUDGE_OVERRIDE)) {
+	if (cc->permissions()[PERMISSION_JUDGE_OVERRIDE]) {
 		legal = true;
 	}
-	else if (perms->hasPermission(cc, PERMISSION_MARK)) {
+	else if (cc->permissions()[PERMISSION_MARK]) {
 		if (Markers::getInstance().hasIssued(cc) == submission_id)
 		{
 			legal = true;
@@ -279,7 +277,7 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 			msg = "Markers may only mark submissions issued to them";
 		}
 	}
-	else if (perms->hasPermission(cc, PERMISSION_JUDGE)) {
+	else if (cc->permissions()[PERMISSION_JUDGE]) {
 		// extra code to avoid race conditions for judge marking
 		RunResult resinfo;
 		uint32_t utype;
@@ -292,13 +290,13 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 		// POSSIBLE RACE BETWEEN DOING THIS CHECK AND ASSIGNING THE MARK
 		// but it's very small & unlikely ... and doesn't really affect anything.
 		bool res = db->getSubmissionState( submission_id, resinfo, utype, comment);
+		const PermissionSet &uperms = PermissionMap::getInstance()->getPermissions(static_cast<UserType>(utype));
 		db->release();db=NULL;
 
 		if (!res) {
 			msg = "This hasn't been compiled or even run: you really think I'm going to let you fiddle with the marks?";
 		}
-		else if (perms->hasPermission(static_cast<UserType>(utype), PERMISSION_JUDGE))
-		{
+		else if (uperms[PERMISSION_JUDGE]) {
 			msg = cc->sendError("Another judge has already this submission, sorry!");
 		}
 		else if (resinfo != JUDGE) {
@@ -327,12 +325,12 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 	// This should be based on whether we defer to judges on automated
 	// wrong answers, not hard coded.  In fact, this should be handled
 	// in the marker daemon entirely. TODO
-	if (result == WRONG && !perms->hasPermission(cc, PERMISSION_MARK)) {
+	if (result == WRONG && !cc->permissions()[PERMISSION_MARK]) {
 		result = JUDGE;
 		comment = "Deferred to judge";
 	}
 
-	MarkMessage *markmsg = new MarkMessage(submission_id, cc->getProperty("user_id"), cc->getProperty("user_type"), result, comment);
+	MarkMessage *markmsg = new MarkMessage(submission_id, cc->getUserId(), result, comment);
 	int c = 0;
 	regex_t file_reg;
 	regcomp(&file_reg, "^([0-9]{1,7}) ([0-9]{1,7}) ([[:print:]]+)$", REG_EXTENDED);

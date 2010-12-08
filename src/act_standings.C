@@ -33,9 +33,8 @@ bool ActStandings::int_process(ClientConnection *cc, MessageBlock *) {
 	if (!standings)
 		return cc->sendError("Misconfigured Server - unable to calculate standings.");
 
-	Permissions *perms = Permissions::getInstance();
-	bool final = perms->hasPermission(cc, PERMISSION_SEE_FINAL_STANDINGS);
-	bool see_all = perms->hasPermission(cc, PERMISSION_SEE_ALL_STANDINGS);
+	bool final = cc->permissions()[PERMISSION_SEE_FINAL_STANDINGS];
+	bool see_all = cc->permissions()[PERMISSION_SEE_ALL_STANDINGS];
 
 	MessageBlock mb("ok");
 	if (!standings->getStandings(0, final, see_all, mb))

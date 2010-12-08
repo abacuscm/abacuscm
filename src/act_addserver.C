@@ -26,7 +26,7 @@ bool ActAddServer::int_process(ClientConnection* cc, MessageBlock* mb) {
 	if(Server::getId() != 1)
 		return cc->sendError("Can only add servers from the master server");
 
-	uint32_t user_id = cc->getProperty("user_id");
+	uint32_t user_id = cc->getUserId();
 
 	string servername = (*mb)["servername"];
 	if(servername == "")

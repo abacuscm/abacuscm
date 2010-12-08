@@ -119,7 +119,7 @@ bool ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
 		return cc->sendError(msg.str());
 	}
 
-	uint32_t user_id = cc->getProperty("user_id");
+	uint32_t user_id = cc->getUserId();
 	char *errptr;
 	uint32_t prob_id = strtol((*mb)["prob_id"].c_str(), &errptr, 0);
 	if(*errptr || (*mb)["prob_id"] == "")
@@ -199,13 +199,12 @@ bool ActGetProblems::int_process(ClientConnection *cc, MessageBlock *) {
 }
 
 bool ActGetSubmissibleProblems::int_process(ClientConnection *cc, MessageBlock *) {
-	uint32_t user_id = cc->getProperty("user_id");
+	uint32_t user_id = cc->getUserId();
 
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return cc->sendError("Error connecting to database");
 
-	Permissions *perms = Permissions::getInstance();
 	ProblemList probs = db->getProblems();
 
 	MessageBlock mb("ok");
@@ -214,7 +213,7 @@ bool ActGetSubmissibleProblems::int_process(ClientConnection *cc, MessageBlock *
 	int c = 0;
 	for (p = probs.begin(); p != probs.end(); p++, c++) {
 		uint32_t problem_id = *p;
-		if (!perms->hasPermission(cc, PERMISSION_SEE_ALL_PROBLEMS) &&
+		if (!cc->permissions()[PERMISSION_SEE_ALL_PROBLEMS] &&
 			!db->isSubmissionAllowed(user_id, problem_id))
 		{
 			c--;
@@ -246,12 +245,11 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 	if (!submission)
 		return cc->sendError("Error getting submission support module");
 
-	uint32_t uid = cc->getProperty("user_id");
+	uint32_t uid = cc->getUserId();
 
-	Permissions *perms = Permissions::getInstance();
 	SubmissionList lst;
 
-	if(!perms->hasPermission(cc, PERMISSION_SEE_ALL_SUBMISSIONS))
+	if(!cc->permissions()[PERMISSION_SEE_ALL_SUBMISSIONS])
 		lst = db->getSubmissions(uid);
 	else
 		lst = db->getSubmissions();
@@ -280,14 +278,13 @@ bool ActGetSubmissionsForUser::int_process(ClientConnection *cc, MessageBlock *m
 	if (!submission)
 		return cc->sendError("Error getting submission support module");
 
-	uint32_t uid = cc->getProperty("user_id");
+	uint32_t uid = cc->getUserId();
 
 	uint32_t user_id = strtoul((*mb)["user_id"].c_str(), NULL, 0);
 
 	SubmissionList lst;
 
-	Permissions *perms = Permissions::getInstance();
-	if(!perms->hasPermission(cc, PERMISSION_SEE_ALL_SUBMISSIONS))
+	if(!cc->permissions()[PERMISSION_SEE_ALL_SUBMISSIONS])
 		lst = db->getSubmissions(uid);
 	else
 		lst = db->getSubmissions(user_id);
@@ -452,15 +449,14 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
 	if(!db)
 		return cc->sendError("Error connecting to database");
 
-	uint32_t uid = cc->getProperty("user_id");
+	uint32_t uid = cc->getUserId();
 
 	string request = (*mb)["request"];
 	uint32_t submission_id = strtoll((*mb)["submission_id"].c_str(), NULL, 0);
 
-	Permissions *perms = Permissions::getInstance();
 	MessageBlock result_mb("ok");
 
-	if (!perms->hasPermission(cc, PERMISSION_SEE_SUBMISSION_DETAILS)) {
+	if (!cc->permissions()[PERMISSION_SEE_SUBMISSION_DETAILS]) {
 		// make sure that this is a compilation failed type of error
 		// and that the submission belongs to this contestant
 		RunResult resinfo;
@@ -484,7 +480,7 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
 		}
 	}
 
-	if (!perms->hasPermission(cc, PERMISSION_SEE_ALL_SUBMISSIONS)) {
+	if (!cc->permissions()[PERMISSION_SEE_ALL_SUBMISSIONS]) {
 		if (db->submission2user_id(submission_id) != uid) {
 			db->release();db=NULL;
 			return cc->sendError("This submission doesn't belong to you; I can't let you look at it");
@@ -534,8 +530,8 @@ bool ActGetSubmissionSource::int_process(ClientConnection *cc, MessageBlock *mb)
 	string language;
 	uint32_t prob_id;
 
-	uint32_t uid = cc->getProperty("user_id");
-	if (Permissions::getInstance()->hasPermission(cc, PERMISSION_SEE_ALL_SUBMISSIONS)) {
+	uint32_t uid = cc->getUserId();
+	if (cc->permissions()[PERMISSION_SEE_ALL_SUBMISSIONS]) {
 		uid = 0;
 	}
 	bool has_data = db->retrieveSubmission(uid, submission_id, &content, &length, language, &prob_id);

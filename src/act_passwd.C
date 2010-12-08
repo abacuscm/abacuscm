@@ -55,7 +55,7 @@ public:
 
 bool ActPasswd::int_process(ClientConnection *cc, MessageBlock *mb) {
 	UserSupportModule *usm = getUserSupportModule();
-	uint32_t user_id = cc->getProperty("user_id");
+	uint32_t user_id = cc->getUserId();
 	string newpass = (*mb)["newpass"];
 
 	if (newpass == "")

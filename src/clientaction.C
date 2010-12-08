@@ -25,12 +25,12 @@ ClientAction::ClientAction() {
 ClientAction::~ClientAction() {
 }
 
-bool ClientAction::registerAction(const std::string &action, const PermissionSet &ps, ClientAction *ca) {
+bool ClientAction::registerAction(const std::string &action, const PermissionTest &pt, ClientAction *ca) {
 	if(_actionmap.find(action) != _actionmap.end())
 		log(LOG_WARNING, "Overriding action handler for action '%s'!", action.c_str());
 
 	log(LOG_INFO, "Registering action '%s'", action.c_str());
-	_actionmap[action] = Info(ps, ca);
+	_actionmap[action] = Info(pt, ca);
 	return true;
 }
 
@@ -54,16 +54,14 @@ bool ClientAction::process(ClientConnection *cc, MessageBlock *mb) {
 	std::map<std::string, Info>::const_iterator it = _actionmap.find(action);
 	if (it == _actionmap.end())
 	{
-		uint32_t user_type = cc->getProperty("user_type");
-		uint32_t user_id = cc->getProperty("user_id");
-		log(LOG_NOTICE, "Unknown action '%s' encountered on ClientConnection for user %u of type %u.", action.c_str(), user_id, user_type);
+		uint32_t user_id = cc->getUserId();
+		log(LOG_NOTICE, "Unknown action '%s' encountered on ClientConnection for user %u.", action.c_str(), user_id);
 		cc->sendError("No such action");
 	}
-	else if (!Permissions::getInstance()->hasPermission(cc, it->second.ps))
+	else if (!it->second.pt.matches(cc->permissions()))
 	{
-		uint32_t user_type = cc->getProperty("user_type");
-		uint32_t user_id = cc->getProperty("user_id");
-		log(LOG_NOTICE, "Denied action '%s' for user %u of type %u.", action.c_str(), user_id, user_type);
+		uint32_t user_id = cc->getUserId();
+		log(LOG_NOTICE, "Denied action '%s' for user %u.", action.c_str(), user_id);
 		cc->sendError("Action not permitted");
 	}
 	else

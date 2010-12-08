@@ -75,11 +75,11 @@ bool ActGetClarifications::int_process(ClientConnection *cc, MessageBlock *) {
 	if (!db)
 		return cc->sendError("Error connecting to database");
 
-	uint32_t uid = cc->getProperty("user_id");
+	uint32_t uid = cc->getUserId();
 
 	ClarificationList lst;
 
-	if(!Permissions::getInstance()->hasPermission(cc, PERMISSION_SEE_ALL_CLARIFICATIONS))
+	if(cc->permissions()[PERMISSION_SEE_ALL_CLARIFICATIONS])
 		lst = db->getClarifications(uid);
 	else
 		lst = db->getClarifications();
@@ -112,11 +112,11 @@ bool ActGetClarificationRequests::int_process(ClientConnection *cc, MessageBlock
 	if (!db)
 		return cc->sendError("Error connecting to database");
 
-	uint32_t uid = cc->getProperty("user_id");
+	uint32_t uid = cc->getUserId();
 
 	ClarificationRequestList lst;
 
-	if(!Permissions::getInstance()->hasPermission(cc, PERMISSION_SEE_ALL_CLARIFICATION_REQUESTS))
+	if(!cc->permissions()[PERMISSION_SEE_ALL_CLARIFICATION_REQUESTS])
 		lst = db->getClarificationRequests(uid);
 	else
 		lst = db->getClarificationRequests();
@@ -305,7 +305,7 @@ bool ClarificationMessage::process() const {
 }
 
 bool ActClarificationRequest::int_process(ClientConnection *cc, MessageBlock *mb) {
-	uint32_t user_id = cc->getProperty("user_id");
+	uint32_t user_id = cc->getUserId();
 	uint32_t prob_id = 0;
 	std::string prob_id_str = (*mb)["prob_id"];
 	std::string question = (*mb)["question"];
@@ -343,7 +343,7 @@ bool ActClarificationRequest::int_process(ClientConnection *cc, MessageBlock *mb
 }
 
 bool ActClarification::int_process(ClientConnection *cc, MessageBlock *mb) {
-	uint32_t user_id = cc->getProperty("user_id");
+	uint32_t user_id = cc->getUserId();
 	std::string answer = (*mb)["answer"];
 
 	char *errptr;

@@ -439,10 +439,10 @@ bool ServerConnection::auth(string username, string password) {
 	return simpleAction(mb);
 }
 
-string ServerConnection::whatAmI() {
+vector<string> ServerConnection::getPermissions() {
 	MessageBlock mb("whatami");
 
-	return stringAction(mb, "type");
+	return vectorAction(mb, "permission");
 }
 
 bool ServerConnection::createuser(string username, string friendlyname, string password, string type) {

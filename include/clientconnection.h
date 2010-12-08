@@ -18,6 +18,7 @@
 
 #include "socket.h"
 #include "threadssl.h"
+#include "permissions.h"
 
 #define CLIENT_BFR_SIZE			512
 
@@ -25,8 +26,6 @@ class MessageBlock;
 
 class ClientConnection : public Socket {
 private:
-	typedef std::map<std::string, uint32_t> ClientProps;
-
 	static const SSL_METHOD *_method;
 	static SSL_CTX *_context;
 
@@ -39,7 +38,9 @@ private:
 	SSL *_ssl;
 
 	MessageBlock *_message;
-	ClientProps _props;
+
+	uint32_t _user_id;
+	PermissionSet _permissions;
 
 	pthread_mutex_t _write_lock;
 
@@ -55,9 +56,10 @@ public:
 	bool reportSuccess();
 	bool sendMessageBlock(const MessageBlock *mb);
 
-	uint32_t setProperty(const std::string& prop, uint32_t value);
-	uint32_t getProperty(const std::string& prop) const;
-	uint32_t delProperty(const std::string& prop);
+	uint32_t getUserId() const;
+	void setUserId(uint32_t user_id);
+	PermissionSet &permissions();
+	const PermissionSet &permissions() const;
 
 	static bool init();
 };

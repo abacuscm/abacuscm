@@ -12,17 +12,20 @@
 #define __PERMISSIONS_H
 
 #include <stdint.h>
-#include <set>
-#include <utility>
-#include <memory>
+#include <string>
+#include <vector>
 #include "misc.h"
 
 class ClientConnection;
 
+/* Note: if you change this enumeration, be sure to update
+ * - permission_names in src/permissions.C
+ * - The list of signals in ui/mainwindowbase.ui
+ * - The table of signal handlers in src/mainwindow.C
+ */
 typedef enum {
-	PERMISSION_NONE,                              // No user has this
-	PERMISSION_ANY,                               // All users have this
-	PERMISSION_AUTH,                              // Users have this once authenticated
+	PERMISSION_INVALID = -1,                      // Not a real permission
+	PERMISSION_AUTH = 0,                          // Successfully logged in
 	PERMISSION_SUBMIT,                            // Submit a solution
 	PERMISSION_CLARIFICATION_REQUEST,             // Ask for clarification
 	PERMISSION_CLARIFICATION_REPLY,               // Provide a clarification
@@ -47,71 +50,71 @@ typedef enum {
 	PERMISSION_START_STOP                         // Control contest state
 } Permission;
 
+const size_t PERMISSION_COUNT = static_cast<uint32_t>(PERMISSION_START_STOP) + 1;
+
+const char *getPermissionName(Permission p);
+
+// Maps a name back to the enum. Returns PERMISSION_INVALID if not found.
+Permission getPermissionValue(const std::string &name);
+
+class PermissionSet : public std::vector<bool> {
+public:
+	PermissionSet() : std::vector<bool>(PERMISSION_COUNT) {}
+};
+
 // A predicate on a permission set, built
 // from AND, OR and NOT conditions.
-class PermissionSet
+class PermissionTest
 {
 private:
 	enum ExpressionType
 	{
+		EXPRESSION_TYPE_NONE,
+		EXPRESSION_TYPE_ANY,
 		EXPRESSION_TYPE_BASE,
 		EXPRESSION_TYPE_OR,
 		EXPRESSION_TYPE_AND,
 		EXPRESSION_TYPE_NOT
 	};
 
-	ExpressionType _type;
-	Permission     _base;
-	PermissionSet *_left;
-	PermissionSet *_right;
+	ExpressionType  _type;
+	Permission      _base;
+	PermissionTest *_left;
+	PermissionTest *_right;
 
-	friend class Permissions;
-
+	explicit PermissionTest(ExpressionType);
 public:
-	PermissionSet();             // Never matches
-	PermissionSet(Permission);   // Matches the permission only
-	PermissionSet(const PermissionSet &ps);
+	static const PermissionTest ANY;
+	static const PermissionTest NONE;
 
-	~PermissionSet();
+	PermissionTest();             // Never matches
+	PermissionTest(Permission);   // Matches the permission only
+	PermissionTest(const PermissionTest &pt);
 
-	PermissionSet& operator=(const PermissionSet &ps);
+	~PermissionTest();
 
-	PermissionSet operator ||(const PermissionSet &ps) const;
-	PermissionSet operator &&(const PermissionSet &ps) const;
-	PermissionSet operator !() const;
+	PermissionTest& operator=(const PermissionTest &pt);
+
+	PermissionTest operator ||(const PermissionTest &pt) const;
+	PermissionTest operator &&(const PermissionTest &pt) const;
+	PermissionTest operator !() const;
+
+	bool matches(const PermissionSet &perms) const;
 };
 
-static inline PermissionSet operator ||(Permission perm1, Permission perm2)
+static inline PermissionTest operator ||(Permission perm1, Permission perm2)
 {
-	return PermissionSet(perm1) || PermissionSet(perm2);
+	return PermissionTest(perm1) || PermissionTest(perm2);
 }
 
-static inline PermissionSet operator &&(Permission perm1, Permission perm2)
+static inline PermissionTest operator &&(Permission perm1, Permission perm2)
 {
-	return PermissionSet(perm1) && PermissionSet(perm2);
+	return PermissionTest(perm1) && PermissionTest(perm2);
 }
 
-static inline PermissionSet operator !(Permission perm)
+static inline PermissionTest operator !(Permission perm)
 {
-	return !PermissionSet(perm);
+	return !PermissionTest(perm);
 }
-
-/* Manages permission mappings */
-class Permissions {
-private:
-	Permissions();
-	~Permissions();
-
-	std::set<std::pair<UserType, Permission> > _perms;
-
-	// Adds permission to the set. The mask is an OR of
-	// USER_MASK_* constants.
-	void allow(Permission perm, uint32_t mask);
-public:
-	static Permissions *getInstance();
-
-	bool hasPermission(UserType user_type, const PermissionSet &ps) const;
-	bool hasPermission(const ClientConnection *cc, const PermissionSet &ps) const;
-};
 
 #endif

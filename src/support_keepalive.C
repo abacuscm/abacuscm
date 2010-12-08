@@ -40,7 +40,7 @@ void KeepaliveSupportModule::KeepaliveTimedAction::perform() {
 
 	MessageBlock keepalive("keepalive");
 	ClientEventRegistry::getInstance().broadcastEvent(
-		0, PERMISSION_ANY, &keepalive);
+		0, PermissionTest::ANY, &keepalive);
 }
 
 DEFINE_SUPPORT_MODULE(KeepaliveSupportModule);
