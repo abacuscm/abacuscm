@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN" "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<book>
+    <title>Abacus Contest Manager</title>
+    <bookinfo>
+        <author>
+            <firstname>Bruce</firstname>
+            <surname>Merry</surname>
+            <email>bmerry@users.sourceforge.net</email>
+        </author>
+        <copyright>
+            <year>2010</year>
+            <holder>Bruce Merry</holder>
+        </copyright>
+    </bookinfo>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="contestant.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="administrator.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="developer.xml"/>
+</book>

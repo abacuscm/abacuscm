@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE part PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN" "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<part id="administrator">
+    <title>Administrator manual</title>
+    <chapter id="administrator.build">
+        <title>Building abacuscm</title>
+        <section id="administrator.build.requirements">
+            <title>Requirements</title>
+            <para>
+                Before you can compile AbacusCM you need the following pieces
+                of software installed:
+            </para>
+            <itemizedlist>
+                <listitem>
+                    <para><command>g++</command> (3.3, 3.4 and 4.4 have all worked at various
+                        times).</para>
+                </listitem>
+                <listitem>
+                    <para>
+                        <application>Qt</application> 3 (only required for the
+                        GUI client).
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        <application>OpenSSL</application> (any version should
+                        work).
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        <application>MySQL</application> 4.1 or later (only
+                        required for the server). In theory any RDB could
+                        work, but currently only MySQL is supported.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        GNU <command>make</command>. The build process uses
+                        patterns and other features only supported by GNU
+                        <command>make</command>.
+                    </para>
+                </listitem>
+            </itemizedlist>
+            <para>
+                TODO: add notes about tools to build the documentation.
+            </para>
+        </section>
+        <section id="administrator.build.compile">
+            <title>Compiling</title>
+            <para>
+                If you want to compile everything, just run
+                <command>make</command>.
+            </para>
+            <para>
+                If you only want to compile certain components, copy
+                <filename>Makefile.conf.sample</filename> to
+                <filename>Makefile.conf</filename> and edit it (there are
+                details in the file). From here you should be able to run
+                <command>make</command> and only get what you want.
+            </para>
+        </section>
+    </chapter>
+    <chapter id="administrator.certificates">
+        <title>Generating certificates</title>
+        <para>TODO</para>
+    </chapter>
+    <chapter id="administrator.client">
+        <title>Configuring the client</title>
+        <para>
+            Running the abacuscm client requires three things:
+        </para>
+        <itemizedlist>
+            <listitem>
+                <para>
+                    The binary, compiled to <filename>bin/abacus</filename>.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    A certificate used to sign the servers. Contestant
+                    administrators should refer to <xref
+                        linkend="administrator.certificates"/> for information
+                    about generating certificates. Anyone else configuring a
+                    client should ask the contest administrator for the
+                    certificate.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    A configuration file. There is a sample configuration file
+                    in <filename>conf/client.conf.sample</filename>. The
+                    client will look for configuration in the following places
+                    (if more than one is found, settings in later files
+                    override those in earlier files):
+                </para>
+                <itemizedlist>
+                    <listitem>
+                        <para><filename>/etc/abacus/client.conf</filename></para>
+                    </listitem>
+                    <listitem>
+                        <para><filename>~/.abacus</filename></para>
+                    </listitem>
+                    <listitem>
+                        <para><filename>abacus.conf</filename> in the current
+                            directory</para>
+                    </listitem>
+                </itemizedlist>
+                <para>
+                    There are two settings you may need to change from the
+                    example configuration file:
+                </para>
+                <itemizedlist>
+                    <listitem>
+                        <para>
+                            Change <parameter>address</parameter> to the
+                            hostname of the default abacuscm server.
+                        </para>
+                    </listitem>
+                    <listitem>
+                        <para>
+                            Change <parameter>cacert</parameter> to the path
+                            to the certificate. Using an absolute path is more
+                            robust, as a relative path will be interpreted
+                            relative to the working directory from which
+                            <command>abacus</command> was started, rather than
+                            the configuration file.
+                        </para>
+                    </listitem>
+                </itemizedlist>
+            </listitem>
+        </itemizedlist>
+        <para>
+            The script <filename>misc/installclient.sh</filename> will install
+            <filename>bin/abacus</filename> to <filename
+                class="directory">/usr/local/bin</filename> and the sample
+            configuration file to
+            <filename>/etc/abacus/client.conf</filename>. You can run this as
+            <systemitem class="username">root</systemitem> to install for
+            all users. It is suggested that if you do this,
+            you place the certificate at
+            <filename>/etc/abacus/cacert.crt</filename>, but this is purely a
+            convention.
+        </para>
+        <para>
+            Of course, it is also possible to run the client directly from
+            the source directory.
+        </para>
+    </chapter>
+    <chapter id="administrator.server">
+        <title>Configuring a server</title>
+        <para>TODO</para>
+        <section id="administrator.database">
+            <title>Preparing the database</title>
+            <para>TODO</para>
+        </section>
+    </chapter>
+    <chapter id="administrator.multiserver">
+        <title>Multi-server contests</title>
+        <para>TODO</para>
+    </chapter>
+    <chapter id="administrator.adduser">
+        <title>Adding users</title>
+        <para>TODO</para>
+    </chapter>
+    <chapter id="administrator.addproblem">
+        <title>Adding problems</title>
+        <section id="administrator.addproblem.interactive">
+            <title>Interactive problems</title>
+            <para>TODO</para>
+        </section>
+        <section id="administrator.addproblem.dependencies">
+            <title>Problem dependencies</title>
+            <para>TODO</para>
+        </section>
+    </chapter>
+    <chapter id="administrator.marking">
+        <title>Configuring the markers</title>
+        <para>
+            The simplest way to install a marker is to run
+            <filename>misc/installmarker.sh</filename> (this requires you to
+            be <systemitem class="username">root</systemitem>, and then edit
+            the configuration file. Note that the installation process will
+            create a group called <systemitem
+                class="groupname">markerd</systemitem> and a setuid
+            binary called <filename>runlimit</filename> that is executable by
+            this group.
+        </para>
+        <para>
+            There are several configuration file options you will need to
+            change:
+        </para>
+        <itemizedlist>
+            <listitem>
+                <para>
+                    In the <literal>[server]</literal> section, configure
+                    <parameter>address</parameter> and
+                    <parameter>cacert</parameter> as described in <xref
+                        linkend="administrator.client"/>. Also set the
+                    <parameter>username</parameter> and
+                    <parameter>password</parameter> to a marker account
+                    created as described in <xref
+                        linkend="administrator.adduser"/>. You can use the
+                    same account for several marker machines, but
+                    troubleshooting will be easier if each marker machine uses
+                    its own account.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    In the <literal>[compilers]</literal>,
+                    <literal>[java]</literal> and <literal>[python]</literal>
+                    sections, configure the paths to the compilers and
+                    interpreters. The <literal>[java]</literal>
+                    <parameter>policy</parameter> must point at the policy
+                    file provided with the abacuscm source bundle.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    In the <literal>[marker]</literal> section, the
+                    <parameter>workdir</parameter> is used as the argument to
+                    <function>mkdtemp</function>. If the marker has lots of
+                    spare memory, it would make sense to use a <systemitem
+                        class="filesystem">tmpfs</systemitem> filesystem.
+                    Additionally, <parameter>runlimit</parameter> must be set
+                    to the path to the <filename>runlimit</filename> binary.
+                </para>
+            </listitem>
+        </itemizedlist>
+        <para>
+            The marker can be run under a normal user account, as long as that
+            user is in the <systemitem class="groupname">markerd</systemitem>
+            group. Since members of this group can run the
+            <filename>runlimit</filename> setuid binary, only trusted users
+            should be placed in this group.
+        </para>
+        <para>
+            Once everything is configured, the marker is started by running
+        </para>
+        <screen><userinput><command>markerd</command> <optional><replaceable>marker.conf</replaceable></optional></userinput></screen>
+        <para>
+            This will connect to the server and mark solutions. If the
+            connection fails, it will automatically reconnect to the server.
+            If the file <filename>/etc/abacus/marker.conf</filename> exists,
+            it is used to obtain options regardless of whether a configuration
+            file is provided on the command-line. If both are present, options
+            in the command-line configuration file take precedence.
+        </para>
+        <para>
+            The marker is designed to have only one instance running on a
+            system. It is possible to run multiple instances by using a
+            different configuration file for each instance, with different
+            users and groups (to prevent marked solutions from interfering
+            with each other). This is not recommended, as solutions undergoing
+            evaluation may contend for memory bandwidth or CPU execution
+            units, making timing less accurate.
+        </para>
+    </chapter>
+    <chapter id="administrator.judging">
+        <title>Judging</title>
+        <para>TODO</para>
+    </chapter>
+    <chapter id="administrator.online-standings">
+        <title>Online standings</title>
+        <para>
+            The <command>standings</command> is used to generate standings that
+            can be viewed from a web browser, with automatic updates. To set
+            this up, follow these steps:
+        </para>
+        <procedure>
+            <step>
+                <para>
+                    Copy <filename>misc/standings/standings.pl</filename> to a
+                    <filename class="directory">cgi-bin</filename> directory
+                    (if you have the rights to do so).
+                </para>
+            </step>
+            <step>
+                <para>
+                    Tweak the settings at the top of
+                    <filename>standings.pl</filename>.
+                </para>
+            </step>
+            <step id="administrator.online-standings.non-cgi">
+                <para>
+                    Copy the other files from <filename
+                        class="directory">misc/standings</filename> to a
+                    normal web server directory.
+                </para>
+            </step>
+            <step>
+                <para>
+                    Make any tweaks to <filename>standings.html</filename>
+                    <filename>standings.css</filename> to your taste (leave in
+                    the magic HTML comments, which are used by the Perl script to fill in
+                    content).
+                </para>
+            </step>
+            <step>
+                <para>
+                    Run
+                </para>
+                <screen><command>bin/standings <replaceable>client.conf</replaceable> <replaceable>/www-data</replaceable>/standings.txt</command></screen>
+                <para>
+                    where <replaceable>/www-data</replaceable> is the
+                    directory where the files were placed in <xref
+                        linkend="administrator.online-standings.non-cgi"/>. If
+                    the filename is omitted, it will write to
+                    <filename>standings.txt</filename> in the current
+                    directory.
+                </para>
+                <para>
+                    This will prompt you for a username and passwork to
+                    connect to the server. You can use any account, but the
+                    standings display will be whatever that account is
+                    authorised. Thus, if you want the online standings to
+                    reflect the contestants' view, use a dummy contestant
+                    account.
+                </para>
+            </step>
+        </procedure>
+        <para>
+            You can now point a web browser at either
+            <filename>standings.pl</filename> or
+            <filename>standings.html</filename>.
+            The former requires CGI, but has the advantage that it will work
+            even without Javascript enabled (but will not auto-update or have
+            any nice animations). If you use <filename>standings.pl</filename>
+            file, then <filename>standings.html</filename> is needed only to
+            provide a template.
+        </para>
+        <note>
+            <para>
+                The files in <filename
+                    class="directory">misc/standings/js</filename> are
+                third-party and contains their own licenses.
+            </para>
+        </note>
+    </chapter>
+    <chapter id="administrator.cmdline">
+        <title>Other command-line tools</title>
+        <para>TODO</para>
+    </chapter>
+</part>

@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE part PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN" "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<part id="contestant">
+    <title>Contestant manual</title>
+    <chapter id="contestant.intro">
+        <title>Introduction</title>
+        <para>
+            <firstterm>Abacus</firstterm> is a software package for programming
+            contests. You will use it to submit your solutions and get
+            feedback from the judges.
+        </para>
+    </chapter>
+    <chapter id="contestant.starting">
+        <title>Starting abacus</title>
+        <para>
+            The command to start Abacus will depend on your local
+            installation. In most cases you should just be able to type
+            <userinput>abacus</userinput> in a terminal window.
+        </para>
+        <para>
+            After starting abacus, you should select
+            <menuchoice><guimenu>Abacus</guimenu><guimenuitem>Connect</guimenuitem></menuchoice>
+            This will open a dialog box. The server and port should have
+            already been set for you. Fill in the username and password that
+            you have been given. If you do this correctly, you should receive
+            the message <computeroutput>You are now connected to the
+                server.</computeroutput>
+        </para>
+        <para>
+            When the contest is running, you will see a clock in the
+            bottom-right corner counting down the remaining time.
+        </para>
+    </chapter>
+    <chapter id="contestant.clarifications">
+        <title>Clarifications</title>
+        <para>
+            If you are uncertain about some details in a task or the contest
+            in general, you may submit a clarification request. On the
+            <guilabel>Clarification requests</guilabel> tab, click
+            <guibutton>Request Clarification</guibutton>. Select the problem
+            your query pertains to and type in your query.
+        </para>
+        <para>
+            When a judge responds to your query, the response will pop up on
+            your screen. It will also be available on the
+            <guilabel>Clarifications</guilabel> tab (you can double-click on
+            clarification requests and clarifications to see the full text).
+        </para>
+        <para>
+            Some things to take note of:
+        </para>
+        <orderedlist>
+            <listitem>
+                <para>The newest information appears at the top.</para>
+            </listitem>
+            <listitem>
+                <para>
+                    In a distributed (multi-site) contest, the judges might
+                    not be on-site. Thus, if you have specific questions about
+                    the installation at your site (e.g., your IDE won't open)
+                    then speak to somebody at the site.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    The judges do not know who is submitting queries. This
+                    means that if you want to refer to a previous query you
+                    made, you should include the <guilabel>Request
+                        ID</guilabel> that appears in
+                    the list box. Similarly, if your query is about a
+                    particular submission, you should include the
+                    <guilabel>Submission ID</guilabel> from the Submissions
+                    tab (or use the <guibutton>Request
+                        Clarification</guibutton> button on that tab &mdash; see
+                    <xref linkend="contestant.submitting"/>).
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    You may receive clarifications for questions that you
+                    never asked.  These are broadcast replies and indicate
+                    important information for all contestants.
+                </para>
+            </listitem>
+        </orderedlist>
+    </chapter>
+    <chapter id="contestant.solutions">
+        <title>Writing your solution</title>
+        <para>
+            If you are using Java, you can call your main class whatever you
+            like, but it must be the <emphasis>emph</emphasis> class in the
+            file. You can include support classes after it, but they should
+            not be <symbol>public</symbol>.
+        </para>
+        <para>
+            Your solution will read from standard input
+            (<code language="c">stdin</code>,
+            <code language="c++">cin</code>,
+            <code language="java">System.in</code> or
+            <code language="python">sys.stdin</code>, depending on language)
+            and write to standard output
+            (<code language="c">stdout</code>,
+            <code language="c++">cout</code>,
+            <code language="java">System.out</code>
+            <code language="python">sys.stdout</code>).
+            Your solution is tested by an automated marker, so you must be
+            careful to input only what is asked for, and output only what is
+            asked for. In particular, do not print prompts or messages like
+            <computeroutput>The answer is:</computeroutput> unless you are
+            asked to.
+        </para>
+        <section id="contestant.solutions.float">
+            <title>Floating-point output</title>
+            <para>
+                In some questions, you may be asked to give output that is
+                correct to a particular number of decimal places. It is
+                recommended that you use the following code fragments to
+                produce correct output for such questions (in all the cases
+                below, we assume that the number of decimal places asked for
+                is 6, and that the variable <varname>x</varname> is the value
+                to be output).
+            </para>
+            <example id="contestant.solutions.float.python">
+                <title>Floating-point output in Python</title>
+                <programlisting language="python"><![CDATA[
+print "Case #%d: %.6f" % (caseNum, x)]]></programlisting>
+            </example>
+            <example id="contestant.solutions.float.java">
+                <title>Floating-point output in Java</title>
+                <programlisting language="java"><![CDATA[
+System.out.println(String.format(
+    "Case #%d: %.6f", caseNum, x));]]></programlisting>
+            </example>
+            <example id="contestant.solutions.float.cxx.stdio">
+                <title>Floating-point output in C++ with stdio</title>
+                <programlisting language="c++"><![CDATA[
+printf("Case #%d: %.6f\n", caseNum, x);]]></programlisting>
+            </example>
+            <example id="contestant.solutions.float.cxx.iostream">
+                <title>Floating-point output in C++ with iostreams</title>
+                <programlisting language="c++"><![CDATA[
+cout.precision(6);
+cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
+            </example>
+        </section>
+    </chapter>
+    <chapter id="contestant.submitting">
+        <title>Submitting your solution</title>
+        <para>
+            When you are ready to submit a solution, go to the
+            <guilabel>Submissions</guilabel> tab and click <guibutton>Make
+                Submission</guibutton>. Be very careful to select the right
+            problem, source file and language in the dialog box, as there are
+            penalties for incorrect submissions and there is no way to reverse
+            an accidentally submitted solution.
+        </para>
+        <para>
+            Once you make a submission, it will appear in the list box, with
+            newest submissions at the top. The status field will let you keep
+            track of the submission status. The possible options are:
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term><computeroutput>Pending</computeroutput></term>
+                <listitem>
+                    <para>
+                        The submission is still in the automatic marker.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><computeroutput>Compilation failure</computeroutput></term>
+                <listitem>
+                    <para>
+                        Your submission did not compile. This can happen with
+                        C++ in particular, because the marker might not be
+                        using the same version of the compiler. To assist you,
+                        you can double-click on the submission to get the
+                        compiler output. In many cases you just need to add a
+                        <code>#include</code> statement. There is no time
+                        penalty for compilation failures. Note that since
+                        Python is an interpreted language, there are no
+                        compilation errors &mdash; so be particularly careful
+                        before submitting, as what would be a compilation error
+                        in another language will be a run-time error in Python
+                        and will cost you penalty time.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><computeroutput>Time limit exceeded</computeroutput></term>
+                <listitem>
+                    <para>
+                        Your program exceeded the maximum time limit. This
+                        could mean that it is too slow or has an infinite
+                        loop.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><computeroutput>Abnormal termination</computeroutput></term>
+                <listitem>
+                    <para>
+                        Your program has crashed for some reason. Possible
+                        reasons include using too much memory, writing an
+                        excessive amount of output, throwing an uncaught
+                        exception, using illegal memory in C++, and returning a
+                        non-zero exit code (in particular, your
+                        <function>main</function> function in C++ must return
+                        0).
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><computeroutput>Awaiting judge</computeroutput></term>
+                <listitem>
+                    <para>
+                        The program produced an output file that was judged
+                        wrong by the automatic marker. A judge will look at it,
+                        and if the only error is in formatting it may be judged
+                        correct. You should not rely on this.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><computeroutput>Wrong answer</computeroutput></term>
+                <listitem>
+                    <para>
+                        A judge has confirmed that the answer is wrong.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><computeroutput>Correct answer</computeroutput></term>
+                <listitem>
+                    <para>
+                        Well done!
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        <para>
+            If you wish to ask a question about a particular submission, you
+            should submit a clarification request and mention the
+            <guilabel>Submission ID</guilabel> in your request. A quick way to
+            do this is to use the <guibutton>Request
+                Clarification</guibutton> button on the
+            <guilabel>Submissions</guilabel> tab &mdash; if you have selected a
+            submission from the list box, then clicking on this button will
+            open a clarification request window with the correct problem
+            selected, and the <guilabel>Submission ID</guilabel> entered in the
+            request text.
+        </para>
+    </chapter>
+    <chapter id="contestant.standings">
+        <title>Standings</title>
+        <para>
+            You can see the standings at any time (from the
+            <guilabel>Standings</guilabel> tab), but they will not be updated
+            during the last hour of the contest. Only teams that have made at
+            least one submission will appear in the standings.
+        </para>
+    </chapter>
+    <chapter id="contestant.alerts">
+        <title>Alerts</title>
+        <para>
+            When a hidden tab has new information (such as a reply to a
+            clarification, or the result of a submission), the flag next to the
+            tab title will light up red.  Click on the tab to see the update.
+        </para>
+    </chapter>
+</part>
