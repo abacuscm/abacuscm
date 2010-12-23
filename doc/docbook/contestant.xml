@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE part PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN" "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
-<part id="contestant">
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN" "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<chapter id="contestant">
     <title>Contestant manual</title>
-    <chapter id="contestant.intro">
+    <section id="contestant.intro">
         <title>Introduction</title>
         <para>
             <firstterm>Abacus</firstterm> is a software package for programming
             contests. You will use it to submit your solutions and get
             feedback from the judges.
         </para>
-    </chapter>
-    <chapter id="contestant.starting">
+    </section>
+    <section id="contestant.starting">
         <title>Starting abacus</title>
         <para>
             The command to start Abacus will depend on your local
@@ -30,8 +30,8 @@
             When the contest is running, you will see a clock in the
             bottom-right corner counting down the remaining time.
         </para>
-    </chapter>
-    <chapter id="contestant.clarifications">
+    </section>
+    <section id="contestant.clarifications">
         <title>Clarifications</title>
         <para>
             If you are uncertain about some details in a task or the contest
@@ -83,8 +83,8 @@
                 </para>
             </listitem>
         </orderedlist>
-    </chapter>
-    <chapter id="contestant.solutions">
+    </section>
+    <section id="contestant.solutions">
         <title>Writing your solution</title>
         <para>
             If you are using Java, you can call your main class whatever you
@@ -122,29 +122,25 @@
             </para>
             <example id="contestant.solutions.float.python">
                 <title>Floating-point output in Python</title>
-                <programlisting language="python"><![CDATA[
-print "Case #%d: %.6f" % (caseNum, x)]]></programlisting>
+                <programlisting language="python"><![CDATA[print "Case #%d: %.6f" % (caseNum, x)]]></programlisting>
             </example>
             <example id="contestant.solutions.float.java">
                 <title>Floating-point output in Java</title>
-                <programlisting language="java"><![CDATA[
-System.out.println(String.format(
+                <programlisting language="java"><![CDATA[System.out.println(String.format(
     "Case #%d: %.6f", caseNum, x));]]></programlisting>
             </example>
             <example id="contestant.solutions.float.cxx.stdio">
                 <title>Floating-point output in C++ with stdio</title>
-                <programlisting language="c++"><![CDATA[
-printf("Case #%d: %.6f\n", caseNum, x);]]></programlisting>
+                <programlisting language="c++"><![CDATA[printf("Case #%d: %.6f\n", caseNum, x);]]></programlisting>
             </example>
             <example id="contestant.solutions.float.cxx.iostream">
                 <title>Floating-point output in C++ with iostreams</title>
-                <programlisting language="c++"><![CDATA[
-cout.precision(6);
+                <programlisting language="c++"><![CDATA[cout.precision(6);
 cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
             </example>
         </section>
-    </chapter>
-    <chapter id="contestant.submitting">
+    </section>
+    <section id="contestant.submitting">
         <title>Submitting your solution</title>
         <para>
             When you are ready to submit a solution, go to the
@@ -251,8 +247,8 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
             selected, and the <guilabel>Submission ID</guilabel> entered in the
             request text.
         </para>
-    </chapter>
-    <chapter id="contestant.standings">
+    </section>
+    <section id="contestant.standings">
         <title>Standings</title>
         <para>
             You can see the standings at any time (from the
@@ -260,13 +256,13 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
             during the last hour of the contest. Only teams that have made at
             least one submission will appear in the standings.
         </para>
-    </chapter>
-    <chapter id="contestant.alerts">
+    </section>
+    <section id="contestant.alerts">
         <title>Alerts</title>
         <para>
             When a hidden tab has new information (such as a reply to a
             clarification, or the result of a submission), the flag next to the
             tab title will light up red.  Click on the tab to see the update.
         </para>
-    </chapter>
-</part>
+    </section>
+</chapter>

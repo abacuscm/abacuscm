@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE part PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN" "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
-<part id="developer">
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN" "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<chapter id="developer">
     <title>Developer manual</title>
-    <chapter id="developer.build">
+    <section id="developer.build">
         <title>Build system</title>
         <para>TODO</para>
-    </chapter>
+    </section>
 
-    <chapter id="developer.standard">
+    <section id="developer.standard">
         <title>Coding standard</title>
         <section id="developer.standard.files">
             <title>Files</title>
@@ -119,9 +119,9 @@
             <title>Singleton pattern</title>
             <para>TODO</para>
         </section>
-    </chapter>
+    </section>
 
-    <chapter id="developer.common">
+    <section id="developer.common">
         <title>Common infrastructure</title>
         <section id="developer.common.logging">
             <title>Logging</title>
@@ -161,9 +161,9 @@
             <title>Score comparison</title>
             <para>TODO</para>
         </section>
-    </chapter>
+    </section>
 
-    <chapter id="developer.csprotocol">
+    <section id="developer.csprotocol">
         <title>Client-server protocol</title>
         <section id="developer.csprotocol.intro">
             <title>Introduction</title>
@@ -195,7 +195,8 @@
                 At present, the parsing code has no restrictions on the type
                 or the headers, but it is recommended that they be limited to
                 ASCII alphanumerics and <literal>-</literal> (hyphen)
-                characters. The protocol is case-sensitive.
+                characters. Headers may be sent in any order, but are
+                case-sensitive.
             </para>
             <para>
                 The message headers are terminated by a blank line. Usually
@@ -249,6 +250,14 @@ pass:<replaceable>password</replaceable>
             </para>
             <section>
                 <title>Client commands</title>
+                <para>
+                    These are commands that the client sends to the server. The
+                    server will always reply with either an <type>ok</type>
+                    message or an <type>err</type> message. Where the
+                    <type>ok</type> message contains information, it is shown
+                    in the synopses below; where it contains no information it
+                    is omitted.
+                </para>
                 <section>
                     <title>Authentication</title>
                     <synopsis>auth
@@ -322,15 +331,373 @@ server_id:<replaceable>id</replaceable>  <co id="startstop.server_id.co"
                             </para>
                         </callout>
                     </calloutlist>
+                </section>
+                <section>
+                    <title>Get list of permitted languages</title>
+                    <synopsis>getlanguages
+
+ok
+language0:<replaceable>language</replaceable>
+language1:<replaceable>language</replaceable>
+&hellip;</synopsis>
                     <para>
-                        TODO: finish this list
+                        The possible values of
+                        <replaceable>language</replaceable> are
+                        <literal>C</literal>,
+                        <literal>C++</literal>,
+                        <literal>Python</literal> and
+                        <literal>Java</literal> (although more languages may be
+                        available in future).
                     </para>
                 </section>
+                <section>
+                    <title>Get list of problem types</title>
+                    <synopsis>getprobtypes
+
+ok
+type0:<replaceable>type</replaceable>
+type1:<replaceable>type</replaceable>
+&hellip;</synopsis>
+                    <para>
+                        The problem types are arbitrary strings that can be
+                        passed back to the server with a
+                        <type>getprobdescipt</type> or
+                        <type>setprobattrs</type> message. They are suitable
+                        for presentation to the user when creating a new
+                        problem.
+                    </para>
+                </section>
+                <section>
+                    <title>Get information about a problem type</title>
+                    <synopsis>getprobdescript
+type:<replaceable>type</replaceable>
+
+ok
+descript:<replaceable>description</replaceable></synopsis>
+                    <para>
+                        TODO: document the mini-language used for descriptions
+                    </para>
+                </section>
+                <section>
+                    <title>Create or update problem</title>
+                    <synopsis>setprobattrs
+prob_id:<replaceable>id</replaceable>                    <co id="setprobattrs.prob_id.co" linkends="setprobattrs.prob_id"/>
+prob_type:<replaceable>type</replaceable>                <co id="setprobattrs.prob_type.co" linkends="setprobattrs.prob_type"/>
+<optional>prob_dependencies:<replaceable>problem</replaceable>,&hellip;</optional> <co id="setprobattrs.prob_dependencies.co" linkends="setprobattrs.prob_dependencies"/>
+<replaceable>key</replaceable>:<replaceable>value</replaceable>                     <co id="setprobattrs.key.co" linkends="setprobattrs.key"/>
+<replaceable>key</replaceable>:<replaceable>value</replaceable>                     <coref linkend="setprobattrs.key.co"/>
+&hellip;
+<replaceable>key</replaceable>:<replaceable>offset</replaceable> <replaceable>size</replaceable> <replaceable>basename</replaceable>      <co id="setprobattrs.file.co" linkends="setprobattrs.file"/>
+<replaceable>key</replaceable>:<replaceable>offset</replaceable> <replaceable>size</replaceable> <replaceable>basename</replaceable>      <coref linkend="setprobattrs.file.co"/>
+&hellip;
+content-length:<replaceable>content-length</replaceable>
+
+<replaceable>binary data</replaceable></synopsis>
+                    <calloutlist>
+                        <callout id="setprobattrs.prob_id" arearefs="setprobattrs.prob_id.co">
+                            <para>
+                                If zero, creates a new problem; otherwise
+                                replaces an existing problem. Replacing a
+                                problem has serious race conditions and is not
+                                recommended, and has not been tested.
+                            </para>
+                            <para>
+                                TODO: does it replace or selectively update?
+                            </para>
+                        </callout>
+                        <callout id="setprobattrs.prob_type" arearefs="setprobattrs.prob_type.co">
+                            <para>
+                                A type returned from
+                                <type>getprobtypes</type>. It may be omitted
+                                if a problem ID is specified.
+                            </para>
+                        </callout>
+                        <callout id="setprobattrs.prob_dependencies" arearefs="setprobattrs.prob_dependencies.co">
+                            <para>
+                                If specified, contains a comma-separated list
+                                of numeric problem IDs for problems that
+                                contestants before they will be allowed to
+                                submit this problem. These problems must
+                                already exist.
+                            </para>
+                        </callout>
+                        <callout id="setprobattrs.key" arearefs="setprobattrs.key.co">
+                            <para>
+                                There must be one of these for each of the
+                                non-file attributes described by
+                                <type>getprobdescript</type>.
+                            </para>
+                        </callout>
+                        <callout id="setprobattrs.file" arearefs="setprobattrs.file.co">
+                            <para>
+                                There must be one of these for each file
+                                attribute described by
+                                <type>getprobdescript</type>. The
+                                <replaceable>offset</replaceable> and
+                                <replaceable>size</replaceable> indicate a
+                                subrange of the binary content that contains
+                                the contents for this file.
+                            </para>
+                            <para>
+                                When updating an existing problem, the header
+                                value may instead be an ASCII dash
+                                (<literal>-</literal>) to indicate that the
+                                existing file data should be retained.
+                            </para>
+                            <para>
+                                TODO: what is the
+                                <replaceable>basename</replaceable> used for?
+                            </para>
+                        </callout>
+                    </calloutlist>
+                </section>
+                <section>
+                    <title>Get problem attributes</title>
+                    <synopsis>getprobattrs
+prob_id:<replaceable>id</replaceable>
+
+ok
+<replaceable>key</replaceable>:<replaceable>value</replaceable>
+<replaceable>key</replaceable>:<replaceable>value</replaceable>
+&hellip;</synopsis>
+                    <para>
+                        This query returns only the key/value pairs that
+                        contain scalars. It does not return the dependencies
+                        or the files.
+                    </para>
+                </section>
+                <section>
+                    <title>Retrieve problem file</title>
+                    <synopsis>getprobfile
+prob_id:<replaceable>id</replaceable>
+file:<replaceable>filename</replaceable> <co id="getprobfile.file.co" linkends="getprobfile.file"/>
+
+ok
+content-length:<replaceable>content-length</replaceable>
+
+<replaceable>binary data</replaceable></synopsis>
+                    <calloutlist>
+                        <callout id="getprobfile.file" arearefs="getprobfile.file.co">
+                            <para>
+                                One of the file keys returned by
+                                <type>getprobdescript</type>.
+                            </para>
+                        </callout>
+                    </calloutlist>
+                </section>
+                <section>
+                    <title>Get list of problems</title>
+                    <synopsis>getproblems
+
+ok
+id0:<replaceable>id</replaceable>     <co id="getproblems.id.co" linkends="getproblems.id"/>
+code0:<replaceable>code</replaceable> <co id="getproblems.code.co" linkends="getproblems.code"/>
+name0:<replaceable>name</replaceable> <co id="getproblems.name.co" linkends="getproblems.name"/>
+id1:<replaceable>id</replaceable>
+code1:<replaceable>code</replaceable>
+name1:<replaceable>name</replaceable>
+&hellip;</synopsis>
+                    <calloutlist>
+                        <callout id="getproblems.id" arearefs="getproblems.id.co">
+                            <para>
+                                A numeric ID that is assigned by the server,
+                                and used in other problem-related messages.
+                            </para>
+                        </callout>
+                        <callout id="getproblems.code" arearefs="getproblems.code.co">
+                            <para>
+                                A short name for the problem (generally one
+                                suitable for forming filenames). It is also
+                                returned as the <parameter>shortname</parameter>
+                                from <type>getprobattrs</type> queries.
+                            </para>
+                        </callout>
+                        <callout id="getproblems.name" arearefs="getproblems.name.co">
+                            <para>
+                                A longer descriptive name for the problem. It
+                                is also returned as the
+                                <parameter>longname</parameter> from
+                                <type>getprobattrs</type> queries.
+                            </para>
+                        </callout>
+                    </calloutlist>
+                    <para>
+                        If <type>getsubmissibleproblems</type> is used instead
+                        of <type>getproblems</type>, only those problems for
+                        which the user has successfully solved the dependent
+                        problems will be returned (unless the user has the
+                        <symbol>PERMISSION_SEE_ALL_PROBLEMS</symbol>
+                        permission). In future, these may be merged into a
+                        single query.
+                    </para>
+                </section>
+                <section>
+                    <title>Submit solution</title>
+                    <synopsis>submit
+prob_id:<replaceable>id</replaceable>    <co id="submit.prob_id.co" linkends="submit.prob_id"/>
+lang:<replaceable>language</replaceable> <co id="submit.lang.co" linkends="submit.lang"/>
+content-length:<replaceable>content-length</replaceable>
+
+<replaceable>binary data</replaceable></synopsis>
+                    <calloutlist>
+                        <callout id="submit.prob_id" arearefs="submit.prob_id.co">
+                            <para>
+                                One of the problem IDs returned by
+                                <type>getsubmissibleproblems</type>.
+                            </para>
+                        </callout>
+                        <callout id="submit.lang" arearefs="submit.lang.co">
+                            <para>
+                                One of the languages returned by
+                                <type>getlanguages</type>.
+                            </para>
+                        </callout>
+                    </calloutlist>
+                </section>
+                <section>
+                    <title>Get submitted source file</title>
+                    <synopsis>getsubmissionsource
+submission_id:<replaceable>submission_id</replaceable>
+
+ok
+content-length:<replaceable>content-length</replaceable>
+
+<replaceable>binary data</replaceable></synopsis>
+                </section>
+                <section>
+                    <title>Clarification request</title>
+                    <synopsis>clarificationrequest
+prob_id:<replaceable>id</replaceable>        <co id="clarificationrequest.id.co" linkends="clarificationrequest.id"/>
+question:<replaceable>question</replaceable> <co id="clarificationrequest.question.co" linkends="clarificationrequest.question"/></synopsis>
+                    <calloutlist>
+                        <callout id="clarificationrequest.id" arearefs="clarificationrequest.id.co">
+                            <para>
+                                A numeric problem ID. May be zero or empty to
+                                indicate a general request.
+                            </para>
+                        </callout>
+                        <callout id="clarificationrequest.question" arearefs="clarificationrequest.question.co">
+                            <para>
+                                Newlines in the clarification request are
+                                replaced by ASCII character 1, to distinguish
+                                them from the newline terminating the header.
+                            </para>
+                        </callout>
+                    </calloutlist>
+                </section>
+                <section>
+                    <title>Clarification reply</title>
+                    <synopsis>clarification
+clarification_request_id:<replaceable>id</replaceable>
+answer:<replaceable>answer</replaceable>
+public:0|1</synopsis>
+                    <para>
+                        As with clarification requests, newlines are replaced
+                        with ASCII character 1.
+                    </para>
+                </section>
+                <section>
+                    <title>Get submissions</title>
+                    <synopsis>getsubmissions
+
+ok
+submission_id0:<replaceable>id</replaceable>
+time0:<replaceable>time</replaceable>        <co id="getsubmissions.time.co" linkends="getsubmissions.time"/>
+problem0:<replaceable>shortname</replaceable>
+prob_id0:<replaceable>id</replaceable>
+contesttime0:<replaceable>time</replaceable> <co id="getsubmissions.contesttime.co" linkends="getsubmissions.contesttime"/>
+result0:<replaceable>result</replaceable>    <co id="getsubmissions.result.co" linkends="getsubmissions.result"/>
+comment0:<replaceable>comment</replaceable>  <co id="getsubmissions.comment.co" linkends="getsubmissions.comment"/>
+&hellip;</synopsis>
+                    <calloutlist>
+                        <callout id="getsubmissions.time" arearefs="getsubmissions.time.co">
+                            <para>
+                                A UNIX timestamp in seconds (integer).
+                            </para>
+                        </callout>
+                        <callout id="getsubmissions.contesttime" arearefs="getsubmissions.contesttime.co">
+                            <para>
+                                Seconds of contest time on the server to which
+                                the server was connected (integer).
+                            </para>
+                        </callout>
+                        <callout id="getsubmissions.result" arearefs="getsubmissions.result.co">
+                            <para>
+                                Either an integer with one of the values from
+                                the <type>RunResult</type> enumeration, or the
+                                string <literal>PENDING</literal> if no
+                                evaluation has been done.
+                            </para>
+                        </callout>
+                        <callout id="getsubmissions.comment" arearefs="getsubmissions.comment.co">
+                            <para>
+                                A human-readable status corresponding to
+                                <parameter>result</parameter>, and possibly
+                                containing extra information.
+                            </para>
+                        </callout>
+                    </calloutlist>
+                    <para>
+                        Using <literal>getsubmissions_for_user</literal> in
+                        place of <literal>getsubmissions</literal> and adding
+                        a <parameter>user_id</parameter> header will give the
+                        submissions for a single user.
+                    </para>
+                    <para>
+                        TODO: are other fields generated?
+                        <filename>serverconnection.C</filename> would suggest
+                        so, but I can't see any code to generate them.
+                    </para>
+                </section>
+                <section>
+                    <title>Get list of users</title>
+                    <synopsis>getusers
+
+ok
+id0:<replaceable>id</replaceable>
+username:<replaceable>username</replaceable></synopsis>
+                </section>
+                <section>
+                    <title>Get list of servers</title>
+                    <synopsis>getserverlist
+
+ok
+server0:<replaceable>domain name</replaceable>
+server1:<replaceable>domain name</replaceable>
+&hellip;</synopsis>
+                </section>
+                <section>
+                    <title>More</title>
+                    <para>
+                        TODO: finish this list. Still missing are (at least):
+                    </para>
+                    <itemizedlist>
+                        <listitem><para><type>getclarifications</type></para></listitem>
+                        <listitem><para><type>getclarificationrequests</type></para></listitem>
+                        <listitem><para><type>standings</type></para></listitem>
+                        <listitem><para><type>eventmap</type></para></listitem>
+                        <listitem><para><type>subscribemark</type></para></listitem>
+                        <listitem><para><type>mark</type></para></listitem>
+                        <listitem><para><type>fetchfile</type></para></listitem>
+                        <listitem><para><type>contesttime</type></para></listitem>
+                        <listitem><para><type>subscribetime</type></para></listitem>
+                    </itemizedlist>
+                </section>
+            </section>
+            <section>
+                <title>Server notifications</title>
+                <para>
+                    These messages are sent asynchronously to the client by
+                    the server. The client does not have to acknowledge them.
+                </para>
+                <para>
+                    TODO
+                </para>
             </section>
         </section>
-    </chapter>
+    </section>
 
-    <chapter id="developer.ssprotocol">
+    <section id="developer.ssprotocol">
         <title>Server-to-server protocol</title>
         <section id="developer.ssprotocol.intro">
             <title>Introduction</title>
@@ -348,9 +715,9 @@ server_id:<replaceable>id</replaceable>  <co id="startstop.server_id.co"
             <title>Messages</title>
             <para>TODO</para>
         </section>
-    </chapter>
+    </section>
 
-    <chapter id="developer.server">
+    <section id="developer.server">
         <title>Server design</title>
         <section id="developer.server.actions">
             <title>Actions</title>
@@ -562,9 +929,9 @@ server_id:<replaceable>id</replaceable>  <co id="startstop.server_id.co"
             <title>Database connections</title>
             <para>TODO</para>
         </section>
-    </chapter>
+    </section>
 
-    <chapter id="developer.database">
+    <section id="developer.database">
         <title>Database layout</title>
         <section id="developer.database.contest">
             <title>Contest data</title>
@@ -574,9 +941,9 @@ server_id:<replaceable>id</replaceable>  <co id="startstop.server_id.co"
             <title>Peer messages</title>
             <para>TODO</para>
         </section>
-    </chapter>
+    </section>
 
-    <chapter id="developer.client">
+    <section id="developer.client">
         <title>Qt client</title>
         <section id="developer.client.intro">
             <title>Introduction</title>
@@ -715,8 +1082,7 @@ server_id:<replaceable>id</replaceable>  <co id="startstop.server_id.co"
                 The code below shows the standard idioms for converting
                 between <classname>QString</classname> and a C string:
             </para>
-            <programlisting language="c++"><![CDATA[
-QString myqstring;
+            <programlisting language="c++"><![CDATA[QString myqstring;
 const char *mycstring;
 
 myqstring = QString::fromUtf8("Hello world");
@@ -761,16 +1127,16 @@ mycstring = (const char *) myqstring.utf8();
                 </listitem>
                 <listitem>
                     <para>
-                        overloads an <methodname></methodname> method to
+                        overloads an <methodname>rtti</methodname> method to
                         indicate which type of item it is (mostly for
                         assertions).
                     </para>
                 </listitem>
             </itemizedlist>
         </section>
-    </chapter>
+    </section>
 
-    <chapter id="developer.marker">
+    <section id="developer.marker">
         <title>Marker</title>
         <section id="developer.marker.runlimit">
             <title>Enforcing constraints</title>
@@ -780,5 +1146,5 @@ mycstring = (const char *) myqstring.utf8();
             <title>Java specifics</title>
             <para>TODO</para>
         </section>
-    </chapter>
-</part>
+    </section>
+</chapter>

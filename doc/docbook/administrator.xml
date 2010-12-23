@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE part PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN" "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
-<part id="administrator">
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN" "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<chapter id="administrator">
     <title>Administrator manual</title>
-    <chapter id="administrator.build">
+    <section id="administrator.build">
         <title>Building abacuscm</title>
         <section id="administrator.build.requirements">
             <title>Requirements</title>
@@ -60,12 +60,73 @@
                 <command>make</command> and only get what you want.
             </para>
         </section>
-    </chapter>
-    <chapter id="administrator.certificates">
+    </section>
+    <section id="administrator.certificates">
         <title>Generating certificates</title>
-        <para>TODO</para>
-    </chapter>
-    <chapter id="administrator.client">
+        <para>
+            Abacus uses X.509 certificates to allow clients to check that they
+            are connecting to a genuine server, and have not been subjected to
+            a man-in-the-middle attack. To run a contest, you will need a
+            certificate authority (CA) certificate, and a certificate per
+            server signed by that certificate authority.
+        </para>
+        <para>
+            Note that at present, the client will happily connect to any
+            server that has a certificate signed by the CA. You should thus
+            <emphasis>not</emphasis> have your server certificates signed by a
+            public CA, as anyone else whose certificate has been signed by
+            that CA would be able to accept connections from clients. Instead,
+            you should generate your own CA certificate, and distribute
+            <filename>cacert.crt</filename> to
+            the clients (see <xref linkend="administrator.client"/>).
+        </para>
+        <para>
+            To create the CA certificate, enter the <filename
+                class="directory">certs</filename> directory and run
+        </para>
+        <screen><userinput>./makeca.sh</userinput></screen>
+        <para>
+            This will run for a while and then prompt for some details, you
+            can mostly just fill in here whatever you want.  Be warned though
+            that <parameter>Server Name</parameter> isn't exactly what you
+            expect it to be. This is the CN field, and should probably be
+            something like <userinput>AbacusCM CA</userinput>.
+        </para>
+        <para>
+            Once you have created the CA certificate, you need to create a
+            certificate for each server. Theoretically this could be done using
+            certificate requests but this has not been implemented yet as
+            <application>ssh</application> has proven adequate for
+            distributing certificates securely.
+        </para>
+        <para>
+            To create a key for a server you should use the
+            <filename>addserver.sh</filename> script (in <filename
+                class="directory">certs</filename>. This script takes a single
+            parameter, the name of the certificate (usually a short name for
+            the server) e.g.,
+        </para>
+        <screen><userinput>./addserver.sh <replaceable>pug</replaceable></userinput></screen>
+        <para>
+            This will create a key and a certificate request for
+            <replaceable>pug</replaceable> and then proceed to sign that
+            request with the previously generated CA.  Again, you can enter
+            just about any details when prompted. You should however, enter
+            the fully qualified domain name when asked for <parameter>Server
+                name</parameter> (the name that users of the AbacusCM client
+            will enter when connecting to the server). Also be sure to enter a
+            <parameter>State or Province Name</parameter> or it will fail.
+        </para>
+        <para>
+            When the script is done it will symlink the keys and certificates
+            into <filename class="directory">certs</filename> as
+            <filename><replaceable>servername</replaceable>.crt</filename> and
+            <filename><replaceable>servername</replaceable>.key</filename>.
+            You will need to set up the server configuration file to reference
+            them (see <xref linkend="administrator.server"/>).
+        </para>
+    </section>
+    <section id="administrator.client">
         <title>Configuring the client</title>
         <para>
             Running the abacuscm client requires three things:
@@ -146,24 +207,138 @@
             Of course, it is also possible to run the client directly from
             the source directory.
         </para>
-    </chapter>
-    <chapter id="administrator.server">
+    </section>
+    <section id="administrator.server">
         <title>Configuring a server</title>
         <para>TODO</para>
-        <section id="administrator.database">
+        <section id="administrator.server.database">
             <title>Preparing the database</title>
-            <para>TODO</para>
+            <para>
+                Each server needs its own database. Currently only MySQL is
+                supported as a database backend. The minimal set of privileges
+                is not currently known, and so currently all privileges are
+                given to the database user.
+            </para>
+            <para>
+                Assuming the MySQL server is running on localhost, you can
+                create the database as follows:
+            </para>
+            <screen><prompt># </prompt><userinput>mysql -u root -p -h localhost</userinput>
+<prompt>&gt; </prompt><userinput>create database abacus;</userinput>
+<prompt>&gt; </prompt><userinput>grant all privileges on abacus.* \
+    to abacus@localhost identified by '<replaceable>password</replaceable>';</userinput>
+<prompt>&gt; </prompt><userinput>quit;</userinput></screen>
+            <para>
+                Once the database has been created you need to load the base
+                structure from <filename>db/structure.sql</filename>:
+            </para>
+            <screen><prompt># </prompt><userinput>mysql -u abacus -p -h localhost abacus &lt; db/structure.sql</userinput>
+<computeroutput>Password:</computeroutput></screen>
+            <para>
+                If everything went well you now have a blank database from
+                where the contest can be run. If you want to reset the database
+                in future (after setting up the server configuration file), you
+                can just chdir into <filename class="directory">db</filename>
+                and run
+            </para>
+            <screen><userinput>./reload_sql.sh <optional><replaceable>server.conf</replaceable></optional></userinput></screen>
         </section>
-    </chapter>
-    <chapter id="administrator.multiserver">
+        <section id="administrator.server.config">
+            <title>Server configuration file</title>
+            <para>
+                You should use the default configuration file
+                (<filename>conf/server.conf.sample</filename>) as a starting
+                point.  You should change the following settings:
+            </para>
+            <procedure>
+                <step>
+                    <para>
+                        Change the settings in the
+                        <literal>[mysql]</literal> section to match the
+                        details of your MySQL server and the account created
+                        in <xref linkend="administrator.server.database"/>.
+                    </para>
+                </step>
+                <step>
+                    <para>
+                        In the <literal>[clientlistener]</literal> section,
+                        change the <parameter>x509</parameter> and
+                        <parameter>private</parameter> options to the server
+                        certificate and private key (see <xref
+                            linkend="administrator.certificates"/>).
+                    </para>
+                </step>
+                <step>
+                    <para>
+                        In the <literal>[initialisation]</literal> section,
+                        make sure the <parameter>type</parameter> is
+                        <literal>master</literal>, and that the
+                        <parameter>name</parameter> matches the parameter
+                        passed to <command>addserver.sh</command>.
+                    </para>
+                </step>
+                <step>
+                    <para>
+                        Set <parameter>admin_password</parameter> to a
+                        password that the contest administrator will use. Note
+                        that this only takes effect the first time the server
+                        is started. After that, the password is stored in the
+                        database, and this setting has no effect. It need not
+                        be the same as the database password.
+                    </para>
+                </step>
+                <step>
+                    <para>
+                        In the <literal>[init_attribs]</literal> section,
+                        set <parameter>ip</parameter> to the IP address of the
+                        server.
+                    </para>
+                </step>
+            </procedure>
+        </section>
+        <section id="administrator.server.keys">
+            <title>Server encryption keys</title>
+            <para>
+                You will need to generate a secret key that is used for
+                server-to-server encryption (if there are multiple servers in
+                a contest, they must all use the same secret key). This can be
+                done as follows:
+            </para>
+            <screen><prompt># </prompt><userinput>dd if=/dev/random of=conf/rijndael.key bs=32 count=1</userinput>
+<prompt># </prompt><userinput>dd if=/dev/random of=conf/rijndael.iv bs=16 count=1</userinput></screen>
+        </section>
+        <section id="administrator.server.running">
+            <title>Running the server</title>
+            <para>
+                The server can be started as follows (if no configuration file
+                is specified on the command line,
+                <filename>/etc/abacus/server.conf</filename> is used):
+            </para>
+            <screen><prompt># </prompt><userinput>bin/abacusd <optional>conf/server.conf</optional></userinput>
+<computeroutput>Sun Nov 28 13:11:50 2010 [INFO]: Loading module dbmysql
+...
+Sun Nov 28 19:13:07 2010 [NOTICE]: Added server '<replaceable>pug</replaceable>'
+Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
+            <para>
+                To shut down the server, press
+                <keycombo>
+                    <keycap>Ctrl</keycap>
+                    <keycap>C</keycap>
+                </keycombo>. This will gracefully save the server state and
+                disconnect all clients. Starting the server again will restore
+                the state.
+            </para>
+        </section>
+    </section>
+    <section id="administrator.multiserver">
         <title>Multi-server contests</title>
         <para>TODO</para>
-    </chapter>
-    <chapter id="administrator.adduser">
+    </section>
+    <section id="administrator.adduser">
         <title>Adding users</title>
         <para>TODO</para>
-    </chapter>
-    <chapter id="administrator.addproblem">
+    </section>
+    <section id="administrator.addproblem">
         <title>Adding problems</title>
         <section id="administrator.addproblem.interactive">
             <title>Interactive problems</title>
@@ -173,8 +348,8 @@
             <title>Problem dependencies</title>
             <para>TODO</para>
         </section>
-    </chapter>
-    <chapter id="administrator.marking">
+    </section>
+    <section id="administrator.marking">
         <title>Configuring the markers</title>
         <para>
             The simplest way to install a marker is to run
@@ -187,26 +362,33 @@
             this group.
         </para>
         <para>
+            The marker will need an Abacus account. You can create one though
+            the GUI (using the <systemitem class="username">admin</systemitem>
+            account, or you can use the command-line
+            <command>adduser</command> tool:
+        </para>
+        <screen><userinput>bin/adduser <replaceable>abacus.conf</replaceable> admin <replaceable>adminpass</replaceable> \
+    <replaceable>marker1</replaceable> "<replaceable>Marker A</replaceable>" <replaceable>markpass</replaceable> marker</userinput></screen>
+        <para>
             There are several configuration file options you will need to
             change:
         </para>
-        <itemizedlist>
-            <listitem>
+        <procedure>
+            <step>
                 <para>
                     In the <literal>[server]</literal> section, configure
                     <parameter>address</parameter> and
                     <parameter>cacert</parameter> as described in <xref
                         linkend="administrator.client"/>. Also set the
                     <parameter>username</parameter> and
-                    <parameter>password</parameter> to a marker account
-                    created as described in <xref
-                        linkend="administrator.adduser"/>. You can use the
+                    <parameter>password</parameter> to the Abacus marker
+                    account. You can use the
                     same account for several marker machines, but
                     troubleshooting will be easier if each marker machine uses
                     its own account.
                 </para>
-            </listitem>
-            <listitem>
+            </step>
+            <step>
                 <para>
                     In the <literal>[compilers]</literal>,
                     <literal>[java]</literal> and <literal>[python]</literal>
@@ -215,8 +397,8 @@
                     <parameter>policy</parameter> must point at the policy
                     file provided with the abacuscm source bundle.
                 </para>
-            </listitem>
-            <listitem>
+            </step>
+            <step>
                 <para>
                     In the <literal>[marker]</literal> section, the
                     <parameter>workdir</parameter> is used as the argument to
@@ -226,8 +408,8 @@
                     Additionally, <parameter>runlimit</parameter> must be set
                     to the path to the <filename>runlimit</filename> binary.
                 </para>
-            </listitem>
-        </itemizedlist>
+            </step>
+        </procedure>
         <para>
             The marker can be run under a normal user account, as long as that
             user is in the <systemitem class="groupname">markerd</systemitem>
@@ -256,12 +438,12 @@
             evaluation may contend for memory bandwidth or CPU execution
             units, making timing less accurate.
         </para>
-    </chapter>
-    <chapter id="administrator.judging">
+    </section>
+    <section id="administrator.judging">
         <title>Judging</title>
         <para>TODO</para>
-    </chapter>
-    <chapter id="administrator.online-standings">
+    </section>
+    <section id="administrator.online-standings">
         <title>Online standings</title>
         <para>
             The <command>standings</command> is used to generate standings that
@@ -337,9 +519,9 @@
                 third-party and contains their own licenses.
             </para>
         </note>
-    </chapter>
-    <chapter id="administrator.cmdline">
+    </section>
+    <section id="administrator.cmdline">
         <title>Other command-line tools</title>
         <para>TODO</para>
-    </chapter>
-</part>
+    </section>
+</chapter>

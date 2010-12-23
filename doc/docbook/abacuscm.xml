@@ -11,6 +11,8 @@
         <copyright>
             <year>2010</year>
             <holder>Bruce Merry</holder>
+            <holder>Jaco Kroon</holder>
+            <holder>Carl Hultquist</holder>
         </copyright>
     </bookinfo>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="contestant.xml"/>
