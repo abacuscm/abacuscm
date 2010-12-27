@@ -228,159 +228,134 @@ pass:<replaceable>password</replaceable>
                 with fixed columns use the same approach for each column of
                 the table.
             </para>
-            <para>
+            <para id="developer.csprotocol.grid">
                 For messages that return general two-dimensional tables,
                 headers <parameter>nrows</parameter> and
                 <parameter>ncols</parameter> contain the dimensions
                 of the table, and the elements are stored in headers called
                 <parameter>row_<replaceable>row</replaceable>_<replaceable>column</replaceable></parameter>,
                 where <replaceable>row</replaceable> and
-                <replaceable>column</replaceable> are indexed from zero. Note
+                <replaceable>column</replaceable> are indexed from zero. Row
+                zero contains the column headers. Note
                 that messages that use this scheme can only contain one table.
             </para>
         </section>
-        <section id="developer.csprotocol.messagetypes">
-            <title>Message types</title>
+        <section id="developer.csprotocol.client">
+            <title>Client commands</title>
             <para>
-                While most message types have a specific format, there is one
-                special type of message: <type>ok</type>.
-                This is used as a successful response to any message from the
-                client, and the content depends on the message type sent by
-                the client.
+                These are commands that the client sends to the server. The
+                server will always reply with either an <type>ok</type>
+                message or an <type>err</type> message. Where the
+                <type>ok</type> message contains information, it is shown
+                in the synopses below; where it contains no information it
+                is omitted.
             </para>
-            <section>
-                <title>Client commands</title>
-                <para>
-                    These are commands that the client sends to the server. The
-                    server will always reply with either an <type>ok</type>
-                    message or an <type>err</type> message. Where the
-                    <type>ok</type> message contains information, it is shown
-                    in the synopses below; where it contains no information it
-                    is omitted.
-                </para>
-                <section>
-                    <title>Authentication</title>
-                    <synopsis>auth
+            <section id="developer.csprotocol.auth">
+                <title>Authentication</title>
+                <synopsis>auth
 user:<replaceable>username</replaceable>
 pass:<replaceable>password</replaceable></synopsis>
-                    <para>
-                        This is typically the first message, used to log in.
-                    </para>
-                </section>
-                <section>
-                    <title>Creating a user</title>
-                    <synopsis>adduser
+                <para>
+                    This is typically the first message, used to log in.
+                </para>
+            </section>
+            <section id="developer.csprotocol.adduser">
+                <title>Create a user</title>
+                <synopsis>adduser
 username:<replaceable>username</replaceable>
 friendlyname:<replaceable>team name</replaceable>
 passwd:<replaceable>password</replaceable>
 type:<replaceable>user type</replaceable> <co id="adduser.type.co"
     linkends="adduser.type"/></synopsis>
-                    <calloutlist>
-                        <callout id="adduser.type" arearefs="adduser.type.co">
-                            <para>
-                                One of
-                                <literal>contestant</literal>,
-                                <literal>observer</literal>,
-                                <literal>judge</literal>,
-                                <literal>admin</literal> or
-                                <literal>marker</literal>.
-                            </para>
-                        </callout>
-                    </calloutlist>
-                </section>
-                <section>
-                    <title>Change own password</title>
-                    <synopsis>passwd
+                <calloutlist>
+                    <callout id="adduser.type" arearefs="adduser.type.co">
+                        <para>
+                            One of
+                            <literal>contestant</literal>,
+                            <literal>observer</literal>,
+                            <literal>judge</literal>,
+                            <literal>admin</literal> or
+                            <literal>marker</literal>.
+                        </para>
+                    </callout>
+                </calloutlist>
+            </section>
+            <section id="developer.csprotocol.getusers">
+                <title>Get list of users</title>
+                <synopsis>getusers
+
+ok
+id0:<replaceable>id</replaceable>
+username:<replaceable>username</replaceable></synopsis>
+            </section>
+            <section id="developer.csprotocol.passwd">
+                <title>Change own password</title>
+                <synopsis>passwd
 newpass:<replaceable>password</replaceable></synopsis>
-                </section>
-                <section>
-                    <title>Change another user's password</title>
-                    <screen>id_passwd
+            </section>
+            <section id="developer.csprotocol.id_passwd">
+                <title>Change another user's password</title>
+                <screen>id_passwd
 user_id:<replaceable>id</replaceable> <co id="id_passwd.user_id.co" linkends="id_passwd.user_id"/>
 newpass:<replaceable>password</replaceable></screen>
-                    <calloutlist>
-                        <callout id="id_passwd.user_id" arearefs="id_passwd.user_id.co">
-                            <para>
-                                The internal numeric ID, rather than a
-                                username.
-                            </para>
-                        </callout>
-                    </calloutlist>
-                </section>
-                <section>
-                    <title>Add start or stop time</title>
-                    <synopsis>startstop
-action:<replaceable>action</replaceable> <co id="startstop.action.co"
-    linkends="startstop.action"/>
-time:<replaceable>time</replaceable>     <co id="startstop.time.co"
-    linkends="startstop.time"/>
-server_id:<replaceable>id</replaceable>  <co id="startstop.server_id.co"
-    linkends="startstop.server_id"/></synopsis>
-                    <calloutlist>
-                        <callout id="startstop.action" arearefs="startstop.action.co">
-                            <para>Either <literal>start</literal> or <literal>stop</literal></para>
-                        </callout>
-                        <callout id="startstop.time" arearefs="startstop.time.co">
-                            <para>A UNIX timestamp in seconds (integer)</para>
-                        </callout>
-                        <callout id="startstop.server_id" arearefs="startstop.server_id.co">
-                            <para>
-                                A numeric ID, <literal>all</literal> for all servers, or
-                                <literal>self</literal> for the current server. If omitted, defaults
-                                to <literal>all</literal>.
-                            </para>
-                        </callout>
-                    </calloutlist>
-                </section>
-                <section>
-                    <title>Get list of permitted languages</title>
-                    <synopsis>getlanguages
+                <calloutlist>
+                    <callout id="id_passwd.user_id" arearefs="id_passwd.user_id.co">
+                        <para>
+                            The internal numeric ID, rather than a
+                            username.
+                        </para>
+                    </callout>
+                </calloutlist>
+            </section>
+            <section id="developer.csprotocol.getlanguages">
+                <title>Get list of permitted languages</title>
+                <synopsis>getlanguages
 
 ok
 language0:<replaceable>language</replaceable>
 language1:<replaceable>language</replaceable>
 &hellip;</synopsis>
-                    <para>
-                        The possible values of
-                        <replaceable>language</replaceable> are
-                        <literal>C</literal>,
-                        <literal>C++</literal>,
-                        <literal>Python</literal> and
-                        <literal>Java</literal> (although more languages may be
-                        available in future).
-                    </para>
-                </section>
-                <section>
-                    <title>Get list of problem types</title>
-                    <synopsis>getprobtypes
+                <para>
+                    The possible values of
+                    <replaceable>language</replaceable> are
+                    <literal>C</literal>,
+                    <literal>C++</literal>,
+                    <literal>Python</literal> and
+                    <literal>Java</literal> (although more languages may be
+                    available in future).
+                </para>
+            </section>
+            <section id="developer.csprotocol.getprobtypes">
+                <title>Get list of problem types</title>
+                <synopsis>getprobtypes
 
 ok
 type0:<replaceable>type</replaceable>
 type1:<replaceable>type</replaceable>
 &hellip;</synopsis>
-                    <para>
-                        The problem types are arbitrary strings that can be
-                        passed back to the server with a
-                        <type>getprobdescipt</type> or
-                        <type>setprobattrs</type> message. They are suitable
-                        for presentation to the user when creating a new
-                        problem.
-                    </para>
-                </section>
-                <section>
-                    <title>Get information about a problem type</title>
-                    <synopsis>getprobdescript
+                <para>
+                    The problem types are arbitrary strings that can be
+                    passed back to the server with a
+                    <type>getprobdescipt</type> or
+                    <type>setprobattrs</type> message. They are suitable
+                    for presentation to the user when creating a new
+                    problem.
+                </para>
+            </section>
+            <section id="developer.csprotocol.getprobdescript">
+                <title>Get information about a problem type</title>
+                <synopsis>getprobdescript
 type:<replaceable>type</replaceable>
 
 ok
 descript:<replaceable>description</replaceable></synopsis>
-                    <para>
-                        TODO: document the mini-language used for descriptions
-                    </para>
-                </section>
-                <section>
-                    <title>Create or update problem</title>
-                    <synopsis>setprobattrs
+                <para>
+                    TODO: document the mini-language used for descriptions
+                </para>
+            </section>
+            <section id="developer.csprotocol.setprobattrs">
+                <title>Create or update problem</title>
+                <synopsis>setprobattrs
 prob_id:<replaceable>id</replaceable>                    <co id="setprobattrs.prob_id.co" linkends="setprobattrs.prob_id"/>
 prob_type:<replaceable>type</replaceable>                <co id="setprobattrs.prob_type.co" linkends="setprobattrs.prob_type"/>
 <optional>prob_dependencies:<replaceable>problem</replaceable>,&hellip;</optional> <co id="setprobattrs.prob_dependencies.co" linkends="setprobattrs.prob_dependencies"/>
@@ -393,82 +368,82 @@ prob_type:<replaceable>type</replaceable>                <co id="setprobattrs.pr
 content-length:<replaceable>content-length</replaceable>
 
 <replaceable>binary data</replaceable></synopsis>
-                    <calloutlist>
-                        <callout id="setprobattrs.prob_id" arearefs="setprobattrs.prob_id.co">
-                            <para>
-                                If zero, creates a new problem; otherwise
-                                replaces an existing problem. Replacing a
-                                problem has serious race conditions and is not
-                                recommended, and has not been tested.
-                            </para>
-                            <para>
-                                TODO: does it replace or selectively update?
-                            </para>
-                        </callout>
-                        <callout id="setprobattrs.prob_type" arearefs="setprobattrs.prob_type.co">
-                            <para>
-                                A type returned from
-                                <type>getprobtypes</type>. It may be omitted
-                                if a problem ID is specified.
-                            </para>
-                        </callout>
-                        <callout id="setprobattrs.prob_dependencies" arearefs="setprobattrs.prob_dependencies.co">
-                            <para>
-                                If specified, contains a comma-separated list
-                                of numeric problem IDs for problems that
-                                contestants before they will be allowed to
-                                submit this problem. These problems must
-                                already exist.
-                            </para>
-                        </callout>
-                        <callout id="setprobattrs.key" arearefs="setprobattrs.key.co">
-                            <para>
-                                There must be one of these for each of the
-                                non-file attributes described by
-                                <type>getprobdescript</type>.
-                            </para>
-                        </callout>
-                        <callout id="setprobattrs.file" arearefs="setprobattrs.file.co">
-                            <para>
-                                There must be one of these for each file
-                                attribute described by
-                                <type>getprobdescript</type>. The
-                                <replaceable>offset</replaceable> and
-                                <replaceable>size</replaceable> indicate a
-                                subrange of the binary content that contains
-                                the contents for this file.
-                            </para>
-                            <para>
-                                When updating an existing problem, the header
-                                value may instead be an ASCII dash
-                                (<literal>-</literal>) to indicate that the
-                                existing file data should be retained.
-                            </para>
-                            <para>
-                                TODO: what is the
-                                <replaceable>basename</replaceable> used for?
-                            </para>
-                        </callout>
-                    </calloutlist>
-                </section>
-                <section>
-                    <title>Get problem attributes</title>
-                    <synopsis>getprobattrs
+                <calloutlist>
+                    <callout id="setprobattrs.prob_id" arearefs="setprobattrs.prob_id.co">
+                        <para>
+                            If zero, creates a new problem; otherwise
+                            replaces an existing problem. Replacing a
+                            problem has serious race conditions and is not
+                            recommended, and has not been tested.
+                        </para>
+                        <para>
+                            TODO: does it replace or selectively update?
+                        </para>
+                    </callout>
+                    <callout id="setprobattrs.prob_type" arearefs="setprobattrs.prob_type.co">
+                        <para>
+                            A type returned from
+                            <type>getprobtypes</type>. It may be omitted
+                            if a problem ID is specified.
+                        </para>
+                    </callout>
+                    <callout id="setprobattrs.prob_dependencies" arearefs="setprobattrs.prob_dependencies.co">
+                        <para>
+                            If specified, contains a comma-separated list
+                            of numeric problem IDs for problems that
+                            contestants before they will be allowed to
+                            submit this problem. These problems must
+                            already exist.
+                        </para>
+                    </callout>
+                    <callout id="setprobattrs.key" arearefs="setprobattrs.key.co">
+                        <para>
+                            There must be one of these for each of the
+                            non-file attributes described by
+                            <type>getprobdescript</type>.
+                        </para>
+                    </callout>
+                    <callout id="setprobattrs.file" arearefs="setprobattrs.file.co">
+                        <para>
+                            There must be one of these for each file
+                            attribute described by
+                            <type>getprobdescript</type>. The
+                            <replaceable>offset</replaceable> and
+                            <replaceable>size</replaceable> indicate a
+                            subrange of the binary content that contains
+                            the contents for this file.
+                        </para>
+                        <para>
+                            When updating an existing problem, the header
+                            value may instead be an ASCII dash
+                            (<literal>-</literal>) to indicate that the
+                            existing file data should be retained.
+                        </para>
+                        <para>
+                            TODO: what is the
+                            <replaceable>basename</replaceable> used for?
+                        </para>
+                    </callout>
+                </calloutlist>
+            </section>
+            <section id="developer.csprotocol.getprobattrs">
+                <title>Get problem attributes</title>
+                <synopsis>getprobattrs
 prob_id:<replaceable>id</replaceable>
 
 ok
 <replaceable>key</replaceable>:<replaceable>value</replaceable>
 <replaceable>key</replaceable>:<replaceable>value</replaceable>
 &hellip;</synopsis>
-                    <para>
-                        This query returns only the key/value pairs that
-                        contain scalars. It does not return the dependencies
-                        or the files.
-                    </para>
-                </section>
-                <section>
-                    <title>Retrieve problem file</title>
-                    <synopsis>getprobfile
+                <para>
+                    This query returns only the key/value pairs that
+                    contain scalars. It does not return the dependencies
+                    or the files.
+                </para>
+            </section>
+            <section id="developer.csprotocol.getprobfile">
+                <title>Retrieve problem file</title>
+                <synopsis>getprobfile
 prob_id:<replaceable>id</replaceable>
 file:<replaceable>filename</replaceable> <co id="getprobfile.file.co" linkends="getprobfile.file"/>
 
@@ -476,18 +451,18 @@ ok
 content-length:<replaceable>content-length</replaceable>
 
 <replaceable>binary data</replaceable></synopsis>
-                    <calloutlist>
-                        <callout id="getprobfile.file" arearefs="getprobfile.file.co">
-                            <para>
-                                One of the file keys returned by
-                                <type>getprobdescript</type>.
-                            </para>
-                        </callout>
-                    </calloutlist>
-                </section>
-                <section>
-                    <title>Get list of problems</title>
-                    <synopsis>getproblems
+                <calloutlist>
+                    <callout id="getprobfile.file" arearefs="getprobfile.file.co">
+                        <para>
+                            One of the file keys returned by
+                            <type>getprobdescript</type>.
+                        </para>
+                    </callout>
+                </calloutlist>
+            </section>
+            <section id="developer.csprotocol.getproblems">
+                <title>Get list of problems</title>
+                <synopsis>getproblems
 
 ok
 id0:<replaceable>id</replaceable>     <co id="getproblems.id.co" linkends="getproblems.id"/>
@@ -497,108 +472,76 @@ id1:<replaceable>id</replaceable>
 code1:<replaceable>code</replaceable>
 name1:<replaceable>name</replaceable>
 &hellip;</synopsis>
-                    <calloutlist>
-                        <callout id="getproblems.id" arearefs="getproblems.id.co">
-                            <para>
-                                A numeric ID that is assigned by the server,
-                                and used in other problem-related messages.
-                            </para>
-                        </callout>
-                        <callout id="getproblems.code" arearefs="getproblems.code.co">
-                            <para>
-                                A short name for the problem (generally one
-                                suitable for forming filenames). It is also
-                                returned as the <parameter>shortname</parameter>
-                                from <type>getprobattrs</type> queries.
-                            </para>
-                        </callout>
-                        <callout id="getproblems.name" arearefs="getproblems.name.co">
-                            <para>
-                                A longer descriptive name for the problem. It
-                                is also returned as the
-                                <parameter>longname</parameter> from
-                                <type>getprobattrs</type> queries.
-                            </para>
-                        </callout>
-                    </calloutlist>
-                    <para>
-                        If <type>getsubmissibleproblems</type> is used instead
-                        of <type>getproblems</type>, only those problems for
-                        which the user has successfully solved the dependent
-                        problems will be returned (unless the user has the
-                        <symbol>PERMISSION_SEE_ALL_PROBLEMS</symbol>
-                        permission). In future, these may be merged into a
-                        single query.
-                    </para>
-                </section>
-                <section>
-                    <title>Submit solution</title>
-                    <synopsis>submit
+                <calloutlist>
+                    <callout id="getproblems.id" arearefs="getproblems.id.co">
+                        <para>
+                            A numeric ID that is assigned by the server,
+                            and used in other problem-related messages.
+                        </para>
+                    </callout>
+                    <callout id="getproblems.code" arearefs="getproblems.code.co">
+                        <para>
+                            A short name for the problem (generally one
+                            suitable for forming filenames). It is also
+                            returned as the <parameter>shortname</parameter>
+                            from <type>getprobattrs</type> queries.
+                        </para>
+                    </callout>
+                    <callout id="getproblems.name" arearefs="getproblems.name.co">
+                        <para>
+                            A longer descriptive name for the problem. It
+                            is also returned as the
+                            <parameter>longname</parameter> from
+                            <type>getprobattrs</type> queries.
+                        </para>
+                    </callout>
+                </calloutlist>
+                <para>
+                    If <type>getsubmissibleproblems</type> is used instead
+                    of <type>getproblems</type>, only those problems for
+                    which the user has successfully solved the dependent
+                    problems will be returned (unless the user has the
+                    <symbol>PERMISSION_SEE_ALL_PROBLEMS</symbol>
+                    permission). In future, these may be merged into a
+                    single query.
+                </para>
+            </section>
+            <section id="developer.csprotocol.submit">
+                <title>Submit solution</title>
+                <synopsis>submit
 prob_id:<replaceable>id</replaceable>    <co id="submit.prob_id.co" linkends="submit.prob_id"/>
 lang:<replaceable>language</replaceable> <co id="submit.lang.co" linkends="submit.lang"/>
 content-length:<replaceable>content-length</replaceable>
 
 <replaceable>binary data</replaceable></synopsis>
-                    <calloutlist>
-                        <callout id="submit.prob_id" arearefs="submit.prob_id.co">
-                            <para>
-                                One of the problem IDs returned by
-                                <type>getsubmissibleproblems</type>.
-                            </para>
-                        </callout>
-                        <callout id="submit.lang" arearefs="submit.lang.co">
-                            <para>
-                                One of the languages returned by
-                                <type>getlanguages</type>.
-                            </para>
-                        </callout>
-                    </calloutlist>
-                </section>
-                <section>
-                    <title>Get submitted source file</title>
-                    <synopsis>getsubmissionsource
+                <calloutlist>
+                    <callout id="submit.prob_id" arearefs="submit.prob_id.co">
+                        <para>
+                            One of the problem IDs returned by
+                            <type>getsubmissibleproblems</type>.
+                        </para>
+                    </callout>
+                    <callout id="submit.lang" arearefs="submit.lang.co">
+                        <para>
+                            One of the languages returned by
+                            <type>getlanguages</type>.
+                        </para>
+                    </callout>
+                </calloutlist>
+            </section>
+            <section id="developer.csprotocol.getsubmissionsource">
+                <title>Get submitted source file</title>
+                <synopsis>getsubmissionsource
 submission_id:<replaceable>submission_id</replaceable>
 
 ok
 content-length:<replaceable>content-length</replaceable>
 
 <replaceable>binary data</replaceable></synopsis>
-                </section>
-                <section>
-                    <title>Clarification request</title>
-                    <synopsis>clarificationrequest
-prob_id:<replaceable>id</replaceable>        <co id="clarificationrequest.id.co" linkends="clarificationrequest.id"/>
-question:<replaceable>question</replaceable> <co id="clarificationrequest.question.co" linkends="clarificationrequest.question"/></synopsis>
-                    <calloutlist>
-                        <callout id="clarificationrequest.id" arearefs="clarificationrequest.id.co">
-                            <para>
-                                A numeric problem ID. May be zero or empty to
-                                indicate a general request.
-                            </para>
-                        </callout>
-                        <callout id="clarificationrequest.question" arearefs="clarificationrequest.question.co">
-                            <para>
-                                Newlines in the clarification request are
-                                replaced by ASCII character 1, to distinguish
-                                them from the newline terminating the header.
-                            </para>
-                        </callout>
-                    </calloutlist>
-                </section>
-                <section>
-                    <title>Clarification reply</title>
-                    <synopsis>clarification
-clarification_request_id:<replaceable>id</replaceable>
-answer:<replaceable>answer</replaceable>
-public:0|1</synopsis>
-                    <para>
-                        As with clarification requests, newlines are replaced
-                        with ASCII character 1.
-                    </para>
-                </section>
-                <section>
-                    <title>Get submissions</title>
-                    <synopsis>getsubmissions
+            </section>
+            <section id="developer.csprotocol.getsubmissions">
+                <title>Get submissions</title>
+                <synopsis>getsubmissions
 
 ok
 submission_id0:<replaceable>id</replaceable>
@@ -609,91 +552,407 @@ contesttime0:<replaceable>time</replaceable> <co id="getsubmissions.contesttime.
 result0:<replaceable>result</replaceable>    <co id="getsubmissions.result.co" linkends="getsubmissions.result"/>
 comment0:<replaceable>comment</replaceable>  <co id="getsubmissions.comment.co" linkends="getsubmissions.comment"/>
 &hellip;</synopsis>
-                    <calloutlist>
-                        <callout id="getsubmissions.time" arearefs="getsubmissions.time.co">
+                <calloutlist>
+                    <callout id="getsubmissions.time" arearefs="getsubmissions.time.co">
+                        <para>
+                            A UNIX timestamp in seconds (integer).
+                        </para>
+                    </callout>
+                    <callout id="getsubmissions.contesttime" arearefs="getsubmissions.contesttime.co">
+                        <para>
+                            Seconds of contest time on the server to which
+                            the server was connected (integer).
+                        </para>
+                    </callout>
+                    <callout id="getsubmissions.result" arearefs="getsubmissions.result.co">
+                        <para>
+                            Either an integer with one of the values from
+                            the <type>RunResult</type> enumeration, or the
+                            string <literal>PENDING</literal> if no
+                            evaluation has been done.
+                        </para>
+                    </callout>
+                    <callout id="getsubmissions.comment" arearefs="getsubmissions.comment.co">
+                        <para>
+                            A human-readable status corresponding to
+                            <parameter>result</parameter>, and possibly
+                            containing extra information.
+                        </para>
+                    </callout>
+                </calloutlist>
+                <para>
+                    Using <literal>getsubmissions_for_user</literal> in
+                    place of <literal>getsubmissions</literal> and adding
+                    a <parameter>user_id</parameter> header will give the
+                    submissions for a single user.
+                </para>
+                <para>
+                    TODO: are other fields generated?
+                    <filename>serverconnection.C</filename> would suggest
+                    so, but I can't see any code to generate them.
+                </para>
+            </section>
+            <section id="developer.csprotocol.standings">
+                <title>Get standings</title>
+                <synopsis>standings
+
+ok
+<replaceable>grid</replaceable></synopsis>
+                <para>
+                    The standings are formatting using the <link
+                        linkend="developer.csprotocol.grid">grid</link>
+                    layout. It has the fixed columns listed below, followed by
+                    a column per problem where the column header is the short
+                    name of the problem.
+                </para>
+                <variablelist>
+                    <varlistentry>
+                        <term><literal>ID</literal></term>
+                        <listitem>
                             <para>
-                                A UNIX timestamp in seconds (integer).
+                                The numeric user ID.
                             </para>
-                        </callout>
-                        <callout id="getsubmissions.contesttime" arearefs="getsubmissions.contesttime.co">
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term><literal>Team</literal></term>
+                        <listitem>
                             <para>
-                                Seconds of contest time on the server to which
-                                the server was connected (integer).
+                                The login username of the user.
                             </para>
-                        </callout>
-                        <callout id="getsubmissions.result" arearefs="getsubmissions.result.co">
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term><literal>Name</literal></term>
+                        <listitem>
                             <para>
-                                Either an integer with one of the values from
-                                the <type>RunResult</type> enumeration, or the
-                                string <literal>PENDING</literal> if no
-                                evaluation has been done.
+                                The full name of the user.
                             </para>
-                        </callout>
-                        <callout id="getsubmissions.comment" arearefs="getsubmissions.comment.co">
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term><literal>Contestant</literal></term>
+                        <listitem>
                             <para>
-                                A human-readable status corresponding to
-                                <parameter>result</parameter>, and possibly
-                                containing extra information.
+                                Contains <literal>1</literal> if the user is a
+                                contestant, and <literal>0</literal> if the
+                                user is an unofficial entry.
                             </para>
-                        </callout>
-                    </calloutlist>
-                    <para>
-                        Using <literal>getsubmissions_for_user</literal> in
-                        place of <literal>getsubmissions</literal> and adding
-                        a <parameter>user_id</parameter> header will give the
-                        submissions for a single user.
-                    </para>
-                    <para>
-                        TODO: are other fields generated?
-                        <filename>serverconnection.C</filename> would suggest
-                        so, but I can't see any code to generate them.
-                    </para>
-                </section>
-                <section>
-                    <title>Get list of users</title>
-                    <synopsis>getusers
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term><literal>Solved</literal></term>
+                        <listitem>
+                            <para>
+                                The number of problems the user has solved.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term><literal>Time</literal></term>
+                        <listitem>
+                            <para>
+                                The number of seconds of time penality, as a
+                                raw integer.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                </variablelist>
+                <para>
+                    The value in each per-problem cell is an integer. If it is
+                    positive, the problem has been solved with that number
+                    of attempts (including the successful attempt).
+                    Otherwise, it is the negative of the number of
+                    attempts (all unsuccessful).
+                </para>
+            </section>
+            <section id="developer.csprotocol.clarificationrequest">
+                <title>Clarification request</title>
+                <synopsis>clarificationrequest
+prob_id:<replaceable>id</replaceable>        <co id="clarificationrequest.id.co" linkends="clarificationrequest.id"/>
+question:<replaceable>question</replaceable> <co id="clarificationrequest.question.co" linkends="clarificationrequest.question"/></synopsis>
+                <calloutlist>
+                    <callout id="clarificationrequest.id" arearefs="clarificationrequest.id.co">
+                        <para>
+                            A numeric problem ID. May be zero or empty to
+                            indicate a general request.
+                        </para>
+                    </callout>
+                    <callout id="clarificationrequest.question" arearefs="clarificationrequest.question.co">
+                        <para>
+                            Newlines in the clarification request are
+                            replaced by ASCII character 1, to distinguish
+                            them from the newline terminating the header.
+                        </para>
+                    </callout>
+                </calloutlist>
+            </section>
+            <section id="developer.csprotocol.clarification">
+                <title>Clarification reply</title>
+                <synopsis>clarification
+clarification_request_id:<replaceable>id</replaceable>
+answer:<replaceable>answer</replaceable>
+public:0|1</synopsis>
+                <para>
+                    As with clarification requests, newlines are replaced
+                    with ASCII character 1.
+                </para>
+            </section>
+            <section id="developer.csprotocol.getclarificationrequests">
+                <title>Get clarification requests</title>
+                <para>
+                    This message will retrieve all clarification requests that
+                    the user has permission to see. Note that when a
+                    clarification is public, the user will be able to see the
+                    question via the <link
+                        linkend="developer.csprotocol.getclarifications">getclarifications</link>
+                    message, yet might not have permission to see the original
+                    clarification request with this message. This is simply an
+                    artefact of the server design rather than a security
+                    requirement.
+                </para>
+                <synopsis>getclarificationrequests
 
 ok
 id0:<replaceable>id</replaceable>
-username:<replaceable>username</replaceable></synopsis>
-                </section>
-                <section>
-                    <title>Get list of servers</title>
-                    <synopsis>getserverlist
+user_id0:<replaceable>user_id</replaceable>
+problem0:<replaceable>shortname</replaceable>
+time0:<replaceable>time</replaceable>
+question0:<replaceable>text</replaceable>
+&hellip;</synopsis>
+                <para>
+                    Refer to <link
+                        linkend="developer.csprotocol.getclarifications">getclarifications</link>
+                    for more information on the meanings of the fields.
+                </para>
+            </section>
+            <section id="developer.csprotocol.getclarifications">
+                <title>Get clarifications</title>
+                <para>
+                    This message will retrieve all clarifications that user has
+                    permission to see.
+                </para>
+                <synopsis>getclarifications
+
+ok
+id0:<replaceable>id</replaceable>           <co id="getclarifications.id.co" linkends="getclarifications.id"/>
+req_id0:<replaceable>id</replaceable>       <co id="getclarifications.req_id.co" linkends="getclarifications.req_id"/>
+time0:<replaceable>time</replaceable>       <co id="getclarifications.time.co" linkends="getclarifications.time"/>
+problem0:<replaceable>problem</replaceable> <co id="getclarifications.problem.co" linkends="getclarifications.problem"/>
+question0:<replaceable>text</replaceable>   <co id="getclarifications.question.co" linkends="getclarifications.question"/>
+answer0:<replaceable>answer</replaceable>   <co id="getclarifications.answer.co" linkends="getclarifications.answer"/>
+&hellip;</synopsis>
+                <calloutlist>
+                    <callout id="getclarifications.id" arearefs="getclarifications.id.co">
+                        <para>
+                            Numeric ID associated with the clarification.
+                        </para>
+                    </callout>
+                    <callout id="getclarifications.req_id" arearefs="getclarifications.req_id.co">
+                        <para>
+                            Numeric ID associated with the clarification
+                            request that this clarification answers.
+                        </para>
+                    </callout>
+                    <callout id="getclarifications.time" arearefs="getclarifications.time.co">
+                        <para>
+                            The time at which the clarification was made, as a
+                            UNIX timestamp in seconds.
+                        </para>
+                    </callout>
+                    <callout id="getclarifications.problem" arearefs="getclarifications.problem.co">
+                        <para>
+                            The short name of the problem to which this request
+                            relates, or the string <literal>General</literal>
+                            to indicate a general request.
+                        </para>
+                    </callout>
+                    <callout id="getclarifications.question" arearefs="getclarifications.question.co">
+                        <para>
+                            The text of the clarification request, with
+                            newlines replaced by ASCII character 1.
+                        </para>
+                    </callout>
+                    <callout id="getclarifications.answer" arearefs="getclarifications.answer.co">
+                        <para>
+                            The text of the clarification reply, with newlines
+                            replaced by ASCII character 1.
+                        </para>
+                    </callout>
+                </calloutlist>
+            </section>
+            <section id="developer.csprotocol.startstop">
+                <title>Add start or stop time</title>
+                <synopsis>startstop
+action:<replaceable>action</replaceable> <co id="startstop.action.co"
+    linkends="startstop.action"/>
+time:<replaceable>time</replaceable>     <co id="startstop.time.co"
+    linkends="startstop.time"/>
+server_id:<replaceable>id</replaceable>  <co id="startstop.server_id.co"
+    linkends="startstop.server_id"/></synopsis>
+                <calloutlist>
+                    <callout id="startstop.action" arearefs="startstop.action.co">
+                        <para>Either <literal>start</literal> or <literal>stop</literal></para>
+                    </callout>
+                    <callout id="startstop.time" arearefs="startstop.time.co">
+                        <para>A UNIX timestamp in seconds (integer)</para>
+                    </callout>
+                    <callout id="startstop.server_id" arearefs="startstop.server_id.co">
+                        <para>
+                            A numeric ID, <literal>all</literal> for all servers, or
+                            <literal>self</literal> for the current server. If omitted, defaults
+                            to <literal>all</literal>.
+                        </para>
+                    </callout>
+                </calloutlist>
+            </section>
+            <section id="developer.csprotocol.contesttime">
+                <title>Get contest timing information</title>
+                <synopsis>contesttime
+
+ok
+running:yes|no
+time:<replaceable>seconds since start</replaceable>
+remain:<replaceable>seconds remaining</replaceable></synopsis>
+            </section>
+            <section id="developer.csprotocol.subscribetime">
+                <title>Subscribe to contest time events</title>
+                <synopsis>subscribetime</synopsis>
+                <para>
+                    This message is equivalent to <link
+                        linkend="developer.csprotocol.eventmap">subscribing</link>
+                    to the <literal>startstop</literal> and
+                    <literal>updateclock</literal> events, and may be removed
+                    in future.
+                </para>
+                <para>
+                    TODO: can we just remove this now?
+                </para>
+            </section>
+            <section id="developer.csprotocol.eventmap">
+                <title>Subscribe or unsubscribe from events</title>
+                <synopsis>eventmap
+action:subscribe|unsubscribe
+event:<replaceable>event</replaceable></synopsis>
+                <para>
+                    Certain events are only sent to clients that have opted in
+                    to receive them, using this command. It is legal to
+                    subscribe to an event to which one is already subscribed,
+                    or unsubscribe from an event to which one is not
+                    subscribed. It is an error to attempt to subscribe or
+                    unsubscribe from an event that doesn't exist, or for which
+                    you do not have permission.
+                </para>
+                <para>
+                    The currently defined events are
+                </para>
+                <itemizedlist>
+                    <listitem><para><type>balloon</type></para></listitem>
+                    <listitem><para><type>startstop</type></para></listitem>
+                    <listitem><para><type>updateclarifications</type></para></listitem>
+                    <listitem><para><type>updateclarificationrequests</type></para></listitem>
+                    <listitem><para><type>updateclock</type></para></listitem>
+                    <listitem><para><type>updatestandings</type></para></listitem>
+                    <listitem><para><type>updatesubmissions</type></para></listitem>
+                </itemizedlist>
+            </section>
+            <section id="developer.csprotocol.fetchfile.count">
+                <title>Count files associated with submission</title>
+                <synopsis>fetchfile
+request:count
+submission_id:<replaceable>id</replaceable></synopsis>
+            </section>
+            <section id="developer.csprotocol.fetchfile.data">
+                <title>Fetch submission-related file</title>
+                <synopsis>fetchfile
+request:data
+submission_id:<replaceable>id</replaceable>
+index:<replaceable>index</replaceable></synopsis>
+                <para>
+                    When retrieving the files associated with a submission,
+                    the typical approach is to first ask how many there are,
+                    then retrieve them one at a time (the
+                    <parameter>index</parameter> ranges from zero to one less
+                    than the number of files). Note that this has a potential
+                    race condition if new files are added while this is
+                    happening.
+                </para>
+                <para>
+                    Both judges and normal users can use this command, but for
+                    contestants it will only return information they are
+                    permitted to see (in particular, compilation failures).
+                </para>
+            </section>
+            <section id="developer.csprotocol.subscribemark">
+                <title>Register as a marker</title>
+                <synopsis>subscribemark</synopsis>
+                <para>
+                    The marker daemon will issue this command after logging in
+                    to register as a marker. Once it has done this, the server
+                    will send it <type>mark</type> notifications when it has
+                    something that needs marking.
+                </para>
+            </section>
+            <section id="developer.csprotocol.mark">
+                <title>Submit a mark for a problem</title>
+                <synopsis>mark
+submission_id:<replaceable>id</replaceable>
+result:<replaceable>result</replaceable>                 <co id="mark.result.co" linkends="mark.result"/>
+comment:<replaceable>comment</replaceable>               <coref linkend="mark.result.co"/>
+file0:<replaceable>offset</replaceable> <replaceable>size</replaceable> <replaceable>description</replaceable> <co id="mark.file.co" linkends="mark.file"/>
+&hellip;
+content-length:<replaceable>content-length</replaceable>
+
+<replaceable>binary data</replaceable></synopsis>
+                <calloutlist>
+                    <callout id="mark.result" arearefs="mark.result.co">
+                        <para>
+                            Refer to <link
+                                linkend="developer.csprotocol.getsubmissions">getsubmissions</link>
+                            for a description of the
+                            <parameter>result</parameter> and
+                            <parameter>replaceable</parameter> fields.
+                        </para>
+                    </callout>
+                    <callout id="mark.file" arearefs="mark.file.co">
+                        <para>
+                            The files are encoded in the same way as for <link
+                                linkend="developer.csprotocol.setprobattrs">setprobattrs</link>,
+                            except that the headers are simply an enumeration,
+                            and that the last sub-field is a human-readable
+                            description rather than a filename.
+                        </para>
+                    </callout>
+                </calloutlist>
+                <para>
+                    This command is used both by the GUI for judges to give
+                    their verdicts, and for the marker to do its automated
+                    marking. When a marker determines that the solution is
+                    wrong, it will give a <parameter>result</parameter> of
+                    <symbol>WRONG</symbol>, which the server will override to
+                    <symbol>JUDGE</symbol>; however, this is subject to
+                    change.
+                </para>
+            </section>
+            <section id="developer.csprotocol.getserverlist">
+                <title>Get list of servers</title>
+                <synopsis>getserverlist
 
 ok
 server0:<replaceable>domain name</replaceable>
 server1:<replaceable>domain name</replaceable>
 &hellip;</synopsis>
-                </section>
-                <section>
-                    <title>More</title>
-                    <para>
-                        TODO: finish this list. Still missing are (at least):
-                    </para>
-                    <itemizedlist>
-                        <listitem><para><type>getclarifications</type></para></listitem>
-                        <listitem><para><type>getclarificationrequests</type></para></listitem>
-                        <listitem><para><type>standings</type></para></listitem>
-                        <listitem><para><type>eventmap</type></para></listitem>
-                        <listitem><para><type>subscribemark</type></para></listitem>
-                        <listitem><para><type>mark</type></para></listitem>
-                        <listitem><para><type>fetchfile</type></para></listitem>
-                        <listitem><para><type>contesttime</type></para></listitem>
-                        <listitem><para><type>subscribetime</type></para></listitem>
-                    </itemizedlist>
-                </section>
             </section>
-            <section>
-                <title>Server notifications</title>
-                <para>
-                    These messages are sent asynchronously to the client by
-                    the server. The client does not have to acknowledge them.
-                </para>
-                <para>
-                    TODO
-                </para>
-            </section>
+        </section>
+        <section>
+            <title>Server notifications</title>
+            <para>
+                These messages are sent asynchronously to the client by
+                the server. The client does not have to acknowledge them.
+            </para>
+            <para>
+                TODO
+            </para>
         </section>
     </section>
 
@@ -726,7 +985,7 @@ server1:<replaceable>domain name</replaceable>
                 <firstterm>actions</firstterm> that clients can perform. Each
                 action has a name, which is the type of the message that the
                 client sends to the server to initiate the action (see <xref
-                    linkend="developer.csprotocol.messagetypes"/>).
+                    linkend="developer.csprotocol"/>).
                 Each action is represented in the server by a singleton
                 instance of a subclass of <classname>ClientAction</classname>,
                 which is registered using
