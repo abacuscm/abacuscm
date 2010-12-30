@@ -149,6 +149,6 @@ LIBS_make_submission = ssl crypto pthread
 endif
 
 ifeq ($(builddocs),yes)
-TARGET_DOCS=usermanual qna
+TARGET_DOCS=usermanual
 endif
 include $(TOPDIR)/Makefile.inc

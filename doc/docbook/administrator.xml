@@ -524,4 +524,71 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
         <title>Other command-line tools</title>
         <para>TODO</para>
     </section>
+    <section id="administrator.troubleshooting">
+        <title>Trouble-shooting</title>
+        <section id="administrator.troubleshooting.ack_id">
+            <title><computeroutput>ack_id == 0 cannot possibly be correct</computeroutput></title>
+            <para>
+                The complete error message would read:
+                <computeroutput>
+                    ack_id == 0 cannot possibly be correct.  This could
+                    potentially happen if/when a server did not initialise
+                    properly upon first creation (the first PeerMessage a
+                    server receives must be its own initialisation message.
+                    Please see the administrator's manual for more
+                    information.
+                </computeroutput>
+            </para>
+            <para>
+                Abacus sends the message to create a particular server to that
+                particular server directly after creating that server.  It does
+                this from all existing servers to increase the chances of this
+                message getting through as it is of critical importance that
+                this is the first message to get there.
+            </para>
+            <para>
+                Unfortunately if this should fail it will mean that there is no
+                way to ensure that it is that particular message that gets
+                re-sent (well, not that I'm aware off &mdash; other than to
+                perhaps connect a priority to the NoAcks).  Consequently the
+                servers that are up will tend to send some other message upon
+                reconnect.  There are two possibly ways to "fix" this.
+            </para>
+            <itemizedlist>
+                <listitem>
+                    <para>Delete the records from <database
+                            class="table">PeerMessageNoAck</database> that
+                        refers to PeerMessage records earlier than that of the
+                        <type>addserver</type> message.  You need to know
+                        exactly what the message id is for this to work.  This
+                        can be done on a live running server.  If you only had
+                        one server up and running, you need to put these
+                        records back when you are done.  This can be done with
+                        the SQL statement:
+                    </para>
+                    <screen><userinput>INSERT INTO PeerMessageNoAck SELECT \
+    server_id, message_id, <replaceable>server</replaceable>, 0 FROM PeerMessage;</userinput></screen>
+                    <para>
+                        where <replaceable>server</replaceable> is the numeric
+                        id of the server to be added.  This will cause too many
+                        messages to be resent, but your server will be up.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        You can put a record into the <database
+                            class="table">Server</database> table on the
+                        affected server, i.e., the one that does not want to
+                        initialise.  This record needs to contain the correct
+                        name and ID of the server.  This part can be done on a
+                        running server.  The processing of the
+                        <type>addserver</type> message will fail.  This is
+                        non-critical (in this case).  Shut down the server,
+                        delete the added record and restart the abacus daemon.
+                        All should now be well.
+                    </para>
+                </listitem>
+            </itemizedlist>
+        </section>
+    </section>
 </chapter>
