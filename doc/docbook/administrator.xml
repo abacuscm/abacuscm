@@ -522,7 +522,88 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
     </section>
     <section id="administrator.cmdline">
         <title>Other command-line tools</title>
-        <para>TODO</para>
+        <section id="administrator.cmdline.batch">
+            <title>Batch</title>
+            <para>
+                The tool <filename>bin/batch</filename> is intended primarily
+                for testing abacus itself, although it can be used to automate
+                tasks that would normally be done through the GUI, and for
+                which there is currently no command-line tool. It is invoked
+                as
+            </para>
+            <cmdsynopsis>
+                <command>bin/batch</command>
+                <arg choice="plain"><replaceable>configfile</replaceable></arg>
+                <arg><replaceable>batchfile</replaceable></arg>
+            </cmdsynopsis>
+            <para>
+                The <replaceable>configfile</replaceable> is a client config
+                file, as would be used by the abacus client.
+                The <replaceable>batchfile</replaceable> contains messages to
+                send to the server. If omitted, standard input is used
+                instead.
+            </para>
+            <para>
+                Messages are specified in the form
+            </para>
+            <synopsis><replaceable>type</replaceable>
+<replaceable>key</replaceable>:<replaceable>value</replaceable>
+<replaceable>key</replaceable>:<replaceable>value</replaceable>
+&hellip;</synopsis>
+            <para>
+                There may optionally be a blank line between messages, but
+                <emphasis>NOT</emphasis> within a message. A blank line also
+                flushes the current message, which may be convenient if using
+                it interactively. Lines beginning with a <literal>#</literal>
+                are ignored.
+            </para>
+            <para>
+                For details of the valid types and keys, refer to <xref
+                    linkend="developer.csprotocol.client"/>. As an example, the
+                first message will generally be
+            </para>
+            <screen><userinput>auth
+user:<replaceable>username</replaceable>
+pass:<replaceable>password</replaceable></userinput></screen>
+            <para>
+                in order to log in.
+            </para>
+            <para>
+                It is also possible to set content to send with messages. This
+                can be done in two ways:
+            </para>
+            <orderedlist>
+                <listitem>
+                    <para>
+                        Add a line of the form
+                        <userinput>&lt;<replaceable>filename</replaceable></userinput>.
+                        This file will be sucked in and appended to the content
+                        block of the message. This is suitable for use with the
+                        <type>submit</type> message type.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Add a line of the form
+                        <userinput><replaceable>key</replaceable>&lt;<replaceable>filename</replaceable></userinput>.
+                        The file will again be sucked in and appended to the
+                        content block, but a header line for
+                        <parameter>key</parameter> will also be generated to
+                        indicate the location within the content block and the
+                        base filename. This is suitable for use with the
+                        <type>setprobattrs</type> message type.
+                    </para>
+                </listitem>
+            </orderedlist>
+            <para>
+                Note that if the file could not be read, it will be skipped,
+                but the message will still be sent.
+            </para>
+        </section>
+        <section>
+            <title>Other</title>
+            <para>TODO: finish</para>
+        </section>
     </section>
     <section id="administrator.troubleshooting">
         <title>Trouble-shooting</title>
