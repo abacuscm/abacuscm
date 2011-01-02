@@ -840,6 +840,7 @@ void MainWindow::switchPermissions(const std::vector<std::string> &permissions) 
 			new_perms[perm] = true;
 		}
 	}
+	_active_permissions = new_perms;
 
 	for (std::size_t i = 0; i < PERMISSION_COUNT; i++) {
 		log(LOG_DEBUG, "Setting permission for '%s' to %s",
