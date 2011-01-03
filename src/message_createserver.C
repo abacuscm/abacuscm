@@ -91,7 +91,7 @@ void Message_CreateServer::addAttribute(const string& name, const string& value)
 	_attribs[name] = value;
 }
 
-bool Message_CreateServer::process() const {
+bool Message_CreateServer::int_process() const {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return false;

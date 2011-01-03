@@ -43,11 +43,11 @@ protected:
 	virtual uint32_t storageRequired();
 	virtual uint32_t store(uint8_t *buffer, uint32_t size);
 	virtual uint32_t load(const uint8_t *buffer, uint32_t size);
+
+	virtual bool int_process() const;
 public:
 	MsgStartStop();
 	MsgStartStop(uint32_t server_id, uint32_t time, uint32_t action);
-
-	virtual bool process() const;
 
 	virtual uint16_t message_type_id() const;
 };
@@ -179,7 +179,7 @@ uint32_t MsgStartStop::load(const uint8_t *buffer, uint32_t size) {
 	return 3 * sizeof(uint32_t);
 }
 
-bool MsgStartStop::process() const {
+bool MsgStartStop::int_process() const {
 	TimerSupportModule *timer = getTimerSupportModule();
 	if(!timer)
 		return false;

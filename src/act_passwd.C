@@ -44,11 +44,11 @@ protected:
 	virtual uint32_t storageRequired();
 	virtual uint32_t store(uint8_t *buffer, uint32_t size);
 	virtual uint32_t load(const uint8_t *buffer, uint32_t size);
+
+	virtual bool int_process() const;
 public:
 	PasswdMessage();
 	PasswdMessage(uint32_t user_id, const string& newpass);
-
-	virtual bool process() const;
 
 	virtual uint16_t message_type_id() const { return TYPE_ID_UPDATEPASS; }
 };
@@ -147,7 +147,7 @@ uint32_t PasswdMessage::load(const uint8_t *buffer, uint32_t size) {
 	return storageRequired();
 }
 
-bool PasswdMessage::process() const {
+bool PasswdMessage::int_process() const {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return false;

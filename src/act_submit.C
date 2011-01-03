@@ -99,12 +99,12 @@ protected:
 	virtual uint32_t storageRequired();
 	virtual uint32_t store(uint8_t* buffer, uint32_t size);
 	virtual uint32_t load(const uint8_t* buffer, uint32_t size);
+
+	virtual bool int_process() const;
 public:
 	SubmissionMessage();
 	SubmissionMessage(uint32_t sub_id, uint32_t prob_id, uint32_t user_id, const char* content, uint32_t content_size, string language);
 	virtual ~SubmissionMessage();
-
-	virtual bool process() const;
 
 	virtual uint16_t message_type_id() const;
 };
@@ -333,7 +333,7 @@ SubmissionMessage::~SubmissionMessage() {
 		delete []_content;
 }
 
-bool SubmissionMessage::process() const {
+bool SubmissionMessage::int_process() const {
 	SubmissionSupportModule *submission = getSubmissionSupportModule();
 	if(!submission)
 		return false;

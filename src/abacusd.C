@@ -286,20 +286,7 @@ static void* peer_listener(void *) {
 static void* message_handler(void *) {
 	log(LOG_INFO, "message_handler() ready to process messages.");
 	for(Message *m = message_queue.dequeue(); m; m = message_queue.dequeue()) {
-		if(m->process()) {
-			DbCon *db = DbCon::getInstance();
-			if(db) {
-				db->markProcessed(m->server_id(), m->message_id());
-				db->release();db=NULL;
-			} else {
-				log(LOG_ERR, "Unable to mark message (%d, %d) as processed!",
-						m->server_id(), m->message_id());
-			}
-		} else {
-			log(LOG_CRIT, "Failure to process message (%d, %d)!!!  "
-					"This is A HUGE PROBLEM!!!	Fix it and restart abacusd!!!",
-					m->server_id(), m->message_id());
-		}
+		m->process();
 		delete m;
 	}
 	log(LOG_INFO, "Shutting down message_handler().");

@@ -28,6 +28,7 @@ Message::Message() {
 	_data_size = 0;
 	_data = NULL;
 	_signature = NULL;
+	_watcher = NULL;
 }
 
 Message::~Message() {
@@ -154,6 +155,32 @@ void Message::makeBlob() {
 	_blob->message_type_id = message_type_id();
 	memcpy(_blob->signature, _signature, MESSAGE_SIGNATURE_SIZE);
 	memcpy(_blob->data, _data, _data_size);
+}
+
+bool Message::process() {
+	bool status = int_process();
+	if(status) {
+		DbCon *db = DbCon::getInstance();
+		if(db) {
+			db->markProcessed(server_id(), message_id());
+			db->release();db=NULL;
+		} else {
+			log(LOG_ERR, "Unable to mark message (%d, %d) as processed!",
+				server_id(), message_id());
+		}
+	} else {
+		log(LOG_CRIT, "Failure to process message (%d, %d)!!!  "
+			"This is A HUGE PROBLEM!!!	Fix it and restart abacusd!!!",
+			server_id(), message_id());
+	}
+	if (_watcher != NULL) {
+		sem_post(_watcher);
+	}
+	return status;
+}
+
+void Message::setWatcher(sem_t *watcher) {
+	_watcher = watcher;
 }
 
 Message* Message::buildMessage(uint32_t server_id, uint32_t message_id,

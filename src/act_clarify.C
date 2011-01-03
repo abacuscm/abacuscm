@@ -42,6 +42,8 @@ protected:
 	virtual uint32_t storageRequired();
 	virtual uint32_t store(uint8_t* buffer, uint32_t size);
 	virtual uint32_t load(const uint8_t* buffer, uint32_t size);
+
+	virtual bool int_process() const;
 public:
 	ClarificationMessage();
 	ClarificationMessage(uint32_t clarification_request_id,
@@ -54,8 +56,6 @@ public:
 				 bool pub,
 				 const std::string& answer);
 	virtual ~ClarificationMessage();
-
-	virtual bool process() const;
 
 	virtual uint16_t message_type_id() const;
 };
@@ -233,7 +233,7 @@ uint32_t ClarificationMessage::load(const uint8_t *buffer, uint32_t size) {
 	return pos - buffer;
 }
 
-bool ClarificationMessage::process() const {
+bool ClarificationMessage::int_process() const {
 	DbCon *db = DbCon::getInstance();
 	if (!db)
 		return false;

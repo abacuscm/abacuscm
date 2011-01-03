@@ -36,7 +36,16 @@ bool ClientAction::registerAction(const std::string &action, const PermissionTes
 
 void ClientAction::triggerMessage(ClientConnection *cc, Message *mb) {
 	if(mb->makeMessage()) {
-		_message_queue->enqueue(mb);
+		sem_t sem;
+		if (0 != sem_init(&sem, 0, 0)) {
+			lerror("sem_init");
+			_message_queue->enqueue(mb);
+		} else {
+			mb->setWatcher(&sem);
+			_message_queue->enqueue(mb);
+			sem_wait(&sem);
+			sem_destroy(&sem);
+		}
 		cc->reportSuccess();
 	} else {
 		delete mb;

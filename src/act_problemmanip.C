@@ -76,6 +76,8 @@ protected:
 	virtual uint32_t storageRequired();
 	virtual uint32_t store(uint8_t *buffer, uint32_t size);
 	virtual uint32_t load(const uint8_t *buffer, uint32_t size);
+
+	virtual bool int_process() const;
 public:
 	ProbMessage();
 	ProbMessage(uint32_t prob_id, const string& type, ProblemList &deps);
@@ -87,7 +89,6 @@ public:
 	bool addFileAttrib(const string& name, const string& filename, const char* buffer, uint32_t len);
 	bool keepFileAttrib(const string& name);
 
-	virtual bool process() const;
 	virtual uint16_t message_type_id() const { return TYPE_ID_PROBLEMUPDATE; };
 };
 
@@ -319,7 +320,7 @@ bool ProbMessage::keepFileAttrib(const string& name) {
 	return true;
 }
 
-bool ProbMessage::process() const {
+bool ProbMessage::int_process() const {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return false;

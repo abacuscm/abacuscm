@@ -61,12 +61,13 @@ protected:
 	virtual uint32_t storageRequired();
 	virtual uint32_t store(uint8_t *buffer, uint32_t size);
 	virtual uint32_t load(const uint8_t *buffer, uint32_t size);
+
+	virtual bool int_process() const;
 public:
 	MarkMessage();
 	MarkMessage(uint32_t submission_id, uint32_t marker, uint32_t result, std::string comment);
 	virtual ~MarkMessage();
 
-	virtual bool process() const;
 	virtual uint16_t message_type_id() const;
 
 	void addFile(std::string, uint32_t len, const void *data);
@@ -100,7 +101,7 @@ void MarkMessage::addFile(std::string name, uint32_t len, const void *data) {
 	_files.push_back(tmp);
 }
 
-bool MarkMessage::process() const {
+bool MarkMessage::int_process() const {
 	UserSupportModule* usm = getUserSupportModule();
 	if (!usm)
 		return false;
