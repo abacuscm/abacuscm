@@ -259,6 +259,18 @@ pass:<replaceable>password</replaceable></synopsis>
                     This is typically the first message, used to log in.
                 </para>
             </section>
+            <section id="developer.csprotocol.whatami">
+                <title>Query permissions</title>
+                <synopsis>whatami
+permission0:<replaceable>permission</replaceable>
+permission1:<replaceable>permission</replaceable>
+&hellip;</synopsis>
+                <para>
+                    The possible values for
+                    <replaceable>permission</replaceable> can be found in
+                    <filename>src/permissions.C</filename>.
+                </para>
+            </section>
             <section id="developer.csprotocol.adduser">
                 <title>Create a user</title>
                 <synopsis>adduser
@@ -933,6 +945,14 @@ content-length:<replaceable>content-length</replaceable>
                     <symbol>JUDGE</symbol>; however, this is subject to
                     change.
                 </para>
+            </section>
+            <section id="developer.csprotocol.addserver">
+                <title>Add a slave server</title>
+                <synopsis>addserver
+servername:<replaceable>name</replaceable>
+ip:<replaceable>domain name</replaceable>
+marker:yes|no
+udppeerport:<replaceable>port number</replaceable></synopsis>
             </section>
             <section id="developer.csprotocol.getserverlist">
                 <title>Get list of servers</title>
