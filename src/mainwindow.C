@@ -882,6 +882,7 @@ void MainWindow::doFileConnect() {
 			std::string uname = _login_dialog.username->text();
 			std::string pass = _login_dialog.password->text();
 			if(_server_con.auth(uname, pass)) {
+				_active_user = uname;
 				std::vector<std::string> permissions = _server_con.getPermissions();
 				switchPermissions(permissions);
 
@@ -1345,18 +1346,23 @@ void MainWindow::updateStatus(const MessageBlock *) {
 	if (!_active_permissions[PERMISSION_AUTH])
 	{
 		status->setText("Not connected");
+		setCaption("Abacus");
 		projected_stop = 0;
 		clock->setText("");
-	} else if (_server_con.contestRunning()) {
-		time_t remain = _server_con.contestRemain();
-		time_t now = time(NULL);
-		projected_stop = remain + now;
-		status->setText("Contest running");
-		clock->setText("");  // timer event will update it
 	} else {
-		status->setText("Contest stopped");
-		projected_stop = 0;
-		clock->setText("");
+		string caption = "Abacus - " + _active_user;
+		setCaption(QString::fromUtf8(caption.c_str()));
+		if (_server_con.contestRunning()) {
+			time_t remain = _server_con.contestRemain();
+			time_t now = time(NULL);
+			projected_stop = remain + now;
+			status->setText("Contest running");
+			clock->setText("");  // timer event will update it
+		} else {
+			status->setText("Contest stopped");
+			projected_stop = 0;
+			clock->setText("");
+		}
 	}
 }
 

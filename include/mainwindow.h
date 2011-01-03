@@ -52,6 +52,7 @@ private:
 	ServerConnection _server_con;
 
 	PermissionSet _active_permissions;
+	std::string _active_user;
 
 	std::set<uint32_t> _subscribed_problems;
 
