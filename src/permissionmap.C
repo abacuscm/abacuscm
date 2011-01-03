@@ -13,6 +13,8 @@
 
 using namespace std;
 
+const PermissionMap PermissionMap::_instance;
+
 void PermissionMap::allow(Permission perm, uint32_t mask) {
 	uint32_t type = 0;
 	while (mask > 0)
@@ -58,9 +60,8 @@ PermissionMap::PermissionMap() {
 PermissionMap::~PermissionMap() {
 }
 
-PermissionMap *PermissionMap::getInstance() {
-	static PermissionMap instance;
-	return &instance;
+const PermissionMap *PermissionMap::getInstance() {
+	return &_instance;
 }
 
 const PermissionSet &PermissionMap::getPermissions(UserType user_type) const {

@@ -19,6 +19,8 @@
 /* Maps user types to permission sets */
 class PermissionMap {
 private:
+	static const PermissionMap _instance;
+
 	PermissionMap();
 	~PermissionMap();
 
@@ -28,7 +30,7 @@ private:
 	// USER_MASK_* constants.
 	void allow(Permission perm, uint32_t mask);
 public:
-	static PermissionMap *getInstance();
+	static const PermissionMap *getInstance();
 
 	const PermissionSet &getPermissions(UserType user_type) const;
 };
