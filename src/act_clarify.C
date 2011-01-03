@@ -80,9 +80,9 @@ bool ActGetClarifications::int_process(ClientConnection *cc, MessageBlock *) {
 	ClarificationList lst;
 
 	if(cc->permissions()[PERMISSION_SEE_ALL_CLARIFICATIONS])
-		lst = db->getClarifications(uid);
-	else
 		lst = db->getClarifications();
+	else
+		lst = db->getClarifications(uid);
 	db->release();db=NULL;
 
 	MessageBlock mb("ok");
