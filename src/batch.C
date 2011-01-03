@@ -94,7 +94,7 @@ static int process(ServerConnection &_server_con, istream &in) {
 				}
 				else {
 					buffer << inf.rdbuf();
-					if (!buffer) {
+					if (!inf) {
 						log(LOG_ERR, "Cannot read %s", fname.c_str());
 					}
 					else {
