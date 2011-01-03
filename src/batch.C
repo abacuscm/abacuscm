@@ -137,6 +137,7 @@ int main(int argc, const char **argv) {
 		return -1;
 	}
 
+	ServerConnection::init();
 	ServerConnection _server_con;
 
 	Config &conf = Config::getConfig();
