@@ -12,11 +12,15 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <netdb.h>
+#include <errno.h>
+#include <vector>
 
 #include "clientlistener.h"
 #include "clientconnection.h"
 #include "logger.h"
 #include "acmconfig.h"
+
+using namespace std;
 
 ClientListener::ClientListener() {
 	_pool = NULL;
@@ -25,7 +29,7 @@ ClientListener::ClientListener() {
 ClientListener::~ClientListener() {
 }
 
-bool ClientListener::init(SocketPool *pool) {
+bool ClientListener::init(WaitableSet *pool) {
 	struct addrinfo hints;
 	struct addrinfo *adinf = NULL;
 	struct addrinfo *i;
@@ -46,7 +50,7 @@ bool ClientListener::init(SocketPool *pool) {
 		return false;
 	}
 
-
+	// TODO: store all found sockets, not just the last
 	for (i = adinf; i && sock <= 0; i = i->ai_next) {
 		sock = socket(i->ai_family, i->ai_socktype, i->ai_protocol);
 
@@ -74,11 +78,9 @@ bool ClientListener::init(SocketPool *pool) {
 			continue;
 		}
 
-		sockfd() = sock;
-
 		if (fcntl(sock, F_SETFL, O_NONBLOCK) < 0) {
 			lerror("fcntl");
-			log(LOG_INFO, "Continueing anyway ...");
+			log(LOG_INFO, "Continuing anyway ...");
 		}
 	}
 
@@ -89,30 +91,31 @@ bool ClientListener::init(SocketPool *pool) {
 		return false;
 	}
 
-	sockfd() = sock;
+	initialise(sock, POLLIN);
 	_pool = pool;
 	return true;
 }
 
-bool ClientListener::process() {
+short ClientListener::socket_process() {
 	struct sockaddr addr;
 	socklen_t size = sizeof(addr);
 	char host[48];
 	char port[7];
 
-	int res = accept(sockfd(), (sockaddr*)&addr, &size);
+	int res = accept(getSock(), (sockaddr*)&addr, &size);
 	if(res < 0) {
-		lerror("accept");
-		return true;
+		if (errno != EAGAIN && errno != EWOULDBLOCK)
+			lerror("accept");
+		return POLLIN;
 	}
 
 	if(fcntl(res, F_SETFL, O_NONBLOCK) < 0) {
 		lerror("fcntl");
-		log(LOG_INFO, "Continueing anyway ...");
+		log(LOG_INFO, "Continuing anyway ...");
 	}
 
 	ClientConnection *client = new ClientConnection(res);
-	_pool->locked_insert(client);
+	_pool->add(client);
 
 	if (getnameinfo(&addr, size, host, sizeof(host), port, sizeof(port), NI_NUMERICHOST) == 0) {
 		log(LOG_INFO, "Accepted new connection from %s:%s.", host, port);
@@ -120,5 +123,5 @@ bool ClientListener::process() {
 		log(LOG_WARNING, "Accepted new connection, but unable to figure out remote host address.");
 	}
 
-	return true;
+	return POLLIN;
 }

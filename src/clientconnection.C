@@ -32,11 +32,13 @@ const SSL_METHOD *ClientConnection::_method = NULL;
 SSL_CTX *ClientConnection::_context = NULL;
 
 ClientConnection::ClientConnection(int sock) {
-	sockfd() = sock;
 	_tssl = NULL;
 	_ssl = NULL;
 	_message = NULL;
 	pthread_mutex_init(&_write_lock, NULL);
+	// This might be more generous than necessary, but if we get one early
+	// wakeup it won't hurt.
+	initialise(sock, POLLIN | POLLOUT);
 }
 
 ClientConnection::~ClientConnection() {
@@ -61,7 +63,7 @@ ClientConnection::~ClientConnection() {
 	pthread_mutex_destroy(&_write_lock);
 }
 
-bool ClientConnection::initiate_ssl() {
+short ClientConnection::initiate_ssl() {
 	assert(_tssl == NULL);
 	if(!_ssl) {
 		_ssl = SSL_new(_context);
@@ -70,7 +72,7 @@ bool ClientConnection::initiate_ssl() {
 			goto err;
 		}
 
-		if(!SSL_set_fd(_ssl, sockfd())) {
+		if(!SSL_set_fd(_ssl, getSock())) {
 			log_ssl_errors("SSL_set_fd");
 			goto err;
 		}
@@ -85,16 +87,17 @@ bool ClientConnection::initiate_ssl() {
 				goto err;
 			}
 			_ssl = NULL;
-			break;
+			// Success - process data until we can't any more
+			return process_data();
 		case SSL_ERROR_WANT_READ:
+			return POLLIN;
 		case SSL_ERROR_WANT_WRITE:
-			break;
+			return POLLOUT;
 		default:
 			log_ssl_errors_with_err("SSL_accept", err);
 			goto err;
 	}
 
-	return true;
 err:
 	if(_ssl) {
 		SSL_free(_ssl);
@@ -105,10 +108,10 @@ err:
 		_tssl = NULL;
 	}
 
-	return false;
+	return 0;
 }
 
-bool ClientConnection::process_data() {
+short ClientConnection::process_data() {
 	char buffer[CLIENT_BFR_SIZE];
 	ThreadSSL::Status status;
 	while(0 < (status = _tssl->read(buffer, CLIENT_BFR_SIZE, ThreadSSL::NONBLOCK)).processed) {
@@ -136,25 +139,26 @@ bool ClientConnection::process_data() {
 
 	switch(status.err) {
 		case SSL_ERROR_NONE:
+			// Can this happen? Implies no data was actually read.
+			// Fall through for now
 		case SSL_ERROR_WANT_READ:
+			return POLLIN;
 		case SSL_ERROR_WANT_WRITE:
-			return true;
+			return POLLOUT;
 		case SSL_ERROR_ZERO_RETURN:
 			// connection shut down
-			return false;
+			return 0;
 		default:
 			log_ssl_errors_with_err("SSL_read", status.err);
-			return false;
+			return 0;
 	}
 }
 
-bool ClientConnection::process() {
+short ClientConnection::socket_process() {
 	if(!_tssl)
 		return initiate_ssl();
 	else
 		return process_data();
-
-	return false;
 }
 
 bool ClientConnection::sendError(const std::string& message) {

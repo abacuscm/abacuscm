@@ -7,51 +7,41 @@
  *
  * $Id$
  */
+#include <vector>
 #include <unistd.h>
-#include <pthread.h>
-
 #include "socket.h"
-#include "logger.h"
+
+using namespace std;
 
 Socket::Socket() {
 	_sock = -1;
 }
 
 Socket::~Socket() {
-	if(_sock > 0)
+	if(_sock >= 0)
 		close(_sock);
 }
 
-void Socket::addToSet(int *n, fd_set *set) {
-	if(_sock < 0) {
-		log(LOG_WARNING, "Attempting to add a negative socket number to the select() set.");
-		return;
+void Socket::initialise(int sock, short events) {
+	_sock = sock;
+	vector<pollfd> fdevents;
+	pollfd cur;
+	cur.fd = sock;
+	cur.events = events;
+	cur.revents = 0;
+	fdevents.push_back(cur);
+	Waitable::initialise(fdevents);
+}
+
+vector<pollfd> Socket::int_process() {
+	vector<pollfd> ans;
+	short events = socket_process();
+	if (events != 0) {
+		pollfd cur;
+		cur.fd = getSock();
+		cur.events = events;
+		cur.revents = 0;
+		ans.push_back(cur);
 	}
-	if(_sock >= *n)
-		*n = _sock + 1;
-	FD_SET(_sock, set);
-}
-
-bool Socket::isInSet(fd_set *set) {
-	return FD_ISSET(sockfd(), set);
-}
-
-SocketPool::SocketPool()
-{
-	pthread_mutex_init(&_lock, NULL);
-}
-
-SocketPool::~SocketPool()
-{
-	pthread_mutex_destroy(&_lock);
-}
-
-void SocketPool::lock()
-{
-	pthread_mutex_lock(&_lock);
-}
-
-void SocketPool::unlock()
-{
-	pthread_mutex_unlock(&_lock);
+	return ans;
 }

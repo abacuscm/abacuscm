@@ -18,6 +18,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <netdb.h>
+#include <set>
 
 #include "peermessenger.h"
 #include "logger.h"
@@ -86,7 +87,7 @@ private:
 		UDTCPPeerMessenger* _messenger;
 	public:
 		UDPReceiver(int sock, UDTCPPeerMessenger* messenger);
-		bool process();
+		virtual short socket_process();
 	};
 
 	class TCPRetriever : public Socket {
@@ -101,7 +102,7 @@ private:
 		TCPRetriever(UDTCPPeerMessenger* messenger, uint32_t server_id, uint32_t message_id, uint32_t size, uint32_t init_server);
 		~TCPRetriever();
 
-		bool process();
+		virtual short socket_process();
 		void addSourceServer(uint32_t server);
 	};
 
@@ -137,11 +138,11 @@ static void log_ciphers(const OBJ_NAME *name, void*);
 
 UDTCPPeerMessenger::UDPReceiver::UDPReceiver(int sock, UDTCPPeerMessenger *messenger)
 {
-	sockfd() = sock;
+	initialise(sock, POLLIN);
 	_messenger = messenger;
 }
 
-bool UDTCPPeerMessenger::UDPReceiver::process()
+short UDTCPPeerMessenger::UDPReceiver::socket_process()
 {
 	ssize_t bytes_received;
 	int packet_size, tlen;
@@ -153,19 +154,19 @@ bool UDTCPPeerMessenger::UDPReceiver::process()
 		struct st_frame frame;
 	};
 
-	bytes_received = recvfrom(sockfd(), inbuffer, BUFFER_SIZE + MAX_BLOCKSIZE,
+	bytes_received = recvfrom(getSock(), inbuffer, BUFFER_SIZE + MAX_BLOCKSIZE,
 			MSG_TRUNC, (struct sockaddr*)&from, &fromlen);
 	if(bytes_received == -1) {
 		if(errno != EINTR)
 			lerror("recvfrom");
-		return errno != EBADF;
+		return (errno != EBADF) ? POLLIN : 0;
 	}
 
 	if(bytes_received > BUFFER_SIZE + MAX_BLOCKSIZE) {
 		log(LOG_WARNING, "Discarding frame of size %u since it is "
 				"bigger than the buffer (%d bytes)",
 				(unsigned)bytes_received, BUFFER_SIZE + MAX_BLOCKSIZE);
-		return true;
+		return POLLIN;
 	}
 
 	EVP_CIPHER_CTX dec_ctx;
@@ -231,7 +232,7 @@ bool UDTCPPeerMessenger::UDPReceiver::process()
 
 	EVP_CIPHER_CTX_cleanup(&dec_ctx);
 
-	return true;
+	return POLLIN;
 }
 
 UDTCPPeerMessenger::TCPRetriever::TCPRetriever(UDTCPPeerMessenger* messenger, uint32_t server_id, uint32_t message_id, uint32_t size, uint32_t init_server)
@@ -247,7 +248,7 @@ UDTCPPeerMessenger::TCPRetriever::~TCPRetriever()
 {
 }
 
-bool UDTCPPeerMessenger::TCPRetriever::process()
+short UDTCPPeerMessenger::TCPRetriever::socket_process()
 {
 	uint8_t *blob = (uint8_t*)malloc(_size);
 	uint32_t pos = 0;
@@ -260,7 +261,7 @@ bool UDTCPPeerMessenger::TCPRetriever::process()
 	if (!blob) {
 		log (LOG_CRIT, "Error allocating %d bytes of memory for receiving blob.", _size);
 		_messenger->removeTCPReceiver(_server_id, _message_id);
-		return false;
+		return 0;
 	}
 
 	str << _server_id;
@@ -372,7 +373,7 @@ quit:
 		free(blob);
 	if (ctx)
 		SSL_CTX_free(ctx);
-	return false;
+	return 0;
 }
 
 void UDTCPPeerMessenger::TCPRetriever::addSourceServer(uint32_t server)
@@ -400,7 +401,7 @@ void UDTCPPeerMessenger::notifyTCPMessage(uint32_t server_id, uint32_t message_i
 	if (tr != _tcp_retrievers[server_id].end())
 		tr->second->addSourceServer(sending_server);
 	else
-		Server::putSocket(_tcp_retrievers[server_id][message_id] = new TCPRetriever(this, server_id, message_id, size, sending_server), true);
+		Server::putWaitable(_tcp_retrievers[server_id][message_id] = new TCPRetriever(this, server_id, message_id, size, sending_server), true);
 }
 
 UDTCPPeerMessenger::UDTCPPeerMessenger() {
@@ -559,7 +560,7 @@ bool UDTCPPeerMessenger::startup() {
 		goto err;
 	}
 
-	Server::putSocket(new UDPReceiver(_sock, this));
+	Server::putWaitable(new UDPReceiver(_sock, this));
 
 	log(LOG_INFO, "UDTCPPeerMessenger started up");
 	return true;

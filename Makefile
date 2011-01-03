@@ -41,7 +41,7 @@ TARGET_LIBS += abacus
 MODS_abacusd = abacusd
 LIBS_abacusd = ssl crypto pthread abacus
 
-LIBMODS_abacus = socket \
+LIBMODS_abacus = waitable socket \
 	clientlistener \
 	dbcon \
 	server \

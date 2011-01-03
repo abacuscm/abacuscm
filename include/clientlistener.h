@@ -17,14 +17,14 @@
 
 class ClientListener : public Socket {
 private:
-	SocketPool* _pool;
+	WaitableSet* _pool;
 public:
 	ClientListener();
 	virtual ~ClientListener();
 
-	bool init(SocketPool *pool);
+	bool init(WaitableSet *pool);
 
-	virtual bool process();
+	virtual short socket_process();
 };
 
 #endif

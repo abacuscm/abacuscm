@@ -52,13 +52,13 @@ private:
 
 	pthread_mutex_t _write_lock;
 
-	bool initiate_ssl();
-	bool process_data();
+	short initiate_ssl();
+	short process_data();
 public:
 	ClientConnection(int sockfd);
 	virtual ~ClientConnection();
 
-	virtual bool process();
+	virtual short socket_process();
 
 	bool sendError(const std::string& message);
 	bool reportSuccess();

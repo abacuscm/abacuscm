@@ -1020,6 +1020,96 @@ server1:<replaceable>domain name</replaceable>
             <title>Modules</title>
             <para>TODO</para>
         </section>
+        <section id="developer.server.clientconnection">
+            <title>Client connections</title>
+            <para>
+                The server communicates with the clients over SSL, using the
+                <systemitem class="library">OpenSSL</systemitem> library. This
+                complicates polling, because application-layer reads or writes
+                can trigger both reads or writes on the underlying TCP socket,
+                due to session renegotiations. Each call to OpenSSL that fails
+                to make forward progress will return a status code indicating
+                the condition on that socket that is required to make further
+                progress. This also means that read and writes cannot be
+                completely decoupled into separate threads; this isn't even
+                thread-safe in OpenSSL.
+            </para>
+            <para>
+                For each socket, the processing is a virtual equivalent to a
+                loop of the following:
+            </para>
+            <procedure>
+                <step id="developer.server.clientconnection.step-read">
+                    <para>
+                        Attempt to read data until no more can be read; store
+                        the condition (e.g.,
+                        <symbol>SSL_ERROR_WANT_READ</symbol>).
+                    </para>
+                </step>
+                <step>
+                    <para>
+                        If there is data in the send queue, attempt to send
+                        data until either <function>SSL_write</function>
+                        returns an error or the send queue is empty.
+                    </para>
+                </step>
+                <step>
+                    <para>
+                        If <function>SSL_pending</function> returns
+                        <constant>true</constant>, then go back to <xref
+                            linkend="developer.server.clientconnection.step-read"/>.
+                        This handles the case where the write caused some
+                        reads to happen which buffered data for reading (this
+                        might be impossible, but the OpenSSL documentation is
+                        somewhat unclear).
+                    </para>
+                </step>
+                <step>
+                    <para>
+                        Wait until forward progress can be made. The conditions
+                        under which forward progress can potentially be made
+                        are:
+                    </para>
+                    <itemizedlist>
+                        <listitem>
+                            <para>
+                                The condition indicated by
+                                <function>SSL_read</function>.
+                            </para>
+                        </listitem>
+                        <listitem>
+                            <para>
+                                If the send queue was emptied, addition of more
+                                data to the send queue.
+                            </para>
+                        </listitem>
+                        <listitem>
+                            <para>
+                                If the send queue was not successfully
+                                emptied, the condition signalled by
+                                <function>SSL_write</function>.
+                            </para>
+                        </listitem>
+                    </itemizedlist>
+                </step>
+            </procedure>
+            <para>
+                This could be done with a separate thread per connection, but
+                the number of threads can be kept much smaller by distributing
+                the work between threads: whenever it is necessary to wait for
+                an event, the socket is given to the socket selector thread to
+                be combined into a single call to <function>select</function>;
+                once the event occurs, it is passed back to a worker thread to
+                operate on. A socket is owned by only one thread at a time.
+            </para>
+            <para>
+                Note that when waiting for data to become available for
+                reading, one should first check
+                <function>SSL_pending</function>, as OpenSSL may have already
+                buffered data and thus prevent <function>select</function>
+                from detecting that there is data to read.
+            </para>
+        </section>
         <section id="developer.server.threads">
             <title>Threads</title>
             <para>

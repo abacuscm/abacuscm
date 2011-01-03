@@ -28,7 +28,7 @@
 #include "dbcon.h"
 #include "threadssl.h"
 #include "hashpw.h"
-#include "socket.h"
+#include "waitable.h"
 #include "clientlistener.h"
 #include "clientconnection.h"
 #include "clientaction.h"
@@ -44,6 +44,22 @@
 
 using namespace std;
 
+class QueuedWaitableSet : public WaitableSet
+{
+private:
+	Queue<Waitable *> &_wait_queue;
+
+	friend void* worker_thread(void *);
+public:
+	explicit QueuedWaitableSet(Queue<Waitable *> &wait_queue) : _wait_queue(wait_queue) {
+	}
+
+	virtual void process(Waitable *w) {
+		w->preprocess();
+		_wait_queue.enqueue(w);
+	}
+};
+
 // some globals, the static keyword keeps them inside _this_
 // source file.
 static pthread_t thread_peer_listener;
@@ -58,11 +74,11 @@ static volatile sig_atomic_t abacusd_running = true;
 
 // All the various Queue<>s
 static Queue<Message*> message_queue;
-static Queue<Socket*> wait_queue;
+static Queue<Waitable*> wait_queue;
 static Queue<uint32_t> ack_queue;
 static Queue<TimedAction*> timed_queue;
 
-static SocketPool socket_pool;
+static QueuedWaitableSet socket_pool(wait_queue);
 
 // num_idle_workers counts the number of currently blocking
 // worker threads, lock_numworkers protects it.
@@ -86,16 +102,6 @@ static void signal_die(int) {
 }
 
 /**
- * Need this because we want to signal the socket_selector
- * with SIGUSR1 to cause it to reload it's state, but at the
- * same time we don't want to get nuked from existance, and
- * setting to SIG_IGN causes the signal to be discarded and
- * doesn't cause select(2) to return EINTR.
- */
-static void signal_nothing(int) {
-}
-
-/**
  * Set up the signals we need to catch...
  */
 static bool setup_signals() {
@@ -107,10 +113,6 @@ static bool setup_signals() {
 	if(sigaction(SIGTERM, &action, NULL) < 0)
 		goto err;
 	if(sigaction(SIGINT, &action, NULL) < 0)
-		goto err;
-
-	action.sa_handler = signal_nothing;
-	if(sigaction(SIGUSR1, &action, NULL) < 0)
 		goto err;
 
 	return true;
@@ -239,7 +241,7 @@ static bool initialise() {
 		return false;
 	}
 
-	socket_pool.locked_insert(cl);
+	socket_pool.add(cl);
 
 	ClientAction::setMessageQueue(&message_queue);
 
@@ -319,7 +321,7 @@ void* worker_thread(void *) {
 		++num_idle_workers;
 		pthread_mutex_unlock(&lock_numworkers);
 
-		Socket *s = wait_queue.dequeue();
+		Waitable *s = wait_queue.dequeue();
 		pthread_mutex_lock(&lock_numworkers);
 		if(--num_idle_workers < min_idle_workers)
 			pthread_cond_signal(&cond_numworkers);
@@ -327,11 +329,8 @@ void* worker_thread(void *) {
 			break;
 		pthread_mutex_unlock(&lock_numworkers);
 
-		if(s->process()) {
-			socket_pool.locked_insert(s);
-			pthread_kill(thread_socket_selector, SIGUSR1);
-		} else
-			delete s;
+		s->process();
+		socket_pool.process_finish(s);
 		pthread_mutex_lock(&lock_numworkers);
 	}
 
@@ -440,40 +439,7 @@ void* worker_spawner(void*) {
 }
 
 void* socket_selector(void*) {
-	while(abacusd_running) {
-		fd_set sockets;
-		int n = 0;
-		FD_ZERO(&sockets);
-
-		SocketPool::iterator i;
-		socket_pool.lock();
-		for(i = socket_pool.begin(); i != socket_pool.end(); ++i)
-			(*i)->addToSet(&n, &sockets);
-		socket_pool.unlock();
-
-		if(select(n, &sockets, NULL, NULL, NULL) < 0) {
-			if(errno != EINTR)
-				lerror("select");
-		} else {
-			socket_pool.lock();
-			for(i = socket_pool.begin(); i != socket_pool.end();)
-			if((*i)->isInSet(&sockets)) {
-				Socket *s = *i;
-				socket_pool.erase(i++);
-				wait_queue.enqueue(s);
-			} else
-				++i;
-			socket_pool.unlock();
-			/*
-			 * Note that the above loop is very messy.	This is due to the
-			 * erase operation invalidating the iterator, so essentially we
-			 * now increment the iterator before nuking what it pointed to.
-			 * this gets extremely nasty and probably took the better part
-			 * of a day to figure out.
-			 */
-		}
-	}
-
+	socket_pool.run();
 	return NULL;
 }
 
@@ -597,8 +563,7 @@ int main(int argc, char ** argv) {
 
 	Server::setAckQueue(&ack_queue);
 	Server::setTimedQueue(&timed_queue);
-	Server::setSocketQueue(&wait_queue);
-	Server::setSocketPool(&socket_pool);
+	Server::setWaitableSet(&socket_pool);
 
 	Markers::getInstance().startTimeoutCheckingThread();
 
@@ -637,29 +602,25 @@ int main(int argc, char ** argv) {
 
 	PeerMessenger::getMessenger()->shutdown();
 
+	socket_pool.shutdown();
 	pthread_join(thread_peer_listener, NULL);
-	pthread_kill(thread_socket_selector, SIGTERM);
 	message_queue.enqueue(NULL);
 	ack_queue.enqueue(0);
 	timed_queue.enqueue(NULL);
 
+	// wake up the worker spawner
 	pthread_mutex_lock(&lock_numworkers);
 	pthread_cond_signal(&cond_numworkers);
 	pthread_mutex_unlock(&lock_numworkers);
 
 	// Now we can join() them too since they should die shortly.
 	pthread_join(thread_message_handler, NULL);
-	pthread_join(thread_worker_spawner, NULL);
+	pthread_join(thread_worker_spawner, NULL); // this waits for the worker threads
 	pthread_join(thread_socket_selector, NULL);
 	pthread_join(thread_message_resender, NULL);
 	pthread_join(thread_timed_actions, NULL);
 
-	SocketPool::iterator i;
-	socket_pool.lock();
-	for(i = socket_pool.begin(); i != socket_pool.end(); ++i)
-		delete (*i);
-	socket_pool.unlock();
-
+	socket_pool.delete_all();
 	DbCon::cleanup();
 	ThreadSSL::cleanup();
 
