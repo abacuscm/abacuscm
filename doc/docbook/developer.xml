@@ -1055,17 +1055,6 @@ server1:<replaceable>domain name</replaceable>
                 </step>
                 <step>
                     <para>
-                        If <function>SSL_pending</function> returns
-                        <constant>true</constant>, then go back to <xref
-                            linkend="developer.server.clientconnection.step-read"/>.
-                        This handles the case where the write caused some
-                        reads to happen which buffered data for reading (this
-                        might be impossible, but the OpenSSL documentation is
-                        somewhat unclear).
-                    </para>
-                </step>
-                <step>
-                    <para>
                         Wait until forward progress can be made. The conditions
                         under which forward progress can potentially be made
                         are:
@@ -1120,11 +1109,12 @@ server1:<replaceable>domain name</replaceable>
                     <term>Worker threads</term>
                     <listitem>
                         <para>
-                            A pool of threads is kept which handle incoming
-                            data on a socket. Polymorphism is used to allow
-                            the same worker thread to process incoming data on
-                            multiple types of sockets: server-to-server (UDP
-                            and TCP) and client-to-server (SSL over TCP).
+                            A pool of threads is kept which handle socket I/O
+                            Polymorphism is used to allow
+                            the same worker thread to process server-to-server
+                            sockets (UDP and TCP), client-server sockets (SSL
+                            over TCP), and the sockets used for listening for
+                            new connections.
                         </para>
                         <para>
                             The minimum and maximum number of worker threads
@@ -1147,11 +1137,22 @@ server1:<replaceable>domain name</replaceable>
                     <listitem>
                         <para>
                             This thread repeatedly calls
-                            <function>select()</function> on all active
+                            <function>poll()</function> on all active
                             sockets to find those with unprocessed data. It
                             then adds those sockets to a queue for the worker
                             threads to process them, after which they are
                             placed back on the active list.
+                        </para>
+                        <para>
+                            The socket selector need not only listen to
+                            sockets: the <interface>Waitable</interface>
+                            interface allows arbitrary file descriptors to be
+                            used, and UNIX pipe pairs are used to signal
+                            internal events such as data becoming available for
+                            sending. There is also a special pipe pair that is
+                            used to wait up this thread when the set of events
+                            to monitor changes, or when it is time to shut
+                            down.
                         </para>
                     </listitem>
                 </varlistentry>
@@ -1163,7 +1164,7 @@ server1:<replaceable>domain name</replaceable>
                             from other servers, records them in the local
                             database (for replay if they are not processed
                             successfully), and enqueues them to the message
-                            handler to operate it. It also immediately
+                            handler to process. It also immediately
                             acknowledges the message to the sending server.
                         </para>
                         <para>
@@ -1197,6 +1198,18 @@ server1:<replaceable>domain name</replaceable>
                             are not performed as a single database
                             transaction).
                         </para>
+                        <para>
+                            Locally generated messages (i.e., those that are
+                            created in response to clients connected to the
+                            current server also hold a pointer to a semaphore,
+                            which is posted when processing is complete. This
+                            is used to delay sending a response to the client
+                            until the message has been processed. This is
+                            necessary to avoid race conditions where a
+                            subsequent message from the same client might
+                            directly query the database and observe stale
+                            information.
+                        </para>
                     </listitem>
                 </varlistentry>
                 <varlistentry>
@@ -1219,7 +1232,10 @@ server1:<replaceable>domain name</replaceable>
                         <para>
                             The timed actions thread keeps a priority queue of
                             actions to perform in future and executes these
-                            actions at the appropriate time.
+                            actions at the appropriate time. It uses a timed
+                            wait on a condition variable so that it can be
+                            woken when either the earliest timed action is
+                            ready to run or when a new timed action is added.
                         </para>
                     </listitem>
                 </varlistentry>
@@ -1240,6 +1256,66 @@ server1:<replaceable>domain name</replaceable>
                 TODO: add a list of the queues that carry data between threads,
                 possibly with a diagram.
             </para>
+        </section>
+        <section id="developer.server.queues">
+            <title>Queues</title>
+            <para>
+                The server uses a number of queues for communication between
+                threads. These use the <classname>Queue</classname> container
+                class, which allows thread-safe insertion and blocking and
+                removal with timeout (non-blocking removal can be done using a
+                timeout of zero). The queues that are used are:
+            </para>
+            <itemizedlist>
+                <listitem>
+                    <para>
+                        The message queue holds server-to-server messages
+                        that have been received either from client actions or
+                        from other servers, and are consumed by the message
+                        handler thread.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        The waitable queue holds sockets (or other instances
+                        of the <interface>Waitable</interface> interface) that
+                        need to be processed, and which are consumed by the
+                        worker threads.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        The timed actions queue holds timed actions that have
+                        been registered but not yet seen by the timed actions
+                        thread. The timed actions thread greedily pulls
+                        actions from this queue and stores them internally in
+                        a priority queue.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        The ack queue records acknowledgements from other
+                        servers. It is consumed by the message resender
+                        thread, which after each ack will check that previous
+                        messages have been received.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Each <classname>ClientConnection</classname> has a
+                        queue of messages to send to the client, which are
+                        posted from just about anywhere, and consumed by
+                        worker threads as part of servicing the connection.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        The hybrid UDP/TCP messenger stores messages it
+                        receives in a queue. They are consumed by the message
+                        handler thread.
+                    </para>
+                </listitem>
+            </itemizedlist>
         </section>
         <section id="developer.server.permissions">
             <title>Permissions</title>
