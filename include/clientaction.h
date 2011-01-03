@@ -39,15 +39,15 @@ private:
 	static std::map<std::string, Info> _actionmap;
 
 protected:
-	bool triggerMessage(ClientConnection *cc, Message*);
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb) = 0;
+	void triggerMessage(ClientConnection *cc, Message*);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb) = 0;
 public:
 	ClientAction();
 	virtual ~ClientAction();
 
 	static void setMessageQueue(Queue<Message*> *message_queue);
 	static bool registerAction(const std::string &name, const PermissionTest &pt, ClientAction *ca);
-	static bool process(ClientConnection *cc, MessageBlock *mb);
+	static void process(ClientConnection *cc, MessageBlock *mb);
 };
 
 #endif

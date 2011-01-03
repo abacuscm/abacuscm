@@ -19,10 +19,10 @@ using namespace std;
 
 class ActAddServer : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
-bool ActAddServer::int_process(ClientConnection* cc, MessageBlock* mb) {
+void ActAddServer::int_process(ClientConnection* cc, MessageBlock* mb) {
 	if(Server::getId() != 1)
 		return cc->sendError("Can only add servers from the master server");
 

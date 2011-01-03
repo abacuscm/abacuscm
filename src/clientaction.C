@@ -34,20 +34,19 @@ bool ClientAction::registerAction(const std::string &action, const PermissionTes
 	return true;
 }
 
-bool ClientAction::triggerMessage(ClientConnection *cc, Message *mb) {
+void ClientAction::triggerMessage(ClientConnection *cc, Message *mb) {
 	if(mb->makeMessage()) {
 		_message_queue->enqueue(mb);
-		return cc->reportSuccess();
+		cc->reportSuccess();
 	} else {
 		delete mb;
-		return cc->sendError("Internal error creating message.  This is indicative of a bug.");
+		cc->sendError("Internal error creating message.  This is indicative of a bug.");
 	}
 }
 
-bool ClientAction::process(ClientConnection *cc, MessageBlock *mb) {
-	bool status = true;
+void ClientAction::process(ClientConnection *cc, MessageBlock *mb) {
 	if(!Server::getId())
-		return cc->sendError("Server has not yet been initialised - please try again later");
+		cc->sendError("Server has not yet been initialised - please try again later");
 
 	std::string action = mb->action();
 
@@ -66,9 +65,8 @@ bool ClientAction::process(ClientConnection *cc, MessageBlock *mb) {
 	}
 	else
 	{
-		status = it->second.action->int_process(cc, mb);
+		it->second.action->int_process(cc, mb);
 	}
-	return status;
 }
 
 void ClientAction::setMessageQueue(Queue<Message*> *message_queue) {

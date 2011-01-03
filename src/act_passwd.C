@@ -23,17 +23,17 @@ using namespace std;
 
 class ActPasswd : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
 class ActIdPasswd : public ClientAction { /* Change other user's password */
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
 class ActGetUsers : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
 class PasswdMessage : public Message {
@@ -53,7 +53,7 @@ public:
 	virtual uint16_t message_type_id() const { return TYPE_ID_UPDATEPASS; }
 };
 
-bool ActPasswd::int_process(ClientConnection *cc, MessageBlock *mb) {
+void ActPasswd::int_process(ClientConnection *cc, MessageBlock *mb) {
 	UserSupportModule *usm = getUserSupportModule();
 	uint32_t user_id = cc->getUserId();
 	string newpass = (*mb)["newpass"];
@@ -64,10 +64,10 @@ bool ActPasswd::int_process(ClientConnection *cc, MessageBlock *mb) {
 	if ((newpass = usm->hashpw(user_id, newpass)) == "")
 		return cc->sendError("Error hashing password.");
 
-	return triggerMessage(cc, new PasswdMessage(user_id, newpass));
+	triggerMessage(cc, new PasswdMessage(user_id, newpass));
 }
 
-bool ActIdPasswd::int_process(ClientConnection *cc, MessageBlock *mb) {
+void ActIdPasswd::int_process(ClientConnection *cc, MessageBlock *mb) {
 	UserSupportModule *usm = getUserSupportModule();
 	char *errptr;
 	uint32_t user_id = strtol((*mb)["user_id"].c_str(), &errptr, 0);
@@ -81,10 +81,10 @@ bool ActIdPasswd::int_process(ClientConnection *cc, MessageBlock *mb) {
 	if ((newpass = usm->hashpw(user_id, newpass)) == "")
 		return cc->sendError("Invalid user id or hashing error.");
 
-	return triggerMessage(cc, new PasswdMessage(user_id, newpass));
+	triggerMessage(cc, new PasswdMessage(user_id, newpass));
 }
 
-bool ActGetUsers::int_process(ClientConnection *cc, MessageBlock *) {
+void ActGetUsers::int_process(ClientConnection *cc, MessageBlock *) {
 	UserSupportModule *usm = getUserSupportModule();
 	if(!usm)
 		return cc->sendError("Misconfigured server, no UserSupportModule!");
@@ -105,7 +105,7 @@ bool ActGetUsers::int_process(ClientConnection *cc, MessageBlock *) {
 		res["username" + cntr] = s->username;
 	}
 
-	return cc->sendMessageBlock(&res);
+	cc->sendMessageBlock(&res);
 }
 
 PasswdMessage::PasswdMessage() {

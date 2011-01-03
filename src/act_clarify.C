@@ -24,7 +24,7 @@
 
 class ActGetClarifications : public ClientAction {
 protected:
-	bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
 /* Holds both requests and replies */
@@ -62,15 +62,15 @@ public:
 
 class ActClarificationRequest : public ClientAction {
 protected:
-	bool int_process(ClientConnection *cc, MessageBlock *sb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *sb);
 };
 
 class ActClarification : public ClientAction {
 protected:
-	bool int_process(ClientConnection *cc, MessageBlock *sb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *sb);
 };
 
-bool ActGetClarifications::int_process(ClientConnection *cc, MessageBlock *) {
+void ActGetClarifications::int_process(ClientConnection *cc, MessageBlock *) {
 	DbCon *db = DbCon::getInstance();
 	if (!db)
 		return cc->sendError("Error connecting to database");
@@ -104,10 +104,10 @@ bool ActGetClarifications::int_process(ClientConnection *cc, MessageBlock *) {
 
 class ActGetClarificationRequests : public ClientAction {
 protected:
-	bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
-bool ActGetClarificationRequests::int_process(ClientConnection *cc, MessageBlock *) {
+void ActGetClarificationRequests::int_process(ClientConnection *cc, MessageBlock *) {
 	DbCon *db = DbCon::getInstance();
 	if (!db)
 		return cc->sendError("Error connecting to database");
@@ -136,7 +136,7 @@ bool ActGetClarificationRequests::int_process(ClientConnection *cc, MessageBlock
 			mb[a->first + cntr] = a->second;
 	}
 
-	return cc->sendMessageBlock(&mb);
+	cc->sendMessageBlock(&mb);
 }
 
 ClarificationMessage::ClarificationMessage() {
@@ -304,7 +304,7 @@ bool ClarificationMessage::process() const {
 	return result;
 }
 
-bool ActClarificationRequest::int_process(ClientConnection *cc, MessageBlock *mb) {
+void ActClarificationRequest::int_process(ClientConnection *cc, MessageBlock *mb) {
 	uint32_t user_id = cc->getUserId();
 	uint32_t prob_id = 0;
 	std::string prob_id_str = (*mb)["prob_id"];
@@ -337,12 +337,10 @@ bool ActClarificationRequest::int_process(ClientConnection *cc, MessageBlock *mb
 
 	ClarificationMessage *msg = new ClarificationMessage(cr_id, prob_id, user_id, question);
 	log(LOG_INFO, "User %u submitted clarification request for problem %u", user_id, prob_id);
-	if (!triggerMessage(cc, msg)) return false;
-
-	return true;
+	triggerMessage(cc, msg);
 }
 
-bool ActClarification::int_process(ClientConnection *cc, MessageBlock *mb) {
+void ActClarification::int_process(ClientConnection *cc, MessageBlock *mb) {
 	uint32_t user_id = cc->getUserId();
 	std::string answer = (*mb)["answer"];
 
@@ -366,7 +364,7 @@ bool ActClarification::int_process(ClientConnection *cc, MessageBlock *mb) {
 
 	ClarificationMessage *msg = new ClarificationMessage(cr_id, c_id, user_id, pub, answer);
 	log(LOG_INFO, "User %u submitted clarification %u for request %u", user_id, c_id, cr_id);
-	return triggerMessage(cc, msg);
+	triggerMessage(cc, msg);
 }
 
 ////////////////////////////////////////////////////////////////////

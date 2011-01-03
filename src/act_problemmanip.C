@@ -33,7 +33,7 @@ class ActSetProbAttrs : public ClientAction {
 private:
 	regex_t _file_reg;
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 public:
 	ActSetProbAttrs();
 	~ActSetProbAttrs();
@@ -41,12 +41,12 @@ public:
 
 class ActGetProbAttrs : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection* cc, MessageBlock* mb);
+	virtual void int_process(ClientConnection* cc, MessageBlock* mb);
 };
 
 class ActGetProblemFile : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection* cc, MessageBlock* mb);
+	virtual void int_process(ClientConnection* cc, MessageBlock* mb);
 };
 
 class ProbMessage : public Message {
@@ -425,8 +425,8 @@ ActSetProbAttrs::~ActSetProbAttrs() {
 	regfree(&_file_reg);
 }
 
-#define act_error(x)	{ delete msg; return cc->sendError(x); }
-bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
+#define act_error(x)	do { delete msg; return cc->sendError(x); } while (false)
+void ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 	uint32_t prob_id = atol((*mb)["prob_id"].c_str());
 
 	string prob_type = (*mb)["prob_type"];
@@ -511,7 +511,7 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 				if(file_attr_desc == "-") {
 					// TODO: Find a better heuristic.
 					if(prob_id == 0)
-						act_error("You cannot 'keep' a file that was never available to begin with.  This applies to 'new' problems only")
+						act_error("You cannot 'keep' a file that was never available to begin with.  This applies to 'new' problems only");
 					else
 						msg->keepFileAttrib(attr);
 				} else {
@@ -564,11 +564,11 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 			pos++;
 	}
 
-	return triggerMessage(cc, msg);
+	triggerMessage(cc, msg);
 }
 #undef act_error
 
-bool ActGetProbAttrs::int_process(ClientConnection* cc, MessageBlock*mb) {
+void ActGetProbAttrs::int_process(ClientConnection* cc, MessageBlock*mb) {
 	char *errpnt;
 	uint32_t prob_id = strtoll((*mb)["prob_id"].c_str(), &errpnt, 0);
 	if(!prob_id || *errpnt)
@@ -592,10 +592,10 @@ bool ActGetProbAttrs::int_process(ClientConnection* cc, MessageBlock*mb) {
 	}
 	res["prob_type"] = prob_type;
 
-	return cc->sendMessageBlock(&res);
+	cc->sendMessageBlock(&res);
 }
 
-bool ActGetProblemFile::int_process(ClientConnection* cc, MessageBlock* mb) {
+void ActGetProblemFile::int_process(ClientConnection* cc, MessageBlock* mb) {
 	char *errpnt;
 	uint32_t prob_id = strtoll((*mb)["prob_id"].c_str(), &errpnt, 0);
 	string file = (*mb)["file"];
@@ -624,7 +624,7 @@ bool ActGetProblemFile::int_process(ClientConnection* cc, MessageBlock* mb) {
 
 	delete []dataptr;
 
-	return cc->sendMessageBlock(&res);
+	cc->sendMessageBlock(&res);
 }
 
 static ActSetProbAttrs _act_setprobattrs;

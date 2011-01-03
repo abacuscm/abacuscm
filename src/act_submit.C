@@ -32,44 +32,44 @@ using namespace std;
 
 class ActSubmit : public ClientAction {
 protected:
-	bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
 class ActGetProblems : public ClientAction {
 protected:
-	bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
 class ActGetSubmissibleProblems : public ClientAction {
 protected:
-	bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
 class ActGetSubmissions : public ClientAction {
 protected:
-	bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
 class ActGetSubmissionsForUser : public ClientAction {
 protected:
-	bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
 class ActSubmissionFileFetcher : public ClientAction {
 protected:
-	bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
 class ActGetSubmissionSource : public ClientAction {
 protected:
-	bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
 class ActGetLanguages : public ClientAction {
 private:
 	vector<string> _languages;
 protected:
-	bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 public:
 	ActGetLanguages();
 
@@ -109,7 +109,7 @@ public:
 	virtual uint16_t message_type_id() const;
 };
 
-bool ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
+void ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
 	if(getTimerSupportModule()->contestStatus(Server::getId()) != TIMER_STATUS_STARTED)
 		return cc->sendError("You cannot submit solutions unless the contest is running");
 
@@ -166,10 +166,10 @@ bool ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
 
 	log(LOG_INFO, "User %u submitted solution for problem %u", user_id, prob_id);
 
-	return triggerMessage(cc, msg);
+	triggerMessage(cc, msg);
 }
 
-bool ActGetProblems::int_process(ClientConnection *cc, MessageBlock *) {
+void ActGetProblems::int_process(ClientConnection *cc, MessageBlock *) {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return cc->sendError("Error connecting to database");
@@ -195,10 +195,10 @@ bool ActGetProblems::int_process(ClientConnection *cc, MessageBlock *) {
 	}
 	db->release();db=NULL;
 
-	return cc->sendMessageBlock(&mb);
+	cc->sendMessageBlock(&mb);
 }
 
-bool ActGetSubmissibleProblems::int_process(ClientConnection *cc, MessageBlock *) {
+void ActGetSubmissibleProblems::int_process(ClientConnection *cc, MessageBlock *) {
 	uint32_t user_id = cc->getUserId();
 
 	DbCon *db = DbCon::getInstance();
@@ -234,10 +234,10 @@ bool ActGetSubmissibleProblems::int_process(ClientConnection *cc, MessageBlock *
 	}
 	db->release();db=NULL;
 
-	return cc->sendMessageBlock(&mb);
+	cc->sendMessageBlock(&mb);
 }
 
-bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
+void ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return cc->sendError("Error connecting to database");
@@ -267,10 +267,10 @@ bool ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 	}
 	db->release();db=NULL;
 
-	return cc->sendMessageBlock(&mb);
+	cc->sendMessageBlock(&mb);
 }
 
-bool ActGetSubmissionsForUser::int_process(ClientConnection *cc, MessageBlock *mb) {
+void ActGetSubmissionsForUser::int_process(ClientConnection *cc, MessageBlock *mb) {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return cc->sendError("Error connecting to database");
@@ -302,7 +302,7 @@ bool ActGetSubmissionsForUser::int_process(ClientConnection *cc, MessageBlock *m
 	}
 	db->release();db=NULL;
 
-	return cc->sendMessageBlock(&result_mb);
+	cc->sendMessageBlock(&result_mb);
 }
 
 SubmissionMessage::SubmissionMessage() {
@@ -444,7 +444,7 @@ static Message* create_submission_msg() {
 	return new SubmissionMessage();
 }
 
-bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *mb) {
+void ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *mb) {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return cc->sendError("Error connecting to database");
@@ -516,10 +516,10 @@ bool ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
 
 	db->release();db=NULL;
 
-	return cc->sendMessageBlock(&result_mb);
+	cc->sendMessageBlock(&result_mb);
 }
 
-bool ActGetSubmissionSource::int_process(ClientConnection *cc, MessageBlock *mb) {
+void ActGetSubmissionSource::int_process(ClientConnection *cc, MessageBlock *mb) {
 	DbCon *db = DbCon::getInstance();
 	if (!db)
 		return cc->sendError("Error connecting to database");
@@ -543,7 +543,7 @@ bool ActGetSubmissionSource::int_process(ClientConnection *cc, MessageBlock *mb)
 	MessageBlock result_mb("ok");
 	result_mb.setContent(content, length);
 
-	return cc->sendMessageBlock(&result_mb);
+	cc->sendMessageBlock(&result_mb);
 }
 
 // Splits a comma-separated list into a vector
@@ -591,7 +591,7 @@ const vector<string> &ActGetLanguages::getLanguages() {
 	return _languages;
 }
 
-bool ActGetLanguages::int_process(ClientConnection *cc, MessageBlock *) {
+void ActGetLanguages::int_process(ClientConnection *cc, MessageBlock *) {
 	MessageBlock result_mb("ok");
 
 	for (size_t i = 0; i < _languages.size(); i++) {
@@ -600,7 +600,7 @@ bool ActGetLanguages::int_process(ClientConnection *cc, MessageBlock *) {
 		result_mb[header.str()] = _languages[i];
 	}
 
-	return cc->sendMessageBlock(&result_mb);
+	cc->sendMessageBlock(&result_mb);
 }
 
 extern "C" void abacuscm_mod_init() {

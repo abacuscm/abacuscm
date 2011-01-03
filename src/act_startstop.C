@@ -26,12 +26,12 @@ using namespace std;
 
 class ActStartStop : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection*, MessageBlock*);
+	virtual void int_process(ClientConnection*, MessageBlock*);
 };
 
 class ActSubscribeTime : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection*, MessageBlock*);
+	virtual void int_process(ClientConnection*, MessageBlock*);
 };
 
 class MsgStartStop : public Message {
@@ -98,7 +98,7 @@ void StartStopAction::perform() {
 	}
 }
 
-bool ActStartStop::int_process(ClientConnection* cc, MessageBlock *mb) {
+void ActStartStop::int_process(ClientConnection* cc, MessageBlock *mb) {
 	char *errpnt;
 
 	uint32_t server_id;
@@ -131,15 +131,15 @@ bool ActStartStop::int_process(ClientConnection* cc, MessageBlock *mb) {
 			return cc->sendError("Invalid server_id specified");
 	}
 
-	return triggerMessage(cc, new MsgStartStop(server_id, time, action));
+	triggerMessage(cc, new MsgStartStop(server_id, time, action));
 }
 
-bool ActSubscribeTime::int_process(ClientConnection* cc, MessageBlock*) {
+void ActSubscribeTime::int_process(ClientConnection* cc, MessageBlock*) {
 	if(ClientEventRegistry::getInstance().registerClient("startstop", cc)
 			&& ClientEventRegistry::getInstance().registerClient("updateclock", cc))
-		return cc->reportSuccess();
+		cc->reportSuccess();
 	else
-		return cc->sendError("Unable to subscribe to the 'startstop' event");
+		cc->sendError("Unable to subscribe to the 'startstop' event");
 }
 
 MsgStartStop::MsgStartStop() {

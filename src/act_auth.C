@@ -17,14 +17,13 @@
 
 class ActAuth : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
-bool ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
+void ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
 	DbCon *db = DbCon::getInstance();
 	if(!db) {
-		cc->sendError("Unable to connect to database.");
-		return false;
+		return cc->sendError("Unable to connect to database.");
 	}
 
 	uint32_t user_id;
@@ -41,7 +40,7 @@ bool ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
 		cc->setUserId(user_id);
 		cc->permissions() = PermissionMap::getInstance()->getPermissions(static_cast<UserType>(user_type));
 		ClientEventRegistry::getInstance().registerClient(cc);
-		return cc->reportSuccess();
+		cc->reportSuccess();
 	}
 }
 

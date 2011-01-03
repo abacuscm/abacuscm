@@ -145,14 +145,16 @@ void Markers::issue(ClientConnection* cc, uint32_t sd) {
 	delete []content;
 
 	log(LOG_DEBUG, "About to issue %u to %p", sd, cc);
-	if(cc->sendMessageBlock(&mb)) {
-		_issued[cc] = sd;
-		_issue_times.push(std::make_pair(time(NULL), std::make_pair(cc, sd)));
-		log(LOG_DEBUG, "Issued submission %u to %p", sd, cc);
-	} else {
-		enqueueSubmission(sd);
-		log(LOG_DEBUG, "Submission of %u to %p failed; returning submission to queue", sd, cc);
-	}
+	/* This only puts it in the queue for that marker, but doesn't guarantee
+	 * that it actually goes (the marker might get killed first). But we have
+	 * a separate timeout mechanism to detect this (although the primary
+	 * reason for it is to detect the case of the marker being killed while
+	 * doing the marking).
+	 */
+	cc->sendMessageBlock(&mb);
+	_issued[cc] = sd;
+	_issue_times.push(std::make_pair(time(NULL), std::make_pair(cc, sd)));
+	log(LOG_DEBUG, "Issued submission %u to %p", sd, cc);
 }
 
 uint32_t Markers::hasIssued(ClientConnection*cc) {

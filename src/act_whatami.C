@@ -18,10 +18,10 @@
 
 class ActWhatAmI : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *);
+	virtual void int_process(ClientConnection *cc, MessageBlock *);
 };
 
-bool ActWhatAmI::int_process(ClientConnection *cc, MessageBlock *) {
+void ActWhatAmI::int_process(ClientConnection *cc, MessageBlock *) {
 	MessageBlock resp("ok");
 
 	const PermissionSet &perms = cc->permissions();
@@ -34,7 +34,7 @@ bool ActWhatAmI::int_process(ClientConnection *cc, MessageBlock *) {
 			pos++;
 		}
 	}
-	return cc->sendMessageBlock(&resp);
+	cc->sendMessageBlock(&resp);
 }
 
 static ActWhatAmI _act_whatami;

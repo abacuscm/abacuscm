@@ -25,10 +25,10 @@ using namespace std;
 
 class ActStandings : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection*, MessageBlock*mb);
+	virtual void int_process(ClientConnection*, MessageBlock*mb);
 };
 
-bool ActStandings::int_process(ClientConnection *cc, MessageBlock *) {
+void ActStandings::int_process(ClientConnection *cc, MessageBlock *) {
 	StandingsSupportModule *standings = getStandingsSupportModule();
 	if (!standings)
 		return cc->sendError("Misconfigured Server - unable to calculate standings.");
@@ -40,7 +40,7 @@ bool ActStandings::int_process(ClientConnection *cc, MessageBlock *) {
 	if (!standings->getStandings(0, final, see_all, mb))
 		return cc->sendError("failed to get standings");
 
-	return cc->sendMessageBlock(&mb);
+	cc->sendMessageBlock(&mb);
 }
 
 static ActStandings _act_standings;

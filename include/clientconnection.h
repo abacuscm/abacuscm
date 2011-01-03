@@ -91,9 +91,9 @@ public:
 	// be called since we overload int_process.
 	virtual short socket_process() { return 0; }
 
-	bool sendError(const std::string& message);
-	bool reportSuccess();
-	bool sendMessageBlock(const MessageBlock *mb);
+	void sendError(const std::string& message);
+	void reportSuccess();
+	void sendMessageBlock(const MessageBlock *mb);
 
 	uint32_t getUserId() const;
 	void setUserId(uint32_t user_id);

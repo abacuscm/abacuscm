@@ -16,17 +16,17 @@
 
 class ActRunning : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
-bool ActRunning::int_process(ClientConnection *cc, MessageBlock*) {
+void ActRunning::int_process(ClientConnection *cc, MessageBlock*) {
 	MessageBlock mb("ok");
 	if(getTimerSupportModule()->contestStatus(Server::getId()) == TIMER_STATUS_STARTED)
 		mb["status"] = "running";
 	else
 		mb["status"] = "stopped";
 
-	return cc->sendMessageBlock(&mb);
+	cc->sendMessageBlock(&mb);
 }
 
 static ActRunning _act_running;

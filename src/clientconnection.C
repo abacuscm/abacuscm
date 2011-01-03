@@ -131,11 +131,9 @@ short ClientConnection::read_data() {
 			if(res2 < 0)
 				return -1;
 			if(res2 > 0) {
-				bool proc_res = ClientAction::process(this, _message);
+				ClientAction::process(this, _message);
 				delete _message;
 				_message = NULL;
-				if(!proc_res)
-					return -1;
 				pos += res2;
 				res -= res2;
 			} else
@@ -242,18 +240,18 @@ vector<pollfd> ClientConnection::int_process() {
 	return fds;
 }
 
-bool ClientConnection::sendError(const std::string& message) {
+void ClientConnection::sendError(const std::string& message) {
 	MessageBlock mb("err");
 	mb["msg"] = message;
-	return sendMessageBlock(&mb);
+	sendMessageBlock(&mb);
 }
 
-bool ClientConnection::reportSuccess() {
+void ClientConnection::reportSuccess() {
 	MessageBlock mb("ok");
-	return sendMessageBlock(&mb);
+	sendMessageBlock(&mb);
 }
 
-bool ClientConnection::sendMessageBlock(const MessageBlock *mb) {
+void ClientConnection::sendMessageBlock(const MessageBlock *mb) {
 	string raw = mb->getRaw();
 	if (!raw.empty()) {
 		char dummy = 0;
@@ -261,7 +259,6 @@ bool ClientConnection::sendMessageBlock(const MessageBlock *mb) {
 		// Wake up anyone who might be waiting for data
 		write(_write_notify[1], &dummy, 1);
 	}
-	return true; // TODO: eliminate return code
 }
 
 bool ClientConnection::init() {

@@ -26,7 +26,7 @@ private:
 	map<string, uint32_t> _typemap;
 
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 public:
 	ActAddUser();
 };
@@ -39,7 +39,7 @@ ActAddUser::ActAddUser() {
 	_typemap["observer"] = USER_TYPE_OBSERVER;
 }
 
-bool ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
+void ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
 	UserSupportModule *usm = getUserSupportModule();
 	uint32_t user_id = cc->getUserId();
 	string new_username = (*mb)["username"];

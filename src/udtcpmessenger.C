@@ -817,7 +817,7 @@ private:
 
 	uint32_t auth_cred;
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 public:
 	TCPTransmitAction();
 	~TCPTransmitAction();
@@ -840,7 +840,7 @@ TCPTransmitAction::~TCPTransmitAction()
 	pthread_mutex_destroy(&_lock_map);
 }
 
-bool TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
+void TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
 {
 #if 0
 	// NOTE: This authentication is WEAK!! TODO
@@ -855,7 +855,7 @@ bool TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
 	uint32_t skip = strtoull((*mb)["skip"].c_str(), NULL, 10);
 
 	if (!server_id || !message_id)
-		return false;
+		return;
 
 	MessageContainer *mc = NULL;
 	{
@@ -873,7 +873,7 @@ bool TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
 		if (!mc) {
 			DbCon *db = DbCon::getInstance();
 			if (!db)
-				return false;
+				return;
 
 			ostringstream query;
 			query << "SELECT message_type_id, time, signature, data FROM PeerMessage WHERE server_id=" << server_id << " AND message_id=" << message_id;
@@ -882,7 +882,7 @@ bool TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
 			db->release(); db = NULL;
 
 			if (row.empty())
-				return false;
+				return;
 
 			uint8_t *signature = new uint8_t[row[2].length()];
 			uint8_t *data = new uint8_t[row[3].length()];
@@ -907,13 +907,14 @@ bool TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
 
 	ostringstream str;
 
-	bool ret;
 	if (skip < mc->blob_size) {
 		MessageBlock rt("udtcppeermessageput");
 		rt.setContent((char*)mc->message_blob + skip, mc->blob_size - skip, false); /* SHARED DATA COPY */
-		ret = cc->sendMessageBlock(&rt);
-	} else
-		ret = false;
+		cc->sendMessageBlock(&rt);
+	} else {
+		// TODO: what should happen here? It used to say
+		// ret = false;
+	}
 
 	{
 		ScopedLock _(&_lock_map);
@@ -926,8 +927,6 @@ bool TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
 				_message_map.erase(s);
 		}
 	}
-
-	return ret;
 }
 
 static TCPTransmitAction _act_getmsg;

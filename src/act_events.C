@@ -16,10 +16,10 @@
 
 class Act_ClientEventRegistry : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
-bool Act_ClientEventRegistry::int_process(ClientConnection* cc, MessageBlock* mb) {
+void Act_ClientEventRegistry::int_process(ClientConnection* cc, MessageBlock* mb) {
 	ClientEventRegistry& evReg = ClientEventRegistry::getInstance();
 
 	std::string action = (*mb)["action"];

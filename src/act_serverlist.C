@@ -16,10 +16,10 @@
 
 class ServerListAct : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
-bool ServerListAct::int_process(ClientConnection *cc, MessageBlock *) {
+void ServerListAct::int_process(ClientConnection *cc, MessageBlock *) {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return cc->sendError("Error connecting to database");
@@ -35,7 +35,7 @@ bool ServerListAct::int_process(ClientConnection *cc, MessageBlock *) {
 		mb[t.str()] = i->second;
 	}
 
-	return cc->sendMessageBlock(&mb);
+	cc->sendMessageBlock(&mb);
 }
 
 static ServerListAct _act_servlist;

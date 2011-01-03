@@ -18,10 +18,10 @@
 
 class ActContesttime : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection* cc, MessageBlock*mb);
+	virtual void int_process(ClientConnection* cc, MessageBlock*mb);
 };
 
-bool ActContesttime::int_process(ClientConnection* cc, MessageBlock*) {
+void ActContesttime::int_process(ClientConnection* cc, MessageBlock*) {
 	TimerSupportModule *timer = getTimerSupportModule();
 	uint32_t server_id = Server::getId();
 	uint32_t contesttime = timer->contestTime(server_id);
@@ -40,7 +40,7 @@ bool ActContesttime::int_process(ClientConnection* cc, MessageBlock*) {
 	os << contestremain;
 	res["remain"] = os.str();
 
-	return cc->sendMessageBlock(&res);
+	cc->sendMessageBlock(&res);
 }
 
 static ActContesttime _act_contesttime;

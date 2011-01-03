@@ -21,10 +21,10 @@ using namespace std;
 ////////////////////////////////////////////////////////////
 class ActGetProbTypes : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
-bool ActGetProbTypes::int_process(ClientConnection *cc, MessageBlock *) {
+void ActGetProbTypes::int_process(ClientConnection *cc, MessageBlock *) {
 	vector<string> types = ProblemType::getProblemTypes();
 
 	MessageBlock resp("ok");
@@ -36,16 +36,16 @@ bool ActGetProbTypes::int_process(ClientConnection *cc, MessageBlock *) {
 		resp[t.str()] = *i;
 	}
 
-	return cc->sendMessageBlock(&resp);
+	cc->sendMessageBlock(&resp);
 }
 
 ////////////////////////////////////////////////////////////
 class ActGetProbDescript : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
-bool ActGetProbDescript::int_process(ClientConnection *cc, MessageBlock *mb) {
+void ActGetProbDescript::int_process(ClientConnection *cc, MessageBlock *mb) {
 	string type = (*mb)["type"];
 	if(type == "")
 		return cc->sendError("You must specify the type to describe");
@@ -57,7 +57,7 @@ bool ActGetProbDescript::int_process(ClientConnection *cc, MessageBlock *mb) {
 	MessageBlock resp("ok");
 	resp["descript"] = desc;
 
-	return cc->sendMessageBlock(&resp);
+	cc->sendMessageBlock(&resp);
 }
 
 ////////////////////////////////////////////////////////////

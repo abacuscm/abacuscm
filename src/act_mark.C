@@ -32,12 +32,12 @@ using namespace std;
 
 class ActSubscribeMark : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection*, MessageBlock* mb);
+	virtual void int_process(ClientConnection*, MessageBlock* mb);
 };
 
 class ActPlaceMark : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection*, MessageBlock* mb);
+	virtual void int_process(ClientConnection*, MessageBlock* mb);
 };
 
 class MarkMessage : public Message {
@@ -238,12 +238,12 @@ uint32_t MarkMessage::load(const uint8_t *buffer, uint32_t size) {
 }
 
 ///////////////////////////////////////////////////////////
-bool ActSubscribeMark::int_process(ClientConnection* cc, MessageBlock*) {
+void ActSubscribeMark::int_process(ClientConnection* cc, MessageBlock*) {
 	Markers::getInstance().enqueueMarker(cc);
-	return cc->reportSuccess();
+	cc->reportSuccess();
 }
 
-bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
+void ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 	std::string submission_id_str = (*mb)["submission_id"];
 	char *errpnt;
 	uint32_t submission_id = strtoll(submission_id_str.c_str(), &errpnt, 0);
@@ -297,7 +297,7 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 			msg = "This hasn't been compiled or even run: you really think I'm going to let you fiddle with the marks?";
 		}
 		else if (uperms[PERMISSION_JUDGE]) {
-			msg = cc->sendError("Another judge has already this submission, sorry!");
+			msg = "Another judge has already this submission, sorry!";
 		}
 		else if (resinfo != JUDGE) {
 			msg = "You cannot change the status of this submission: the decision was black and white; no human required.";
@@ -355,7 +355,7 @@ bool ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 	regfree(&file_reg);
 
 	Markers::getInstance().notifyMarked(cc, submission_id);
-	return triggerMessage(cc, markmsg);
+	triggerMessage(cc, markmsg);
 }
 
 static ActSubscribeMark _act_subscribe_mark;
