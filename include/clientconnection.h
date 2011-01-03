@@ -26,7 +26,7 @@ class MessageBlock;
 
 class ClientConnection : public Socket {
 private:
-	static const SSL_METHOD *_method;
+	static SSL_METHOD *_method;
 	static SSL_CTX *_context;
 
 	/* The connection is a state machine:
