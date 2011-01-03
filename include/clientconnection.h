@@ -26,7 +26,15 @@ class MessageBlock;
 
 class ClientConnection : public Socket {
 private:
+	/* The type returned by TLSv1_method and accepted by SSL_CTX_NEW changed
+	 * somewhere between 0.9.8 and 1.0.0c. For now assume it was with the major
+	 * revision.
+	 */
+#if OPENSSL_VERSION_NUMBER < 0x10000000
 	static SSL_METHOD *_method;
+#else
+	static const SSL_METHOD *_method;
+#endif
 	static SSL_CTX *_context;
 
 	/* The connection is a state machine:
