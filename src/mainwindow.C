@@ -1467,13 +1467,10 @@ void MainWindow::updateStandings(const MessageBlock *mb) {
 		StandingItem *&item = standingMap[id];
 		if (item == NULL)
 			item = new StandingItem(standings);
-		/* Check that we have newer information, not something out-of-order */
-		if (!Score::CompareAttempts()(cur, *item)) {
-			/* Only alert on correct submissions */
-			if (cur.getTotalSolved() > item->getTotalSolved())
-				changed = item;
-			*item = cur;
-		}
+		/* Only alert on correct submissions */
+		if (cur.getTotalSolved() > item->getTotalSolved())
+			changed = item;
+		*item = cur;
 	}
 
 	sortStandings();

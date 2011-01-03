@@ -65,13 +65,6 @@ public:
 		}
 	};
 
-	/* Identifies which score for a contestant is earlier in time */
-	struct CompareAttempts {
-		bool operator()(const Score &a, const Score &b) const {
-			return a.getTotalAttempts() < b.getTotalAttempts();
-		}
-	};
-
 	Score();
 	virtual ~Score() {}
 

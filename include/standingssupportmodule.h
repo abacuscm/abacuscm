@@ -55,6 +55,11 @@ private:
 	StandingsSupportModule();
 	virtual ~StandingsSupportModule();
 
+	/* Equivalent to getStandings, but optionally allows the caller to
+	 * handle locking.
+	 */
+	bool getStandingsInternal(uint32_t uid, bool final, bool see_all, MessageBlock &mb, bool caller_locks);
+
 	friend class TimedStandingsUpdater;
 public:
 	/* Indicate that new information might be available for user (or for all

@@ -206,7 +206,6 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 			}
 		}
 	}
-	pthread_rwlock_unlock(&_lock);
 
 	for (int w = 0; w < 2; w++)
 		if (have_update[w]) {
@@ -223,11 +222,22 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 					pt = pt && !PERMISSION_SEE_ALL_STANDINGS;
 
 				MessageBlock mb("updatestandings");
-				if (getStandings(uid, w, see_all, mb)
+				if (getStandingsInternal(uid, w, see_all, mb, true)
 					&& mb["nrows"] != "0")
 					ClientEventRegistry::getInstance().broadcastEvent(0, pt, &mb);
 			}
 		}
+
+	/* Note: this lock must be held until after the update broadcast, because
+	 * clients assume that standings updates are monotonicly providing newer
+	 * information. If the lock is not held, then concurrent calls to
+	 * updateStandings can return results out-of-order as they race to enqueue
+	 * the broadcast messages.
+	 *
+	 * Because broadcastEvent simply enqueues the broadcast to other threads,
+	 * it should not block for any significant amount of time.
+	 */
+	pthread_rwlock_unlock(&_lock);
 
 	return true;
 }
@@ -238,7 +248,7 @@ static string cell_name(int row, int col) {
 	return name.str();
 }
 
-bool StandingsSupportModule::getStandings(uint32_t uid, bool final, bool see_all, MessageBlock &mb)
+bool StandingsSupportModule::getStandingsInternal(uint32_t uid, bool final, bool see_all, MessageBlock &mb, bool caller_locks)
 {
 	UserSupportModule *usm = getUserSupportModule();
 	if (!usm) {
@@ -277,7 +287,8 @@ bool StandingsSupportModule::getStandings(uint32_t uid, bool final, bool see_all
 		mb["ncols"] = ncols_str.str();
 	}
 
-	pthread_rwlock_rdlock(&_lock);
+	if (!caller_locks)
+		pthread_rwlock_rdlock(&_lock);
 	const Standings &standings = 
 		final ? _final_standings : _contestant_standings;
 
@@ -337,8 +348,13 @@ bool StandingsSupportModule::getStandings(uint32_t uid, bool final, bool see_all
 		mb["nrows"] = row.str();
 	}
 
-	pthread_rwlock_unlock(&_lock);
+	if (!caller_locks)
+		pthread_rwlock_unlock(&_lock);
 	return true;
+}
+
+bool StandingsSupportModule::getStandings(uint32_t uid, bool final, bool see_all, MessageBlock &mb) {
+	return getStandingsInternal(uid, final, see_all, mb, false);
 }
 
 void StandingsSupportModule::timedUpdate(time_t time, uint32_t uid, uint32_t submission_id) {
