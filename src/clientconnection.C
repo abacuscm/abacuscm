@@ -12,6 +12,7 @@
 
 #include <cassert>
 #include <new>
+#include <fcntl.h>
 #include "clientconnection.h"
 #include "logger.h"
 #include "acmconfig.h"
@@ -35,7 +36,11 @@ ClientConnection::ClientConnection(int sock) {
 	_tssl = NULL;
 	_ssl = NULL;
 	_message = NULL;
-	pthread_mutex_init(&_write_lock, NULL);
+	// TODO: error checking
+	pipe(_write_notify);
+	fcntl(_write_notify[0], F_SETFL, O_NONBLOCK);
+	fcntl(_write_notify[1], F_SETFL, O_NONBLOCK);
+	_write_progress = 0;
 	// This might be more generous than necessary, but if we get one early
 	// wakeup it won't hurt.
 	initialise(sock, POLLIN | POLLOUT);
@@ -60,7 +65,8 @@ ClientConnection::~ClientConnection() {
 		_tssl = NULL;
 	}
 
-	pthread_mutex_destroy(&_write_lock);
+	close(_write_notify[0]);
+	close(_write_notify[1]);
 }
 
 short ClientConnection::initiate_ssl() {
@@ -87,8 +93,8 @@ short ClientConnection::initiate_ssl() {
 				goto err;
 			}
 			_ssl = NULL;
-			// Success - process data until we can't any more
-			return process_data();
+			// Success
+			return 0;
 		case SSL_ERROR_WANT_READ:
 			return POLLIN;
 		case SSL_ERROR_WANT_WRITE:
@@ -108,10 +114,10 @@ err:
 		_tssl = NULL;
 	}
 
-	return 0;
+	return -1;
 }
 
-short ClientConnection::process_data() {
+short ClientConnection::read_data() {
 	char buffer[CLIENT_BFR_SIZE];
 	ThreadSSL::Status status;
 	while(0 < (status = _tssl->read(buffer, CLIENT_BFR_SIZE, ThreadSSL::NONBLOCK)).processed) {
@@ -123,13 +129,13 @@ short ClientConnection::process_data() {
 
 			int res2 = _message->addBytes(pos, res);
 			if(res2 < 0)
-				return false;
+				return -1;
 			if(res2 > 0) {
 				bool proc_res = ClientAction::process(this, _message);
 				delete _message;
 				_message = NULL;
 				if(!proc_res)
-					return false;
+					return -1;
 				pos += res2;
 				res -= res2;
 			} else
@@ -138,27 +144,102 @@ short ClientConnection::process_data() {
 	}
 
 	switch(status.err) {
-		case SSL_ERROR_NONE:
-			// Can this happen? Implies no data was actually read.
-			// Fall through for now
 		case SSL_ERROR_WANT_READ:
 			return POLLIN;
 		case SSL_ERROR_WANT_WRITE:
 			return POLLOUT;
+		case SSL_ERROR_NONE:
+			// Can this happen? Implies no data was actually read.
+			// Fall through for now
 		case SSL_ERROR_ZERO_RETURN:
 			// connection shut down
-			return 0;
+			return -1;
 		default:
 			log_ssl_errors_with_err("SSL_read", status.err);
-			return 0;
+			return -1;
 	}
 }
 
-short ClientConnection::socket_process() {
-	if(!_tssl)
-		return initiate_ssl();
-	else
-		return process_data();
+short ClientConnection::write_data() {
+	char dummy[64];
+	// Drain the wakeup queue
+	while (read(_write_notify[0], dummy, sizeof(dummy)) > 0) {
+		// Do nothing
+	}
+
+	while (true) {
+		if (_write_msg.empty()) {
+			if (_write_queue.empty()) {
+				return 0; // caller must wait until more is enqueued
+			}
+			_write_msg = _write_queue.dequeue();
+		}
+		ThreadSSL::Status status;
+		size_t remain = _write_msg.size() - _write_progress;
+		assert(remain > 0);
+		status = _tssl->write(_write_msg.data() + _write_progress, remain, ThreadSSL::NONBLOCK);
+		if (status.processed == 0) {
+			switch (status.err) {
+			case SSL_ERROR_WANT_READ:
+				return POLLIN;
+			case SSL_ERROR_WANT_WRITE:
+				return POLLOUT;
+			case SSL_ERROR_NONE:
+				// Can this happen? Implies no data was actually read.
+				// Fall through for now
+			case SSL_ERROR_ZERO_RETURN:
+				// connection shut down
+				return -1;
+			default:
+				log_ssl_errors_with_err("SSL_write", status.err);
+				return -1;
+			}
+		}
+		_write_progress += status.processed;
+		if (_write_progress == _write_msg.size()) {
+			_write_progress = 0;
+			_write_msg = "";
+		}
+	}
+}
+
+vector<pollfd> ClientConnection::int_process() {
+	vector<pollfd> fds;
+	if(!_tssl) {
+		short status = initiate_ssl();
+		if (status == -1)
+			return fds; // error
+		else if (status > 0) {
+			fds.push_back(pollfd());
+			fds.back().fd = getSock();
+			fds.back().events = status;
+			return fds;
+		}
+	}
+
+	/* If we get here, the connection was established */
+
+	short read_status = read_data();
+	if (read_status < 0)
+		return fds; // error
+
+	short write_status = write_data();
+	if (write_status < 0)
+		return fds; // error
+
+	// TODO: check for SSL_pending after the write and go back to reading?
+
+	if (read_status | write_status) {
+		fds.push_back(pollfd());
+		fds.back().fd = getSock();
+		fds.back().events = read_status | write_status;
+	}
+	if (write_status == 0) { // asked to wait for more incoming data
+		fds.push_back(pollfd());
+		fds.back().fd = _write_notify[0];
+		fds.back().events = POLLIN;
+	}
+	return fds;
 }
 
 bool ClientConnection::sendError(const std::string& message) {
@@ -173,16 +254,14 @@ bool ClientConnection::reportSuccess() {
 }
 
 bool ClientConnection::sendMessageBlock(const MessageBlock *mb) {
-	/* Note: the ThreadSSL lock only protects readers and writers from each
-	 * other. We need need the _write_lock to prevent the data from multiple
-	 * concurrent callers to this function from becoming interleaved.
-	 */
-	pthread_mutex_lock(&_write_lock);
-	bool res = mb->writeToSSL(_tssl);
-	pthread_mutex_unlock(&_write_lock);
-	if(!res)
-		log(LOG_NOTICE, "Failed to write MessageBlock to client - not sure what this means though");
-	return res;
+	string raw = mb->getRaw();
+	if (!raw.empty()) {
+		char dummy = 0;
+		_write_queue.enqueue(raw);
+		// Wake up anyone who might be waiting for data
+		write(_write_notify[1], &dummy, 1);
+	}
+	return true; // TODO: eliminate return code
 }
 
 bool ClientConnection::init() {

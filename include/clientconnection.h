@@ -14,11 +14,13 @@
 #include <openssl/ssl.h>
 #include <string>
 #include <map>
+#include <vector>
 #include <pthread.h>
 
 #include "socket.h"
 #include "threadssl.h"
 #include "permissions.h"
+#include "queue.h"
 
 #define CLIENT_BFR_SIZE			512
 
@@ -37,6 +39,13 @@ private:
 #endif
 	static SSL_CTX *_context;
 
+	/* Out-going data
+	 */
+	std::string _write_msg;      // data that is on its way out
+	std::size_t _write_progress; // amount of _out_msg that has been sent
+	Queue<std::string> _write_queue;  // messages waiting to be sent
+	int _write_notify[2];        // pipe pair for waking up on data
+
 	/* The connection is a state machine:
 	 * 1. Uninitialised: _tssl = NULL, _ssl = NULL
 	 * 2. Connecting: _tssl = NULL, _ssl != NULL
@@ -50,15 +59,37 @@ private:
 	uint32_t _user_id;
 	PermissionSet _permissions;
 
-	pthread_mutex_t _write_lock;
-
+	/**
+	 * Attempts to open the SSL connection, but will not block. Returns:
+	 * <0 on terminal failure
+	 *  0 on success (connection open)
+	 * >0 a pollfd events mask to wait for on the socket.
+	 */
 	short initiate_ssl();
-	short process_data();
+
+	/**
+	 * Attempts to read data from the connection, but will not block. Returns:
+	 * <0 on failure (kill off the connection)
+	 * >0 a pollfd events mask to wait for on the socket.
+	 */
+	short read_data();
+
+	/**
+	 * Attempts to write data to the connection, but will not block. Returns:
+	 * <0 on failure (kill off the connection)
+	 *  0 to wait for more data to be added to the queue
+	 * >0 a pollfd events mask to wait for on the socket.
+	 */
+	short write_data();
 public:
 	ClientConnection(int sockfd);
 	virtual ~ClientConnection();
 
-	virtual short socket_process();
+	virtual std::vector<pollfd> int_process();
+
+	// Needs to be implemented since we inherit from Socket, but will never
+	// be called since we overload int_process.
+	virtual short socket_process() { return 0; }
 
 	bool sendError(const std::string& message);
 	bool reportSuccess();

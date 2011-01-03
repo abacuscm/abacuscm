@@ -12,6 +12,7 @@
 #include "threadssl.h"
 
 #include <sstream>
+#include <string>
 #include <cassert>
 
 using namespace std;
@@ -182,22 +183,21 @@ bool MessageBlock::writeBlockToSSL(const char *buffer, int length, ThreadSSL *ss
 	return true;
 }
 
-bool MessageBlock::writeToSSL(ThreadSSL* ssl) const {
-	ostringstream init_block;
-	init_block << _message << '\n';
+string MessageBlock::getRaw() const {
+	ostringstream block;
+	block << _message << '\n';
 	for(MessageHeaders::const_iterator i = _headers.begin(); i != _headers.end(); ++i)
-		init_block << i->first << ':' << i->second << '\n';
-	init_block << '\n';
+		block << i->first << ':' << i->second << '\n';
+	block << '\n';
 
-	string headerblock = init_block.str();
-	int length = headerblock.length();
-	const char *buffer = headerblock.c_str();
+	if (_content) {
+		block.write(_content, _content_length);
+	}
 
-	if(!writeBlockToSSL(buffer, length, ssl))
-		return false;
+	return block.str();
+}
 
-	if(_content)
-		return writeBlockToSSL(_content, _content_length, ssl);
-
-	return true;
+bool MessageBlock::writeToSSL(ThreadSSL* ssl) const {
+	string raw = getRaw();
+	return writeBlockToSSL(raw.data(), raw.size(), ssl);
 }

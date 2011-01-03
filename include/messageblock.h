@@ -57,9 +57,9 @@ public:
 				static std::string empty("");
 				return empty;
 			}
-		};
+		}
 	std::string& operator[] (const std::string& name)
-		{ return _headers[name]; };
+		{ return _headers[name]; }
 	bool hasAttribute(const std::string &name) const
 		{ return _headers.find(name) != _headers.end(); }
 
@@ -72,7 +72,7 @@ public:
 	/**
 	 * Set the content of the MessageBlock.  Note that if you set make_private_copy
 	 * to false then you must ensure that the content stays consistent for the
-	 * duration of the existance of this MessageBlock.
+	 * duration of the existence of this MessageBlock.
 	 */
 	bool setContent(const char* data, int size, bool make_private_copy = true);
 
@@ -95,6 +95,11 @@ public:
 	 * this ssl connection.
 	 */
 	bool writeToSSL(ThreadSSL* ssl) const;
+
+	/**
+	 * Returns the message as a binary string.
+	 */
+	std::string getRaw() const;
 
 	/**
 	 * Dumps the MB to log() with LOG_DEBUG
