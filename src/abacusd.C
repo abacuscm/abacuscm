@@ -501,7 +501,7 @@ void resend_message(uint32_t server_id) {
 }
 
 // TODO: Make the waiting period configurable
-// instead of a fixed 5.  Posibly also make this
+// instead of a fixed 5.  Possibly also make this
 // a "hard" time, ie, every 5 seconds instead of
 // a complete 5 seconds every time.
 void* message_resender(void*) {
