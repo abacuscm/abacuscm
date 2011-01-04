@@ -680,16 +680,8 @@ bool ServerConnection::getSubmissionSource(uint32_t submission_id, char **buffer
 }
 
 vector<ProblemInfo> ServerConnection::getProblems() {
-	return _getProblems("getproblems");
-}
-
-vector<ProblemInfo> ServerConnection::getSubmissibleProblems() {
-	return _getProblems("getsubmissibleproblems");
-}
-
-vector<ProblemInfo> ServerConnection::_getProblems(std::string query) {
 	vector<ProblemInfo> response;
-	MessageBlock mb(query);
+	MessageBlock mb("getproblems");
 
 	MessageBlock *res = sendMB(&mb);
 	if(!res)

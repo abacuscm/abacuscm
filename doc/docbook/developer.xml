@@ -508,15 +508,6 @@ name1:<replaceable>name</replaceable>
                         </para>
                     </callout>
                 </calloutlist>
-                <para>
-                    If <type>getsubmissibleproblems</type> is used instead
-                    of <type>getproblems</type>, only those problems for
-                    which the user has successfully solved the dependent
-                    problems will be returned (unless the user has the
-                    <symbol>PERMISSION_SEE_ALL_PROBLEMS</symbol>
-                    permission). In future, these may be merged into a
-                    single query.
-                </para>
             </section>
             <section id="developer.csprotocol.submit">
                 <title>Submit solution</title>

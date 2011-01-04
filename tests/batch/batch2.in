@@ -38,9 +38,3 @@ getproblems
 ?id0:1
 ?code0:test
 ?name0:Test Problem
-
-getsubmissibleproblems
-?ok
-?id0:1
-?code0:test
-?name0:Test Problem

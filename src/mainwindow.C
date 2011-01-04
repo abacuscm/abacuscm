@@ -1146,7 +1146,7 @@ void MainWindow::doAdminStartStop() {
 }
 
 void MainWindow::doSubmit() {
-	vector<ProblemInfo> probs = _server_con.getSubmissibleProblems();
+	vector<ProblemInfo> probs = _server_con.getProblems();
 	if(probs.empty()) {
 		QMessageBox::critical(this, "Error", "There are no active problems to submit solutions for!", "O&k");
 		return;
@@ -1217,7 +1217,7 @@ void MainWindow::doSubmit() {
 // choose the correct problem id from the list. If submission_id is specified, then we automatically
 // populate the request's text with a header that includes the submission id.
 void MainWindow::clarificationRequest(uint32_t submission_id, uint32_t prob_id) {
-	vector<ProblemInfo> probs = _server_con.getSubmissibleProblems();
+	vector<ProblemInfo> probs = _server_con.getProblems();
 
 	ClarificationRequest cr;
 

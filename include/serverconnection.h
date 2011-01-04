@@ -135,7 +135,6 @@ public:
 	std::vector<std::string> getLanguages();
 	std::vector<std::string> getProblemTypes();
 	std::vector<ProblemInfo> getProblems();
-	std::vector<ProblemInfo> getSubmissibleProblems();
 	std::string getProblemDescription(std::string problemtype);
 
 	std::vector<UserInfo> getUsers();
@@ -174,9 +173,6 @@ public:
 	bool deregisterEventCallback(std::string event, EventCallback func);
 
 	static void init();
-
-private:
-	std::vector<ProblemInfo> _getProblems(std::string query);
 };
 
 #endif

@@ -40,11 +40,6 @@ protected:
 	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
 };
 
-class ActGetSubmissibleProblems : public ClientAction {
-protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
-};
-
 class ActGetSubmissions : public ClientAction {
 protected:
 	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
@@ -82,7 +77,6 @@ static ActGetSubmissions _act_getsubs;
 static ActGetSubmissionsForUser _act_getsubs_for_user;
 static ActSubmissionFileFetcher _act_submission_file_fetcher;
 static ActGetSubmissionSource _act_get_submission_source;
-static ActGetSubmissibleProblems _act_get_submissible_problems;
 static ActGetLanguages _act_get_languages;
 
 class SubmissionMessage : public Message {
@@ -170,35 +164,6 @@ void ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
 }
 
 void ActGetProblems::int_process(ClientConnection *cc, MessageBlock *) {
-	DbCon *db = DbCon::getInstance();
-	if(!db)
-		return cc->sendError("Error connecting to database");
-
-	ProblemList probs = db->getProblems();
-
-	MessageBlock mb("ok");
-
-	ProblemList::iterator p;
-	int c = 0;
-	for(p = probs.begin(); p != probs.end(); ++p, ++c) {
-		ostringstream ostrstrm;
-		ostrstrm << c;
-		string cstr = ostrstrm.str();
-		ostrstrm.str("");
-		ostrstrm << *p;
-
-		mb["id" + cstr] = ostrstrm.str();
-
-		AttributeList lst = db->getProblemAttributes(*p);
-		mb["code" + cstr] = lst["shortname"];
-		mb["name" + cstr] = lst["longname"];
-	}
-	db->release();db=NULL;
-
-	cc->sendMessageBlock(&mb);
-}
-
-void ActGetSubmissibleProblems::int_process(ClientConnection *cc, MessageBlock *) {
 	uint32_t user_id = cc->getUserId();
 
 	DbCon *db = DbCon::getInstance();
@@ -611,7 +576,6 @@ extern "C" void abacuscm_mod_init() {
 		PERMISSION_SEE_ALL_SUBMISSIONS && PERMISSION_SEE_USER_ID, &_act_getsubs_for_user);
 	ClientAction::registerAction("fetchfile",           PERMISSION_AUTH, &_act_submission_file_fetcher);
 	ClientAction::registerAction("getsubmissionsource", PERMISSION_AUTH, &_act_get_submission_source);
-	ClientAction::registerAction("getsubmissibleproblems", PERMISSION_AUTH, &_act_get_submissible_problems);
 	ClientAction::registerAction("getlanguages",        PERMISSION_AUTH, &_act_get_languages);
 	Message::registerMessageFunctor(TYPE_ID_SUBMISSION, create_submission_msg);
 

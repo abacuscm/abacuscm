@@ -125,15 +125,6 @@ getproblems
 ?code1:test2
 ?name1:Unicode £etterß
 
-getsubmissibleproblems
-?ok
-?id0:1
-?code0:test
-?name0:Test Problem
-?id1:17
-?code1:test2
-?name1:Unicode £etterß
-
 getsubmissions
 ?ok
 
