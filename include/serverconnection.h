@@ -48,7 +48,7 @@ typedef struct {
 
 class ServerConnection {
 	// In batch.C, to allow it to call sendMB directly
-	friend void batch_sendMB(ServerConnection &_server_con, MessageBlock *&mb, std::vector<std::string> &content);
+	friend void batch_sendMB(ServerConnection &_server_con, MessageBlock *&mb, MessageBlock *&expect, std::vector<std::string> &content, std::vector<std::string> &expect_content);
 private:
 	struct CallbackData {
 		EventCallback func;

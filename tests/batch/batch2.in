@@ -4,22 +4,43 @@
 auth
 user:test1
 pass:test1
+?ok
 
 whatami
+?ok
+?permission0:auth
+?permission1:submit
+?permission2:clarification_request
+?permission3:change_password
+?permission4:in_standings
+?permission5:see_standings
 
 submit
 prob_id:1
 lang:C++
 <tests/bad_solutions/empty.cpp
+?ok
 
 submit
 prob_id:1
 lang:Java
 <tests/bad_solutions/spin_forever.java
+?ok
 
 submit
 prob_id:1
 lang:Python
 <tests/bad_solutions/exception.py
+?ok
+
+getproblems
+?ok
+?id0:1
+?code0:test
+?name0:Test Problem
 
 getsubmissibleproblems
+?ok
+?id0:1
+?code0:test
+?name0:Test Problem

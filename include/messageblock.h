@@ -63,7 +63,7 @@ public:
 	bool hasAttribute(const std::string &name) const
 		{ return _headers.find(name) != _headers.end(); }
 
-	std::string& action() { return _message; }
+	const std::string& action() const { return _message; }
 
 	int content_size() const { return _content_length; };
 	const char* content() const { return _content; };

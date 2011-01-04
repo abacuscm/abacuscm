@@ -596,9 +596,32 @@ pass:<replaceable>password</replaceable></userinput></screen>
                 </listitem>
             </orderedlist>
             <para>
-                Note that if the file could not be read, it will be skipped,
-                but the message will still be sent.
+                It is possible to make assertions about the values returned
+                from commands. This can be used for testing Abacus, as well as
+                for sanity-checking the results. To do this, immediately
+                follow the message with the expected reply, with each line
+                prefixed by a <literal>?</literal> e.g.
             </para>
+            <synopsis>getusers
+?ok
+?id0:1
+?username0:admin
+?id1:17
+?username1:test1</synopsis>
+            <para>
+                In some cases, the exact values won't be known. A value of
+                <literal>*</literal> will match any value; a line of the form
+                <literal>?*:*</literal> will accept any headers. At present,
+                attached content is ignored when doing comparisons (although
+                you can use <literal>content-length:*</literal> to assert that
+                there is attached content.
+            </para>
+            <note>
+                <para>
+                    There must not be a blank line between the message and the
+                    expected response.
+                </para>
+            </note>
         </section>
         <section>
             <title>Other</title>
