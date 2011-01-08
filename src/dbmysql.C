@@ -814,12 +814,12 @@ ProblemList MySQL::getDependentProblemsPending(uint32_t user_id, uint32_t proble
 	ProblemList dependent_problems = getProblemDependencies(problem_id);
 	for (ProblemList::iterator it = dependent_problems.begin(); it != dependent_problems.end(); it++)
 	{
-        uint32_t dependent_problem_id = *it;
+		uint32_t dependent_problem_id = *it;
 		if (!hasSolved(user_id, dependent_problem_id)) {
 			result.push_back(dependent_problem_id);
 		}
 	}
-    return result;
+	return result;
 }
 
 bool MySQL::isSubmissionAllowed(uint32_t user_id, uint32_t problem_id) {
