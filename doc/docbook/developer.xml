@@ -955,15 +955,186 @@ server1:<replaceable>domain name</replaceable>
 &hellip;</synopsis>
             </section>
         </section>
-        <section>
+        <section id="developer.csprotocol.notifications">
             <title>Server notifications</title>
             <para>
                 These messages are sent asynchronously to the client by
-                the server. The client does not have to acknowledge them.
+                the server. The client is not expected to explicitly
+                acknowledge them. Some require explicit subscription (using
+                <link linkend="developer.csprotocol.eventmap">eventmap</link>),
+                while others will always be sent.
             </para>
             <para>
-                TODO
+                TODO: document which are which. For the moment, look at the
+                source: those sent with
+                <methodname>ClientEventRegistry::triggerEvent</methodname> are
+                sent only to subscribers, while those sent with
+                <methodname>ClientEventRegistry::broadcastEvent</methodname>
+                are sent to all users matching the method parameters.
             </para>
+            <para>
+                The messages whose names start with <literal>update</literal>
+                are all incremental updates to the information shown to the
+                user. Interactive clients will typically use them to update
+                lists shown to the user, and possibly to signal that new
+                information is available. Clients are discouraged from
+                requesting a full update except when necessary (e.g.,
+                immediately after connection).
+            </para>
+            <para>
+                Servers are recommended not to send redundant updates to
+                clients; however, the current server implementation may still
+                do so under certain conditions. Clients must be prepared to
+                accept redundant updates, and should avoid notifying the user
+                of them. For relations that are normally immutable
+                (clarification requests and clarifications), it is recommended
+                that clients nevertheless update their internal database based
+                on the notification, to allow for the possibility that these
+                may become mutable in future.
+            </para>
+            <section id="developer.csprotocol.notifications.keepalive">
+                <title>Keepalives</title>
+                <synopsis>keepalive</synopsis>
+                <para>
+                    This message is broadcast to all clients at regular
+                    intervals (see <filename>include/acmconfig.h</filename>),
+                    to inform the client that the server is still alive. If
+                    the client does not receive one for some interval, it will
+                    assume that the connection has become stuck and terminate
+                    it.
+                </para>
+                <para>
+                    The keepalives are important because some routers
+                    (possibly those performing NAT) will silently break
+                    connections after a few minutes of inactivity without
+                    sending a reset to the client; the keepalives both allow
+                    this behaviour to be detected by the client, while at the
+                    same time reducing the likelyhood by keeping data flowing
+                    through the connection.
+                </para>
+            </section>
+            <section id="developer.csprotocol.notifications.msg">
+                <title>Message for user</title>
+                <synopsis>msg
+title:<replaceable>message title</replaceable>
+text:<replaceable>message body</replaceable></synopsis>
+                <para>
+                    This is a general-purpose mechanism for the server to
+                    asynchronously display notifications to the user.
+                    Interactive clients are expected to display a dialog box
+                    or some other form of notification.
+                </para>
+            </section>
+            <section id="developer.csprotocol.notifications.startstop">
+                <title>Contest state changes</title>
+                <synopsis>startstop
+action:start|stop</synopsis>
+                <para>
+                    This is sent when the contest either starts or stops.
+                </para>
+            </section>
+            <section id="developer.csprotocol.notifications.updateclock">
+                <title>Clock updates</title>
+                <synopsis>updateclock</synopsis>
+                <para>
+                    This is sent when administrator intervention invalidates
+                    the client's idea of how much time is left in the contest
+                    (for example, by retroactively adding a start or stop
+                    event). If the retroactive event changes the contest
+                    state, this notification will be sent after the
+                    <type>startstop</type> notification.
+                </para>
+                <para>
+                    If a client displays the remaining contest time to the
+                    user, it will need to use a <link
+                        linkend="developer.csprotocol.contesttime">contesttime</link>
+                    command to determine the new remaining time.
+                </para>
+                <para>
+                    This message is not issued simply because the contest
+                    stopped or started at a pre-determined time. If the client
+                    tracks remaining contest time, it is responsible for
+                    decrementing the remaining time while the contest is
+                    running and not decrementing it while the contest is
+                    stopped.
+                </para>
+            </section>
+            <section id="developer.csprotocol.notifications.balloon">
+                <title>Balloon notifications</title>
+                <synopsis>balloon
+server:<replaceable>server name</replaceable>
+contestant:<replaceable>username</replaceable>
+problem:<replaceable>short name</replaceable></synopsis>
+                <para>
+                    This message is sent when a problem is correctly solved.
+                    It is used by the standalone <command>balloon</command>
+                    client to display a message for each problem solved.
+                </para>
+            </section>
+            <section id="developer.csprotocol.notifications.updatesubmissions">
+                <title>Update submissions</title>
+                <synopsis>updatesubmissions
+submission_id:<replaceable>id</replaceable>
+time:<replaceable>time</replaceable>
+problem:<replaceable>shortname</replaceable>
+prob_id:<replaceable>id</replaceable>
+contesttime:<replaceable>time</replaceable>
+result:<replaceable>result</replaceable>
+comment:<replaceable>comment</replaceable></synopsis>
+                <para>
+                    This notification is sent when either there is a new
+                    submission, or the state of an existing submission
+                    changes. It has the same format as the reply to <link
+                        linkend="developer.csprotocol.getsubmissions">getsubmissions</link>,
+                    except that only a single submission is updated.
+                </para>
+            </section>
+            <section id="developer.csprotocol.notifications.updateclarificationrequests">
+                <title>Update clarification requests</title>
+                <synopsis>updateclarificationrequests
+id:<replaceable>id</replaceable>
+user_id:<replaceable>user_id</replaceable>
+problem:<replaceable>shortname</replaceable>
+time:<replaceable>time</replaceable>
+question:<replaceable>text</replaceable></synopsis>
+                <para>
+                    The fields are the same as for <link
+                        linkend="developer.csprotocol.getclarificationrequests">getclarificationrequests</link>,
+                    except that only one clarification request is updated.
+                </para>
+            </section>
+            <section id="developer.csprotocol.notifications.updateclarifications">
+                <title>Update clarifications</title>
+                <synopsis>updateclarifications
+id:<replaceable>id</replaceable>
+req_id:<replaceable>id</replaceable>
+time:<replaceable>time</replaceable>
+problem:<replaceable>problem</replaceable>
+question:<replaceable>text</replaceable>
+answer:<replaceable>answer</replaceable></synopsis>
+                <para>
+                    The fields are the same as for <link
+                        linkend="developer.csprotocol.getclarifications">getclarifications</link>,
+                    except that only one clarification is updated.
+                </para>
+            </section>
+            <section id="developer.csprotocol.notifications.updatestandings">
+                <title>Update standings</title>
+                <para>
+                    TODO
+                </para>
+            </section>
+            <section id="developer.csprotocol.notifications.close">
+                <title>Connection closed</title>
+                <synopsis>close</synopsis>
+                <para>
+                    This message is never sent over the wire, but is used
+                    internally with the event registry to allow a callback to
+                    be associated with the socket being closed. It is reserved
+                    for future use as an explicit session termination
+                    notification.
+                </para>
+            </section>
         </section>
     </section>
 
