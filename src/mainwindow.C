@@ -1736,11 +1736,16 @@ void MainWindow::updateClarifications(const MessageBlock *mb) {
 		/* Replace if already present, otherwise add */
 		uint32_t id = strtoull((*mb)["id"].c_str(), NULL, 10);
 		ClarificationItem *&item = clarificationMap[id];
-		if (!item)
+		bool notify = false;
+		if (!item) {
 			item = new ClarificationItem(clarifications);
+			/* A new clarification, rather than a duplicate */
+			notify = true;
+		}
 
 		setClarification(item, *mb);
-		setAlert(tabClarifications);
+		if (notify)
+			setAlert(tabClarifications);
 	}
 	clarifications->sort();
 	clarificationRequests->sort();
@@ -1790,11 +1795,16 @@ void MainWindow::updateClarificationRequests(const MessageBlock *mb) {
 		/* Replace if already present, otherwise add */
 		uint32_t id = strtoull((*mb)["id"].c_str(), NULL, 10);
 		ClarificationRequestItem *&item = clarificationRequestMap[id];
-		if (!item)
+		bool notify = false;
+		if (!item) {
 			item = new ClarificationRequestItem(clarificationRequests);
+			/* A new clarification, rather than a duplicate */
+			notify = true;
+		}
 
 		setClarificationRequest(item, *mb);
-		setAlert(tabClarificationRequests);
+		if (notify)
+			setAlert(tabClarificationRequests);
 	}
 	clarificationRequests->sort();
 }
