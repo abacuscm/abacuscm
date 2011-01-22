@@ -41,10 +41,12 @@
             your query pertains to and type in your query.
         </para>
         <para>
-            When a judge responds to your query, the response will pop up on
-            your screen. It will also be available on the
-            <guilabel>Clarifications</guilabel> tab (you can double-click on
-            clarification requests and clarifications to see the full text).
+            When a judge responds to your query, the response will
+            be available on the
+            <guilabel>Clarifications</guilabel> tab<phrase
+            id='contestant.view-clarification'> (you can double-click on
+            clarification requests and clarifications to see the full
+            text)</phrase>.
         </para>
         <para>
             Some things to take note of:
@@ -171,8 +173,9 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                         Your submission did not compile. This can happen with
                         C++ in particular, because the marker might not be
                         using the same version of the compiler. To assist you,
-                        you can double-click on the submission to get the
-                        compiler output. In many cases you just need to add a
+                        <phrase id='contestant.comp-output'>you can double-click
+                        on the submission</phrase> to get the compiler output.
+                        In many cases you just need to add a
                         <code>#include</code> statement. There is no time
                         penalty for compilation failures. Note that since
                         Python is an interpreted language, there are no
