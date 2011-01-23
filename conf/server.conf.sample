@@ -43,10 +43,10 @@ name=chimera
 admin_password = admin
 
 [workers]
-min_idle=5
-max_idle=10
-max=100
-init=7
+min_idle=2
+max_idle=4
+max=16
+init=3
 
 [init_attribs]
 ip = 127.0.0.1

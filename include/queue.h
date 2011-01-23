@@ -91,6 +91,13 @@ public:
 		pthread_mutex_unlock(&_m);
 		return result;
 	}
+
+	size_t size() {
+		pthread_mutex_lock(&_m);
+		size_t result = _q.size();
+		pthread_mutex_unlock(&_m);
+		return result;
+	}
 };
 
 #endif

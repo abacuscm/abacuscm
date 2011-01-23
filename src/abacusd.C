@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <algorithm>
 #include <memory>
+#include <cassert>
 
 #include "acmconfig.h"
 #include "logger.h"
@@ -38,26 +39,46 @@
 #include "clienteventregistry.h"
 #include "usersupportmodule.h"
 
-#define DEFAULT_MIN_IDLE_WORKERS		5
-#define DEFAULT_MAX_IDLE_WORKERS		10
-#define MIN_MAX_TOTAL_WORKERS			50
+#define DEFAULT_MIN_IDLE_WORKERS		1
+#define DEFAULT_MAX_IDLE_WORKERS		2
+#define MIN_MAX_TOTAL_WORKERS			2
 
 using namespace std;
 
-class QueuedWaitableSet : public WaitableSet
+class ThreadedWaitableSet : public WaitableSet
 {
-private:
-	Queue<Waitable *> &_wait_queue;
-
-	friend void* worker_thread(void *);
 public:
-	explicit QueuedWaitableSet(Queue<Waitable *> &wait_queue) : _wait_queue(wait_queue) {
-	}
+	struct Worker {
+		Queue<Waitable *> work_queue;
+		pthread_t thread_id;
+		ThreadedWaitableSet *owner;
+	};
+private:
+	int _initial_workers;
+	int _min_idle_workers;
+	int _max_idle_workers;
+	int _max_total_workers;
+	Queue<Worker *> _idle_workers;
 
-	virtual void process(Waitable *w) {
-		w->preprocess();
-		_wait_queue.enqueue(w);
-	}
+	// Manipulated only from the main thread
+	int _total_workers;
+
+	// Loads the tuning parameters from the configuration file
+	void configure();
+
+	void create_worker();
+	void destroy_worker();
+
+	static void *worker_thread(void *);
+public:
+	// Callback in main thread to process work
+	virtual void process(Waitable *w);
+
+	// Wraps the underlying run() method to spawn and clean up workers
+	virtual void run();
+
+	// Called by worker thread to notify it that the worker is now idle
+	void worker_idle(Worker *w);
 };
 
 // some globals, the static keyword keeps them inside _this_
@@ -65,7 +86,6 @@ public:
 static pthread_t thread_peer_listener;
 static pthread_t thread_message_handler;
 static pthread_t thread_socket_selector;
-static pthread_t thread_worker_spawner;
 static pthread_t thread_message_resender;
 static pthread_t thread_timed_actions;
 
@@ -74,20 +94,9 @@ static volatile sig_atomic_t abacusd_running = true;
 
 // All the various Queue<>s
 static Queue<Message*> message_queue;
-static Queue<Waitable*> wait_queue;
 static Queue<uint32_t> ack_queue;
 static Queue<TimedAction*> timed_queue;
-
-static QueuedWaitableSet socket_pool(wait_queue);
-
-// num_idle_workers counts the number of currently blocking
-// worker threads, lock_numworkers protects it.
-static volatile uint32_t num_idle_workers = 0;
-static volatile uint32_t total_num_workers = 0;
-static pthread_mutex_t lock_numworkers;
-static pthread_cond_t cond_numworkers;
-static uint32_t min_idle_workers;
-static uint32_t max_idle_workers;
+static ThreadedWaitableSet socket_pool;
 
 /**
  * This signal handler sets abacusd_running to false
@@ -294,135 +303,125 @@ static void* message_handler(void *) {
 }
 
 /**
- * A worker thread.  These threads handles clients and run in detached mode.
- * They need to terminate either when dequeueing a NULL Socket* or if the
- * max block count is reached.
+ * A worker thread.  These threads handles clients as well as the client
+ * listener.
  */
-void* worker_thread(void *) {
-	pthread_mutex_lock(&lock_numworkers);
-	total_num_workers++;
-	log(LOG_DEBUG, "Creating worker thread (now has %d).", total_num_workers);
+void* ThreadedWaitableSet::worker_thread(void *data) {
+	Worker *self = (Worker *) data;
 	while(true) {
-		if(num_idle_workers == max_idle_workers)
-			break;
-		++num_idle_workers;
-		pthread_mutex_unlock(&lock_numworkers);
-
-		Waitable *s = wait_queue.dequeue();
-		pthread_mutex_lock(&lock_numworkers);
-		if(--num_idle_workers < min_idle_workers)
-			pthread_cond_signal(&cond_numworkers);
+		Waitable *s = self->work_queue.dequeue();
 		if(!s)
 			break;
-		pthread_mutex_unlock(&lock_numworkers);
 
 		s->process();
 		socket_pool.process_finish(s);
-		pthread_mutex_lock(&lock_numworkers);
+		self->owner->worker_idle(self);
 	}
-
-	total_num_workers--;
-	log(LOG_DEBUG, "Worker thread dying, %d left.", total_num_workers);
-	if(!total_num_workers)
-		pthread_cond_signal(&cond_numworkers);
-	pthread_mutex_unlock(&lock_numworkers);
+	log(LOG_DEBUG, "Worker thread dying.");
 	return NULL;
 }
 
-/**
- * Worker spawner.	This thread spawns more workers as required.
- * It expects to get sent a SIGUSR1 whenever the number of idle
- * workers reaches the minimum, at which point it will spawn a
- * few.
- */
-void* worker_spawner(void*) {
+void ThreadedWaitableSet::configure() {
 	Config& config = Config::getConfig();
-	uint32_t initial_workers = atol(config["workers"]["init"].c_str());
-	uint32_t max_num_workers = atol(config["workers"]["max"].c_str());
-	max_idle_workers = atol(config["workers"]["max_idle"].c_str());
-	min_idle_workers = atol(config["workers"]["min_idle"].c_str());
+	_initial_workers = atol(config["workers"]["init"].c_str());
+	_max_total_workers = atol(config["workers"]["max"].c_str());
+	_max_idle_workers = atol(config["workers"]["max_idle"].c_str());
+	_min_idle_workers = atol(config["workers"]["min_idle"].c_str());
 
-	if(max_num_workers < MIN_MAX_TOTAL_WORKERS) {
+	if(_max_total_workers < MIN_MAX_TOTAL_WORKERS) {
 		log(LOG_NOTICE, "Increasing the maximum number of total workers "
-				"from %u to %u.", max_num_workers, MIN_MAX_TOTAL_WORKERS);
-		max_num_workers = MIN_MAX_TOTAL_WORKERS;
+				"from %u to %u.", _max_total_workers, MIN_MAX_TOTAL_WORKERS);
+		_max_total_workers = MIN_MAX_TOTAL_WORKERS;
 	}
 
-	if(min_idle_workers == 0) {
+	if(_min_idle_workers == 0) {
 		log(LOG_NOTICE, "Defaulting to %u minimum number of idle workers.",
 				DEFAULT_MIN_IDLE_WORKERS);
-		min_idle_workers = DEFAULT_MIN_IDLE_WORKERS;
+		_min_idle_workers = DEFAULT_MIN_IDLE_WORKERS;
 	}
 
-	if(max_idle_workers <= min_idle_workers) {
-		max_idle_workers = min_idle_workers +
+	if(_max_idle_workers <= _min_idle_workers) {
+		_max_idle_workers = _min_idle_workers +
 			(DEFAULT_MAX_IDLE_WORKERS - DEFAULT_MIN_IDLE_WORKERS);
 		log(LOG_NOTICE, "Defaulting to %u maximum number of idle workers.",
-				max_idle_workers);
+				_max_idle_workers);
 	}
 
-	if(initial_workers <= min_idle_workers ||
-			initial_workers >= max_idle_workers) {
-		// +1 couses the division to be rounded up!
-		initial_workers = (min_idle_workers + max_idle_workers + 1) / 2;
-		log(LOG_NOTICE, "Defaulting to %u initial woker threads.",
-				initial_workers);
+	if(_initial_workers <= _min_idle_workers ||
+	   _initial_workers > _max_idle_workers) {
+		// +1 causes the division to be rounded up!
+		_initial_workers = (_min_idle_workers + _max_idle_workers + 1) / 2;
+		log(LOG_NOTICE, "Defaulting to %u initial worker threads.",
+				_initial_workers);
 	}
 
-	if(max_num_workers < 2 * max_idle_workers) {
+	if(_max_total_workers < 2 * _max_idle_workers) {
 		log(LOG_NOTICE, "Increasing the maximum number of workers threads "
-				"to %u from %u.", 2 * max_idle_workers, max_num_workers);
-		max_num_workers = 2 * max_idle_workers;
+				"to %u from %u.", 2 * _max_idle_workers, _max_total_workers);
+		_max_total_workers = 2 * _max_idle_workers;
+	}
+}
+
+void ThreadedWaitableSet::create_worker() {
+	Worker *worker = new Worker();
+	worker->owner = this;
+	if (pthread_create(&worker->thread_id, NULL, worker_thread, worker) == 0) {
+		_total_workers++;
+		_idle_workers.enqueue(worker);
+		log(LOG_DEBUG, "Created worker thread (now %d)", _total_workers);
+	} else {
+		log(LOG_ERR, "Failed to create worker thread (currently %d)", _total_workers);
+		delete worker;
+	}
+}
+
+void ThreadedWaitableSet::destroy_worker() {
+	assert(_total_workers > 0);
+	Worker *worker = _idle_workers.dequeue();
+	assert(worker != NULL);
+	worker->work_queue.enqueue(NULL); // requests shutdown
+	pthread_join(worker->thread_id, NULL);
+	delete worker;
+	_total_workers--;
+	log(LOG_DEBUG, "Destroyed worker thread (now %d)", _total_workers);
+}
+
+void ThreadedWaitableSet::run() {
+	configure();
+	_total_workers = 0;
+	for (int i = 0; i < _initial_workers; i++) {
+		create_worker();
+	}
+	WaitableSet::run();
+	while (_total_workers > 0) {
+		destroy_worker();
+	}
+}
+
+void ThreadedWaitableSet::process(Waitable *w) {
+	w->preprocess();
+
+	int idle_workers = _idle_workers.size();
+	/* At this point, worker threads can add workers to _idle_queue, but not
+	 * remove from it - so we may end up with more idle workers than we really
+	 * want, but never less (unless we've hit the total limit).
+	 */
+	while (idle_workers - 1 < _min_idle_workers && _total_workers < _max_total_workers) {
+		// - 1 above is because we're about to give one thread work to do
+		create_worker();
+		idle_workers++;
+	}
+	while (idle_workers > _max_idle_workers) {
+		destroy_worker();
+		idle_workers--;
 	}
 
-	pthread_mutex_init(&lock_numworkers, NULL);
-	pthread_cond_init(&cond_numworkers, NULL);
+	Worker *worker = _idle_workers.dequeue();
+	worker->work_queue.enqueue(w);
+}
 
-	while(initial_workers--) {
-		pthread_t tmp;
-		if(pthread_create(&tmp, NULL, worker_thread, NULL) == 0)
-			pthread_detach(tmp);
-	}
-
-	sigset_t sigset;
-	if(sigemptyset(&sigset))
-		lerror("sigemptyset");
-	else if(sigaddset(&sigset, SIGUSR1))
-		lerror("sigaddset");
-	else if(pthread_sigmask(SIG_BLOCK, &sigset, NULL))
-		lerror("pthread_sigmask");
-	else while(true) {
-		pthread_mutex_lock(&lock_numworkers);
-		pthread_cond_wait(&cond_numworkers, &lock_numworkers);
-
-		if(!abacusd_running)
-			break;
-
-		uint32_t tospawn = min_idle_workers - num_idle_workers;
-		uint32_t max_create = max_num_workers - total_num_workers;
-		pthread_mutex_unlock(&lock_numworkers);
-		if(max_create < tospawn)
-			tospawn = max_create;
-
-		while(tospawn--) {
-			pthread_t tmp;
-			if(pthread_create(&tmp, NULL, worker_thread, NULL) == 0)
-				pthread_detach(tmp);
-		}
-	}
-
-	log(LOG_INFO, "Waiting for workers to die ...");
-	for(uint32_t i = 0; i < total_num_workers; i++)
-		wait_queue.enqueue(NULL);
-
-	while(total_num_workers)
-		pthread_cond_wait(&cond_numworkers, &lock_numworkers);
-	pthread_mutex_unlock(&lock_numworkers);
-
-	pthread_cond_destroy(&cond_numworkers);
-	pthread_mutex_destroy(&lock_numworkers);
-
-	return NULL;
+void ThreadedWaitableSet::worker_idle(Worker *worker) {
+	_idle_workers.enqueue(worker);
 }
 
 void* socket_selector(void*) {
@@ -572,7 +571,6 @@ int main(int argc, char ** argv) {
 
 	pthread_create(&thread_peer_listener, NULL, peer_listener, NULL);
 	pthread_create(&thread_message_handler, NULL, message_handler, NULL);
-	pthread_create(&thread_worker_spawner, NULL, worker_spawner, NULL);
 	pthread_create(&thread_socket_selector, NULL, socket_selector, NULL);
 	pthread_create(&thread_message_resender, NULL, message_resender, NULL);
 	pthread_create(&thread_timed_actions, NULL, timed_actions, NULL);
@@ -595,14 +593,8 @@ int main(int argc, char ** argv) {
 	ack_queue.enqueue(0);
 	timed_queue.enqueue(NULL);
 
-	// wake up the worker spawner
-	pthread_mutex_lock(&lock_numworkers);
-	pthread_cond_signal(&cond_numworkers);
-	pthread_mutex_unlock(&lock_numworkers);
-
 	// Now we can join() them too since they should die shortly.
 	pthread_join(thread_message_handler, NULL);
-	pthread_join(thread_worker_spawner, NULL); // this waits for the worker threads
 	pthread_join(thread_socket_selector, NULL);
 	pthread_join(thread_message_resender, NULL);
 	pthread_join(thread_timed_actions, NULL);

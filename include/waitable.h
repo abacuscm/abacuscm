@@ -128,7 +128,7 @@ public:
 	void add(Waitable *w);
 
 	/* Runs main loop until a shutdown command is received. */
-	void run();
+	virtual void run();
 
 	/* Enqueue a shutdown command to the main loop */
 	void shutdown();
