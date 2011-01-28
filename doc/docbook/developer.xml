@@ -1184,18 +1184,15 @@ answer:<replaceable>answer</replaceable></synopsis>
                 message block from the client.
             </para>
             <para>
-                At present, any changes that arise from the message are not
-                performed synchronously, but are merely enqueued for another
-                thread to handle. This causes race conditions, because a
-                following query from a client might not observe this new
-                state. It also causes an <symbol>ok</symbol> response to be
-                returned to the client before the message has even been
-                processed, making it impossible to inform the client about
-                errors in processing. Note that although error checks are done
-                before the server-to-server message is created, race
-                conditions can invalidate those checks (e.g., if two clients
-                add a user with the same name at the same time, they may both
-                be given the <symbol>ok</symbol> response).
+                Changes that arise from the message are performed in another
+                thread, and a semaphore is posted when the processing is
+                complete. Currently it is assumed that the changes cannot fail
+                to be applied, and an <symbol>ok</symbol> response will always
+                be sent back if the error checks in
+                <methodname>int_process</methodname> passed. In practise, race
+                conditions can occur e.g. two users might simultaneously
+                attempt to add users with the same name; or system errors such
+                as a full disk can occur.
             </para>
         </section>
         <section id="developer.server.modules">
@@ -1306,24 +1303,22 @@ answer:<replaceable>answer</replaceable></synopsis>
                     </listitem>
                 </varlistentry>
                 <varlistentry>
-                    <term>Worker spawner</term>
-                    <listitem>
-                        <para>
-                            This thread monitors the number of idle workers;
-                            if it becomes too low, new workers are spawned.
-                        </para>
-                    </listitem>
-                </varlistentry>
-                <varlistentry>
                     <term>Socket selector</term>
                     <listitem>
                         <para>
                             This thread repeatedly calls
                             <function>poll()</function> on all active
-                            sockets to find those with unprocessed data. It
-                            then adds those sockets to a queue for the worker
-                            threads to process them, after which they are
-                            placed back on the active list.
+                            sockets to find those with unprocessed data. When a
+                            socket becomes ready for work, it finds an idle
+                            work from the idle worker queue, and enqueues the
+                            socket to it to be processed. At the same time, it
+                            checks the number of idle workers to see if any
+                            need to be created or destroyed. Once a worker
+                            finishes processing the socket, it adds itself
+                            back to the idle worker queue. This process is
+                            implemented in the
+                            <classname>ThreadedWaitableSet</classname>
+                            class.
                         </para>
                         <para>
                             The socket selector need not only listen to
@@ -1332,7 +1327,7 @@ answer:<replaceable>answer</replaceable></synopsis>
                             used, and UNIX pipe pairs are used to signal
                             internal events such as data becoming available for
                             sending. There is also a special pipe pair that is
-                            used to wait up this thread when the set of events
+                            used to wake up this thread when the set of events
                             to monitor changes, or when it is time to shut
                             down.
                         </para>
@@ -1347,7 +1342,8 @@ answer:<replaceable>answer</replaceable></synopsis>
                             database (for replay if they are not processed
                             successfully), and enqueues them to the message
                             handler to process. It also immediately
-                            acknowledges the message to the sending server.
+                            acknowledges receipt of the message to the sending
+                            server.
                         </para>
                         <para>
                             In the UDP messenger, this operation does blocking
