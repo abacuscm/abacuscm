@@ -47,6 +47,11 @@
                 <string>Observer</string>
             </property>
         </item>
+        <item>
+            <property name="text">
+                <string>Proctor</string>
+            </property>
+        </item>
         <property name="name">
             <cstring>type</cstring>
         </property>

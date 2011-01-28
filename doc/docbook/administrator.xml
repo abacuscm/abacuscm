@@ -336,7 +336,93 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
     </section>
     <section id="administrator.adduser">
         <title>Adding users</title>
-        <para>TODO</para>
+        <para>
+            TODO: more detailed instructions on the actual creation
+            process
+        </para>
+        <para>
+            Abacus supports the following types of users:
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term>Contestant</term>
+                <listitem>
+                    <para>
+                        Contestants are the regular users of the system, who
+                        make submissions and show up in the standings.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Observer</term>
+                <listitem>
+                    <para>
+                        Observers are unofficial contestants. Like contestants,
+                        they can submit solutions, but they don't show up in
+                        the contestants' view of standings. Observers do not
+                        have any special access to information like the secret
+                        inputs or the last-hour standings, but they can choose
+                        to view standings that include other observers.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Proctor</term>
+                <listitem>
+                    <para>
+                        This type is user was created specifically for contests
+                        where the judges are off-site while prizes are awarded
+                        on-site before the results are officially published.
+                        This type of user cannot submit, but does have access
+                        to the full standings.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Judge</term>
+                <listitem>
+                    <para>
+                        Judges are responsible for answering clarification
+                        requests and passing judgement where the automated
+                        marking software does not make a decision. They are
+                        given access to privileged information (such as the
+                        secret inputs and expected outputs, the full list of
+                        submissions, the current standings etc), but cannot
+                        take administrative actions such as starting or
+                        stopping the contest.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Marker</term>
+                <listitem>
+                    <para>
+                        This user type is only intended for the automated
+                        marking software to use. Judges should not use this
+                        user type.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Administrator</term>
+                <listitem>
+                    <para>
+                        The administrator has almost limitless power, although
+                        to prevent accidents, is not allowed to submit
+                        solutions. The administrator is the only user type
+                        that can create problems, create users, start or stop
+                        the contest, override incorrect judging, etc.
+                    </para>
+                    <para>
+                        Due to some quirks in the way marking conflicts are
+                        resolved, it is currently recommended to only ever use
+                        the administrator account created when abacus is
+                        initialised, with username <systemitem
+                            class="username">admin</systemitem>.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
     </section>
     <section id="administrator.addproblem">
         <title>Adding problems</title>

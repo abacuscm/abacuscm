@@ -37,6 +37,7 @@ ActAddUser::ActAddUser() {
 	_typemap["contestant"] = USER_TYPE_CONTESTANT;
 	_typemap["marker"] = USER_TYPE_MARKER;
 	_typemap["observer"] = USER_TYPE_OBSERVER;
+	_typemap["proctor"] = USER_TYPE_PROCTOR;
 }
 
 void ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
