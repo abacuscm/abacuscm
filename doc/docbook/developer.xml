@@ -254,9 +254,22 @@ pass:<replaceable>password</replaceable>
                 <title>Authentication</title>
                 <synopsis>auth
 user:<replaceable>username</replaceable>
-pass:<replaceable>password</replaceable></synopsis>
+pass:<replaceable>password</replaceable>
+
+ok
+user:<replaceable>user</replaceable></synopsis>
                 <para>
-                    This is typically the first message, used to log in.
+                    This is typically the first message, used to log in. The
+                    username is repeated in a successful reply to simplify the
+                    client logic.
+                </para>
+                <para>
+                    The web interface uses a special form of this message
+                    where the username and password fields are omitted
+                    (entirely absent, rather than blank). This requests the
+                    servlet to log in using credentials cached in the web
+                    server, rather than provided by the client. These fields
+                    are filled in before being passed to the abacus server.
                 </para>
             </section>
             <section id="developer.csprotocol.whatami">

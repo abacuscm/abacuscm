@@ -40,7 +40,9 @@ void ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
 		cc->setUserId(user_id);
 		cc->permissions() = PermissionMap::getInstance()->getPermissions(static_cast<UserType>(user_type));
 		ClientEventRegistry::getInstance().registerClient(cc);
-		cc->reportSuccess();
+		MessageBlock ret("ok");
+		ret["user"] = (*mb)["user"];
+		cc->sendMessageBlock(&ret);
 	}
 }
 
