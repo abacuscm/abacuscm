@@ -36,6 +36,7 @@ ClientConnection::ClientConnection(int sock) {
 	_tssl = NULL;
 	_ssl = NULL;
 	_message = NULL;
+	_user_id = 0;
 	// TODO: error checking
 	pipe(_write_notify);
 	fcntl(_write_notify[0], F_SETFL, O_NONBLOCK);
