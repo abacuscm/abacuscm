@@ -11,14 +11,14 @@
         </para>
     </section>
     <section id="contestant.starting">
-        <title>Starting abacus</title>
+        <title>Starting Abacus</title>
         <para>
-            The command to start Abacus will depend on your local
+            The command to start <application>Abacus</application> will depend on your local
             installation. In most cases you should just be able to type
             <userinput>abacus</userinput> in a terminal window.
         </para>
         <para>
-            After starting abacus, you should select
+            After starting <application>Abacus</application>, you should select
             <menuchoice><guimenu>Abacus</guimenu><guimenuitem>Connect</guimenuitem></menuchoice>
             This will open a dialog box. The server and port should have
             already been set for you. Fill in the username and password that
@@ -90,7 +90,7 @@
         <title>Writing your solution</title>
         <para>
             If you are using Java, you can call your main class whatever you
-            like, but it must be the <emphasis>emph</emphasis> class in the
+            like, but it must be the <emphasis>first</emphasis> class in the
             file. You can include support classes after it, but they should
             not be <symbol>public</symbol>.
         </para>
@@ -103,7 +103,7 @@
             and write to standard output
             (<code language="c">stdout</code>,
             <code language="c++">cout</code>,
-            <code language="java">System.out</code>
+            <code language="java">System.out</code> or
             <code language="python">sys.stdout</code>).
             Your solution is tested by an automated marker, so you must be
             careful to input only what is asked for, and output only what is
@@ -242,10 +242,10 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
             If you wish to ask a question about a particular submission, you
             should submit a clarification request and mention the
             <guilabel>Submission ID</guilabel> in your request. A quick way to
-            do this is to use the <guibutton>Request
+            do this is <phrase id='contestant.sub-clar'>to use the <guibutton>Request
                 Clarification</guibutton> button on the
             <guilabel>Submissions</guilabel> tab &mdash; if you have selected a
-            submission from the list box, then clicking on this button will
+            submission from the list box, then clicking on this button</phrase> will
             open a clarification request window with the correct problem
             selected, and the <guilabel>Submission ID</guilabel> entered in the
             request text.
@@ -264,7 +264,8 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
         <title>Alerts</title>
         <para>
             When a hidden tab has new information (such as a reply to a
-            clarification, or the result of a submission), the flag next to the
+            clarification, or the result of a submission), <phrase
+            id='contestant.flag'>the flag next to</phrase> the
             tab title will light up red.  Click on the tab to see the update.
         </para>
     </section>
