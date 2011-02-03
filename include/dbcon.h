@@ -276,20 +276,20 @@ public:
 	/**
 	 * Retrieves the list of problems that must be solved before a
 	 * solution to the given problem can be submitted.
-     */
+	 */
 	virtual ProblemList getProblemDependencies(uint32_t problem_id) = 0;
 
 	/**
 	 * Retrieves the list of problems that the given user still needs to
 	 * solve before they are permitted to submit a solution to the given
 	 * problems.
-     */
+	 */
 	virtual ProblemList getDependentProblemsPending(uint32_t user_id, uint32_t problem_id) = 0;
 
 	/**
 	 * Returns whether or not the given user may submit a solution to the
 	 * given problem.
-     */
+	 */
 	virtual bool isSubmissionAllowed(uint32_t user_id, uint32_t problem_id) = 0;
 
 	/**
