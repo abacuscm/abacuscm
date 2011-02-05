@@ -39,6 +39,9 @@ function get_setting()
 }
 
 admin_password="$(get_setting initialisation admin_password "$server_conf")"
+if [ -z "$admin_password" ]; then
+    admin_password="admin"
+fi
 marker_username="$(get_setting server username "$marker_conf")"
 marker_password="$(get_setting server password "$marker_conf")"
 duration="$(get_setting contest duration "$server_conf")"
@@ -69,7 +72,7 @@ whatami
 adduser
 username:test1
 friendlyname:<b>Unicode</b>: ēßõ±°½—£
-passwd:test1
+passwd:changeme_test1
 type:contestant
 ?ok
 
@@ -79,6 +82,22 @@ friendlyname:HTML: <b>not bold</b>
 passwd:judge
 type:judge
 ?ok
+
+# TEST: Creating a new user with a blank name must fail.
+adduser
+username:
+friendlyname:Blank
+password:blank
+type:contestant
+?err
+?msg:*
+
+# TEST: Creating a new user must fail if the name is already in use.
+adduser
+username:judge
+friendlyname:New judge
+passwd:judge
+type:judge
 
 # Not used in test, but allows a marker to be connected afterwards
 adduser
@@ -99,10 +118,8 @@ getusers
 ?id3:17
 ?username3:test1
 
-passwd
-newpass:$admin_password
-?ok
-
+# TEST: Changing a password must succeed
+# Later we test logging in with this new password.
 id_passwd
 user_id:17
 newpass:test1
@@ -124,10 +141,11 @@ type:tcprob
 ?ok
 ?descript:shortname S, longname S, multi_submit {No,Yes}, testcase (input F, output F), ignore_whitespace {Yes,No}, time_limit I
 
+# TEST: creating a problem must succeed
 setprobattrs
 prob_id:0
 prob_type:tcprob
-time_limit:5
+time_limit:1
 ignore_whitespace:Yes
 shortname:test
 longname:Test Problem
@@ -146,12 +164,13 @@ prob_id:1
 ?shortname:test
 ?testcase.input:data.in
 ?testcase.output:data.out
-?time_limit:5
+?time_limit:1
 
+# TEST: creating a problem with dependencies must succeed
 setprobattrs
 prob_id:0
 prob_type:tcprob
-time_limit:5
+time_limit:1
 ignore_whitespace:Yes
 shortname:test2
 longname:<b>Unicode</b> £etterß
@@ -171,7 +190,7 @@ prob_id:17
 ?shortname:test2
 ?testcase.input:data.in
 ?testcase.output:data.out
-?time_limit:5
+?time_limit:1
 
 getprobfile
 prob_id:1
@@ -316,7 +335,6 @@ getserverlist
 # Still TODO:
 # getsubmissionsource
 # getsubmissions (with submissions)
-# getstandings (with non-trivial standings)
 # mark
 # fetchfile
 # subscribemark
@@ -327,6 +345,29 @@ user:test1
 pass:test1
 ?ok
 ?user:test1
+
+# TEST: Normal users must be able to set their passwords
+passwd
+newpass:tmp_test1
+?ok
+
+# TEST: Normal users must not be able to set a blank password.
+passwd
+newpass:
+?err
+?msg:*
+
+# Test the new password
+auth
+user:test1
+pass:tmp_test1
+?ok
+?user:test1
+
+# Change the password back
+passwd
+newpass:test1
+?ok
 
 whatami
 ?ok
@@ -350,10 +391,132 @@ standings
 ?row_0_6:test
 ?row_0_7:test2
 
+# Submit assorted solutions
+# Use gentests.py to regenerate
+submit
+prob_id:1
+lang:Java
+<tests/bad_solutions/bad_class.java
+?ok
+
+submit
+prob_id:1
+lang:Java
+<tests/bad_solutions/bad_class2.java
+?ok
+
+submit
+prob_id:1
+lang:Java
+<tests/bad_solutions/bad_class3.java
+?ok
+
+submit
+prob_id:1
+lang:C++
+<tests/bad_solutions/compile_fail.cpp
+?ok
+
+submit
+prob_id:1
+lang:Java
+<tests/bad_solutions/compile_fail.java
+?ok
+
+submit
+prob_id:1
+lang:C++
+<tests/bad_solutions/do_nothing.cpp
+?ok
+
+submit
+prob_id:1
+lang:Python
+<tests/bad_solutions/do_nothing.py
+?ok
+
+submit
+prob_id:1
+lang:C++
+<tests/bad_solutions/do_nothing_unicode.cpp
+?ok
+
 submit
 prob_id:1
 lang:C++
 <tests/bad_solutions/empty.cpp
+?ok
+
+submit
+prob_id:1
+lang:Java
+<tests/bad_solutions/empty.java
+?ok
+
+submit
+prob_id:1
+lang:Python
+<tests/bad_solutions/empty.py
+?ok
+
+submit
+prob_id:1
+lang:C++
+<tests/bad_solutions/exception.cpp
+?ok
+
+submit
+prob_id:1
+lang:Java
+<tests/bad_solutions/exception.java
+?ok
+
+submit
+prob_id:1
+lang:Python
+<tests/bad_solutions/exception.py
+?ok
+
+submit
+prob_id:1
+lang:C++
+<tests/bad_solutions/infinite_stream.cpp
+?ok
+
+submit
+prob_id:1
+lang:Python
+<tests/bad_solutions/infinite_stream.py
+?ok
+
+submit
+prob_id:1
+lang:Java
+<tests/bad_solutions/package.java
+?ok
+
+submit
+prob_id:1
+lang:Java
+<tests/bad_solutions/pathclass.java
+?ok
+
+submit
+prob_id:1
+lang:C++
+<tests/bad_solutions/sleep_forever.cpp
+?ok
+
+submit
+prob_id:1
+lang:Python
+<tests/bad_solutions/sleep_forever.py
+?ok
+
+submit
+prob_id:1
+lang:C++
+<tests/bad_solutions/spin_forever.cpp
 ?ok
 
 submit
@@ -365,7 +528,19 @@ lang:Java
 submit
 prob_id:1
 lang:Python
-<tests/bad_solutions/exception.py
+<tests/bad_solutions/spin_forever.py
+?ok
+
+submit
+prob_id:1
+lang:C++
+<tests/bad_solutions/wrong_retcode.cpp
+?ok
+
+submit
+prob_id:1
+lang:Python
+<tests/bad_solutions/wrong_retcode.py
 ?ok
 
 getproblems
@@ -383,12 +558,12 @@ pass:judge
 getsubmissionsource
 submission_id:1
 ?ok
-?<tests/bad_solutions/empty.cpp
+?<tests/bad_solutions/bad_class.java
 EOF
 
-echo "**************************************************************"
-echo "Waiting for marking of 3 submissions - press enter when marked"
-echo "**************************************************************"
+echo "***************************************************************"
+echo "Waiting for marking of 25 submissions - press enter when marked"
+echo "***************************************************************"
 read
 
 bin/batch "$client_conf" <<EOF
@@ -398,7 +573,193 @@ pass:test1
 ?ok
 ?user:test1
 
-# Compilation failure must not count, the users must count
+# Log in as judge to verify submission status
+auth
+user:judge
+pass:judge
+?ok
+?user:judge
+
+# Use gentests.py to regenerate
+getsubmissions
+?ok
+?comment0:Compilation failed
+?contesttime0:*
+?prob_id0:1
+?problem0:test
+?result0:4
+?submission_id0:1
+?time0:*
+?comment1:Compilation failed
+?contesttime1:*
+?prob_id1:1
+?problem1:test
+?result1:4
+?submission_id1:17
+?time1:*
+?comment2:Compilation failed
+?contesttime2:*
+?prob_id2:1
+?problem2:test
+?result2:4
+?submission_id2:33
+?time2:*
+?comment3:Compilation failed
+?contesttime3:*
+?prob_id3:1
+?problem3:test
+?result3:4
+?submission_id3:49
+?time3:*
+?comment4:Compilation failed
+?contesttime4:*
+?prob_id4:1
+?problem4:test
+?result4:4
+?submission_id4:65
+?time4:*
+?comment5:Deferred to judge
+?contesttime5:*
+?prob_id5:1
+?problem5:test
+?result5:5
+?submission_id5:81
+?time5:*
+?comment6:Deferred to judge
+?contesttime6:*
+?prob_id6:1
+?problem6:test
+?result6:5
+?submission_id6:97
+?time6:*
+?comment7:Deferred to judge
+?contesttime7:*
+?prob_id7:1
+?problem7:test
+?result7:5
+?submission_id7:113
+?time7:*
+?comment8:Compilation failed
+?contesttime8:*
+?prob_id8:1
+?problem8:test
+?result8:4
+?submission_id8:129
+?time8:*
+?comment9:Compilation failed
+?contesttime9:*
+?prob_id9:1
+?problem9:test
+?result9:4
+?submission_id9:145
+?time9:*
+?comment10:Deferred to judge
+?contesttime10:*
+?prob_id10:1
+?problem10:test
+?result10:5
+?submission_id10:161
+?time10:*
+?comment11:Abnormal termination of program
+?contesttime11:*
+?prob_id11:1
+?problem11:test
+?result11:3
+?submission_id11:177
+?time11:*
+?comment12:Abnormal termination of program
+?contesttime12:*
+?prob_id12:1
+?problem12:test
+?result12:3
+?submission_id12:193
+?time12:*
+?comment13:Abnormal termination of program
+?contesttime13:*
+?prob_id13:1
+?problem13:test
+?result13:3
+?submission_id13:209
+?time13:*
+?comment14:Abnormal termination of program
+?contesttime14:*
+?prob_id14:1
+?problem14:test
+?result14:3
+?submission_id14:225
+?time14:*
+?comment15:Abnormal termination of program
+?contesttime15:*
+?prob_id15:1
+?problem15:test
+?result15:3
+?submission_id15:241
+?time15:*
+?comment16:Deferred to judge
+?contesttime16:*
+?prob_id16:1
+?problem16:test
+?result16:5
+?submission_id16:257
+?time16:*
+?comment17:Compilation failed
+?contesttime17:*
+?prob_id17:1
+?problem17:test
+?result17:4
+?submission_id17:273
+?time17:*
+?comment18:Time limit exceeded
+?contesttime18:*
+?prob_id18:1
+?problem18:test
+?result18:2
+?submission_id18:289
+?time18:*
+?comment19:Time limit exceeded
+?contesttime19:*
+?prob_id19:1
+?problem19:test
+?result19:2
+?submission_id19:305
+?time19:*
+?comment20:Time limit exceeded
+?contesttime20:*
+?prob_id20:1
+?problem20:test
+?result20:2
+?submission_id20:321
+?time20:*
+?comment21:Time limit exceeded
+?contesttime21:*
+?prob_id21:1
+?problem21:test
+?result21:2
+?submission_id21:337
+?time21:*
+?comment22:Time limit exceeded
+?contesttime22:*
+?prob_id22:1
+?problem22:test
+?result22:2
+?submission_id22:353
+?time22:*
+?comment23:Abnormal termination of program
+?contesttime23:*
+?prob_id23:1
+?problem23:test
+?result23:3
+?submission_id23:369
+?time23:*
+?comment24:Abnormal termination of program
+?contesttime24:*
+?prob_id24:1
+?problem24:test
+?result24:3
+?submission_id24:385
+?time24:*
+
+# Compilation failure and awaiting judge must not count, the others must count.
 standings
 ?ok
 ?ncols:8
@@ -417,8 +778,9 @@ standings
 ?row_1_3:1
 ?row_1_4:0
 ?row_1_5:*
-?row_1_6:-2
+?row_1_6:-12
 ?row_1_7:0
+
 EOF
 
 echo "****************"
