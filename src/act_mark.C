@@ -323,14 +323,6 @@ void ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 
 	std::string comment = (*mb)["comment"];
 
-	// This should be based on whether we defer to judges on automated
-	// wrong answers, not hard coded.  In fact, this should be handled
-	// in the marker daemon entirely. TODO
-	if (result == WRONG && !cc->permissions()[PERMISSION_MARK]) {
-		result = JUDGE;
-		comment = "Deferred to judge";
-	}
-
 	MarkMessage *markmsg = new MarkMessage(submission_id, cc->getUserId(), result, comment);
 	int c = 0;
 	regex_t file_reg;
