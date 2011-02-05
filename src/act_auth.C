@@ -14,6 +14,7 @@
 #include "dbcon.h"
 #include "clienteventregistry.h"
 #include "permissionmap.h"
+#include "markers.h"
 
 class ActAuth : public ClientAction {
 protected:
@@ -36,6 +37,11 @@ void ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
 	else if(result == 0)
 		return cc->sendError("Authentication failed.  Invalid username and/or password.");
 	else {
+		if (cc->getUserId() != 0) {
+			// Client was already logged in - fake disconnection
+			ClientEventRegistry::getInstance().deregisterClient(cc);
+			Markers::getInstance().preemptMarker(cc);
+		}
 		log(LOG_INFO, "User '%s' successfully logged in on client connection %p.", (*mb)["user"].c_str(), cc);
 		cc->setUserId(user_id);
 		cc->permissions() = PermissionMap::getInstance()->getPermissions(static_cast<UserType>(user_type));
@@ -49,5 +55,5 @@ void ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
 static ActAuth _act_auth;
 
 extern "C" void abacuscm_mod_init() {
-	ClientAction::registerAction("auth", !PERMISSION_AUTH, &_act_auth);
+	ClientAction::registerAction("auth", PermissionTest::ANY, &_act_auth);
 }
