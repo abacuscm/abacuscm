@@ -874,7 +874,7 @@ SubmissionList MySQL::getSubmissions(uint32_t uid) {
 	if(uid)
 		query << " AND User.user_id = " << uid;
 
-	query << " ORDER BY time";
+	query << " ORDER BY submission_id";
 
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();
