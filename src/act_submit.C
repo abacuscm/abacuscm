@@ -141,8 +141,10 @@ void ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
 		}
 	}
 
-	if (!db->isSubmissionAllowed(user_id, prob_id))
+	if (!db->isSubmissionAllowed(user_id, prob_id)) {
+		db->release(); db = NULL;
 		return cc->sendError("You are not allowed to submit a solution for this problem");
+	}
 
 	db->release();db=NULL;
 
