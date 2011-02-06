@@ -59,6 +59,7 @@ bin/batch "$client_conf" <<EOF
 whatami
 ?ok
 
+# TEST: When first starting the server, the admin_password must apply if set.
 auth
 user:admin
 pass:$admin_password
@@ -69,6 +70,7 @@ whatami
 ?ok
 ?*:*
 
+# TEST: Creating a new user must succeed, including support for Unicode in the team name.
 adduser
 username:test1
 friendlyname:<b>Unicode</b>: ēßõ±°½—£
@@ -628,6 +630,8 @@ pass:judge
 ?ok
 ?user:judge
 
+# TEST: Submitting a correct solution must succeed.
+# TEST: Submitting a solution that outputs only different whitespace must succeed (should include leading, intermediate, and trailing whitespace, and blank lines after the end).
 # TEST: Submitting a solution that throws an exception must return appropriate error.
 # TEST: Submitting a solution that returns non-zero must return appropriate error.
 # TEST: Submitting a solution that fails to compile must return appropriate error.
