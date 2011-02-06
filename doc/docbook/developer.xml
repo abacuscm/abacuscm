@@ -945,9 +945,7 @@ content-length:<replaceable>content-length</replaceable>
                     their verdicts, and for the marker to do its automated
                     marking. When a marker determines that the solution is
                     wrong, it will give a <parameter>result</parameter> of
-                    <symbol>WRONG</symbol>, which the server will override to
-                    <symbol>JUDGE</symbol>; however, this is subject to
-                    change.
+                    <symbol>JUDGE</symbol>.
                 </para>
             </section>
             <section id="developer.csprotocol.addserver">
