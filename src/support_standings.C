@@ -170,7 +170,7 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 			uint32_t correct_time = 0;
 
 			vector<SubData> &subs = p->second;
-			sort(subs.begin(), subs.end(), SubDataLessThan);
+			stable_sort(subs.begin(), subs.end(), SubDataLessThan);
 
 			vector<SubData>::iterator s;
 			s = subs.begin();
