@@ -328,13 +328,25 @@ event:updatesubmissions
 action:subscribe
 ?ok
 
+# TEST: Attempting to register for a non-existent event must not crash the server.
+eventmap
+event:bogus
+action:subscribe
+?err
+?msg:*
+
+# TEST: Attempting to deregister for a non-existent event must not crash the server.
+eventmap
+event:bogus
+action:unsubscribe
+?err
+?msg:*
+
 getserverlist
 ?ok
 ?server0:*
 
 # Still TODO:
-# getsubmissionsource
-# getsubmissions (with submissions)
 # mark
 # fetchfile
 # subscribemark
@@ -396,158 +408,179 @@ standings
 submit
 prob_id:1
 lang:Java
-<tests/bad_solutions/bad_class.java
+<tests/solutions/bad_class.java
 ?ok
 
 submit
 prob_id:1
 lang:Java
-<tests/bad_solutions/bad_class2.java
+<tests/solutions/bad_class2.java
 ?ok
 
 submit
 prob_id:1
 lang:Java
-<tests/bad_solutions/bad_class3.java
+<tests/solutions/bad_class3.java
 ?ok
 
 submit
 prob_id:1
 lang:C++
-<tests/bad_solutions/compile_fail.cpp
+<tests/solutions/compile_fail.cpp
 ?ok
 
 submit
 prob_id:1
 lang:Java
-<tests/bad_solutions/compile_fail.java
+<tests/solutions/compile_fail.java
 ?ok
 
 submit
 prob_id:1
 lang:C++
-<tests/bad_solutions/do_nothing.cpp
+<tests/solutions/do_nothing.cpp
 ?ok
 
 submit
 prob_id:1
 lang:Python
-<tests/bad_solutions/do_nothing.py
+<tests/solutions/do_nothing.py
 ?ok
 
 submit
 prob_id:1
 lang:C++
-<tests/bad_solutions/do_nothing_unicode.cpp
+<tests/solutions/do_nothing_unicode.cpp
 ?ok
 
 submit
 prob_id:1
 lang:C++
-<tests/bad_solutions/empty.cpp
+<tests/solutions/empty.cpp
 ?ok
 
 submit
 prob_id:1
 lang:Java
-<tests/bad_solutions/empty.java
+<tests/solutions/empty.java
 ?ok
 
 submit
 prob_id:1
 lang:Python
-<tests/bad_solutions/empty.py
+<tests/solutions/empty.py
 ?ok
 
 submit
 prob_id:1
 lang:C++
-<tests/bad_solutions/exception.cpp
+<tests/solutions/exception.cpp
 ?ok
 
 submit
 prob_id:1
 lang:Java
-<tests/bad_solutions/exception.java
+<tests/solutions/exception.java
 ?ok
 
 submit
 prob_id:1
 lang:Python
-<tests/bad_solutions/exception.py
+<tests/solutions/exception.py
 ?ok
 
 submit
 prob_id:1
 lang:C++
-<tests/bad_solutions/infinite_stream.cpp
+<tests/solutions/infinite_stream.cpp
 ?ok
 
 submit
 prob_id:1
 lang:Python
-<tests/bad_solutions/infinite_stream.py
+<tests/solutions/infinite_stream.py
 ?ok
 
 submit
 prob_id:1
 lang:Java
-<tests/bad_solutions/package.java
+<tests/solutions/package.java
 ?ok
 
 submit
 prob_id:1
 lang:Java
-<tests/bad_solutions/pathclass.java
+<tests/solutions/pathclass.java
 ?ok
 
 submit
 prob_id:1
 lang:C++
-<tests/bad_solutions/sleep_forever.cpp
+<tests/solutions/sleep_forever.cpp
 ?ok
 
 submit
 prob_id:1
 lang:Python
-<tests/bad_solutions/sleep_forever.py
+<tests/solutions/sleep_forever.py
 ?ok
 
 submit
 prob_id:1
 lang:C++
-<tests/bad_solutions/spin_forever.cpp
+<tests/solutions/spin_forever.cpp
 ?ok
 
 submit
 prob_id:1
 lang:Java
-<tests/bad_solutions/spin_forever.java
+<tests/solutions/spin_forever.java
 ?ok
 
 submit
 prob_id:1
 lang:Python
-<tests/bad_solutions/spin_forever.py
+<tests/solutions/spin_forever.py
 ?ok
 
 submit
 prob_id:1
 lang:C++
-<tests/bad_solutions/wrong_retcode.cpp
+<tests/solutions/wrong_retcode.cpp
 ?ok
 
 submit
 prob_id:1
 lang:Python
-<tests/bad_solutions/wrong_retcode.py
+<tests/solutions/wrong_retcode.py
 ?ok
 
+submit
+prob_id:1
+lang:Python
+<tests/solutions/exact.py
+?ok
+
+submit
+prob_id:1
+lang:Python
+<tests/solutions/whitespace.py
+?ok
+
+# TEST: Contestants must not be able to see problems with unmet dependencies.
 getproblems
 ?ok
 ?id0:1
 ?code0:test
 ?name0:Test Problem
+
+# TEST: It must not be possible to submit a problem until its dependencies are satisfied.
+submit
+prob_id:17
+lang:C++
+<tests/solutions/exception.cpp
+?err
+?msg:You are not allowed to submit a solution for this problem
 
 auth
 user:judge
@@ -555,14 +588,29 @@ pass:judge
 ?ok
 ?user:judge
 
+# TEST: It must be possible for judges to submit clarification requests.
+clarificationrequest
+question:General judge clarification request.
+?ok
+
+# TEST: Judges must see all problems, even if they have dependencies.
+getproblems
+?ok
+?id0:1
+?code0:test
+?name0:Test Problem
+?id1:17
+?code1:test2
+?name1:<b>Unicode</b> £etterß
+
 getsubmissionsource
 submission_id:1
 ?ok
-?<tests/bad_solutions/bad_class.java
+?<tests/solutions/bad_class.java
 EOF
 
 echo "***************************************************************"
-echo "Waiting for marking of 25 submissions - press enter when marked"
+echo "Waiting for marking of 27 submissions - press enter when marked"
 echo "***************************************************************"
 read
 
@@ -580,6 +628,14 @@ pass:judge
 ?ok
 ?user:judge
 
+# TEST: Submitting a solution that throws an exception must return appropriate error.
+# TEST: Submitting a solution that returns non-zero must return appropriate error.
+# TEST: Submitting a solution that fails to compile must return appropriate error.
+# TEST: Submitting a solution that runs forever must return appropriate error.
+# TEST: Submitting a solution that sleeps forever must return appropriate error.
+# TEST: Submitting a solution that produces an infinite stream of output must return appropriate error.
+# TEST: Submitting an empty solution must return an appropriate error.
+# TEST: Submitting a Java solution with a package statement must work.
 # Use gentests.py to regenerate
 getsubmissions
 ?ok
@@ -758,8 +814,22 @@ getsubmissions
 ?result24:3
 ?submission_id24:385
 ?time24:*
+?comment25:Correct answer
+?contesttime25:*
+?prob_id25:1
+?problem25:test
+?result25:0
+?submission_id25:401
+?time25:*
+?comment26:Correct answer
+?contesttime26:*
+?prob_id26:1
+?problem26:test
+?result26:0
+?submission_id26:417
+?time26:*
 
-# Compilation failure and awaiting judge must not count, the others must count.
+# TEST: Time penalties must not apply for failed compilation
 standings
 ?ok
 ?ncols:8
@@ -776,10 +846,39 @@ standings
 ?row_1_1:test1
 ?row_1_2:<b>Unicode</b>: ēßõ±°½—£
 ?row_1_3:1
-?row_1_4:0
+?row_1_4:1
 ?row_1_5:*
-?row_1_6:-12
+?row_1_6:13
 ?row_1_7:0
+
+# TEST: Judges must be able to mark a solution as wrong
+mark
+submission_id:81
+result:1
+comment:Wrong answer
+?ok
+
+# TEST: Judges should NOT be able to override a previous decision
+mark
+submission_id:81
+result:0
+comment:Correct answer
+?err
+?msg:*
+
+# TEST: Judges must be able to mark a solution as a format error
+mark
+submission_id:97
+result:6
+comment:Format error
+?ok
+
+# TEST: Judges must be able to mark a solution as correct
+mark
+submission_id:161
+result:0
+comment:Correct answer
+?ok
 
 EOF
 
