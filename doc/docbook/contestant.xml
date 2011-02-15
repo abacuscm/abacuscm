@@ -222,6 +222,16 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                 </listitem>
             </varlistentry>
             <varlistentry>
+                <term><computeroutput>Format error</computeroutput></term>
+                <listitem>
+                    <para>
+                        A judge has looked at your output and noticed that your
+                        solution does not conform to the output format in the
+                        problem statement.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
                 <term><computeroutput>Wrong answer</computeroutput></term>
                 <listitem>
                     <para>
@@ -238,6 +248,13 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                 </listitem>
             </varlistentry>
         </variablelist>
+        <para>
+            Judges report the first condition they notice. In particular,
+            <computeroutput>Format error</computeroutput> does not indicate
+            whether the answers are correct or not, and <computeroutput>Wrong
+                answer</computeroutput> does not indicate whether the format
+            is correct or not.
+        </para>
         <para>
             If you wish to ask a question about a particular submission, you
             should submit a clarification request and mention the
