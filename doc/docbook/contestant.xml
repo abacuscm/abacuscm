@@ -211,7 +211,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                 </listitem>
             </varlistentry>
             <varlistentry>
-                <term><computeroutput>Awaiting judge</computeroutput></term>
+                <term><computeroutput>Deferred to judge</computeroutput></term>
                 <listitem>
                     <para>
                         The program produced an output file that was judged
