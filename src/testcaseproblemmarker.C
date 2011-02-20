@@ -41,7 +41,7 @@ void TestCaseProblemMarker::mark_compiled() {
 				errfile.c_str(),
 				runfile.c_str()) == 0) {
 
-		addResultFile("Team's stderr", errfile, 64 * 1024);
+		addResultFile("Team's error log", errfile, 64 * 1024);
 		// parse the runinfo output
 		if (_run_info)
 			delete _run_info;
