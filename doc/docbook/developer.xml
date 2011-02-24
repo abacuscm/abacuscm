@@ -175,8 +175,22 @@
             <para>
                 The protocol is semi-synchronous: the client makes requests
                 and then blocks waiting for a synchronous reply from the
-                server. However, the server may also sent asynchronous
-                notifications to the client at any time.
+                server. The client may also pipeline requests, but messages are
+                always processed and responses delivered in-order). 
+            </para>
+            <para>
+                Clients may optionally associate message IDs with requests.
+                Replies to the requests will contain the same message ID,
+                making it easier to match responses to requests.
+            </para>
+            <para>
+                The server may also sent asynchronous notifications to the
+                client at any time. These are distinguished from normal
+                messages by having a type other than <type>ok</type> or
+                <type>err</type>. At present asynchronous replies do not
+                contain a message ID, clients must be
+                prepared to accept a message ID to allow for future expansion
+                of the protocol.
             </para>
             <para>
                 The protocol is text-based rather than binary. Lines are
@@ -188,12 +202,22 @@
         <section id="developer.csprotocol.format">
             <title>Message format</title>
             <para>
-                A message consists of a type and a set of key/value pairs. The
-                type appears first on a line of its own. After this, key/value
+                A message consists of a type, an optional message ID and a set
+                of key/value pairs. The first line of a message consists of the
+                type, then optionally a space and a message ID. Specifying no
+                message ID is considered to be equivalent to an empty ID.
+                Although not currently enforced, clients should only use
+                lowercase ASCII characters and numbers in message IDs (in
+                particular, non-printable, non-ASCII and whitespace characters
+                should never be used).
+            </para>
+            <para>
+                After this header line, this, key/value
                 pairs appear one per line, in the form
                 <literal><replaceable>header</replaceable>:<replaceable>value</replaceable></literal>.
-                At present, the parsing code has no restrictions on the type
-                or the headers, but it is recommended that they be limited to
+                At present, the parsing code has no restrictions on the
+                characters used in the type, message ID or header keys,
+                but it is highly recommended that they be limited to
                 ASCII alphanumerics and <literal>-</literal> (hyphen)
                 characters. Headers may be sent in any order, but are
                 case-sensitive.
@@ -211,7 +235,7 @@
             </para>
             <example>
                 <title>A sample message</title>
-                <synopsis>auth
+                <synopsis>auth 123
 user:<replaceable>username</replaceable>
 pass:<replaceable>password</replaceable>
 
@@ -248,7 +272,8 @@ pass:<replaceable>password</replaceable>
                 message or an <type>err</type> message. Where the
                 <type>ok</type> message contains information, it is shown
                 in the synopses below; where it contains no information it
-                is omitted.
+                is omitted. Message IDs may be used on any of these messages,
+                but are not shown.
             </para>
             <section id="developer.csprotocol.auth">
                 <title>Authentication</title>
