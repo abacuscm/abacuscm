@@ -16,15 +16,19 @@
 #include "permissionmap.h"
 #include "markers.h"
 
+#include <memory>
+
+using namespace std;
+
 class ActAuth : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
-void ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
+auto_ptr<MessageBlock> ActAuth::int_process(ClientConnection *cc, const MessageBlock *mb) {
 	DbCon *db = DbCon::getInstance();
 	if(!db) {
-		return cc->sendError("Unable to connect to database.");
+		return MessageBlock::error("Unable to connect to database.");
 	}
 
 	uint32_t user_id;
@@ -33,9 +37,9 @@ void ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
 	db->release();db=NULL;
 
 	if(result < 0)
-		return cc->sendError("Database error.");
+		return MessageBlock::error("Database error.");
 	else if(result == 0)
-		return cc->sendError("Authentication failed.  Invalid username and/or password.");
+		return MessageBlock::error("Authentication failed.  Invalid username and/or password.");
 	else {
 		if (cc->getUserId() != 0) {
 			// Client was already logged in - fake disconnection
@@ -46,9 +50,9 @@ void ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
 		cc->setUserId(user_id);
 		cc->permissions() = PermissionMap::getInstance()->getPermissions(static_cast<UserType>(user_type));
 		ClientEventRegistry::getInstance().registerClient(cc);
-		MessageBlock ret("ok");
-		ret["user"] = (*mb)["user"];
-		cc->sendMessageBlock(&ret);
+		auto_ptr<MessageBlock> ret = MessageBlock::ok();
+		(*ret)["user"] = (*mb)["user"];
+		return ret;
 	}
 }
 

@@ -31,6 +31,10 @@ static bool match(const MessageBlock *ret, const MessageBlock *expect) {
 		return false;
 	}
 
+	if (expect->getMessageId() != "" && ret->getMessageId() != expect->getMessageId()) {
+		return false;
+	}
+
 	for (MessageBlock::const_iterator i = ret->begin(); i != ret->end(); ++i) {
 		string e;
 		if (expect->hasAttribute(i->first)) {
@@ -110,7 +114,15 @@ static MessageBlock *append(const std::string line, MessageBlock *&cur, vector<s
 		if (split == string::npos) {
 			/* Start of a new record */
 			ret = cur;
-			cur = new MessageBlock(line);
+
+			split = line.find(' ');
+			if (split == string::npos) {
+				cur = new MessageBlock(line);
+			}
+			else {
+				cur = new MessageBlock(line.substr(0, split));
+				cur->setMessageId(line.substr(split + 1));
+			}
 		}
 		else {
 			/* File input */

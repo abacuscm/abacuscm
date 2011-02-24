@@ -20,27 +20,28 @@
 #include <list>
 #include <string>
 #include <sstream>
+#include <memory>
 
 using namespace std;
 
 class ActStandings : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection*, MessageBlock*mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection*, const MessageBlock*mb);
 };
 
-void ActStandings::int_process(ClientConnection *cc, MessageBlock *) {
+auto_ptr<MessageBlock> ActStandings::int_process(ClientConnection *cc, const MessageBlock *) {
 	StandingsSupportModule *standings = getStandingsSupportModule();
 	if (!standings)
-		return cc->sendError("Misconfigured Server - unable to calculate standings.");
+		return MessageBlock::error("Misconfigured Server - unable to calculate standings.");
 
 	bool final = cc->permissions()[PERMISSION_SEE_FINAL_STANDINGS];
 	bool see_all = cc->permissions()[PERMISSION_SEE_ALL_STANDINGS];
 
-	MessageBlock mb("ok");
-	if (!standings->getStandings(0, final, see_all, mb))
-		return cc->sendError("failed to get standings");
+	auto_ptr<MessageBlock> mb(MessageBlock::ok());
+	if (!standings->getStandings(0, final, see_all, *mb))
+		return MessageBlock::error("failed to get standings");
 
-	cc->sendMessageBlock(&mb);
+	return mb;
 }
 
 static ActStandings _act_standings;

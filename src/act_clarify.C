@@ -20,11 +20,14 @@
 
 #include <sstream>
 #include <string>
+#include <memory>
 #include <time.h>
+
+using namespace std;
 
 class ActGetClarifications : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
 /* Holds both requests and replies */
@@ -62,18 +65,18 @@ public:
 
 class ActClarificationRequest : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *sb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *sb);
 };
 
 class ActClarification : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *sb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *sb);
 };
 
-void ActGetClarifications::int_process(ClientConnection *cc, MessageBlock *) {
+auto_ptr<MessageBlock> ActGetClarifications::int_process(ClientConnection *cc, const MessageBlock *) {
 	DbCon *db = DbCon::getInstance();
 	if (!db)
-		return cc->sendError("Error connecting to database");
+		return MessageBlock::error("Error connecting to database");
 
 	uint32_t uid = cc->getUserId();
 
@@ -85,7 +88,7 @@ void ActGetClarifications::int_process(ClientConnection *cc, MessageBlock *) {
 		lst = db->getClarifications(uid);
 	db->release();db=NULL;
 
-	MessageBlock mb("ok");
+	auto_ptr<MessageBlock> mb(MessageBlock::ok());
 
 	ClarificationList::iterator s;
 	int c = 0;
@@ -96,21 +99,21 @@ void ActGetClarifications::int_process(ClientConnection *cc, MessageBlock *) {
 
 		AttributeList::iterator a;
 		for(a = s->begin(); a != s->end(); ++a)
-			mb[a->first + cntr] = a->second;
+			(*mb)[a->first + cntr] = a->second;
 	}
 
-	return cc->sendMessageBlock(&mb);
+	return mb;
 }
 
 class ActGetClarificationRequests : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
-void ActGetClarificationRequests::int_process(ClientConnection *cc, MessageBlock *) {
+auto_ptr<MessageBlock> ActGetClarificationRequests::int_process(ClientConnection *cc, const MessageBlock *) {
 	DbCon *db = DbCon::getInstance();
 	if (!db)
-		return cc->sendError("Error connecting to database");
+		return MessageBlock::error("Error connecting to database");
 
 	uint32_t uid = cc->getUserId();
 
@@ -122,7 +125,7 @@ void ActGetClarificationRequests::int_process(ClientConnection *cc, MessageBlock
 		lst = db->getClarificationRequests();
 	db->release();db=NULL;
 
-	MessageBlock mb("ok");
+	auto_ptr<MessageBlock> mb(MessageBlock::ok());
 
 	ClarificationRequestList::iterator s;
 	int c = 0;
@@ -133,10 +136,10 @@ void ActGetClarificationRequests::int_process(ClientConnection *cc, MessageBlock
 
 		AttributeList::iterator a;
 		for(a = s->begin(); a != s->end(); ++a)
-			mb[a->first + cntr] = a->second;
+			(*mb)[a->first + cntr] = a->second;
 	}
 
-	cc->sendMessageBlock(&mb);
+	return mb;
 }
 
 ClarificationMessage::ClarificationMessage() {
@@ -151,9 +154,9 @@ ClarificationMessage::ClarificationMessage() {
 }
 
 ClarificationMessage::ClarificationMessage(uint32_t clarification_request_id,
-					   uint32_t prob_id,
-					   uint32_t user_id,
-					   const std::string& question) {
+										   uint32_t prob_id,
+										   uint32_t user_id,
+										   const std::string& question) {
 	_request = 1;
 	_clarification_request_id = clarification_request_id;
 	_clarification_id = 0;
@@ -304,7 +307,7 @@ bool ClarificationMessage::int_process() const {
 	return result;
 }
 
-void ActClarificationRequest::int_process(ClientConnection *cc, MessageBlock *mb) {
+auto_ptr<MessageBlock> ActClarificationRequest::int_process(ClientConnection *cc, const MessageBlock *mb) {
 	uint32_t user_id = cc->getUserId();
 	uint32_t prob_id = 0;
 	std::string prob_id_str = (*mb)["prob_id"];
@@ -315,11 +318,11 @@ void ActClarificationRequest::int_process(ClientConnection *cc, MessageBlock *mb
 		char *errptr;
 		prob_id = strtol((*mb)["prob_id"].c_str(), &errptr, 0);
 		if(*errptr || (*mb)["prob_id"] == "")
-			return cc->sendError("prob_id isn't a valid integer");
+			return MessageBlock::error("prob_id isn't a valid integer");
 
 		DbCon *db = DbCon::getInstance();
 		if(!db)
-			return cc->sendError("Unable to connect to database");
+			return MessageBlock::error("Unable to connect to database");
 		ProblemList probs = db->getProblems();
 		db->release();db=NULL;
 
@@ -328,43 +331,43 @@ void ActClarificationRequest::int_process(ClientConnection *cc, MessageBlock *mb
 			if(*p == prob_id)
 				break;
 		if(p == probs.end())
-			return cc->sendError("Invalid prob_id - no such id");
+			return MessageBlock::error("Invalid prob_id - no such id");
 	}
 
 	uint32_t cr_id = Server::nextClarificationRequestId();
 	if(cr_id == ~0U)
-		return cc->sendError("Internal server error. Error obtaining new clarification request id");
+		return MessageBlock::error("Internal server error. Error obtaining new clarification request id");
 
 	ClarificationMessage *msg = new ClarificationMessage(cr_id, prob_id, user_id, question);
 	log(LOG_INFO, "User %u submitted clarification request for problem %u", user_id, prob_id);
-	triggerMessage(cc, msg);
+	return triggerMessage(cc, msg);
 }
 
-void ActClarification::int_process(ClientConnection *cc, MessageBlock *mb) {
+auto_ptr<MessageBlock> ActClarification::int_process(ClientConnection *cc, const MessageBlock *mb) {
 	uint32_t user_id = cc->getUserId();
 	std::string answer = (*mb)["answer"];
 
 	char *errptr;
 	uint32_t cr_id = strtol((*mb)["clarification_request_id"].c_str(), &errptr, 0);
 	if(*errptr || (*mb)["clarification_request_id"] == "")
-		return cc->sendError("clarification_request_id isn't a valid integer");
+		return MessageBlock::error("clarification_request_id isn't a valid integer");
 	DbCon *db = DbCon::getInstance();
 	if(!db)
-		return cc->sendError("Unable to connect to database");
+		return MessageBlock::error("Unable to connect to database");
 	AttributeList cr = db->getClarificationRequest(cr_id);
 	db->release();db=NULL;
 
 	if(cr.empty())
-		return cc->sendError("Invalid clarification_request_id - no such id");
+		return MessageBlock::error("Invalid clarification_request_id - no such id");
 
 	uint32_t pub = (*mb)["public"] == "1";
 	uint32_t c_id = Server::nextClarificationId();
 	if(c_id == ~0U)
-		return cc->sendError("Internal server error. Error obtaining new clarification id");
+		return MessageBlock::error("Internal server error. Error obtaining new clarification id");
 
 	ClarificationMessage *msg = new ClarificationMessage(cr_id, c_id, user_id, pub, answer);
 	log(LOG_INFO, "User %u submitted clarification %u for request %u", user_id, c_id, cr_id);
-	triggerMessage(cc, msg);
+	return triggerMessage(cc, msg);
 }
 
 ////////////////////////////////////////////////////////////////////

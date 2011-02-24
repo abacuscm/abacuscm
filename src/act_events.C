@@ -14,29 +14,33 @@
 #include "clienteventregistry.h"
 #include "misc.h"
 
+#include <memory>
+
+using namespace std;
+
 class Act_ClientEventRegistry : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
-void Act_ClientEventRegistry::int_process(ClientConnection* cc, MessageBlock* mb) {
+auto_ptr<MessageBlock> Act_ClientEventRegistry::int_process(ClientConnection* cc, const MessageBlock* mb) {
 	ClientEventRegistry& evReg = ClientEventRegistry::getInstance();
 
-	std::string action = (*mb)["action"];
-	std::string event = (*mb)["event"];
+	string action = (*mb)["action"];
+	string event = (*mb)["event"];
 
 	if(action == "subscribe") {
 		if(evReg.registerClient(event, cc))
-			return cc->reportSuccess();
+			return MessageBlock::ok();
 		else
-			return cc->sendError("No such event or permission denied");
+			return MessageBlock::error("No such event or permission denied");
 	} else if(action == "unsubscribe") {
 		if (evReg.deregisterClient(event, cc))
-			return cc->reportSuccess();
+			return MessageBlock::ok();
 		else
-			return cc->sendError("No such event or permission denied");
+			return MessageBlock::error("No such event or permission denied");
 	} else
-		return cc->sendError("Unknown action");
+		return MessageBlock::error("Unknown action");
 }
 
 static Act_ClientEventRegistry _act_eventreg;

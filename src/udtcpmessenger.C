@@ -817,7 +817,7 @@ private:
 
 	uint32_t auth_cred;
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 public:
 	TCPTransmitAction();
 	~TCPTransmitAction();
@@ -840,7 +840,7 @@ TCPTransmitAction::~TCPTransmitAction()
 	pthread_mutex_destroy(&_lock_map);
 }
 
-void TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
+auto_ptr<MessageBlock> TCPTransmitAction::int_process(ClientConnection *, const MessageBlock *mb)
 {
 #if 0
 	// NOTE: This authentication is WEAK!! TODO
@@ -850,12 +850,14 @@ void TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
 		return false;
 #endif
 
+	auto_ptr<MessageBlock> resp;
+
 	uint32_t server_id = strtoull((*mb)["server_id"].c_str(), NULL, 10);
 	uint32_t message_id = strtoull((*mb)["message_id"].c_str(), NULL, 10);
 	uint32_t skip = strtoull((*mb)["skip"].c_str(), NULL, 10);
 
 	if (!server_id || !message_id)
-		return;
+		return MessageBlock::error("Ill-formed message");
 
 	MessageContainer *mc = NULL;
 	{
@@ -873,7 +875,7 @@ void TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
 		if (!mc) {
 			DbCon *db = DbCon::getInstance();
 			if (!db)
-				return;
+				return MessageBlock::error("Could not connect to database");
 
 			ostringstream query;
 			query << "SELECT message_type_id, time, signature, data FROM PeerMessage WHERE server_id=" << server_id << " AND message_id=" << message_id;
@@ -882,7 +884,7 @@ void TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
 			db->release(); db = NULL;
 
 			if (row.empty())
-				return;
+				return MessageBlock::error("Message not found");
 
 			uint8_t *signature = new uint8_t[row[2].length()];
 			uint8_t *data = new uint8_t[row[3].length()];
@@ -908,12 +910,12 @@ void TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
 	ostringstream str;
 
 	if (skip < mc->blob_size) {
-		MessageBlock rt("udtcppeermessageput");
-		rt.setContent((char*)mc->message_blob + skip, mc->blob_size - skip, false); /* SHARED DATA COPY */
-		cc->sendMessageBlock(&rt);
+		resp.reset(new MessageBlock("udtcppeermessageput"));
+		resp->setContent((char*)mc->message_blob + skip, mc->blob_size - skip, false); /* SHARED DATA COPY */
 	} else {
 		// TODO: what should happen here? It used to say
 		// ret = false;
+		resp = MessageBlock::error("skip < block_size");
 	}
 
 	{
@@ -927,6 +929,7 @@ void TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
 				_message_map.erase(s);
 		}
 	}
+	return resp;
 }
 
 static TCPTransmitAction _act_getmsg;

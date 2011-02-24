@@ -26,45 +26,46 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <memory>
 #include <time.h>
 
 using namespace std;
 
 class ActSubmit : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
 class ActGetProblems : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
 class ActGetSubmissions : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
 class ActGetSubmissionsForUser : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
 class ActSubmissionFileFetcher : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
 class ActGetSubmissionSource : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
 class ActGetLanguages : public ClientAction {
 private:
 	vector<string> _languages;
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 public:
 	ActGetLanguages();
 
@@ -103,25 +104,25 @@ public:
 	virtual uint16_t message_type_id() const;
 };
 
-void ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
+auto_ptr<MessageBlock> ActSubmit::int_process(ClientConnection *cc, const MessageBlock *mb) {
 	if(getTimerSupportModule()->contestStatus(Server::getId()) != TIMER_STATUS_STARTED)
-		return cc->sendError("You cannot submit solutions unless the contest is running");
+		return MessageBlock::error("You cannot submit solutions unless the contest is running");
 
 	if(mb->content_size() > MAX_SUBMISSION_SIZE) {
 		ostringstream msg;
 		msg << "Your submission is too large (max " << MAX_SUBMISSION_SIZE << " bytes)";
-		return cc->sendError(msg.str());
+		return MessageBlock::error(msg.str());
 	}
 
 	uint32_t user_id = cc->getUserId();
 	char *errptr;
 	uint32_t prob_id = strtol((*mb)["prob_id"].c_str(), &errptr, 0);
 	if(*errptr || (*mb)["prob_id"] == "")
-		return cc->sendError("prob_id isn't a valid integer");
+		return MessageBlock::error("prob_id isn't a valid integer");
 
 	DbCon *db = DbCon::getInstance();
 	if(!db)
-		return cc->sendError("Unable to connect to database");
+		return MessageBlock::error("Unable to connect to database");
 	ProblemList probs = db->getProblems();
 
 	ProblemList::iterator p;
@@ -130,20 +131,20 @@ void ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
 			break;
 	if(p == probs.end()) {
 		db->release();db=NULL;
-		return cc->sendError("Invalid prob_id - no such id");
+		return MessageBlock::error("Invalid prob_id - no such id");
 	}
 
 	bool solved = db->hasSolved(user_id, prob_id);
 	if(solved) {
 		if (db->getProblemAttributes(prob_id)["multi_submit"] != "Yes") {
 			db->release(); db = NULL;
-			return cc->sendError("You have already solved this problem, you may no longer submit solutions for it");
+			return MessageBlock::error("You have already solved this problem, you may no longer submit solutions for it");
 		}
 	}
 
 	if (!db->isSubmissionAllowed(user_id, prob_id)) {
 		db->release(); db = NULL;
-		return cc->sendError("You are not allowed to submit a solution for this problem");
+		return MessageBlock::error("You are not allowed to submit a solution for this problem");
 	}
 
 	db->release();db=NULL;
@@ -151,30 +152,30 @@ void ActSubmit::int_process(ClientConnection *cc, MessageBlock *mb) {
 	string lang = (*mb)["lang"];
 	const vector<string> &languages = _act_get_languages.getLanguages();
 	if(find(languages.begin(), languages.end(), lang) == languages.end())
-		return cc->sendError("You have not specified the language");
+		return MessageBlock::error("You have not specified the language");
 
 	uint32_t sub_id = Server::nextSubmissionId();
 	if(sub_id == ~0U)
-		return cc->sendError("Internal server error. Error obtaining new submission id");
+		return MessageBlock::error("Internal server error. Error obtaining new submission id");
 
 	SubmissionMessage *msg = new SubmissionMessage(sub_id, prob_id, user_id,
 			mb->content(), mb->content_size(), lang);
 
 	log(LOG_INFO, "User %u submitted solution for problem %u", user_id, prob_id);
 
-	triggerMessage(cc, msg);
+	return triggerMessage(cc, msg);
 }
 
-void ActGetProblems::int_process(ClientConnection *cc, MessageBlock *) {
+auto_ptr<MessageBlock> ActGetProblems::int_process(ClientConnection *cc, const MessageBlock *) {
 	uint32_t user_id = cc->getUserId();
 
 	DbCon *db = DbCon::getInstance();
 	if(!db)
-		return cc->sendError("Error connecting to database");
+		return MessageBlock::error("Error connecting to database");
 
 	ProblemList probs = db->getProblems();
 
-	MessageBlock mb("ok");
+	auto_ptr<MessageBlock> mb(MessageBlock::ok());
 
 	ProblemList::iterator p;
 	int c = 0;
@@ -193,24 +194,24 @@ void ActGetProblems::int_process(ClientConnection *cc, MessageBlock *) {
 		ostrstrm.str("");
 		ostrstrm << *p;
 
-		mb["id" + cstr] = ostrstrm.str();
+		(*mb)["id" + cstr] = ostrstrm.str();
 
 		AttributeList lst = db->getProblemAttributes(*p);
-		mb["code" + cstr] = lst["shortname"];
-		mb["name" + cstr] = lst["longname"];
+		(*mb)["code" + cstr] = lst["shortname"];
+		(*mb)["name" + cstr] = lst["longname"];
 	}
 	db->release();db=NULL;
 
-	cc->sendMessageBlock(&mb);
+	return mb;
 }
 
-void ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
+auto_ptr<MessageBlock> ActGetSubmissions::int_process(ClientConnection *cc, const MessageBlock *) {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
-		return cc->sendError("Error connecting to database");
+		return MessageBlock::error("Error connecting to database");
 	SubmissionSupportModule *submission = getSubmissionSupportModule();
 	if (!submission)
-		return cc->sendError("Error getting submission support module");
+		return MessageBlock::error("Error getting submission support module");
 
 	uint32_t uid = cc->getUserId();
 
@@ -221,7 +222,7 @@ void ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 	else
 		lst = db->getSubmissions();
 
-	MessageBlock mb("ok");
+	auto_ptr<MessageBlock> mb(MessageBlock::ok());
 
 	SubmissionList::iterator s;
 	int c = 0;
@@ -230,20 +231,20 @@ void ActGetSubmissions::int_process(ClientConnection *cc, MessageBlock *) {
 		tmp << c;
 		string cntr = tmp.str();
 
-		submission->submissionToMB(db, *s, mb, cntr);
+		submission->submissionToMB(db, *s, *mb, cntr);
 	}
 	db->release();db=NULL;
 
-	cc->sendMessageBlock(&mb);
+	return mb;
 }
 
-void ActGetSubmissionsForUser::int_process(ClientConnection *cc, MessageBlock *mb) {
+auto_ptr<MessageBlock> ActGetSubmissionsForUser::int_process(ClientConnection *cc, const MessageBlock *mb) {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
-		return cc->sendError("Error connecting to database");
+		return MessageBlock::error("Error connecting to database");
 	SubmissionSupportModule *submission = getSubmissionSupportModule();
 	if (!submission)
-		return cc->sendError("Error getting submission support module");
+		return MessageBlock::error("Error getting submission support module");
 
 	uint32_t uid = cc->getUserId();
 
@@ -256,7 +257,7 @@ void ActGetSubmissionsForUser::int_process(ClientConnection *cc, MessageBlock *m
 	else
 		lst = db->getSubmissions(user_id);
 
-	MessageBlock result_mb("ok");
+	auto_ptr<MessageBlock> result_mb(MessageBlock::ok());
 
 	SubmissionList::iterator s;
 	int c = 0;
@@ -265,11 +266,11 @@ void ActGetSubmissionsForUser::int_process(ClientConnection *cc, MessageBlock *m
 		tmp << c;
 		string cntr = tmp.str();
 
-		submission->submissionToMB(db, *s, result_mb, cntr);
+		submission->submissionToMB(db, *s, *result_mb, cntr);
 	}
 	db->release();db=NULL;
 
-	cc->sendMessageBlock(&result_mb);
+	return result_mb;
 }
 
 SubmissionMessage::SubmissionMessage() {
@@ -411,17 +412,17 @@ static Message* create_submission_msg() {
 	return new SubmissionMessage();
 }
 
-void ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *mb) {
+auto_ptr<MessageBlock> ActSubmissionFileFetcher::int_process(ClientConnection *cc, const MessageBlock *mb) {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
-		return cc->sendError("Error connecting to database");
+		return MessageBlock::error("Error connecting to database");
 
 	uint32_t uid = cc->getUserId();
 
 	string request = (*mb)["request"];
 	uint32_t submission_id = strtoll((*mb)["submission_id"].c_str(), NULL, 0);
 
-	MessageBlock result_mb("ok");
+	auto_ptr<MessageBlock> result_mb(MessageBlock::ok());
 
 	if (!cc->permissions()[PERMISSION_SEE_SUBMISSION_DETAILS]) {
 		// make sure that this is a compilation failed type of error
@@ -437,20 +438,20 @@ void ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
 								  comment)) {
 			if (resinfo != COMPILE_FAILED) {
 				db->release();db=NULL;
-				return cc->sendError("Not allowed to fetch file data for anything except failed compilations");
+				return MessageBlock::error("Not allowed to fetch file data for anything except failed compilations");
 			}
 		}
 		else {
 			// no state => it hasn't been marked!
 			db->release(); db = NULL;
-			return cc->sendError("This submission hasn't been marked yet, please be patient :-)");
+			return MessageBlock::error("This submission hasn't been marked yet, please be patient :-)");
 		}
 	}
 
 	if (!cc->permissions()[PERMISSION_SEE_ALL_SUBMISSIONS]) {
 		if (db->submission2user_id(submission_id) != uid) {
 			db->release();db=NULL;
-			return cc->sendError("This submission doesn't belong to you; I can't let you look at it");
+			return MessageBlock::error("This submission doesn't belong to you; I can't let you look at it");
 		}
 	}
 
@@ -458,7 +459,7 @@ void ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
 		uint32_t count = db->countMarkFiles(submission_id);
 		ostringstream str("");
 		str << count;
-		result_mb["count"] = str.str();
+		(*result_mb)["count"] = str.str();
 	}
 	else if (request == "data") {
 		uint32_t index = strtoll((*mb)["index"].c_str(), NULL, 0);
@@ -470,26 +471,26 @@ void ActSubmissionFileFetcher::int_process(ClientConnection *cc, MessageBlock *m
 		if (!result) {
 			db->release(); db = NULL;
 			log(LOG_ERR, "Failed to get submission file with index %u for submission_id %u\n", index, submission_id);
-			return cc->sendError("Mark file not found");
+			return MessageBlock::error("Mark file not found");
 		}
 
-		result_mb["name"] = name;
+		(*result_mb)["name"] = name;
 		ostringstream str("");
 		str << length;
-		result_mb["length"] = str.str();
-		result_mb.setContent((char *) data, length);
+		(*result_mb)["length"] = str.str();
+		result_mb->setContent((char *) data, length);
 		delete []data;
 	}
 
 	db->release();db=NULL;
 
-	cc->sendMessageBlock(&result_mb);
+	return result_mb;
 }
 
-void ActGetSubmissionSource::int_process(ClientConnection *cc, MessageBlock *mb) {
+auto_ptr<MessageBlock> ActGetSubmissionSource::int_process(ClientConnection *cc, const MessageBlock *mb) {
 	DbCon *db = DbCon::getInstance();
 	if (!db)
-		return cc->sendError("Error connecting to database");
+		return MessageBlock::error("Error connecting to database");
 
 	uint32_t submission_id = strtoll((*mb)["submission_id"].c_str(), NULL, 0);
 	char* content;
@@ -505,12 +506,12 @@ void ActGetSubmissionSource::int_process(ClientConnection *cc, MessageBlock *mb)
 	db->release();db=NULL;
 
 	if (!has_data)
-		return cc->sendError("Unable to retrieve contestant source code");
+		return MessageBlock::error("Unable to retrieve contestant source code");
 
-	MessageBlock result_mb("ok");
-	result_mb.setContent(content, length);
+	auto_ptr<MessageBlock> result_mb(MessageBlock::ok());
+	result_mb->setContent(content, length);
 
-	cc->sendMessageBlock(&result_mb);
+	return result_mb;
 }
 
 // Splits a comma-separated list into a vector
@@ -558,16 +559,16 @@ const vector<string> &ActGetLanguages::getLanguages() {
 	return _languages;
 }
 
-void ActGetLanguages::int_process(ClientConnection *cc, MessageBlock *) {
-	MessageBlock result_mb("ok");
+auto_ptr<MessageBlock> ActGetLanguages::int_process(ClientConnection *, const MessageBlock *) {
+	auto_ptr<MessageBlock> result_mb(MessageBlock::ok());
 
 	for (size_t i = 0; i < _languages.size(); i++) {
 		ostringstream header;
 		header << "language" << i;
-		result_mb[header.str()] = _languages[i];
+		(*result_mb)[header.str()] = _languages[i];
 	}
 
-	cc->sendMessageBlock(&result_mb);
+	return result_mb;
 }
 
 extern "C" void abacuscm_mod_init() {

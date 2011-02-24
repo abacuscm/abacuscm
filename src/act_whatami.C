@@ -16,13 +16,17 @@
 #include "clienteventregistry.h"
 #include "permissionmap.h"
 
+#include <memory>
+
+using namespace std;
+
 class ActWhatAmI : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *);
 };
 
-void ActWhatAmI::int_process(ClientConnection *cc, MessageBlock *) {
-	MessageBlock resp("ok");
+auto_ptr<MessageBlock> ActWhatAmI::int_process(ClientConnection *cc, const MessageBlock *) {
+	auto_ptr<MessageBlock> resp(MessageBlock::ok());
 
 	const PermissionSet &perms = cc->permissions();
 	size_t pos = 0;
@@ -30,11 +34,11 @@ void ActWhatAmI::int_process(ClientConnection *cc, MessageBlock *) {
 		if (perms[j]) {
 			std::ostringstream header;
 			header << "permission" << pos;
-			resp[header.str()] = getPermissionName(static_cast<Permission>(j));
+			(*resp)[header.str()] = getPermissionName(static_cast<Permission>(j));
 			pos++;
 		}
 	}
-	cc->sendMessageBlock(&resp);
+	return resp;
 }
 
 static ActWhatAmI _act_whatami;

@@ -27,23 +27,24 @@
 #include <regex.h>
 #include <time.h>
 #include <sstream>
+#include <memory>
 
 using namespace std;
 
 class ActSubscribeMark : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection*, MessageBlock* mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection*, const MessageBlock* mb);
 };
 
 class ActPlaceMark : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection*, MessageBlock* mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection*, const MessageBlock* mb);
 };
 
 class MarkMessage : public Message {
 private:
 	struct File {
-		std::string name;
+		string name;
 		uint32_t len;
 		uint8_t *data;
 	};
@@ -54,8 +55,8 @@ private:
 	uint32_t _marker;
 	uint32_t _server_id;
 
-	std::string _comment;
-	std::list<File> _files;
+	string _comment;
+	list<File> _files;
 
 protected:
 	virtual uint32_t storageRequired();
@@ -65,18 +66,18 @@ protected:
 	virtual bool int_process() const;
 public:
 	MarkMessage();
-	MarkMessage(uint32_t submission_id, uint32_t marker, uint32_t result, std::string comment);
+	MarkMessage(uint32_t submission_id, uint32_t marker, uint32_t result, string comment);
 	virtual ~MarkMessage();
 
 	virtual uint16_t message_type_id() const;
 
-	void addFile(std::string, uint32_t len, const void *data);
+	void addFile(string, uint32_t len, const void *data);
 };
 
 MarkMessage::MarkMessage() {
 }
 
-MarkMessage::MarkMessage(uint32_t submission_id, uint32_t marker, uint32_t result, std::string comment) {
+MarkMessage::MarkMessage(uint32_t submission_id, uint32_t marker, uint32_t result, string comment) {
 	_submission_id = submission_id;
 	_marker = marker;
 	_result = result;
@@ -91,7 +92,7 @@ MarkMessage::~MarkMessage() {
 		delete []i->data;
 }
 
-void MarkMessage::addFile(std::string name, uint32_t len, const void *data) {
+void MarkMessage::addFile(string name, uint32_t len, const void *data) {
 	File tmp;
 	tmp.name = name;
 	tmp.len = len;
@@ -239,19 +240,19 @@ uint32_t MarkMessage::load(const uint8_t *buffer, uint32_t size) {
 }
 
 ///////////////////////////////////////////////////////////
-void ActSubscribeMark::int_process(ClientConnection* cc, MessageBlock*) {
+auto_ptr<MessageBlock> ActSubscribeMark::int_process(ClientConnection* cc, const MessageBlock*) {
 	Markers::getInstance().enqueueMarker(cc);
-	cc->reportSuccess();
+	return MessageBlock::ok();
 }
 
-void ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
-	std::string submission_id_str = (*mb)["submission_id"];
+auto_ptr<MessageBlock> ActPlaceMark::int_process(ClientConnection* cc, const MessageBlock*mb) {
+	string submission_id_str = (*mb)["submission_id"];
 	char *errpnt;
 	uint32_t submission_id = strtoll(submission_id_str.c_str(), &errpnt, 0);
 
 	if (*errpnt || submission_id_str == "") {
 		Markers::getInstance().preemptMarker(cc);
-		return cc->sendError("Invalid submission_id");
+		return MessageBlock::error("Invalid submission_id");
 	}
 
 	/* Permission checks. As soon as any validity condition is found, legal
@@ -282,11 +283,11 @@ void ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 		// extra code to avoid race conditions for judge marking
 		RunResult resinfo;
 		uint32_t utype;
-		std::string comment;
+		string comment;
 
 		DbCon *db = DbCon::getInstance();
 		if(!db)
-			return cc->sendError("Error connecting to database");
+			return MessageBlock::error("Error connecting to database");
 
 		// POSSIBLE RACE BETWEEN DOING THIS CHECK AND ASSIGNING THE MARK
 		// but it's very small & unlikely ... and doesn't really affect anything.
@@ -312,16 +313,16 @@ void ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 		if (msg == "") {
 			msg = "You do not have permission to do this";
 		}
-		return cc->sendError(msg);
+		return MessageBlock::error(msg);
 	}
 
 	uint32_t result = strtoll((*mb)["result"].c_str(), &errpnt, 0);
 	if(*errpnt || (*mb)["result"] == "") {
 		Markers::getInstance().preemptMarker(cc);
-		return cc->sendError("You must specify the result");
+		return MessageBlock::error("You must specify the result");
 	}
 
-	std::string comment = (*mb)["comment"];
+	string comment = (*mb)["comment"];
 
 	MarkMessage *markmsg = new MarkMessage(submission_id, cc->getUserId(), result, comment);
 	int c = 0;
@@ -348,7 +349,7 @@ void ActPlaceMark::int_process(ClientConnection* cc, MessageBlock*mb) {
 	regfree(&file_reg);
 
 	Markers::getInstance().notifyMarked(cc, submission_id);
-	triggerMessage(cc, markmsg);
+	return triggerMessage(cc, markmsg);
 }
 
 static ActSubscribeMark _act_subscribe_mark;

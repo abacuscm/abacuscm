@@ -18,6 +18,7 @@
 #include "hashpw.h"
 
 #include <map>
+#include <memory>
 
 using namespace std;
 
@@ -26,7 +27,7 @@ private:
 	map<string, uint32_t> _typemap;
 
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 public:
 	ActAddUser();
 };
@@ -40,7 +41,7 @@ ActAddUser::ActAddUser() {
 	_typemap["proctor"] = USER_TYPE_PROCTOR;
 }
 
-void ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
+auto_ptr<MessageBlock> ActAddUser::int_process(ClientConnection *cc, const MessageBlock *mb) {
 	UserSupportModule *usm = getUserSupportModule();
 	uint32_t user_id = cc->getUserId();
 	string new_username = (*mb)["username"];
@@ -49,19 +50,19 @@ void ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
 	uint32_t new_type = _typemap[(*mb)["type"]];
 
 	if (!usm)
-		return cc->sendError("UserSupportModule not available.");
+		return MessageBlock::error("UserSupportModule not available.");
 
 	if(!new_type)
-		return cc->sendError("Invalid user type " + (*mb)["type"]);
+		return MessageBlock::error("Invalid user type " + (*mb)["type"]);
 
 	if(new_username == "")
-		return cc->sendError("Cannot have a blank username");
+		return MessageBlock::error("Cannot have a blank username");
 
 	if(new_passwd == "")
-		return cc->sendError("Cannot set a blank password");
+		return MessageBlock::error("Cannot set a blank password");
 
 	if ((new_passwd = hashpw(new_username, new_passwd)) == "")
-		return cc->sendError("Password hashing error");
+		return MessageBlock::error("Password hashing error");
 
 	if (new_friendlyname == "")
 		new_friendlyname = new_username;
@@ -69,13 +70,13 @@ void ActAddUser::int_process(ClientConnection *cc, MessageBlock *mb) {
 	uint32_t tmp_user_id = usm->user_id(new_username);
 
 	if(tmp_user_id == ~0U)
-		return cc->sendError("Unexpected error while trying to query availability of username '" + new_username + "'");
+		return MessageBlock::error("Unexpected error while trying to query availability of username '" + new_username + "'");
 	else if (tmp_user_id != 0)
-		return cc->sendError("Username '" + new_username + "' is already in use");
+		return MessageBlock::error("Username '" + new_username + "' is already in use");
 
 	uint32_t new_id = usm->nextId();
 	if(new_id == ~0U)
-		return cc->sendError("Unable to determine next usable user_id");
+		return MessageBlock::error("Unable to determine next usable user_id");
 
 	return triggerMessage(cc, new Message_CreateUser(new_username, new_friendlyname,
 				new_passwd, new_id, new_type, user_id));

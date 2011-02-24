@@ -13,29 +13,32 @@
 #include "dbcon.h"
 
 #include <sstream>
+#include <memory>
+
+using namespace std;
 
 class ServerListAct : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
-void ServerListAct::int_process(ClientConnection *cc, MessageBlock *) {
+auto_ptr<MessageBlock> ServerListAct::int_process(ClientConnection *, const MessageBlock *) {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
-		return cc->sendError("Error connecting to database");
+		return MessageBlock::error("Error connecting to database");
 
 	ServerList list = db->getServers();
 	db->release();db=NULL;
 
-	MessageBlock mb("ok");
+	auto_ptr<MessageBlock> mb(MessageBlock::ok());
 	int c = 0;
 	for(ServerList::iterator i = list.begin(); i != list.end(); ++i, ++c) {
 		std::ostringstream t;
 		t << "server" << c;
-		mb[t.str()] = i->second;
+		(*mb)[t.str()] = i->second;
 	}
 
-	cc->sendMessageBlock(&mb);
+	return mb;
 }
 
 static ServerListAct _act_servlist;

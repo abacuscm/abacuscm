@@ -15,49 +15,50 @@
 #include "misc.h"
 
 #include <sstream>
+#include <memory>
 
 using namespace std;
 
 ////////////////////////////////////////////////////////////
 class ActGetProbTypes : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
-void ActGetProbTypes::int_process(ClientConnection *cc, MessageBlock *) {
+auto_ptr<MessageBlock> ActGetProbTypes::int_process(ClientConnection *, const MessageBlock *) {
 	vector<string> types = ProblemType::getProblemTypes();
 
-	MessageBlock resp("ok");
+	auto_ptr<MessageBlock> resp(MessageBlock::ok());
 
 	int c = 0;
 	for(vector<string>::iterator i = types.begin(); i != types.end(); ++i, ++c) {
 		ostringstream t;
 		t << "type" << c;
-		resp[t.str()] = *i;
+		(*resp)[t.str()] = *i;
 	}
 
-	cc->sendMessageBlock(&resp);
+	return resp;
 }
 
 ////////////////////////////////////////////////////////////
 class ActGetProbDescript : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
-void ActGetProbDescript::int_process(ClientConnection *cc, MessageBlock *mb) {
+auto_ptr<MessageBlock> ActGetProbDescript::int_process(ClientConnection *, const MessageBlock *mb) {
 	string type = (*mb)["type"];
 	if(type == "")
-		return cc->sendError("You must specify the type to describe");
+		return MessageBlock::error("You must specify the type to describe");
 
 	string desc = ProblemType::getProblemDescription(type);
 	if(desc == "")
-		return cc->sendError("Error retrieving description for type " + type);
+		return MessageBlock::error("Error retrieving description for type " + type);
 
-	MessageBlock resp("ok");
-	resp["descript"] = desc;
+	auto_ptr<MessageBlock> resp(MessageBlock::ok());
+	(*resp)["descript"] = desc;
 
-	cc->sendMessageBlock(&resp);
+	return resp;
 }
 
 ////////////////////////////////////////////////////////////

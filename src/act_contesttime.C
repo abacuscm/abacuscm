@@ -15,32 +15,35 @@
 #include "misc.h"
 
 #include <sstream>
+#include <memory>
+
+using namespace std;
 
 class ActContesttime : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection* cc, MessageBlock*mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection* cc, const MessageBlock*mb);
 };
 
-void ActContesttime::int_process(ClientConnection* cc, MessageBlock*) {
+auto_ptr<MessageBlock> ActContesttime::int_process(ClientConnection*, const MessageBlock*) {
 	TimerSupportModule *timer = getTimerSupportModule();
 	uint32_t server_id = Server::getId();
 	uint32_t contesttime = timer->contestTime(server_id);
 	uint32_t contestremain = timer->contestDuration() - contesttime;
 	bool running = timer->contestStatus(server_id) == TIMER_STATUS_STARTED;
 
-	std::ostringstream os;
+	ostringstream os;
 
-	MessageBlock res("ok");
-	res["running"] = running ? "yes" : "no";
+	auto_ptr<MessageBlock> res(MessageBlock::ok());
+	(*res)["running"] = running ? "yes" : "no";
 
 	os << contesttime;
-	res["time"] = os.str();
+	(*res)["time"] = os.str();
 
 	os.str("");
 	os << contestremain;
-	res["remain"] = os.str();
+	(*res)["remain"] = os.str();
 
-	cc->sendMessageBlock(&res);
+	return res;
 }
 
 static ActContesttime _act_contesttime;

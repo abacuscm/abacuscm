@@ -21,17 +21,18 @@
 #include "standingssupportmodule.h"
 
 #include <string>
+#include <memory>
 
 using namespace std;
 
 class ActStartStop : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection*, MessageBlock*);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection*, const MessageBlock*);
 };
 
 class ActSubscribeTime : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection*, MessageBlock*);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection*, const MessageBlock*);
 };
 
 class MsgStartStop : public Message {
@@ -98,7 +99,7 @@ void StartStopAction::perform() {
 	}
 }
 
-void ActStartStop::int_process(ClientConnection* cc, MessageBlock *mb) {
+auto_ptr<MessageBlock> ActStartStop::int_process(ClientConnection* cc, const MessageBlock *mb) {
 	char *errpnt;
 
 	uint32_t server_id;
@@ -111,11 +112,11 @@ void ActStartStop::int_process(ClientConnection* cc, MessageBlock *mb) {
 	} else if(t_action == "stop") {
 		action = TIMER_STOP;
 	} else
-		return cc->sendError("Invalid 'action', must be either 'start' or 'stop'");
+		return MessageBlock::error("Invalid 'action', must be either 'start' or 'stop'");
 
 	time = strtoll((*mb)["time"].c_str(), &errpnt, 0);
 	if(time == 0 || *errpnt)
-		return cc->sendError("Invalid start/stop time specified");
+		return MessageBlock::error("Invalid start/stop time specified");
 
 	// note that an omitted or blank server_id translates to 0, meaning
 	// "all" servers.
@@ -128,18 +129,18 @@ void ActStartStop::int_process(ClientConnection* cc, MessageBlock *mb) {
 	{
 		server_id = strtoll((*mb)["server_id"].c_str(), &errpnt, 0);
 		if(*errpnt)
-			return cc->sendError("Invalid server_id specified");
+			return MessageBlock::error("Invalid server_id specified");
 	}
 
-	triggerMessage(cc, new MsgStartStop(server_id, time, action));
+	return triggerMessage(cc, new MsgStartStop(server_id, time, action));
 }
 
-void ActSubscribeTime::int_process(ClientConnection* cc, MessageBlock*) {
+auto_ptr<MessageBlock> ActSubscribeTime::int_process(ClientConnection* cc, const MessageBlock*) {
 	if(ClientEventRegistry::getInstance().registerClient("startstop", cc)
 			&& ClientEventRegistry::getInstance().registerClient("updateclock", cc))
-		cc->reportSuccess();
+		return MessageBlock::ok();
 	else
-		cc->sendError("Unable to subscribe to the 'startstop' event");
+		return MessageBlock::error("Unable to subscribe to the 'startstop' event");
 }
 
 MsgStartStop::MsgStartStop() {

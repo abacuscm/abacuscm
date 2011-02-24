@@ -15,6 +15,7 @@
 #endif
 #include <string>
 #include <map>
+#include <memory>
 #include <openssl/ssl.h>
 #include "threadssl.h"
 
@@ -23,6 +24,7 @@ typedef std::map<std::string, std::string> MessageHeaders;
 class MessageBlock {
 private:
 	std::string _message;
+	std::string _message_id;
 	MessageHeaders _headers;
 	int _content_length;
 	bool _content_private;
@@ -42,28 +44,35 @@ public:
 	MessageBlock();
 	~MessageBlock();
 
+	/* Static factory to produce an error message */
+	static std::auto_ptr<MessageBlock> error(const std::string &msg);
+	/* static factory to produce a success message */
+	static std::auto_ptr<MessageBlock> ok();
+
 	MessageHeaders::const_iterator begin() const { return _headers.begin(); };
 	MessageHeaders::iterator begin() { return _headers.begin(); };
 
 	MessageHeaders::const_iterator end() const { return _headers.end(); };
 	MessageHeaders::iterator end() { return _headers.end(); };
 
-	const std::string& operator[] (const std::string& name) const
-		{
-			MessageHeaders::const_iterator i = _headers.find(name);
-			if(i != _headers.end())
-				return i->second;
-			else {
-				static std::string empty("");
-				return empty;
-			}
+	const std::string& operator[] (const std::string& name) const {
+		MessageHeaders::const_iterator i = _headers.find(name);
+		if(i != _headers.end())
+			return i->second;
+		else {
+			static std::string empty("");
+			return empty;
 		}
+	}
 	std::string& operator[] (const std::string& name)
 		{ return _headers[name]; }
 	bool hasAttribute(const std::string &name) const
 		{ return _headers.find(name) != _headers.end(); }
 
 	const std::string& action() const { return _message; }
+
+	void setMessageId(const std::string &id) { _message_id = id; }
+	const std::string &getMessageId() const { return _message_id; }
 
 	int content_size() const { return _content_length; };
 	const char* content() const { return _content; };

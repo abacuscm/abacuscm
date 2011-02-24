@@ -241,17 +241,6 @@ vector<pollfd> ClientConnection::int_process() {
 	return fds;
 }
 
-void ClientConnection::sendError(const std::string& message) {
-	MessageBlock mb("err");
-	mb["msg"] = message;
-	sendMessageBlock(&mb);
-}
-
-void ClientConnection::reportSuccess() {
-	MessageBlock mb("ok");
-	sendMessageBlock(&mb);
-}
-
 void ClientConnection::sendMessageBlock(const MessageBlock *mb) {
 	string raw = mb->getRaw();
 	if (!raw.empty()) {

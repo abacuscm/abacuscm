@@ -14,19 +14,23 @@
 #include "timersupportmodule.h"
 #include "misc.h"
 
+#include <memory>
+
+using namespace std;
+
 class ActRunning : public ClientAction {
 protected:
-	virtual void int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
-void ActRunning::int_process(ClientConnection *cc, MessageBlock*) {
-	MessageBlock mb("ok");
+auto_ptr<MessageBlock> ActRunning::int_process(ClientConnection *, const MessageBlock*) {
+	auto_ptr<MessageBlock> mb(MessageBlock::ok());
 	if(getTimerSupportModule()->contestStatus(Server::getId()) == TIMER_STATUS_STARTED)
-		mb["status"] = "running";
+		(*mb)["status"] = "running";
 	else
-		mb["status"] = "stopped";
+		(*mb)["status"] = "stopped";
 
-	cc->sendMessageBlock(&mb);
+	return mb;
 }
 
 static ActRunning _act_running;
