@@ -68,6 +68,17 @@ auto_ptr<MessageBlock> MessageBlock::ok() {
 	return auto_ptr<MessageBlock>(new MessageBlock("ok"));
 }
 
+
+const string& MessageBlock::operator[] (const std::string& name) const {
+	MessageHeaders::const_iterator i = _headers.find(name);
+	if(i != _headers.end())
+		return i->second;
+	else {
+		static const std::string empty("");
+		return empty;
+	}
+}
+
 bool MessageBlock::setContent(const char* data, int size, bool make_private_copy) {
 	if (!data || !size) {
 		if (_content && _content_private)

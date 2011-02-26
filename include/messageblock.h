@@ -55,15 +55,7 @@ public:
 	MessageHeaders::const_iterator end() const { return _headers.end(); };
 	MessageHeaders::iterator end() { return _headers.end(); };
 
-	const std::string& operator[] (const std::string& name) const {
-		MessageHeaders::const_iterator i = _headers.find(name);
-		if(i != _headers.end())
-			return i->second;
-		else {
-			static std::string empty("");
-			return empty;
-		}
-	}
+	const std::string& operator[] (const std::string& name) const;
 	std::string& operator[] (const std::string& name)
 		{ return _headers[name]; }
 	bool hasAttribute(const std::string &name) const
