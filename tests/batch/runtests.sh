@@ -55,6 +55,8 @@ let old=now-duration+blinds/2
 # A long time into the future
 let future=now+duration
 
+nl_escape=$'\001'
+
 bin/batch "$client_conf" <<EOF
 whatami
 ?ok
@@ -238,7 +240,7 @@ public:1
 
 clarification
 clarification_request_id:1
-answer:Private answer.Second line.
+answer:Private answer.${nl_escape}Second line.
 public:0
 ?ok
 
@@ -263,7 +265,7 @@ getclarifications
 ?problem1:test
 ?time1:*
 ?question1:Question with <i>HTML</i> and unicode: £À´´µ¶?
-?answer1:Private answer.Second line.
+?answer1:Private answer.${nl_escape}Second line.
 
 # A time in the past, so that contest will start
 startstop
