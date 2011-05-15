@@ -17,7 +17,8 @@
         </copyright>
     </bookinfo>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="contestant.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="administrator.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="administrator-core.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="administrator-webapp.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="developer-core.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="developer-webapp.xml"/>
 </book>

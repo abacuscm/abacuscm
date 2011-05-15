@@ -1,10 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN" "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
-<chapter id="administrator">
-    <title>Administrator manual</title>
-    <section id="administrator.build">
+<chapter id="administrator-core">
+    <title>Administrator manual for AbacusCM core</title>
+    <section id="administrator-core.introduction">
+        <title>Introduction</title>
+        <para>
+            For partially historical reasons, AbacusCM consists of two largely
+            independent parts. Firstly, there is a core, which is written in
+            C++ and consists of the server, the marker code, a Qt client, and
+            a selection of command-line tools. Secondly, there is a web
+            application which contestants can use to interface with the
+            server, avoiding the need for the Qt client to be distributed to
+            contestants.
+        </para>
+        <para>
+            This chapter discusses only the core part. Administrators wishing
+            to deploy the web interface should first follow the instructions
+            in this chapter before reading <xref
+                linkend="administrator-webapp"/>.
+        </para>
+    </section>
+    <section id="administrator-core.build">
         <title>Building abacuscm</title>
-        <section id="administrator.build.requirements">
+        <section id="administrator-core.build.requirements">
             <title>Requirements</title>
             <para>
                 Before you can compile AbacusCM you need the following pieces
@@ -46,7 +64,7 @@
                 TODO: add notes about tools to build the documentation.
             </para>
         </section>
-        <section id="administrator.build.compile">
+        <section id="administrator-core.build.compile">
             <title>Compiling</title>
             <para>
                 If you want to compile everything, just run
@@ -61,7 +79,7 @@
             </para>
         </section>
     </section>
-    <section id="administrator.certificates">
+    <section id="administrator-core.certificates">
         <title>Generating certificates</title>
         <para>
             Abacus uses X.509 certificates to allow clients to check that they
@@ -78,7 +96,7 @@
             that CA would be able to accept connections from clients. Instead,
             you should generate your own CA certificate, and distribute
             <filename>cacert.crt</filename> to
-            the clients (see <xref linkend="administrator.client"/>).
+            the clients (see <xref linkend="administrator-core.client"/>).
         </para>
         <para>
             To create the CA certificate, enter the <filename
@@ -123,10 +141,10 @@
             <filename><replaceable>servername</replaceable>.crt</filename> and
             <filename><replaceable>servername</replaceable>.key</filename>.
             You will need to set up the server configuration file to reference
-            them (see <xref linkend="administrator.server"/>).
+            them (see <xref linkend="administrator-core.server"/>).
         </para>
     </section>
-    <section id="administrator.client">
+    <section id="administrator-core.client">
         <title>Configuring the client</title>
         <para>
             Running the abacuscm client requires three things:
@@ -141,7 +159,7 @@
                 <para>
                     A certificate used to sign the servers. Contestant
                     administrators should refer to <xref
-                        linkend="administrator.certificates"/> for information
+                        linkend="administrator-core.certificates"/> for information
                     about generating certificates. Anyone else configuring a
                     client should ask the contest administrator for the
                     certificate.
@@ -208,10 +226,10 @@
             the source directory.
         </para>
     </section>
-    <section id="administrator.server">
+    <section id="administrator-core.server">
         <title>Configuring a server</title>
         <para>TODO</para>
-        <section id="administrator.server.database">
+        <section id="administrator-core.server.database">
             <title>Preparing the database</title>
             <para>
                 Each server needs its own database. Currently only MySQL is
@@ -243,7 +261,7 @@
             </para>
             <screen><userinput>./reload_sql.sh <optional><replaceable>server.conf</replaceable></optional></userinput></screen>
         </section>
-        <section id="administrator.server.config">
+        <section id="administrator-core.server.config">
             <title>Server configuration file</title>
             <para>
                 You should use the default configuration file
@@ -256,7 +274,7 @@
                         Change the settings in the
                         <literal>[mysql]</literal> section to match the
                         details of your MySQL server and the account created
-                        in <xref linkend="administrator.server.database"/>.
+                        in <xref linkend="administrator-core.server.database"/>.
                     </para>
                 </step>
                 <step>
@@ -265,7 +283,7 @@
                         change the <parameter>x509</parameter> and
                         <parameter>private</parameter> options to the server
                         certificate and private key (see <xref
-                            linkend="administrator.certificates"/>).
+                            linkend="administrator-core.certificates"/>).
                     </para>
                 </step>
                 <step>
@@ -296,7 +314,7 @@
                 </step>
             </procedure>
         </section>
-        <section id="administrator.server.keys">
+        <section id="administrator-core.server.keys">
             <title>Server encryption keys</title>
             <para>
                 You will need to generate a secret key that is used for
@@ -307,7 +325,7 @@
             <screen><prompt># </prompt><userinput>dd if=/dev/random of=conf/rijndael.key bs=32 count=1</userinput>
 <prompt># </prompt><userinput>dd if=/dev/random of=conf/rijndael.iv bs=16 count=1</userinput></screen>
         </section>
-        <section id="administrator.server.running">
+        <section id="administrator-core.server.running">
             <title>Running the server</title>
             <para>
                 The server can be started as follows (if no configuration file
@@ -330,11 +348,11 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
             </para>
         </section>
     </section>
-    <section id="administrator.multiserver">
+    <section id="administrator-core.multiserver">
         <title>Multi-server contests</title>
         <para>TODO</para>
     </section>
-    <section id="administrator.adduser">
+    <section id="administrator-core.adduser">
         <title>Adding users</title>
         <para>
             TODO: more detailed instructions on the actual creation
@@ -424,18 +442,18 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
             </varlistentry>
         </variablelist>
     </section>
-    <section id="administrator.addproblem">
+    <section id="administrator-core.addproblem">
         <title>Adding problems</title>
-        <section id="administrator.addproblem.interactive">
+        <section id="administrator-core.addproblem.interactive">
             <title>Interactive problems</title>
             <para>TODO</para>
         </section>
-        <section id="administrator.addproblem.dependencies">
+        <section id="administrator-core.addproblem.dependencies">
             <title>Problem dependencies</title>
             <para>TODO</para>
         </section>
     </section>
-    <section id="administrator.marking">
+    <section id="administrator-core.marking">
         <title>Configuring the markers</title>
         <para>
             The simplest way to install a marker is to run
@@ -465,7 +483,7 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
                     In the <literal>[server]</literal> section, configure
                     <parameter>address</parameter> and
                     <parameter>cacert</parameter> as described in <xref
-                        linkend="administrator.client"/>. Also set the
+                        linkend="administrator-core.client"/>. Also set the
                     <parameter>username</parameter> and
                     <parameter>password</parameter> to the Abacus marker
                     account. You can use the
@@ -525,11 +543,11 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
             units, making timing less accurate.
         </para>
     </section>
-    <section id="administrator.judging">
+    <section id="administrator-core.judging">
         <title>Judging</title>
         <para>TODO</para>
     </section>
-    <section id="administrator.online-standings">
+    <section id="administrator-core.online-standings">
         <title>Online standings</title>
         <para>
             The <command>standings</command> is used to generate standings that
@@ -550,7 +568,7 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
                     <filename>standings.pl</filename>.
                 </para>
             </step>
-            <step id="administrator.online-standings.non-cgi">
+            <step id="administrator-core.online-standings.non-cgi">
                 <para>
                     Copy the other files from <filename
                         class="directory">misc/standings</filename> to a
@@ -573,7 +591,7 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
                 <para>
                     where <replaceable>/www-data</replaceable> is the
                     directory where the files were placed in <xref
-                        linkend="administrator.online-standings.non-cgi"/>. If
+                        linkend="administrator-core.online-standings.non-cgi"/>. If
                     the filename is omitted, it will write to
                     <filename>standings.txt</filename> in the current
                     directory.
@@ -606,9 +624,9 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
             </para>
         </note>
     </section>
-    <section id="administrator.cmdline">
+    <section id="administrator-core.cmdline">
         <title>Other command-line tools</title>
-        <section id="administrator.cmdline.batch">
+        <section id="administrator-core.cmdline.batch">
             <title>Batch</title>
             <para>
                 The tool <filename>bin/batch</filename> is intended primarily
@@ -714,9 +732,9 @@ pass:<replaceable>password</replaceable></userinput></screen>
             <para>TODO: finish</para>
         </section>
     </section>
-    <section id="administrator.troubleshooting">
+    <section id="administrator-core.troubleshooting">
         <title>Trouble-shooting</title>
-        <section id="administrator.troubleshooting.ack_id">
+        <section id="administrator-core.troubleshooting.ack_id">
             <title><computeroutput>ack_id == 0 cannot possibly be correct</computeroutput></title>
             <para>
                 The complete error message would read:
