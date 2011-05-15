@@ -10,6 +10,12 @@
     <xsl:param name="html.stylesheet" select="'abacuscm.css'"/>
     <xsl:param name="html.stylesheet.type" select="'text/css'"/>
 
+    <!-- Put images in a docbook-xsl subdirectory to disguishing them -->
+    <xsl:param name="img.src.path" select="'docbook-xsl/images/'"/>
+    <xsl:param name="callout.graphics.path" select="'docbook-xsl/images/callouts/'"/>
+    <xsl:param name="admon.graphics.path" select="'docbook-xsl/images/'"/>
+    <xsl:param name="navig.graphics.path" select="'docbook-xsl/images/'"/>
+
     <!-- These are needed to get valid XHTML Strict output -->
     <xsl:param name="css.decoration" select="'0'"/>
     <xsl:param name="ulink.target" select="''"/>
