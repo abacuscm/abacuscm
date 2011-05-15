@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Abacus Contest Portal</title>
+</head>
+<body>
+    <div id="connection-status">
+        <img id="status-connected" style="float:left" src="images/connected.png" width="15" alt="Connected" title="Connected" />
+        <img id="status-disconnected" style="float:left" src="images/disconnected.png" width="15" alt="Disconnected" title="Disconnected" />
+        <span id="waiting"><span>Working... please wait</span></span>
+        <button id="logout" class="abacus-button ui-state-default">Logout</button>
+        <!-- Dummy logout button that is off-screen, to make it invisible,
+             while still forcing the parent div to have the right height.
+             -->
+        <button id="logout-dummy" class="abacus-button ui-state-default">Logout</button>
+    </div>
+    <div id="contest-user-bar">
+        <span id="contest-status"></span>
+        <span id="username"></span>
+        <span id="user-status">Logged in as:</span>
+    </div>
+    <div id="login-dialog">
+        <form action="javascript:;">
+            <p id="login-dialog-error" class="error">&nbsp;</p>
+            <table>
+                <tr>
+                    <td>Username:</td>
+                    <td><input id="login-dialog-username" /></td>
+                </tr>
+                <tr>
+                    <td>Password:</td>
+                    <td><input id="login-dialog-password" type="password" /></td>
+                </tr>
+            </table>
+            <p>
+                <button id="login-dialog-submit" class="abacus-button ui-state-default">Login</button>
+            </p>
+        </form>
+    </div>
+    <div id="clarification-request-dialog">
+        <table>
+            <tr>
+                <td>Problem:</td>
+                <td>
+                    <select id="clarification-request-dialog-problems">
+                        <option value="-1">Select a problem...</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>Question:</td>
+                <td><textarea rows="6" cols="50" id="clarification-request-dialog-question"></textarea></td>
+            </tr>
+        </table>
+        <p>
+            <button id="clarification-request-dialog-submit" class="abacus-button ui-state-default">Request clarification</button>
+            <button id="clarification-request-dialog-cancel" class="abacus-button ui-state-default">Cancel</button>
+        </p>
+    </div>
+    <div id="clarification-request-details-dialog">
+        <table>
+            <tr>
+                <td>Question:</td>
+                <td><textarea rows="6" cols="50" id="clarification-request-details-dialog-question" readonly="readonly"></textarea></td>
+            </tr>
+            <tr>
+                <td><div id="clarification-request-details-dialog-answer-label">Answer:</div></td>
+                <td><textarea rows="6" cols="50" id="clarification-request-details-dialog-answer" readonly="readonly"></textarea></td>
+            </tr>
+        </table>
+        <table class="clarification-request-buttons-table">
+            <colgroup><col/><col/><col/></colgroup>
+            <tbody>
+                <tr>
+                    <td><button id="clarification-request-details-dialog-previous" class="abacus-button ui-state-default">Previous answer</button></td>
+                    <td><button id="clarification-request-details-dialog-ok"       class="abacus-button ui-state-default">OK</button></td>
+                    <td><button id="clarification-request-details-dialog-next"     class="abacus-button ui-state-default">Next answer</button></td>
+                </tr>
+            </tbody>
+        </table>
+        <div id="clarification-request-details-dialog-cur-reply"></div>
+    </div>
+    <div id="submission-dialog">
+        <table>
+            <tr>
+                <td>Problem:</td>
+                <td>
+                    <select id="submission-dialog-problems">
+                        <option value="-1">Select a problem...</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>Language:</td>
+                <td>
+                    <select id="submission-dialog-languages">
+                        <option value="-1">Select a language...</option>
+                    </select>
+                </td>
+            </tr>
+        </table>
+        <div id="submission-dialog-file-selector" class="jsubox"></div>
+        <p>
+            <input type='hidden' id='submission-dialog-file-key' value=''/>
+            <button id="submission-dialog-submit" class="abacus-button ui-state-default">OK</button>
+            <button id="submission-dialog-cancel" class="abacus-button ui-state-default">Cancel</button>
+        </p>
+    </div>
+    <div id="submission-result-dialog">
+        <pre id="submission-result-dialog-contents"></pre>
+        <p>
+            <button id="submission-result-dialog-ok" class="abacus-button ui-state-default">OK</button>
+        </p>
+    </div>
+    <div id="tabs" class="ui-tabs">
+        <ul>
+            <li><a href="#tab-manual"><span id="manual-tab-label">Manual</span></a></li>
+            <li><a href="#tab-standings"><span id="standings-tab-label">Standings</span></a></li>
+            <li><a href="#tab-clarification-requests"><span id="clarification-requests-tab-label">Clarification requests</span></a></li>
+            <li><a href="#tab-clarifications"><span id="clarifications-tab-label">Clarifications</span></a></li>
+            <li><a href="#tab-submissions"><span id="submissions-tab-label">Submissions</span></a></li>
+            <li class="tab-debug tab-hidden"><a href="#tab-debug"><span>Debugging</span></a></li>
+            <li class="tab-debug tab-hidden"><a href="#tab-log"><span>Log</span></a></li>
+        </ul>
+        <div id="tab-manual" class="ui-tabs-hide">
+            <object class="manual" title="User manual" data="contestant.html"/>
+        </div>
+        <div id="tab-standings" class="ui-tabs-hide">
+            <p>
+                <label>Search (regex)</label>
+                <input id="standings-searchbox" type="text" />
+            </p>
+            <table class="data-table standings-table">
+                <colgroup>
+                    <col class="place"/>
+                    <col class="team"/>
+                    <col class="name"/>
+                </colgroup>
+                <colgroup>
+                    <col class="solved"/>
+                    <col class="time"/>
+                </colgroup>
+                <colgroup class="problem">
+                </colgroup>
+                <thead id="standings-thead">
+                    <tr>
+                        <th>Place</th>
+                        <th>Team</th>
+                        <th>Name</th>
+                        <th>Solved</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody id="standings-tbody">
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p>Legend</p>
+            <table class="standings-legend">
+                <colgroup><col/><col/></colgroup>
+                <tbody>
+                    <tr><td><span class="correct">+</span></td><td>Solved</td></tr>
+                    <tr><td><span class="correct">+N</span></td><td>Solved, with N incorrect submissions</td></tr>
+                    <tr><td>-N</td><td>Unsolved, N incorrect submissions</td></tr>
+                </tbody>
+            </table>
+            <p id="standings-updatedat" class="updated">
+            </p>
+        </div>
+        <div id="tab-clarification-requests" class="ui-tabs-hide">
+            <p><button id="clarification-requests-request" class="abacus-button ui-state-default">Request clarification</button></p>
+            <table class="data-table">
+                <col class="id"/>
+                <col class="time"/>
+                <col class="problem"/>
+                <col class="status"/>
+                <col class="question"/>
+                <thead id="clarification-requests-thead">
+                    <tr>
+                        <th>ID</th>
+                        <th>Time</th>
+                        <th>Problem</th>
+                        <th>Status</th>
+                        <th>Question</th>
+                    </tr>
+                </thead>
+                <tbody id="clarification-requests-tbody">
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="tab-clarifications" class="ui-tabs-hide">
+            <table class="data-table">
+                <col class="id"/>
+                <col class="req_id"/>
+                <col class="time"/>
+                <col class="problem"/>
+                <col class="queston"/>
+                <col class="answer"/>
+                <thead id="clarifications-thead">
+                    <tr>
+                        <th>ID</th>
+                        <th>Request ID</th>
+                        <th>Time</th>
+                        <th>Problem</th>
+                        <th>Queston</th>
+                        <th>Answer</th>
+                    </tr>
+                </thead>
+                <tbody id="clarifications-tbody">
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="tab-submissions" class="ui-tabs-hide">
+            <p><button id="submissions-make-submission" class="abacus-button ui-state-default">Make submission</button></p>
+            <table class="data-table">
+                <col class="id"/>
+                <col class="time"/>
+                <col class="time"/>
+                <col class="problem"/>
+                <col class="result"/>
+                <col/>
+                <thead id="submissions-thead">
+                    <tr>
+                        <th>Submission ID</th>
+                        <th>Contest time</th>
+                        <th>Real time</th>
+                        <th>Problem</th>
+                        <th>Result</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="submissions-tbody">
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="tab-debug" class="ui-tabs-hide">
+            <form action="javascript:;">
+                <table>
+                    <tr>
+                        <td>Name</td>
+                        <td><input id="out-msg-name"/></td>
+                        <td>&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td>Header</td>
+                        <td><input id="out-msg-key1"/></td>
+                        <td><input id="out-msg-value1"/></td>
+                    </tr>
+                    <tr>
+                        <td>Header</td>
+                        <td><input id="out-msg-key2"/></td>
+                        <td><input id="out-msg-value2"/></td>
+                    </tr>
+                    <tr>
+                        <td>Header</td>
+                        <td><input id="out-msg-key3"/></td>
+                        <td><input id="out-msg-value3"/></td>
+                    </tr>
+                    <tr>
+                        <td>Header</td>
+                        <td><input id="out-msg-key4"/></td>
+                        <td><input id="out-msg-value4"/></td>
+                    </tr>
+                </table>
+                <p>
+                    <button id="out-msg-submit">Send</button>
+                </p>
+            </form>
+        </div>
+        <div id="tab-log" class="ui-tabs-hide">
+            <pre id="log"></pre>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright (C) 2010-2011  Bruce Merry and Carl Hultquist
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; version 2.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>abacuscm</groupId>
+    <artifactId>abacuscm</artifactId>
+    <packaging>war</packaging>
+    <version>1.0-SNAPSHOT</version>
+
+    <build>
+        <defaultGoal>install</defaultGoal>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.mortbay.jetty</groupId>
+                <artifactId>maven-jetty-plugin</artifactId>
+                <version>6.1.24</version>
+                <configuration>
+                    <scanIntervalSeconds>10</scanIntervalSeconds>
+                    <webAppConfig>
+                        <contextPath>/abacuscm</contextPath>
+                    </webAppConfig>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>com.samaxes.maven</groupId>
+                <artifactId>maven-minify-plugin</artifactId>
+                <version>1.3.1</version>
+                <executions>
+                    <execution>
+                        <id>abacus-ui</id>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <cssSourceDir>.</cssSourceDir>
+                            <cssSourceFiles>
+                                <cssSourceFile>fileuploader.css</cssSourceFile>
+                                <cssSourceFile>styles.css</cssSourceFile>
+                                <cssSourceFile>abacuscm.css</cssSourceFile>
+                            </cssSourceFiles>
+                            <cssFinalFile>abacus.css</cssFinalFile>
+                            <jsSourceDir>.</jsSourceDir>
+                            <jsSourceFiles>
+                                <jsSourceFile>application.js</jsSourceFile>
+                                <jsSourceFile>clarifications.js</jsSourceFile>
+                                <jsSourceFile>contest_status.js</jsSourceFile>
+                                <jsSourceFile>debug.js</jsSourceFile>
+                                <jsSourceFile>fileuploader.js</jsSourceFile>
+                                <jsSourceFile>login.js</jsSourceFile>
+                                <jsSourceFile>problems.js</jsSourceFile>
+                                <jsSourceFile>standings.js</jsSourceFile>
+                                <jsSourceFile>submissions.js</jsSourceFile>
+                            </jsSourceFiles>
+                            <jsFinalFile>abacus.js</jsFinalFile>
+                        </configuration>
+                        <goals>
+                            <goal>minify</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>common-js</id>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <cssSourceDir>jquery</cssSourceDir>
+                            <cssSourceFiles>
+                                <cssSourceFile>jquery-ui-1.8.9.custom.css</cssSourceFile>
+                                <cssSourceFile>jquery.alerts.css</cssSourceFile>
+                            </cssSourceFiles>
+                            <cssFinalFile>common.css</cssFinalFile>
+                            <jsSourceDir>.</jsSourceDir>
+                            <jsSourceFiles>
+                                <jsSourceFile>jquery/jquery-1.4.4.min.js</jsSourceFile>
+                                <jsSourceFile>jquery/jquery.json-2.2.js</jsSourceFile>
+                                <jsSourceFile>jquery/jquery-ui-1.8.9.custom.min.js</jsSourceFile>
+                                <jsSourceFile>org/cometd.js</jsSourceFile>
+                                <jsSourceFile>jquery/jquery.cometd.js</jsSourceFile>
+                                <jsSourceFile>jquery/jquery.alerts.js</jsSourceFile>
+                                <jsSourceFile>org/cometd/AckExtension.js</jsSourceFile>
+                                <jsSourceFile>org/cometd/TimeSyncExtension.js</jsSourceFile>
+                                <!--
+                                <jsSourceFile>org/cometd/ReloadExtension.js</jsSourceFile>
+                                <jsSourceFile>org/cometd/TimeStampExtension.js</jsSourceFile>
+                                -->
+                                <jsSourceFile>jquery/jquery.cometd-ack.js</jsSourceFile>
+                                <jsSourceFile>jquery/jquery.cometd-timesync.js</jsSourceFile>
+                                <!--
+                                <jsSourceFile>jquery/jquery.cometd-reload.js</jsSourceFile>
+                                <jsSourceFile>jquery/jquery.cometd-timestamp.js</jsSourceFile>
+                                -->
+                            </jsSourceFiles>
+                            <jsFinalFile>common.js</jsFinalFile>
+                        </configuration>
+                        <goals>
+                            <goal>minify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Can't figure out how to beat it into actually using
+                 a catalog file, so disabling.
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>xml-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>transform</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <catalogs>
+                        <catalog>/etc/xml/catalog</catalog>
+                    </catalogs>
+                    <validationSets>
+                        <validationSet>
+                            <dir>src/main/xml</dir>
+                            <systemId>http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd</systemId>
+                        </validationSet>
+                    </validationSets>
+                    <transformationSets>
+                        <transformationSet>
+                            <dir>src/main/xml</dir>
+                            <includes><include>*.html</include></includes>
+                            <stylesheet>src/main/xml/insert-manual.xsl</stylesheet>
+                        </transformationSet>
+                    </transformationSets>
+                </configuration>
+            </plugin>
+            -->
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+            <version>2.5</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.cometd.java</groupId>
+            <artifactId>bayeux-api</artifactId>
+            <version>2.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.cometd.javascript</groupId>
+            <artifactId>cometd-javascript-jquery</artifactId>
+            <version>2.0.0</version>
+            <type>war</type>
+        </dependency>
+        <dependency>
+            <groupId>org.cometd.java</groupId>
+            <artifactId>cometd-java-server</artifactId>
+            <version>2.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>1.3.2</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-fileupload</groupId>
+            <artifactId>commons-fileupload</artifactId>
+            <version>1.2.2</version>
+        </dependency>
+    </dependencies>
+
+</project>
