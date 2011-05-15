@@ -1,4 +1,4 @@
-TARGETS = ../html/abacuscm.html abacuscm.pdf
+TARGETS = ../html/abacuscm.html ../html/usermanual.html abacuscm.pdf
 STYLESHEETS = $(wildcard *.xsl)
 SOURCES = $(wildcard *.xml)
 CLEANFILES = $(TARGETS) abacuscm.pdf abacuscm.fo
@@ -7,13 +7,17 @@ XMLLINT = xmllint
 XSLTPROC = xsltproc
 FOP = fop
 
-html: ../html/abacuscm.html
+html: ../html/abacuscm.html ../html/usermanual.html
 pdf: abacuscm.pdf
 all: $(TARGETS)
 
 ../html/abacuscm.html: $(SOURCES) $(STYLESHEETS) Makefile
 	$(XMLLINT) --xinclude --postvalid --noout abacuscm.xml
 	$(XSLTPROC) --xinclude -o $@ xhtml.xsl abacuscm.xml
+
+../html/usermanual.html: $(SOURCES) $(STYLESHEETS) Makefile
+	$(XMLLINT) --xinclude --postvalid --noout usermanual.xml
+	$(XSLTPROC) --xinclude -o $@ xhtml.xsl usermanual.xml
 
 abacuscm.pdf: abacuscm.fo
 	$(FOP) -fo $< -pdf $@
