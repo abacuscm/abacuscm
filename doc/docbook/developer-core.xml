@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN" "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
-<chapter id="developer">
-    <title>Developer manual</title>
-    <section id="developer.build">
+<chapter id="developer-core">
+    <title>Developer manual for abacus core</title>
+    <section id="developer-core.build">
         <title>Build system</title>
         <para>TODO</para>
     </section>
 
-    <section id="developer.standard">
+    <section id="developer-core.standard">
         <title>Coding standard</title>
-        <section id="developer.standard.files">
+        <section id="developer-core.standard.files">
             <title>Files</title>
             <itemizedlist>
                 <listitem>
@@ -71,7 +71,7 @@
                 </listitem>
             </itemizedlist>
         </section>
-        <section id="developer.standard.style">
+        <section id="developer-core.standard.style">
             <title>Coding style</title>
             <itemizedlist>
                 <listitem>
@@ -115,15 +115,15 @@
                 </listitem>
             </itemizedlist>
         </section>
-        <section id="developer.standard.singleton">
+        <section id="developer-core.standard.singleton">
             <title>Singleton pattern</title>
             <para>TODO</para>
         </section>
     </section>
 
-    <section id="developer.common">
+    <section id="developer-core.common">
         <title>Common infrastructure</title>
-        <section id="developer.common.logging">
+        <section id="developer-core.common.logging">
             <title>Logging</title>
             <para>
                 General logging is done by calling
@@ -153,19 +153,19 @@
                     class="headerfile">include/logger.h</filename>).
             </para>
         </section>
-        <section id="developer.common.config">
+        <section id="developer-core.common.config">
             <title>Configuration files</title>
             <para>TODO</para>
         </section>
-        <section id="developer.common.score">
+        <section id="developer-core.common.score">
             <title>Score comparison</title>
             <para>TODO</para>
         </section>
     </section>
 
-    <section id="developer.csprotocol">
+    <section id="developer-core.csprotocol">
         <title>Client-server protocol</title>
-        <section id="developer.csprotocol.intro">
+        <section id="developer-core.csprotocol.intro">
             <title>Introduction</title>
             <para>
                 The client-server protocol is encrypted with SSL over a TCP/IP
@@ -199,7 +199,7 @@
                 not permitted, although currently this is not enforced.
             </para>
         </section>
-        <section id="developer.csprotocol.format">
+        <section id="developer-core.csprotocol.format">
             <title>Message format</title>
             <para>
                 A message consists of a type, an optional message ID and a set
@@ -252,7 +252,7 @@ pass:<replaceable>password</replaceable>
                 with fixed columns use the same approach for each column of
                 the table.
             </para>
-            <para id="developer.csprotocol.grid">
+            <para id="developer-core.csprotocol.grid">
                 For messages that return general two-dimensional tables,
                 headers <parameter>nrows</parameter> and
                 <parameter>ncols</parameter> contain the dimensions
@@ -264,7 +264,7 @@ pass:<replaceable>password</replaceable>
                 that messages that use this scheme can only contain one table.
             </para>
         </section>
-        <section id="developer.csprotocol.client">
+        <section id="developer-core.csprotocol.client">
             <title>Client commands</title>
             <para>
                 These are commands that the client sends to the server. The
@@ -275,7 +275,7 @@ pass:<replaceable>password</replaceable>
                 is omitted. Message IDs may be used on any of these messages,
                 but are not shown.
             </para>
-            <section id="developer.csprotocol.auth">
+            <section id="developer-core.csprotocol.auth">
                 <title>Authentication</title>
                 <synopsis>auth
 user:<replaceable>username</replaceable>
@@ -297,7 +297,7 @@ user:<replaceable>user</replaceable></synopsis>
                     are filled in before being passed to the abacus server.
                 </para>
             </section>
-            <section id="developer.csprotocol.whatami">
+            <section id="developer-core.csprotocol.whatami">
                 <title>Query permissions</title>
                 <synopsis>whatami
 permission0:<replaceable>permission</replaceable>
@@ -309,7 +309,7 @@ permission1:<replaceable>permission</replaceable>
                     <filename>src/permissions.C</filename>.
                 </para>
             </section>
-            <section id="developer.csprotocol.adduser">
+            <section id="developer-core.csprotocol.adduser">
                 <title>Create a user</title>
                 <synopsis>adduser
 username:<replaceable>username</replaceable>
@@ -330,7 +330,7 @@ type:<replaceable>user type</replaceable> <co id="adduser.type.co"
                     </callout>
                 </calloutlist>
             </section>
-            <section id="developer.csprotocol.getusers">
+            <section id="developer-core.csprotocol.getusers">
                 <title>Get list of users</title>
                 <synopsis>getusers
 
@@ -338,12 +338,12 @@ ok
 id0:<replaceable>id</replaceable>
 username0:<replaceable>username</replaceable></synopsis>
             </section>
-            <section id="developer.csprotocol.passwd">
+            <section id="developer-core.csprotocol.passwd">
                 <title>Change own password</title>
                 <synopsis>passwd
 newpass:<replaceable>password</replaceable></synopsis>
             </section>
-            <section id="developer.csprotocol.id_passwd">
+            <section id="developer-core.csprotocol.id_passwd">
                 <title>Change another user's password</title>
                 <screen>id_passwd
 user_id:<replaceable>id</replaceable> <co id="id_passwd.user_id.co" linkends="id_passwd.user_id"/>
@@ -357,7 +357,7 @@ newpass:<replaceable>password</replaceable></screen>
                     </callout>
                 </calloutlist>
             </section>
-            <section id="developer.csprotocol.getlanguages">
+            <section id="developer-core.csprotocol.getlanguages">
                 <title>Get list of permitted languages</title>
                 <synopsis>getlanguages
 
@@ -375,7 +375,7 @@ language1:<replaceable>language</replaceable>
                     available in future).
                 </para>
             </section>
-            <section id="developer.csprotocol.getprobtypes">
+            <section id="developer-core.csprotocol.getprobtypes">
                 <title>Get list of problem types</title>
                 <synopsis>getprobtypes
 
@@ -392,7 +392,7 @@ type1:<replaceable>type</replaceable>
                     problem.
                 </para>
             </section>
-            <section id="developer.csprotocol.getprobdescript">
+            <section id="developer-core.csprotocol.getprobdescript">
                 <title>Get information about a problem type</title>
                 <synopsis>getprobdescript
 type:<replaceable>type</replaceable>
@@ -403,7 +403,7 @@ descript:<replaceable>description</replaceable></synopsis>
                     TODO: document the mini-language used for descriptions
                 </para>
             </section>
-            <section id="developer.csprotocol.setprobattrs">
+            <section id="developer-core.csprotocol.setprobattrs">
                 <title>Create or update problem</title>
                 <synopsis>setprobattrs
 prob_id:<replaceable>id</replaceable>                    <co id="setprobattrs.prob_id.co" linkends="setprobattrs.prob_id"/>
@@ -476,7 +476,7 @@ content-length:<replaceable>content-length</replaceable>
                     </callout>
                 </calloutlist>
             </section>
-            <section id="developer.csprotocol.getprobattrs">
+            <section id="developer-core.csprotocol.getprobattrs">
                 <title>Get problem attributes</title>
                 <synopsis>getprobattrs
 prob_id:<replaceable>id</replaceable>
@@ -491,7 +491,7 @@ ok
                     or the files.
                 </para>
             </section>
-            <section id="developer.csprotocol.getprobfile">
+            <section id="developer-core.csprotocol.getprobfile">
                 <title>Retrieve problem file</title>
                 <synopsis>getprobfile
 prob_id:<replaceable>id</replaceable>
@@ -510,7 +510,7 @@ content-length:<replaceable>content-length</replaceable>
                     </callout>
                 </calloutlist>
             </section>
-            <section id="developer.csprotocol.getproblems">
+            <section id="developer-core.csprotocol.getproblems">
                 <title>Get list of problems</title>
                 <synopsis>getproblems
 
@@ -547,7 +547,7 @@ name1:<replaceable>name</replaceable>
                     </callout>
                 </calloutlist>
             </section>
-            <section id="developer.csprotocol.submit">
+            <section id="developer-core.csprotocol.submit">
                 <title>Submit solution</title>
                 <synopsis>submit
 prob_id:<replaceable>id</replaceable>    <co id="submit.prob_id.co" linkends="submit.prob_id"/>
@@ -570,7 +570,7 @@ content-length:<replaceable>content-length</replaceable>
                     </callout>
                 </calloutlist>
             </section>
-            <section id="developer.csprotocol.getsubmissionsource">
+            <section id="developer-core.csprotocol.getsubmissionsource">
                 <title>Get submitted source file</title>
                 <synopsis>getsubmissionsource
 submission_id:<replaceable>submission_id</replaceable>
@@ -580,7 +580,7 @@ content-length:<replaceable>content-length</replaceable>
 
 <replaceable>binary data</replaceable></synopsis>
             </section>
-            <section id="developer.csprotocol.getsubmissions">
+            <section id="developer-core.csprotocol.getsubmissions">
                 <title>Get submissions</title>
                 <synopsis>getsubmissions
 
@@ -633,7 +633,7 @@ comment0:<replaceable>comment</replaceable>  <co id="getsubmissions.comment.co" 
                     so, but I can't see any code to generate them.
                 </para>
             </section>
-            <section id="developer.csprotocol.standings">
+            <section id="developer-core.csprotocol.standings">
                 <title>Get standings</title>
                 <synopsis>standings
 
@@ -641,7 +641,7 @@ ok
 <replaceable>grid</replaceable></synopsis>
                 <para>
                     The standings are formatting using the <link
-                        linkend="developer.csprotocol.grid">grid</link>
+                        linkend="developer-core.csprotocol.grid">grid</link>
                     layout. It has the fixed columns listed below, followed by
                     a column per problem where the column header is the short
                     name of the problem.
@@ -707,7 +707,7 @@ ok
                     attempts (all unsuccessful).
                 </para>
             </section>
-            <section id="developer.csprotocol.clarificationrequest">
+            <section id="developer-core.csprotocol.clarificationrequest">
                 <title>Clarification request</title>
                 <synopsis>clarificationrequest
 prob_id:<replaceable>id</replaceable>        <co id="clarificationrequest.id.co" linkends="clarificationrequest.id"/>
@@ -728,7 +728,7 @@ question:<replaceable>question</replaceable> <co id="clarificationrequest.questi
                     </callout>
                 </calloutlist>
             </section>
-            <section id="developer.csprotocol.clarification">
+            <section id="developer-core.csprotocol.clarification">
                 <title>Clarification reply</title>
                 <synopsis>clarification
 clarification_request_id:<replaceable>id</replaceable>
@@ -739,14 +739,14 @@ public:0|1</synopsis>
                     with ASCII character 1.
                 </para>
             </section>
-            <section id="developer.csprotocol.getclarificationrequests">
+            <section id="developer-core.csprotocol.getclarificationrequests">
                 <title>Get clarification requests</title>
                 <para>
                     This message will retrieve all clarification requests that
                     the user has permission to see. Note that when a
                     clarification is public, the user will be able to see the
                     question via the <link
-                        linkend="developer.csprotocol.getclarifications">getclarifications</link>
+                        linkend="developer-core.csprotocol.getclarifications">getclarifications</link>
                     message, yet might not have permission to see the original
                     clarification request with this message. This is simply an
                     artefact of the server design rather than a security
@@ -763,11 +763,11 @@ question0:<replaceable>text</replaceable>
 &hellip;</synopsis>
                 <para>
                     Refer to <link
-                        linkend="developer.csprotocol.getclarifications">getclarifications</link>
+                        linkend="developer-core.csprotocol.getclarifications">getclarifications</link>
                     for more information on the meanings of the fields.
                 </para>
             </section>
-            <section id="developer.csprotocol.getclarifications">
+            <section id="developer-core.csprotocol.getclarifications">
                 <title>Get clarifications</title>
                 <para>
                     This message will retrieve all clarifications that user has
@@ -822,7 +822,7 @@ answer0:<replaceable>answer</replaceable>   <co id="getclarifications.answer.co"
                     </callout>
                 </calloutlist>
             </section>
-            <section id="developer.csprotocol.startstop">
+            <section id="developer-core.csprotocol.startstop">
                 <title>Add start or stop time</title>
                 <synopsis>startstop
 action:<replaceable>action</replaceable> <co id="startstop.action.co"
@@ -847,7 +847,7 @@ server_id:<replaceable>id</replaceable>  <co id="startstop.server_id.co"
                     </callout>
                 </calloutlist>
             </section>
-            <section id="developer.csprotocol.contesttime">
+            <section id="developer-core.csprotocol.contesttime">
                 <title>Get contest timing information</title>
                 <synopsis>contesttime
 
@@ -856,12 +856,12 @@ running:yes|no
 time:<replaceable>seconds since start</replaceable>
 remain:<replaceable>seconds remaining</replaceable></synopsis>
             </section>
-            <section id="developer.csprotocol.subscribetime">
+            <section id="developer-core.csprotocol.subscribetime">
                 <title>Subscribe to contest time events</title>
                 <synopsis>subscribetime</synopsis>
                 <para>
                     This message is equivalent to <link
-                        linkend="developer.csprotocol.eventmap">subscribing</link>
+                        linkend="developer-core.csprotocol.eventmap">subscribing</link>
                     to the <literal>startstop</literal> and
                     <literal>updateclock</literal> events, and may be removed
                     in future.
@@ -870,7 +870,7 @@ remain:<replaceable>seconds remaining</replaceable></synopsis>
                     TODO: can we just remove this now?
                 </para>
             </section>
-            <section id="developer.csprotocol.eventmap">
+            <section id="developer-core.csprotocol.eventmap">
                 <title>Subscribe or unsubscribe from events</title>
                 <synopsis>eventmap
 action:subscribe|unsubscribe
@@ -897,13 +897,13 @@ event:<replaceable>event</replaceable></synopsis>
                     <listitem><para><type>updatesubmissions</type></para></listitem>
                 </itemizedlist>
             </section>
-            <section id="developer.csprotocol.fetchfile.count">
+            <section id="developer-core.csprotocol.fetchfile.count">
                 <title>Count files associated with submission</title>
                 <synopsis>fetchfile
 request:count
 submission_id:<replaceable>id</replaceable></synopsis>
             </section>
-            <section id="developer.csprotocol.fetchfile.data">
+            <section id="developer-core.csprotocol.fetchfile.data">
                 <title>Fetch submission-related file</title>
                 <synopsis>fetchfile
 request:data
@@ -924,7 +924,7 @@ index:<replaceable>index</replaceable></synopsis>
                     permitted to see (in particular, compilation failures).
                 </para>
             </section>
-            <section id="developer.csprotocol.subscribemark">
+            <section id="developer-core.csprotocol.subscribemark">
                 <title>Register as a marker</title>
                 <synopsis>subscribemark</synopsis>
                 <para>
@@ -934,7 +934,7 @@ index:<replaceable>index</replaceable></synopsis>
                     something that needs marking.
                 </para>
             </section>
-            <section id="developer.csprotocol.mark">
+            <section id="developer-core.csprotocol.mark">
                 <title>Submit a mark for a problem</title>
                 <synopsis>mark
 submission_id:<replaceable>id</replaceable>
@@ -949,7 +949,7 @@ content-length:<replaceable>content-length</replaceable>
                     <callout id="mark.result" arearefs="mark.result.co">
                         <para>
                             Refer to <link
-                                linkend="developer.csprotocol.getsubmissions">getsubmissions</link>
+                                linkend="developer-core.csprotocol.getsubmissions">getsubmissions</link>
                             for a description of the
                             <parameter>result</parameter> and
                             <parameter>replaceable</parameter> fields.
@@ -958,7 +958,7 @@ content-length:<replaceable>content-length</replaceable>
                     <callout id="mark.file" arearefs="mark.file.co">
                         <para>
                             The files are encoded in the same way as for <link
-                                linkend="developer.csprotocol.setprobattrs">setprobattrs</link>,
+                                linkend="developer-core.csprotocol.setprobattrs">setprobattrs</link>,
                             except that the headers are simply an enumeration,
                             and that the last sub-field is a human-readable
                             description rather than a filename.
@@ -973,7 +973,7 @@ content-length:<replaceable>content-length</replaceable>
                     <symbol>JUDGE</symbol>.
                 </para>
             </section>
-            <section id="developer.csprotocol.addserver">
+            <section id="developer-core.csprotocol.addserver">
                 <title>Add a slave server</title>
                 <synopsis>addserver
 servername:<replaceable>name</replaceable>
@@ -981,7 +981,7 @@ ip:<replaceable>domain name</replaceable>
 marker:yes|no
 udppeerport:<replaceable>port number</replaceable></synopsis>
             </section>
-            <section id="developer.csprotocol.getserverlist">
+            <section id="developer-core.csprotocol.getserverlist">
                 <title>Get list of servers</title>
                 <synopsis>getserverlist
 
@@ -991,13 +991,13 @@ server1:<replaceable>domain name</replaceable>
 &hellip;</synopsis>
             </section>
         </section>
-        <section id="developer.csprotocol.notifications">
+        <section id="developer-core.csprotocol.notifications">
             <title>Server notifications</title>
             <para>
                 These messages are sent asynchronously to the client by
                 the server. The client is not expected to explicitly
                 acknowledge them. Some require explicit subscription (using
-                <link linkend="developer.csprotocol.eventmap">eventmap</link>),
+                <link linkend="developer-core.csprotocol.eventmap">eventmap</link>),
                 while others will always be sent.
             </para>
             <para>
@@ -1028,7 +1028,7 @@ server1:<replaceable>domain name</replaceable>
                 on the notification, to allow for the possibility that these
                 may become mutable in future.
             </para>
-            <section id="developer.csprotocol.notifications.keepalive">
+            <section id="developer-core.csprotocol.notifications.keepalive">
                 <title>Keepalives</title>
                 <synopsis>keepalive</synopsis>
                 <para>
@@ -1049,7 +1049,7 @@ server1:<replaceable>domain name</replaceable>
                     through the connection.
                 </para>
             </section>
-            <section id="developer.csprotocol.notifications.msg">
+            <section id="developer-core.csprotocol.notifications.msg">
                 <title>Message for user</title>
                 <synopsis>msg
 title:<replaceable>message title</replaceable>
@@ -1061,7 +1061,7 @@ text:<replaceable>message body</replaceable></synopsis>
                     or some other form of notification.
                 </para>
             </section>
-            <section id="developer.csprotocol.notifications.startstop">
+            <section id="developer-core.csprotocol.notifications.startstop">
                 <title>Contest state changes</title>
                 <synopsis>startstop
 action:start|stop</synopsis>
@@ -1069,7 +1069,7 @@ action:start|stop</synopsis>
                     This is sent when the contest either starts or stops.
                 </para>
             </section>
-            <section id="developer.csprotocol.notifications.updateclock">
+            <section id="developer-core.csprotocol.notifications.updateclock">
                 <title>Clock updates</title>
                 <synopsis>updateclock</synopsis>
                 <para>
@@ -1083,7 +1083,7 @@ action:start|stop</synopsis>
                 <para>
                     If a client displays the remaining contest time to the
                     user, it will need to use a <link
-                        linkend="developer.csprotocol.contesttime">contesttime</link>
+                        linkend="developer-core.csprotocol.contesttime">contesttime</link>
                     command to determine the new remaining time.
                 </para>
                 <para>
@@ -1095,7 +1095,7 @@ action:start|stop</synopsis>
                     stopped.
                 </para>
             </section>
-            <section id="developer.csprotocol.notifications.balloon">
+            <section id="developer-core.csprotocol.notifications.balloon">
                 <title>Balloon notifications</title>
                 <synopsis>balloon
 server:<replaceable>server name</replaceable>
@@ -1107,7 +1107,7 @@ problem:<replaceable>short name</replaceable></synopsis>
                     client to display a message for each problem solved.
                 </para>
             </section>
-            <section id="developer.csprotocol.notifications.updatesubmissions">
+            <section id="developer-core.csprotocol.notifications.updatesubmissions">
                 <title>Update submissions</title>
                 <synopsis>updatesubmissions
 submission_id:<replaceable>id</replaceable>
@@ -1121,11 +1121,11 @@ comment:<replaceable>comment</replaceable></synopsis>
                     This notification is sent when either there is a new
                     submission, or the state of an existing submission
                     changes. It has the same format as the reply to <link
-                        linkend="developer.csprotocol.getsubmissions">getsubmissions</link>,
+                        linkend="developer-core.csprotocol.getsubmissions">getsubmissions</link>,
                     except that only a single submission is updated.
                 </para>
             </section>
-            <section id="developer.csprotocol.notifications.updateclarificationrequests">
+            <section id="developer-core.csprotocol.notifications.updateclarificationrequests">
                 <title>Update clarification requests</title>
                 <synopsis>updateclarificationrequests
 id:<replaceable>id</replaceable>
@@ -1135,11 +1135,11 @@ time:<replaceable>time</replaceable>
 question:<replaceable>text</replaceable></synopsis>
                 <para>
                     The fields are the same as for <link
-                        linkend="developer.csprotocol.getclarificationrequests">getclarificationrequests</link>,
+                        linkend="developer-core.csprotocol.getclarificationrequests">getclarificationrequests</link>,
                     except that only one clarification request is updated.
                 </para>
             </section>
-            <section id="developer.csprotocol.notifications.updateclarifications">
+            <section id="developer-core.csprotocol.notifications.updateclarifications">
                 <title>Update clarifications</title>
                 <synopsis>updateclarifications
 id:<replaceable>id</replaceable>
@@ -1150,17 +1150,17 @@ question:<replaceable>text</replaceable>
 answer:<replaceable>answer</replaceable></synopsis>
                 <para>
                     The fields are the same as for <link
-                        linkend="developer.csprotocol.getclarifications">getclarifications</link>,
+                        linkend="developer-core.csprotocol.getclarifications">getclarifications</link>,
                     except that only one clarification is updated.
                 </para>
             </section>
-            <section id="developer.csprotocol.notifications.updatestandings">
+            <section id="developer-core.csprotocol.notifications.updatestandings">
                 <title>Update standings</title>
                 <para>
                     TODO
                 </para>
             </section>
-            <section id="developer.csprotocol.notifications.close">
+            <section id="developer-core.csprotocol.notifications.close">
                 <title>Connection closed</title>
                 <synopsis>close</synopsis>
                 <para>
@@ -1174,36 +1174,36 @@ answer:<replaceable>answer</replaceable></synopsis>
         </section>
     </section>
 
-    <section id="developer.ssprotocol">
+    <section id="developer-core.ssprotocol">
         <title>Server-to-server protocol</title>
-        <section id="developer.ssprotocol.intro">
+        <section id="developer-core.ssprotocol.intro">
             <title>Introduction</title>
             <para>TODO</para>
         </section>
-        <section id="developer.ssprotocol.udp">
+        <section id="developer-core.ssprotocol.udp">
             <title>Pure UDP protocol</title>
             <para>TODO</para>
         </section>
-        <section id="developer.ssprotocol.udtcp">
+        <section id="developer-core.ssprotocol.udtcp">
             <title>Hybrid UDP/TCP protocol</title>
             <para>TODO</para>
         </section>
-        <section id="developer.ssprotocol.messages">
+        <section id="developer-core.ssprotocol.messages">
             <title>Messages</title>
             <para>TODO</para>
         </section>
     </section>
 
-    <section id="developer.server">
+    <section id="developer-core.server">
         <title>Server design</title>
-        <section id="developer.server.actions">
+        <section id="developer-core.server.actions">
             <title>Actions</title>
             <para>
                 The server maintains a register of
                 <firstterm>actions</firstterm> that clients can perform. Each
                 action has a name, which is the type of the message that the
                 client sends to the server to initiate the action (see <xref
-                    linkend="developer.csprotocol"/>).
+                    linkend="developer-core.csprotocol"/>).
                 Each action is represented in the server by a singleton
                 instance of a subclass of <classname>ClientAction</classname>,
                 which is registered using
@@ -1231,11 +1231,11 @@ answer:<replaceable>answer</replaceable></synopsis>
                 as a full disk can occur.
             </para>
         </section>
-        <section id="developer.server.modules">
+        <section id="developer-core.server.modules">
             <title>Modules</title>
             <para>TODO</para>
         </section>
-        <section id="developer.server.clientconnection">
+        <section id="developer-core.server.clientconnection">
             <title>Client connections</title>
             <para>
                 The server communicates with the clients over SSL, using the
@@ -1254,7 +1254,7 @@ answer:<replaceable>answer</replaceable></synopsis>
                 loop of the following:
             </para>
             <procedure>
-                <step id="developer.server.clientconnection.step-read">
+                <step id="developer-core.server.clientconnection.step-read">
                     <para>
                         Attempt to read data until no more can be read; store
                         the condition (e.g.,
@@ -1314,7 +1314,7 @@ answer:<replaceable>answer</replaceable></synopsis>
                 from detecting that there is data to read.
             </para>
         </section>
-        <section id="developer.server.threads">
+        <section id="developer-core.server.threads">
             <title>Threads</title>
             <para>
                 The server maintains a large number of threads:
@@ -1471,7 +1471,7 @@ answer:<replaceable>answer</replaceable></synopsis>
                 possibly with a diagram.
             </para>
         </section>
-        <section id="developer.server.queues">
+        <section id="developer-core.server.queues">
             <title>Queues</title>
             <para>
                 The server uses a number of queues for communication between
@@ -1531,7 +1531,7 @@ answer:<replaceable>answer</replaceable></synopsis>
                 </listitem>
             </itemizedlist>
         </section>
-        <section id="developer.server.permissions">
+        <section id="developer-core.server.permissions">
             <title>Permissions</title>
             <para>
                 Each connection to the server is given a set of
@@ -1564,27 +1564,27 @@ answer:<replaceable>answer</replaceable></synopsis>
                 permission checks.
             </para>
         </section>
-        <section id="developer.server.database">
+        <section id="developer-core.server.database">
             <title>Database connections</title>
             <para>TODO</para>
         </section>
     </section>
 
-    <section id="developer.database">
+    <section id="developer-core.database">
         <title>Database layout</title>
-        <section id="developer.database.contest">
+        <section id="developer-core.database.contest">
             <title>Contest data</title>
             <para>TODO</para>
         </section>
-        <section id="developer.database.peermessage">
+        <section id="developer-core.database.peermessage">
             <title>Peer messages</title>
             <para>TODO</para>
         </section>
     </section>
 
-    <section id="developer.client">
+    <section id="developer-core.client">
         <title>Qt client</title>
-        <section id="developer.client.intro">
+        <section id="developer-core.client.intro">
             <title>Introduction</title>
             <para>
                 The GUI client is written using Qt 3, and is currently only
@@ -1592,7 +1592,7 @@ answer:<replaceable>answer</replaceable></synopsis>
                 are known to work).
             </para>
         </section>
-        <section id="developer.client.designer">
+        <section id="developer-core.client.designer">
             <title>GUI</title>
             <para>
                 The window layouts, as well as signal/slot connections are
@@ -1610,7 +1610,7 @@ answer:<replaceable>answer</replaceable></synopsis>
                 need to maintain code within Qt Designer.
             </para>
         </section>
-        <section id="developer.client.permissions">
+        <section id="developer-core.client.permissions">
             <title>Permissions</title>
             <para>
                 While permissions are enforced by the server, the client aids
@@ -1633,7 +1633,7 @@ answer:<replaceable>answer</replaceable></synopsis>
                 such as <guimenuitem>Connect</guimenuitem> should be enabled).
             </para>
         </section>
-        <section id="developer.client.threads">
+        <section id="developer-core.client.threads">
             <title>Threads</title>
             <para>
                 The client contains three threads:
@@ -1707,7 +1707,7 @@ answer:<replaceable>answer</replaceable></synopsis>
                 timeout.
             </para>
         </section>
-        <section id="developer.client.encoding">
+        <section id="developer-core.client.encoding">
             <title>Character encodings</title>
             <para>
                 All (or almost all) user-visible strings in Abacuscm are in
@@ -1728,7 +1728,7 @@ myqstring = QString::fromUtf8("Hello world");
 mycstring = (const char *) myqstring.utf8();
 ]]></programlisting>
         </section>
-        <section id="developer.client.listview">
+        <section id="developer-core.client.listview">
             <title>List views</title>
             <para>
                 The GUI contains a number of list views, which are sortable
@@ -1775,13 +1775,13 @@ mycstring = (const char *) myqstring.utf8();
         </section>
     </section>
 
-    <section id="developer.marker">
+    <section id="developer-core.marker">
         <title>Marker</title>
-        <section id="developer.marker.runlimit">
+        <section id="developer-core.marker.runlimit">
             <title>Enforcing constraints</title>
             <para>TODO</para>
         </section>
-        <section id="developer.marker.java">
+        <section id="developer-core.marker.java">
             <title>Java specifics</title>
             <para>TODO</para>
         </section>

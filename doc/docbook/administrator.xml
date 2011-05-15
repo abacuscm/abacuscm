@@ -645,7 +645,7 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
             </para>
             <para>
                 For details of the valid types and keys, refer to <xref
-                    linkend="developer.csprotocol.client"/>. As an example, the
+                    linkend="developer-core.csprotocol.client"/>. As an example, the
                 first message will generally be
             </para>
             <screen><userinput>auth

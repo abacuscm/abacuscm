@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN" "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<chapter id="developer-webapp">
+    <title>Developer manual for abacus web application</title>
+    <section id="developer-webapp.standard">
+        <title>Coding standard</title>
+        <section id="developer-webapp.standard.java">
+            <title>Java style</title>
+            <para>TODO</para>
+        </section>
+
+        <section id="developer-webapp.standard.js">
+            <title>Javascript style</title>
+            <itemizedlist>
+                <listitem>
+                    <para>
+                        As for the core <link linkend="developer-core.standard.style">coding style</link>,
+                        indentation is with tabs, and the tab stops are 4
+                        spaces.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Opening braces are placed at the end of a line of
+                        code, not on their own line.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Variables and functions use
+                        <function><replaceable>camelCase</replaceable></function>.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Classes use
+                        <classname><replaceable>InterCaps</replaceable></classname>,
+                        although the code is generally not object-oriented.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        CSS class names use lower-case with dashes, for
+                        consistency with <application>jQuery</application>.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        A public function (one shared across source files) is
+                        defined like this:
+                    </para>
+                    <programlisting language="javascript">this.<replaceable>function</replaceable> = function(<replaceable>params</replaceable>) {
+   ...
+}</programlisting>
+                </listitem>
+                <listitem>
+                    <para>
+                        A private function (one local to the file it is in) is
+                        defined like this:
+                    </para>
+                    <programlisting language="javascript">var <replaceable>function</replaceable> = function(<replaceable>params</replaceable>) {
+   ...
+}</programlisting>
+                </listitem>
+                <listitem>
+                    <para>
+                        All files wrap their contents in a call to an anonymous
+                        function, so that private functions can be defined
+                        within its scope. Refer to an existing file for the
+                        pattern.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        All local variables are explicitly declared with
+                        <literal>var</literal> (otherwise they become global).
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Messages are called <varname>message</varname> (or
+                        <varname>pendingMessage</varname>,
+                        <varname>queuedMessage</varname>, etc) rather than
+                        <varname>msg</varname>.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Strings use single quotes rather than double quotes,
+                        unless there is a good reason not to (e.g., single
+                        quotes embedded in the string).
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Functions which are callbacks triggered by a message
+                        arrival are called
+                        <function><replaceable>something</replaceable>Handler</function>.
+                    </para>
+                </listitem>
+            </itemizedlist>
+        </section>
+    </section>
+</chapter>
