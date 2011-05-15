@@ -21,4 +21,5 @@
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="administrator-webapp.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="developer-core.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="developer-webapp.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="licensing.xml"/>
 </book>
