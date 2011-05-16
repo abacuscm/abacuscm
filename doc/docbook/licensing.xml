@@ -139,4 +139,16 @@
             Public License, version 2 or later.
         </para>
     </section>
+    <section>
+        <title>Icons</title>
+        <para>
+            The connection status icons (<filename>connected.png</filename>
+            and <filename>disconnected.png</filename>) were downloaded from
+            <ulink
+                url="http://www.easyvectors.com/browse/other/9f6520f14dc7b7a7eb25a85f01628d39-button-green-clip-art">here</ulink>
+            and <ulink
+                url="http://www.easyvectors.com/browse/other/button-red-clip-art">here</ulink>,
+            and are free for commercial use.
+        </para>
+    </section>
 </chapter>
