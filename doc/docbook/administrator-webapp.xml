@@ -114,7 +114,8 @@
             <para>
                 This can be done as follows:
             </para>
-            <screen><prompt>$ </prompt><userinput>keytool -importcert -alias abacuscert -file <replaceable>cacert.crt</replaceable> -keystore <replaceable>abacus_keystore</replaceable> -noprompt</userinput>
+            <screen><prompt>$ </prompt><userinput>keytool -importcert -alias abacuscert -file <replaceable>cacert.crt</replaceable> \
+    -keystore <replaceable>abacus_keystore</replaceable> -noprompt</userinput>
 <computeroutput>Enter keystore password:
 Re-enter new password:
 Certificate was added to keystore</computeroutput></screen>
@@ -140,11 +141,14 @@ Certificate was added to keystore</computeroutput></screen>
                 is arbitrary; we use <filename>abacuscm.xml</filename>):
             </para>
             <programlisting language="xml">&lt;?xml version="1.0"  encoding="ISO-8859-1"?&gt;
-&lt;!DOCTYPE Configure PUBLIC "-//Mort Bay Consulting//DTD Configure//EN" "http://jetty.mortbay.org/configure.dtd"&gt;
+&lt;!DOCTYPE Configure
+    PUBLIC "-//Mort Bay Consulting//DTD Configure//EN"
+    "http://jetty.mortbay.org/configure.dtd"&gt;
 &lt;Configure class="org.mortbay.jetty.webapp.WebAppContext"&gt;
   &lt;Set name="contextPath"&gt;<replaceable>/contextPath</replaceable>&lt;/Set&gt;
   &lt;Set name="war"&gt;<filename><replaceable>/path/to/war</replaceable></filename>&lt;/Set&gt;
-  &lt;Set name="overrideDescriptor"&gt;&lt;SystemProperty name="jetty.home" default="." /&gt;<filename><replaceable>/etc/abacuscm-secret-web.xml</replaceable></filename>&lt;/Set&gt;
+  &lt;Set name="overrideDescriptor"&gt;&lt;SystemProperty name="jetty.home"
+      default="." /&gt;<filename><replaceable>/etc/abacuscm-secret-web.xml</replaceable></filename>&lt;/Set&gt;
 &lt;/Configure&gt;</programlisting>
             <para>
                 The <varname>contextPath</varname> is the path
@@ -175,7 +179,8 @@ Certificate was added to keystore</computeroutput></screen>
 &lt;?xml version="1.0" encoding="UTF-8"?&gt;
 &lt;web-app xmlns="http://java.sun.com/xml/ns/javaee"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+             http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
          version="2.5"&gt;
 
     &lt;servlet&gt;

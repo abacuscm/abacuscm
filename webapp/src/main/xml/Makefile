@@ -16,7 +16,7 @@
 TOP = ../../../..
 TARGET_DIR = ../webapp
 MANUAL_DIR = $(TOP)/doc/docbook
-MANUAL_FILE = $(TOP)/doc/html/usermanual.html
+MANUAL_FILE = $(TOP)/doc/html/contestant-web.html
 
 SOURCES = $(wildcard index*.html) standings.html
 TARGETS = $(patsubst %,$(TARGET_DIR)/%,$(SOURCES))

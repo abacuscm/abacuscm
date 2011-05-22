@@ -1,30 +1,39 @@
-TARGETS = ../html/abacuscm.html ../html/usermanual.html abacuscm.pdf
-STYLESHEETS = $(wildcard *.xsl)
-SOURCES = $(wildcard *.xml)
-CLEANFILES = $(TARGETS) abacuscm.pdf abacuscm.fo
+HTML_TARGETS = ../html/abacuscm-web.html ../html/contestant-web.html
+PDF_TARGETS = abacuscm-web.pdf contestant-web.pdf
+TARGETS = $(HTML_TARGETS) $(PDF_TARGETS)
+SOURCES = abacuscm.xml \
+	  contestant.xml \
+	  administrator-core.xml administrator-webapp.xml \
+	  developer-core.xml developer-webapp.xml \
+	  licensing.xml
+CLEANFILES = $(TARGETS) abacuscm-web.xml contestant-web.xml abacuscm-web.fo contestant-web.fo
 
 XMLLINT = xmllint
 XSLTPROC = xsltproc
 FOP = fop
 
-html: ../html/abacuscm.html ../html/usermanual.html
-pdf: abacuscm.pdf
+html: $(HTML_TARGETS)
+pdf: $(PDF_TARGETS)
 all: $(TARGETS)
 
-../html/abacuscm.html: $(SOURCES) $(STYLESHEETS) Makefile
+abacuscm-%.xml: profile-%.xsl $(SOURCES) Makefile
 	$(XMLLINT) --xinclude --postvalid --noout abacuscm.xml
-	$(XSLTPROC) --xinclude -o $@ xhtml.xsl abacuscm.xml
+	$(XSLTPROC) --xinclude -o $@ $< abacuscm.xml
 
-../html/usermanual.html: $(SOURCES) $(STYLESHEETS) Makefile
-	$(XMLLINT) --xinclude --postvalid --noout usermanual.xml
-	$(XSLTPROC) --xinclude -o $@ xhtml.xsl usermanual.xml
+contestant-%.xml: profile-%.xsl contestant.xml Makefile
+	$(XMLLINT) --xinclude --postvalid --noout contestant.xml
+	$(XSLTPROC) --xinclude -o $@ $< contestant.xml
 
-abacuscm.pdf: abacuscm.fo
+../html/%.html: %.xml xhtml.xsl Makefile
+	$(XMLLINT) --postvalid --noout $<
+	$(XSLTPROC) --xinclude -o $@ xhtml.xsl $<
+
+%.pdf: %.fo
 	$(FOP) -fo $< -pdf $@
 
-abacuscm.fo: $(SOURCES) $(STYLESHEETS) Makefile
-	$(XMLLINT) --xinclude --postvalid --noout abacuscm.xml
-	$(XSLTPROC) --xinclude -o $@ fo.xsl abacuscm.xml
+%.fo: %.xml fo.xsl Makefile
+	$(XMLLINT) --xinclude --postvalid --noout $<
+	$(XSLTPROC) --xinclude -o $@ fo.xsl $<
 
 clean:
 	rm -f $(CLEANFILES)
