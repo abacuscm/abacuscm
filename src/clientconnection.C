@@ -23,7 +23,12 @@
 
 using namespace std;
 
+/* See comment in header file */
+#if OPENSSL_VERSION_NUMBER < 0x10000000
+SSL_METHOD *ClientConnection::_method = NULL;
+#else
 const SSL_METHOD *ClientConnection::_method = NULL;
+#endif
 SSL_CTX *ClientConnection::_context = NULL;
 
 ClientConnection::ClientConnection(int sock) {
@@ -187,6 +192,11 @@ bool ClientConnection::init() {
 		goto err;
 	}
 
+	/* OpenSSL versions prior to 1.0.0 don't take a const parameter, so we have
+	 * to explicitly make it unconst. Simply changing _method to be non-const
+	 * doesn't work, because in 1.0.0 the return from TLSv1_server_method is
+	 * const.
+	 */
 	_context = SSL_CTX_new(_method);
 	if(!_context) {
 		log_ssl_errors("SSL_CTX_new");
