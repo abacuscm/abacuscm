@@ -39,7 +39,7 @@
         </para>
         <para condition="qt">
             After starting <application>Abacus</application>, you should select
-            <menuchoice><guimenu>Abacus</guimenu><guimenuitem>Connect</guimenuitem></menuchoice>
+            <menuchoice><guimenu>Abacus</guimenu><guimenuitem>Connect</guimenuitem></menuchoice>.
             This will open a dialog box. The server and port should have
             already been set for you. Fill in the username and password that
             you have been given. If you do this correctly, you should receive
@@ -296,17 +296,12 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
             If you wish to ask a question about a particular submission, you
             should submit a clarification request and mention the
             <guilabel>Submission ID</guilabel> in your request. A quick way to
-            do this is to
-            <phrase condition="qt">
-                use the <guibutton>Request
+            do this is to <phrase condition="qt">use the <guibutton>Request
                     Clarification</guibutton> button on the
                 <guilabel>Submissions</guilabel> tab &mdash; if you have selected a
-                submission from the list box, then clicking on this button
-            </phrase>
-            <phrase condition="web">
-                click the <guilabel>Request Clarification</guilabel> button
-                next to the submission. This
-            </phrase>
+                submission from the list box, then clicking on this button</phrase>
+            <phrase condition="web">click the <guilabel>Request
+                    Clarification</guilabel> button next to the submission. This</phrase>
             will open a clarification request window with the correct problem
             selected, and the <guilabel>Submission ID</guilabel> entered in the
             request text.
