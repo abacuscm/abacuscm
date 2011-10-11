@@ -1,5 +1,5 @@
-HTML_TARGETS = ../html/abacuscm-web.html ../html/contestant-web.html
-PDF_TARGETS = abacuscm-web.pdf contestant-web.pdf
+HTML_TARGETS = ../html/abacuscm-web.html ../html/contestant-web.html ../html/contestant-qt.html
+PDF_TARGETS = abacuscm-web.pdf contestant-web.pdf contestant-qt.pdf
 TARGETS = $(HTML_TARGETS) $(PDF_TARGETS)
 SOURCES = abacuscm.xml \
 	  contestant.xml \
