@@ -13,7 +13,7 @@ RANLIB ?= ranlib
 CFLAGS ?= -W -Wall
 
 CFLAGS += -Iinclude
-LDFLAGS += -rdynamic -Llib -lrt
+LDFLAGS += -rdynamic -Llib -lrt -ldl
 
 ifneq ($(EXTRA_FLAGS),)
 CFLAGS += $(EXTRA_FLAGS)
@@ -139,7 +139,7 @@ endif
 #
 $(LIB_TARGET_SO): | lib/.d
 	@echo -e "\t[LD - SO] $@"
-	$(SHOWCL)$(CC) $(LDFLAGS) -shared -o $@ $(foreach L,$(LIBS) $(LIBS_$(patsubst lib/lib%.so,%,$@)),-l$(L)) $(foreach M,$(LIBMODS_$(patsubst lib/lib%.so,%,$@)),obj/$(M).o)
+	$(SHOWCL)$(CC) -shared -o $@ $(foreach M,$(LIBMODS_$(patsubst lib/lib%.so,%,$@)),obj/$(M).o) $(LDFLAGS) $(foreach L,$(LIBS) $(LIBS_$(patsubst lib/lib%.so,%,$@)),-l$(L))
 
 
 $(LIB_TARGET_A): | lib/.d
@@ -149,11 +149,11 @@ $(LIB_TARGET_A): | lib/.d
 
 $(MOD_TARGET): | modules/.d
 	@echo -e "\t[LD - MOD] $@"
-	$(SHOWCL)$(CC) $(LDFLAGS) -shared -o $@ $(foreach L,$(LIBS) $(MODLIBS_$(patsubst modules/%.so,%,$@)),-l$(L)) $(@:modules/%.so=obj/%.o)
+	$(SHOWCL)$(CC) -shared -o $@ $(@:modules/%.so=obj/%.o) $(LDFLAGS) $(foreach L,$(LIBS) $(MODLIBS_$(patsubst modules/%.so,%,$@)),-l$(L))
 	
 $(BIN_TARGET): | bin/.d
 	@echo -e "\t[LD] $@"
-	$(SHOWCL)$(CC) $(LDFLAGS) -o $@ $(foreach L,$(LIBS) $(LIBS_$(patsubst bin/%,%,$@)),-l$(L)) $(foreach M,$(MODS_$(notdir $(basename $@))),obj/$(M).o)
+	$(SHOWCL)$(CC) -o $@ $(foreach M,$(MODS_$(notdir $(basename $@))),obj/$(M).o) $(LDFLAGS) $(foreach L,$(LIBS) $(LIBS_$(patsubst bin/%,%,$@)),-l$(L))
 
 ##########################################
 # Pattern matched build targets.
