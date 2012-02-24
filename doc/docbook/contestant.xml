@@ -109,7 +109,9 @@
                     <guilabel>Submission ID</guilabel> from the Submissions
                     tab (or use the <guibutton>Request
                         Clarification</guibutton> button on that tab &mdash; see
-                    <xref linkend="contestant.submitting"/>).
+                    <xref linkend="contestant.submitting"/>). Even if you
+                    include a submission ID, you still need to ask a specific
+                    question.
                 </para>
             </listitem>
             <listitem>
@@ -304,7 +306,8 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                     Clarification</guilabel> button next to the submission. This</phrase>
             will open a clarification request window with the correct problem
             selected, and the <guilabel>Submission ID</guilabel> entered in the
-            request text.
+            request text. Even if you include a submission ID, you still need to
+            ask a specific question.
         </para>
     </section>
     <section id="contestant.standings">
