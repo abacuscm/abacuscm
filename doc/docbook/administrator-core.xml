@@ -446,7 +446,50 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
         <title>Adding problems</title>
         <section id="administrator-core.addproblem.interactive">
             <title>Interactive problems</title>
-            <para>TODO</para>
+            <para>This section covers the interface needed to write an evaluator for
+            interactive problems.</para>
+            <para>The marker is a single executable (which may be a script if it
+            has the appropriate shebang line). This executable is stored in the
+            database, and will be written out by the marker as needed.
+            Therefore, it should not rely on being at a certain path; if it
+            needs external files, they should be installed on each marker
+            machine.</para>
+            <para>The evaluator will be run with an argument list specifying the
+            command-line to run the submission. This will include the necessary
+            programs and options to run the submission with limited permissions,
+            the correct time and memory limits, and so on.</para>
+            <para>The evaluator's standard output and error streams will be
+            saved, and will be visible in Abacus as such. The evaluator must
+            output its judgment to standard output in the form
+
+            <screen><computeroutput>STATUS <replaceable>CORRECT</replaceable> <replaceable>comment or reason</replaceable>
+            </computeroutput></screen>
+            </para>
+            <para>Instead of <computeroutput>CORRECT</computeroutput>, the
+            status can be any of the following:
+            <table>
+                <title>Evaluator status codes</title>
+                <tgroup cols="2">
+                <thead>
+                <row><entry>Status</entry><entry>Description</entry></row>
+                </thead>
+                <tbody>
+                <row><entry>CORRECT</entry> <entry>Correct answer</entry></row>
+                <row><entry>WRONG</entry> <entry>Wrong answer</entry></row>
+                <row><entry>TIME_EXCEEDED</entry> <entry>Time limit exceeded</entry></row>
+                <row><entry>ABNORMAL</entry> <entry>Abnormal termination of program</entry></row>
+                <row><entry>COMPILE_FAILED</entry> <entry>Compilation failed</entry></row>
+                <row><entry>JUDGE</entry> <entry>Deferred to judge</entry></row>
+                <row><entry>FORMAT_ERROR</entry> <entry>Format error</entry></row>
+                <row><entry>OTHER</entry> <entry>Other - contact a judge</entry></row>
+                </tbody>
+                </tgroup>
+            </table>
+            </para>
+
+            <para>There must be exactly one
+            <computeroutput>STATUS</computeroutput> line, but all other lines
+            are ignored.</para>
         </section>
         <section id="administrator-core.addproblem.dependencies">
             <title>Problem dependencies</title>
