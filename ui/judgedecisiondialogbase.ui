@@ -48,7 +48,7 @@
                 </property>
                 <property name="font">
                     <font>
-                        <family>Terminal</family>
+                        <family>Monospace</family>
                         <pointsize>13</pointsize>
                     </font>
                 </property>

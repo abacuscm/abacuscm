@@ -457,7 +457,10 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
             <para>The evaluator will be run with an argument list specifying the
             command-line to run the submission. This will include the necessary
             programs and options to run the submission with limited permissions,
-            the correct time and memory limits, and so on.</para>
+            the correct time and memory limits, and so on. When this
+            command-line is run, it will run the submission with these limits;
+            the output from the sandbox will be to file descriptor 3. This must
+            be checked to determine whether the time limit was exceeded.</para>
             <para>The evaluator's standard output and error streams will be
             saved, and will be visible in Abacus as such. The evaluator must
             output its judgment to standard output in the form
