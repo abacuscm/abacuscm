@@ -25,6 +25,7 @@
 #include "message.h"
 #include "message_createserver.h"
 #include "message_createuser.h"
+#include "message_creategroup.h"
 #include "server.h"
 #include "dbcon.h"
 #include "threadssl.h"
@@ -227,13 +228,16 @@ static bool initialise() {
 			initial_pw = "admin";
 		}
 		string initial_hashpw = hashpw("admin", initial_pw);
+		Message_CreateGroup *default_group = new Message_CreateGroup("default", 1);
 		Message_CreateUser *admin = new Message_CreateUser("admin", "Administrator", initial_hashpw, 1, USER_TYPE_ADMIN);
 
-		if(init->makeMessage() && admin->makeMessage()) {
+		if(init->makeMessage() && default_group->makeMessage() && admin->makeMessage()) {
 			message_queue.enqueue(init);
+			message_queue.enqueue(default_group);
 			message_queue.enqueue(admin);
 		} else {
 			delete init;
+			delete default_group;
 			delete admin;
 			return false;
 		}

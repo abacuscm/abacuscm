@@ -456,6 +456,14 @@ bool ServerConnection::createuser(string username, string friendlyname, string p
 	return simpleAction(mb);
 }
 
+bool ServerConnection::creategroup(string groupname) {
+	MessageBlock mb("addgroup");
+
+	mb["groupname"] = groupname;
+
+	return simpleAction(mb);
+}
+
 bool ServerConnection::changePassword(string password) {
 	MessageBlock mb("passwd");
 

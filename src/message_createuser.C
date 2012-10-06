@@ -80,7 +80,7 @@ uint32_t Message_CreateUser::load(const uint8_t *buffer, uint32_t size) {
 	for(uint32_t offset = 3 * sizeof(uint32_t); offset < size; offset++)
 		if(!buffer[offset])
 			numzeros++;
-	if(numzeros < 2)
+	if(numzeros < 3)
 		return ~0U;
 
 	_user_id = *(uint32_t*)pos; pos += sizeof(uint32_t);

@@ -245,6 +245,20 @@ CREATE TABLE `User` (
   UNIQUE KEY `user_id` (`user_id`),
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `Group`
+--
+
+DROP TABLE IF EXISTS `Group`;
+CREATE TABLE `Group` (
+  `group_id` int(11) NOT NULL DEFAULT '0',
+  `groupname` varchar(128) CHARACTER SET utf8 NOT NULL DEFAULT '',
+  PRIMARY KEY (`group_id`),
+  UNIQUE KEY `groupname` (`groupname`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

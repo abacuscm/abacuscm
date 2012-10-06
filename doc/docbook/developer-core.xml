@@ -330,6 +330,11 @@ type:<replaceable>user type</replaceable> <co id="adduser.type.co"
                     </callout>
                 </calloutlist>
             </section>
+            <section id="developer-core.csprotocol.addgroup">
+                <title>Create a group</title>
+                <synopsis>addgroup
+groupname:<replaceable>name</replaceable></synopsis>
+            </section>
             <section id="developer-core.csprotocol.getusers">
                 <title>Get list of users</title>
                 <synopsis>getusers

@@ -55,6 +55,7 @@ LIBMODS_abacus = waitable socket \
 	message \
 	message_createserver \
 	message_createuser \
+	message_creategroup \
 	clientconnection \
 	clientaction \
 	markers \
@@ -77,6 +78,7 @@ TARGET_MODS += dbmysql \
 	support_keepalive \
 	act_addserver \
 	act_adduser \
+	act_addgroup \
 	act_auth \
 	act_clarify \
 	act_contesttime \

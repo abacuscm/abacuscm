@@ -73,6 +73,23 @@ uint32_t UserSupportModule::user_id(const string& username)
 	return 0;
 }
 
+uint32_t UserSupportModule::group_id(const string& groupname)
+{
+	DbCon *db = DbCon::getInstance();
+	if (!db)
+		return ~0U;
+
+	ostringstream query;
+	query << "SELECT group_id FROM `Group` WHERE groupname='" << db->escape_string(groupname) << "'";
+
+	QueryResultRow res = db->singleRowQuery(query.str());
+	db->release();
+
+	if (res.size())
+		return strtoul(res.begin()->c_str(), NULL, 10);
+	return 0;
+}
+
 string UserSupportModule::friendlyname(uint32_t user_id)
 {
 	DbCon *db = DbCon::getInstance();
@@ -152,6 +169,43 @@ err:
 	return ~0U;
 }
 
+uint32_t UserSupportModule::nextGroupId()
+{
+	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+	static uint32_t cur_max_id = 0;
+
+	uint32_t local_max_id;
+
+	pthread_mutex_lock(&lock);
+
+	if (!cur_max_id) {
+		DbCon *db = DbCon::getInstance();
+		if (!db)
+			goto err;
+		cur_max_id = db->maxGroupId();
+		db->release(); db = NULL;
+
+		if (cur_max_id == ~0U) {
+			cur_max_id = 0;
+			goto err;
+		}
+	}
+
+	if (!cur_max_id)
+		cur_max_id = Server::getId();
+	else
+		cur_max_id += ID_GRANULARITY;
+
+	local_max_id = cur_max_id;
+
+	pthread_mutex_unlock(&lock);
+
+	return local_max_id;
+err:
+	pthread_mutex_unlock(&lock);
+	return ~0U;
+}
+
 string UserSupportModule::hashpw(uint32_t user_id, const string& pw)
 {
 	string username = this->username(user_id);
@@ -168,6 +222,20 @@ bool UserSupportModule::addUser(uint32_t user_id, const std::string& username, c
 
 	ostringstream query;
 	query << "INSERT INTO User (user_id, username, friendlyname, password, type) VALUES (" << user_id << ", '" << db->escape_string(username) << "', '" << db->escape_string(friendlyname) << "', '" << db->escape_string(password) << "', " << type << ")";
+
+	bool r = db->executeQuery(query.str());
+	db->release();
+
+	return r;
+}
+
+bool UserSupportModule::addGroup(uint32_t group_id, const std::string& groupname) {
+	DbCon *db = DbCon::getInstance();
+	if (!db)
+		return false;
+
+	ostringstream query;
+	query << "INSERT INTO `Group` (group_id, groupname) VALUES (" << group_id << ", '" << db->escape_string(groupname) << "')";
 
 	bool r = db->executeQuery(query.str());
 	db->release();

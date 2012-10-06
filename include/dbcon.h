@@ -160,6 +160,11 @@ public:
 	virtual uint32_t maxUserId() = 0;
 
 	/**
+	 * Like maxUserId, but for groups.
+	 */
+	virtual uint32_t maxGroupId() = 0;
+
+	/**
 	 * Used to retrieve the max Submission Id.  See maxUserId.
 	 */
 	virtual uint32_t maxSubmissionId() = 0;

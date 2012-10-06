@@ -67,6 +67,7 @@ public:
 	virtual bool hasMessage(uint32_t server_id, uint32_t message_id);
 	virtual uint32_t maxServerId();
 	virtual uint32_t maxUserId();
+	virtual uint32_t maxGroupId();
 	virtual uint32_t maxSubmissionId();
 	virtual uint32_t maxClarificationReqId();
 	virtual uint32_t maxClarificationId();
@@ -632,6 +633,30 @@ uint32_t MySQL::maxUserId() {
 	}
 
 	return max_user_id;
+}
+
+uint32_t MySQL::maxGroupId() {
+	uint32_t max_group_id = ~0U;
+	ostringstream query;
+	query << "SELECT MAX(group_id) FROM `Group` WHERE group_id & " << (ID_GRANULARITY - 1) << " = " << Server::getId();
+	if (mysql_query(&_mysql, query.str().c_str())) {
+		log_mysql_error();
+		return ~0U;
+	}
+
+	MYSQL_RES *res = mysql_use_result(&_mysql);
+	if(res) {
+		MYSQL_ROW row = mysql_fetch_row(res);
+		if(row) {
+			if(row[0])
+				max_group_id = atol(row[0]);
+			else
+				max_group_id = 0;
+		}
+		mysql_free_result(res);
+	}
+
+	return max_group_id;
 }
 
 uint32_t MySQL::maxSubmissionId() {
