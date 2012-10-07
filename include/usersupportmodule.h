@@ -27,27 +27,26 @@ public:
 	struct User {
 		uint32_t user_id;
 		std::string username;
-//		std::string friendlyname; TODO
-		uint32_t type;
+	};
+
+	struct Group {
+		uint32_t group_id;
+		std::string groupname;
 	};
 
 	typedef std::vector<User> UserList;
+	typedef std::vector<Group> GroupList;
 private:
 	UserSupportModule();
 	virtual ~UserSupportModule();
 
-/*	typedef std::map<uint32_t, struct User> UserMap;
-	UserMap _users;
-	pthread_mutex_t _id_lock;
-	pthread_mutex_t _usermap_lock;
-
-	UserMap::const_iterator getUser(uint32_t user_id); */
 public:
 	virtual void init();
 
 	virtual bool addUser(uint32_t user_id, const std::string& username, const std::string& friendlyname, const std::string& password, uint32_t type);
 	virtual bool addGroup(uint32_t group_id, const std::string& groupname);
-	UserList list();
+	UserList userList();
+	GroupList groupList();
 	uint32_t user_id(const std::string& username);
 	uint32_t group_id(const std::string& groupname);
 	std::string username(uint32_t user_id);

@@ -13,6 +13,7 @@
 #include "messageblock.h"
 #include "usersupportmodule.h"
 #include "message_creategroup.h"
+#include <sstream>
 
 using namespace std;
 
@@ -44,8 +45,38 @@ auto_ptr<MessageBlock> ActAddGroup::int_process(ClientConnection *cc, const Mess
 	return triggerMessage(cc, new Message_CreateGroup(groupname, new_id));
 }
 
+class ActGetGroups : public ClientAction {
+protected:
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
+};
+
+auto_ptr<MessageBlock> ActGetGroups::int_process(ClientConnection *, const MessageBlock *) {
+	UserSupportModule *usm = getUserSupportModule();
+	if(!usm)
+		return MessageBlock::error("Misconfigured server, no UserSupportModule!");
+
+	UserSupportModule::GroupList groups = usm->groupList();
+	auto_ptr<MessageBlock> res(MessageBlock::ok());
+
+	UserSupportModule::GroupList::iterator s;
+	int c = 0;
+	for (s = groups.begin(); s != groups.end(); ++s, ++c) {
+		std::ostringstream tmp;
+		tmp << c;
+		std::string cntr = tmp.str();
+
+		tmp.str(""); tmp << s->group_id;
+		(*res)["id" + cntr] = tmp.str();
+		(*res)["groupname" + cntr] = s->groupname;
+	}
+
+	return res;
+}
+
 static ActAddGroup _act_addgroup;
+static ActGetGroups _act_getgroups;
 
 extern "C" void abacuscm_mod_init() {
 	ClientAction::registerAction("addgroup", PERMISSION_USER_ADMIN, &_act_addgroup);
+	ClientAction::registerAction("getgroups", PermissionTest(PERMISSION_USER_ADMIN) || PERMISSION_START_STOP, &_act_getgroups);
 }

@@ -243,7 +243,7 @@ bool UserSupportModule::addGroup(uint32_t group_id, const std::string& groupname
 	return r;
 }
 
-UserSupportModule::UserList UserSupportModule::list() {
+UserSupportModule::UserList UserSupportModule::userList() {
 	UserList res;
 	DbCon *db = DbCon::getInstance();
 	if (!db)
@@ -263,5 +263,25 @@ UserSupportModule::UserList UserSupportModule::list() {
 		res.push_back(u);
 	}
 
+	return res;
+}
+
+UserSupportModule::GroupList UserSupportModule::groupList() {
+	GroupList res;
+	DbCon *db = DbCon::getInstance();
+	if (!db)
+		return res;
+
+	QueryResult qr = db->multiRowQuery("SELECT group_id, groupname FROM `Group`");
+	db->release();
+
+	res.reserve(qr.size());
+	for (QueryResult::iterator i = qr.begin(); i != qr.end(); ++i)
+	{
+		Group g;
+		g.group_id = strtoul((*i)[0].c_str(), NULL, 0);
+		g.groupname = (*i)[1];
+		res.push_back(g);
+	}
 	return res;
 }

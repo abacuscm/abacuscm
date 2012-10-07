@@ -46,6 +46,11 @@ typedef struct {
 	std::string username;
 } UserInfo;
 
+typedef struct {
+	uint32_t id;
+	std::string groupname;
+} GroupInfo;
+
 class ServerConnection {
 	// In batch.C, to allow it to call sendMB directly
 	friend void batch_sendMB(ServerConnection &_server_con, MessageBlock *&mb, MessageBlock *&expect, std::vector<std::string> &content, std::vector<std::string> &expect_content);
@@ -139,6 +144,7 @@ public:
 	std::string getProblemDescription(std::string problemtype);
 
 	std::vector<UserInfo> getUsers();
+	std::vector<GroupInfo> getGroups();
 
 	std::vector<std::string> getServerList();
 

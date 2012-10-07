@@ -146,6 +146,14 @@ groupname:
 ?err
 ?msg:*
 
+# TEST: getgroups must return the groups
+getgroups
+?ok
+?id0:1
+?groupname0:default
+?id1:17
+?groupname1:testgroup
+
 getlanguages
 ?ok
 ?language0:C++

@@ -90,7 +90,7 @@ auto_ptr<MessageBlock> ActGetUsers::int_process(ClientConnection *, const Messag
 	if(!usm)
 		return MessageBlock::error("Misconfigured server, no UserSupportModule!");
 
-	UserSupportModule::UserList lst = usm->list();
+	UserSupportModule::UserList lst = usm->userList();
 
 	auto_ptr<MessageBlock> res(MessageBlock::ok());
 

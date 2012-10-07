@@ -343,6 +343,14 @@ ok
 id0:<replaceable>id</replaceable>
 username0:<replaceable>username</replaceable></synopsis>
             </section>
+            <section id="developer-core.csprotocol.getgroups">
+                <title>Get list of groups</title>
+                <synopsis>getgroups
+
+ok
+id0:<replaceable>id</replaceable>
+groupname0:<replaceable>name</replaceable></synopsis>
+            </section>
             <section id="developer-core.csprotocol.passwd">
                 <title>Change own password</title>
                 <synopsis>passwd

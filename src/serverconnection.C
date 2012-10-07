@@ -762,6 +762,42 @@ vector<UserInfo> ServerConnection::getUsers() {
 	return response;
 }
 
+vector<GroupInfo> ServerConnection::getGroups() {
+	vector<GroupInfo> response;
+	MessageBlock mb("getgroups");
+
+	MessageBlock *res = sendMB(&mb);
+	if (!res)
+		return response;
+
+	if (res->action() != "ok") {
+		log(LOG_ERR, "%s", (*res)["msg"].c_str());
+		delete res;
+		return response;
+	}
+
+	unsigned i = 0;
+	while (true) {
+		ostringstream strstrm;
+		strstrm << "id" << i;
+		if (!res->hasAttribute(strstrm.str()))
+			break;
+
+		GroupInfo tmp;
+		tmp.id = strtoll((*res)[strstrm.str()].c_str(), NULL, 0);
+
+		strstrm.str(""); strstrm << "groupname" << i;
+		tmp.groupname = (*res)[strstrm.str()];
+
+		log(LOG_DEBUG, "Added group '%u' (%s)", (unsigned int) tmp.id, tmp.groupname.c_str());
+		response.push_back(tmp);
+		i++;
+	}
+
+	delete res;
+	return response;
+}
+
 bool ServerConnection::submit(uint32_t prob_id, int fd, const string& lang) {
 	ostringstream str_prob_id;
 	str_prob_id << prob_id;
