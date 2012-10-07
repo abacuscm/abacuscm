@@ -33,7 +33,8 @@ auto_ptr<MessageBlock> ActAuth::int_process(ClientConnection *cc, const MessageB
 
 	uint32_t user_id;
 	uint32_t user_type;
-	int result = db->authenticate((*mb)["user"], (*mb)["pass"], &user_id, &user_type);
+	uint32_t group_id;
+	int result = db->authenticate((*mb)["user"], (*mb)["pass"], &user_id, &user_type, &group_id);
 	db->release();db=NULL;
 
 	if(result < 0)
@@ -48,6 +49,7 @@ auto_ptr<MessageBlock> ActAuth::int_process(ClientConnection *cc, const MessageB
 		}
 		log(LOG_INFO, "User '%s' successfully logged in on client connection %p.", (*mb)["user"].c_str(), cc);
 		cc->setUserId(user_id);
+		cc->setGroupId(group_id);
 		cc->permissions() = PermissionMap::getInstance()->getPermissions(static_cast<UserType>(user_type));
 		ClientEventRegistry::getInstance().registerClient(cc);
 		auto_ptr<MessageBlock> ret = MessageBlock::ok();

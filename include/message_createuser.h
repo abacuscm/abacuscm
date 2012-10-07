@@ -26,6 +26,7 @@ private:
 	std::string _password;
 	uint32_t _user_id;
 	uint32_t _type;
+	uint32_t _group_id;
 	uint32_t _requestor_id;
 protected:
 	virtual uint32_t storageRequired();
@@ -35,7 +36,7 @@ protected:
 	virtual bool int_process() const;
 public:
 	Message_CreateUser();
-	Message_CreateUser(const std::string& username, const std::string& friendlyname, const std::string& pass, uint32_t id, uint32_t type, uint32_t requester_id = 0);
+	Message_CreateUser(const std::string& username, const std::string& friendlyname, const std::string& pass, uint32_t id, uint32_t type, uint32_t group_id, uint32_t requester_id);
 	virtual ~Message_CreateUser();
 
 	virtual uint16_t message_type_id() const;

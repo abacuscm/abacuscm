@@ -72,63 +72,6 @@ whatami
 ?ok
 ?*:*
 
-# TEST: Creating a new user must succeed, including support for Unicode in the team name.
-adduser
-username:test1
-friendlyname:<b>Unicode</b>: ēßõ±°½—£
-passwd:changeme_test1
-type:contestant
-?ok
-
-adduser
-username:judge
-friendlyname:HTML: <b>not bold</b>
-passwd:judge
-type:judge
-?ok
-
-# TEST: Creating a new user with a blank name must fail.
-adduser
-username:
-friendlyname:Blank
-password:blank
-type:contestant
-?err
-?msg:*
-
-# TEST: Creating a new user must fail if the name is already in use.
-adduser
-username:judge
-friendlyname:New judge
-passwd:judge
-type:judge
-
-# Not used in test, but allows a marker to be connected afterwards
-adduser
-username:$marker_username
-friendlyname:Marker
-passwd:$marker_password
-type:marker
-?ok
-
-getusers
-?ok
-?id0:1
-?username0:admin
-?id1:33
-?username1:judge
-?id2:49
-?username2:marker
-?id3:17
-?username3:test1
-
-# TEST: Changing a password must succeed
-# Later we test logging in with this new password.
-id_passwd
-user_id:17
-newpass:test1
-?ok
-
 # TEST: Adding a new group must succeed
 addgroup
 groupname:testgroup
@@ -153,6 +96,87 @@ getgroups
 ?groupname0:default
 ?id1:17
 ?groupname1:testgroup
+
+# TEST: Creating a new user must succeed, including support for Unicode in the team name.
+adduser
+username:test1
+friendlyname:<b>Unicode</b>: ēßõ±°½—£
+passwd:changeme_test1
+type:contestant
+group:1
+?ok
+
+adduser
+username:judge
+friendlyname:HTML: <b>not bold</b>
+passwd:judge
+type:judge
+group:17
+?ok
+
+# TEST: Creating a new user with a blank name must fail.
+adduser
+username:
+friendlyname:Blank
+password:blank
+type:contestant
+group:1
+?err
+?msg:*
+
+# TEST: Creating a new user must fail if the name is already in use.
+adduser
+username:judge
+friendlyname:New judge
+passwd:judge
+type:judge
+group:1
+
+# TEST: omitting the group field must fail
+adduser
+username:nogroup
+friendlyname:nogroup
+password:nogroup
+type:contestant
+?err
+?msg:*
+
+# TEST: using a non-existent group must fail
+adduser
+username:badgroup
+friendlyname:badgroup
+password:badgroup
+type:contestant
+group:3
+?err
+?msg:*
+
+# Not used in test, but allows a marker to be connected afterwards
+adduser
+username:$marker_username
+friendlyname:Marker
+passwd:$marker_password
+type:marker
+group:1
+?ok
+
+getusers
+?ok
+?id0:1
+?username0:admin
+?id1:33
+?username1:judge
+?id2:49
+?username2:marker
+?id3:17
+?username3:test1
+
+# TEST: Changing a password must succeed
+# Later we test logging in with this new password.
+id_passwd
+user_id:17
+newpass:test1
+?ok
 
 getlanguages
 ?ok

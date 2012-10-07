@@ -992,7 +992,7 @@ void MainWindow::doAdminCreateUser() {
 		} else if(!_server_con.createuser(add_user_dialog.username->text(),
 					(const char *) add_user_dialog.friendlyname->text().utf8(),
 					add_user_dialog.pass1->text(),
-					add_user_dialog.type->currentText().lower())) {
+					add_user_dialog.type->currentText().lower(), 1)) {
 			QMessageBox("Connection error",
 					"Error sending adduser request.",
 					QMessageBox::Critical, QMessageBox::Ok,

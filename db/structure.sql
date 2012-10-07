@@ -241,9 +241,11 @@ CREATE TABLE `User` (
   `friendlyname` varchar(128) CHARACTER SET utf8 NOT NULL default '',
   `password` varchar(32) NOT NULL default '',
   `type` int(11) NOT NULL default '0',
+  `group` int(11) NOT NULL default '1',
   PRIMARY KEY  (`user_id`),
   UNIQUE KEY `user_id` (`user_id`),
-  UNIQUE KEY `username` (`username`)
+  UNIQUE KEY `username` (`username`),
+  CONSTRAINT `User_ibfk_1` FOREIGN KEY (`group`) REFERENCES `Group` (`group_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --

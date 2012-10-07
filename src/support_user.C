@@ -46,14 +46,23 @@ string UserSupportModule::username(uint32_t user_id)
 	if (res.size())
 		return *res.begin();
 	return "";
+}
 
-	/*
-	ScopedLock __l(&_usermap_lock);
-	UserMap::const_iterator i = getUser(user_id);
-	if(i != _users.end())
-		return i->second.username;
+string UserSupportModule::groupname(uint32_t group_id)
+{
+	DbCon *db = DbCon::getInstance();
+	if (!db)
+		return "";
+
+	ostringstream query;
+	query << "SELECT groupname FROM `Group` WHERE group_id=" << group_id;
+
+	QueryResultRow res = db->singleRowQuery(query.str());
+	db->release();
+
+	if (res.size())
+		return *res.begin();
 	return "";
-	*/
 }
 
 uint32_t UserSupportModule::user_id(const string& username)
@@ -122,14 +131,23 @@ uint32_t UserSupportModule::usertype(uint32_t user_id)
 	if (res.size())
 		return strtoul(res.begin()->c_str(), NULL, 10);
 	return ~0U;
+}
 
-	/*
-	ScopedLock __l(&_usermap_lock);
-	UserMap::const_iterator i = getUser(user_id);
-	if(i != _users.end())
-		return i->second.type;
-	return USER_TYPE_NONE;
-	*/
+uint32_t UserSupportModule::user_group(uint32_t user_id)
+{
+	DbCon *db = DbCon::getInstance();
+	if (!db)
+		return ~0U;
+
+	ostringstream query;
+	query << "SELECT `group` FROM User WHERE user_id=" << user_id;
+
+	QueryResultRow res = db->singleRowQuery(query.str());
+	db->release();
+
+	if (res.size())
+		return strtoul(res.begin()->c_str(), NULL, 10);
+	return ~0U;
 }
 
 uint32_t UserSupportModule::nextId()
@@ -214,14 +232,14 @@ string UserSupportModule::hashpw(uint32_t user_id, const string& pw)
 	return ::hashpw(username, pw);
 }
 
-bool UserSupportModule::addUser(uint32_t user_id, const std::string& username, const std::string& friendlyname, const std::string& password, uint32_t type)
+bool UserSupportModule::addUser(uint32_t user_id, const std::string& username, const std::string& friendlyname, const std::string& password, uint32_t type, uint32_t group)
 {
 	DbCon *db = DbCon::getInstance();
 	if (!db)
 		return false;
 
 	ostringstream query;
-	query << "INSERT INTO User (user_id, username, friendlyname, password, type) VALUES (" << user_id << ", '" << db->escape_string(username) << "', '" << db->escape_string(friendlyname) << "', '" << db->escape_string(password) << "', " << type << ")";
+	query << "INSERT INTO User (user_id, username, friendlyname, password, type, `group`) VALUES (" << user_id << ", '" << db->escape_string(username) << "', '" << db->escape_string(friendlyname) << "', '" << db->escape_string(password) << "', " << type << ", " << group << ")";
 
 	bool r = db->executeQuery(query.str());
 	db->release();

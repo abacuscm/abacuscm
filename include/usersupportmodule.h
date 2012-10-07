@@ -43,15 +43,17 @@ private:
 public:
 	virtual void init();
 
-	virtual bool addUser(uint32_t user_id, const std::string& username, const std::string& friendlyname, const std::string& password, uint32_t type);
+	virtual bool addUser(uint32_t user_id, const std::string& username, const std::string& friendlyname, const std::string& password, uint32_t type, uint32_t group);
 	virtual bool addGroup(uint32_t group_id, const std::string& groupname);
 	UserList userList();
 	GroupList groupList();
 	uint32_t user_id(const std::string& username);
 	uint32_t group_id(const std::string& groupname);
 	std::string username(uint32_t user_id);
+	std::string groupname(uint32_t user_id);
 	std::string friendlyname(uint32_t user_id);
 	uint32_t usertype(uint32_t user_id);
+	uint32_t user_group(uint32_t user_id);
 	uint32_t nextId(); // next free user ID
 	uint32_t nextGroupId(); // next free group ID
 

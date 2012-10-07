@@ -130,7 +130,7 @@ public:
 	static Grid gridFromMB(const MessageBlock &mb);
 
 	bool auth(std::string username, std::string password);
-	bool createuser(std::string username, std::string friendlyname, std::string password, std::string type);
+	bool createuser(std::string username, std::string friendlyname, std::string password, std::string type, uint32_t group);
 	bool creategroup(std::string groupname);
 	bool changePassword(std::string password);
 	bool changePassword(uint32_t id, std::string password);

@@ -316,13 +316,15 @@ username:<replaceable>username</replaceable>
 friendlyname:<replaceable>team name</replaceable>
 passwd:<replaceable>password</replaceable>
 type:<replaceable>user type</replaceable> <co id="adduser.type.co"
-    linkends="adduser.type"/></synopsis>
+    linkends="adduser.type"/>
+group:<replaceable>group id</replaceable></synopsis>
                 <calloutlist>
                     <callout id="adduser.type" arearefs="adduser.type.co">
                         <para>
                             One of
                             <literal>contestant</literal>,
                             <literal>observer</literal>,
+                            <literal>proctor</literal>,
                             <literal>judge</literal>,
                             <literal>admin</literal> or
                             <literal>marker</literal>.

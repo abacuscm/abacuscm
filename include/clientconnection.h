@@ -57,6 +57,7 @@ private:
 	MessageBlock *_message;
 
 	uint32_t _user_id;
+	uint32_t _group_id;
 	PermissionSet _permissions;
 
 	/**
@@ -95,6 +96,8 @@ public:
 
 	uint32_t getUserId() const;
 	void setUserId(uint32_t user_id);
+	uint32_t getGroupId() const;
+	void setGroupId(uint32_t group_id);
 	PermissionSet &permissions();
 	const PermissionSet &permissions() const;
 

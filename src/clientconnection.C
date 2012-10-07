@@ -37,6 +37,7 @@ ClientConnection::ClientConnection(int sock) {
 	_ssl = NULL;
 	_message = NULL;
 	_user_id = 0;
+	_group_id = 1; // default group
 	// TODO: error checking
 	pipe(_write_notify);
 	fcntl(_write_notify[0], F_SETFL, O_NONBLOCK);
@@ -316,6 +317,14 @@ void ClientConnection::setUserId(uint32_t id) {
 
 uint32_t ClientConnection::getUserId() const {
 	return _user_id;
+}
+
+void ClientConnection::setGroupId(uint32_t id) {
+	_group_id = id;
+}
+
+uint32_t ClientConnection::getGroupId() const {
+	return _group_id;
 }
 
 PermissionSet &ClientConnection::permissions() {

@@ -445,13 +445,16 @@ vector<string> ServerConnection::getPermissions() {
 	return vectorAction(mb, "permission");
 }
 
-bool ServerConnection::createuser(string username, string friendlyname, string password, string type) {
+bool ServerConnection::createuser(string username, string friendlyname, string password, string type, uint32_t group) {
 	MessageBlock mb("adduser");
+	ostringstream g;
+	g << group;
 
 	mb["username"] = username;
 	mb["friendlyname"] = friendlyname;
 	mb["passwd"] = password;
 	mb["type"] = type;
+	mb["group"] = g.str();
 
 	return simpleAction(mb);
 }

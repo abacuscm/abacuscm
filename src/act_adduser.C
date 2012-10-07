@@ -48,6 +48,7 @@ auto_ptr<MessageBlock> ActAddUser::int_process(ClientConnection *cc, const Messa
 	string new_friendlyname = (*mb)["friendlyname"];
 	string new_passwd = (*mb)["passwd"];
 	uint32_t new_type = _typemap[(*mb)["type"]];
+	uint32_t new_group = atol((*mb)["group"].c_str());
 
 	if (!usm)
 		return MessageBlock::error("UserSupportModule not available.");
@@ -60,6 +61,9 @@ auto_ptr<MessageBlock> ActAddUser::int_process(ClientConnection *cc, const Messa
 
 	if(new_passwd == "")
 		return MessageBlock::error("Cannot set a blank password");
+
+	if(usm->groupname(new_group) == "")
+		return MessageBlock::error("Invalid group ID");
 
 	if ((new_passwd = hashpw(new_username, new_passwd)) == "")
 		return MessageBlock::error("Password hashing error");
@@ -79,7 +83,7 @@ auto_ptr<MessageBlock> ActAddUser::int_process(ClientConnection *cc, const Messa
 		return MessageBlock::error("Unable to determine next usable user_id");
 
 	return triggerMessage(cc, new Message_CreateUser(new_username, new_friendlyname,
-				new_passwd, new_id, new_type, user_id));
+				new_passwd, new_id, new_type, new_group, user_id));
 }
 
 static ActAddUser _act_adduser;

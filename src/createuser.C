@@ -20,8 +20,8 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-	if(argc != 8) {
-		cerr << "USAGE: " << *argv << " config username password newaccount newname newpassword type\n";
+	if(argc != 9) {
+		cerr << "USAGE: " << *argv << " config username password newaccount newname newpassword type group\n";
 		return -1;
 	}
 
@@ -31,6 +31,7 @@ int main(int argc, char **argv) {
 	string newfriendlyname = argv[5];
 	string newpassword = argv[6];
 	string type = argv[7];
+	string group = argv[8];
 
 	ServerConnection::init();
 	ServerConnection _server_con;
@@ -50,9 +51,18 @@ int main(int argc, char **argv) {
 	if(!_server_con.auth(username, password))
 		return -1;
 
+	vector<GroupInfo> groups = _server_con.getGroups();
+	vector<GroupInfo>::iterator pos = groups.begin();
+	while (pos != groups.end() && pos->groupname != group)
+		++pos;
+	if (pos == groups.end()) {
+		log(LOG_ERR, "No such group `%s'", group.c_str());
+		return -1;
+	}
+
 	log(LOG_DEBUG, "Creating user ...");
 
-	if(!_server_con.createuser(newusername, newfriendlyname, newpassword, type))
+	if(!_server_con.createuser(newusername, newfriendlyname, newpassword, type, pos->id))
 		return -1;
 
 	log(LOG_DEBUG, "Done.");

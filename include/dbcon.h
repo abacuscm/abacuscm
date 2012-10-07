@@ -193,7 +193,7 @@ public:
 	 * appropriate variables, iff the pointers are non-null.
 	 */
 	virtual int authenticate(const std::string& uname, const std::string& pass,
-			uint32_t *user_id, uint32_t *user_type) = 0;
+			uint32_t *user_id, uint32_t *user_type, uint32_t *group_id) = 0;
 
 	/**
 	 * Used to retrieve all unprocessed messages.

@@ -229,7 +229,7 @@ static bool initialise() {
 		}
 		string initial_hashpw = hashpw("admin", initial_pw);
 		Message_CreateGroup *default_group = new Message_CreateGroup("default", 1);
-		Message_CreateUser *admin = new Message_CreateUser("admin", "Administrator", initial_hashpw, 1, USER_TYPE_ADMIN);
+		Message_CreateUser *admin = new Message_CreateUser("admin", "Administrator", initial_hashpw, 1, USER_TYPE_ADMIN, 1, 0);
 
 		if(init->makeMessage() && default_group->makeMessage() && admin->makeMessage()) {
 			message_queue.enqueue(init);

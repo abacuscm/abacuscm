@@ -58,7 +58,7 @@ public:
 	virtual bool markProcessed(uint32_t server_id, uint32_t message_id);
 	virtual bool addServer(const string& name, uint32_t id);
 	virtual int authenticate(const std::string& uname, const std::string& pass,
-			uint32_t *user_id, uint32_t *user_type);
+			uint32_t *user_id, uint32_t *user_type, uint32_t *group_id);
 	virtual MessageList getUnprocessedMessages();
 	virtual MessageList getUnacked(uint32_t server_id, uint32_t message_type_id,
 			uint32_t limit = 0);
@@ -459,11 +459,11 @@ bool MySQL::addServer(const string& name, uint32_t id) {
 	return true;
 }
 
-int MySQL::authenticate(const std::string& uname, const std::string& pass, uint32_t *user_id, uint32_t *user_type) {
+int MySQL::authenticate(const std::string& uname, const std::string& pass, uint32_t *user_id, uint32_t *user_type, uint32_t *group_id) {
 	ostringstream query;
 
 	string hash = hashpw(uname, pass);
-	query << "SELECT user_id, type FROM User WHERE username='" << escape_string(uname) << "' AND password='" << escape_string(hash) << "'";
+	query << "SELECT user_id, type, `group` FROM User WHERE username='" << escape_string(uname) << "' AND password='" << escape_string(hash) << "'";
 
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();
@@ -487,6 +487,12 @@ int MySQL::authenticate(const std::string& uname, const std::string& pass, uint3
 			if(row[1]) {
 				if(user_type)
 					*user_type = atol(row[1]);
+			} else
+				ret = -1;
+
+			if (row[2]) {
+				if (group_id)
+					*group_id = atol(row[2]);
 			} else
 				ret = -1;
 		}
