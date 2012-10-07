@@ -24,6 +24,7 @@ TimerSupportModule::TimerSupportModule()
 {
 	_evlist = NULL;
 	pthread_mutex_init(&_writelock, NULL);
+	pthread_mutex_init(&_group_state_lock, NULL);
 }
 
 TimerSupportModule::~TimerSupportModule()
@@ -34,6 +35,7 @@ TimerSupportModule::~TimerSupportModule()
 		delete tmp;
 	}
 	pthread_mutex_destroy(&_writelock);
+	pthread_mutex_destroy(&_group_state_lock);
 }
 
 void TimerSupportModule::dumpevlist()
