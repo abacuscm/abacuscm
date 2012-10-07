@@ -4,10 +4,10 @@ set -e
 # Before using this script: on the server
 # 1. Wipe out the server database:
 # db/reload_sql.sh conf/server.conf
-# 2. Start the server:
-#
-# Now run this script as
-# tests/batch/run-tests.sh client.conf server.conf marker.conf
+# 2. Start the server.
+# 3. Now run this script as
+#    tests/batch/run-tests.sh client.conf server.conf marker.conf
+# 4. When prompted, start the marker.
 
 if [ "$#" -ne 3 ]; then
     echo "Usage: $0 client.conf server.conf marker.conf" 1>&2
@@ -128,6 +128,23 @@ id_passwd
 user_id:17
 newpass:test1
 ?ok
+
+# TEST: Adding a new group must succeed
+addgroup
+groupname:testgroup
+?ok
+
+# TEST: Adding an existing group name must fail
+addgroup
+groupname:testgroup
+?err
+?msg:*
+
+# TEST: Adding a blank group name must fail
+addgroup
+groupname:
+?err
+?msg:*
 
 getlanguages
 ?ok
