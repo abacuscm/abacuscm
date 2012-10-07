@@ -23,9 +23,9 @@ protected:
 	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
-auto_ptr<MessageBlock> ActRunning::int_process(ClientConnection *, const MessageBlock*) {
+auto_ptr<MessageBlock> ActRunning::int_process(ClientConnection *cc, const MessageBlock*) {
 	auto_ptr<MessageBlock> mb(MessageBlock::ok());
-	if(getTimerSupportModule()->contestStatus(Server::getId()) == TIMER_STATUS_STARTED)
+	if(getTimerSupportModule()->contestStatus(cc->getGroupId()) == TIMER_STATUS_STARTED)
 		(*mb)["status"] = "running";
 	else
 		(*mb)["status"] = "stopped";

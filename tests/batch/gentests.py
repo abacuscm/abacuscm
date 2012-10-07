@@ -78,6 +78,7 @@ for (filename, state) in files:
             ?problem{0}:test
             ?result{0}:{1}
             ?submission_id{0}:{3}
+            ?group_id{0}:1
             ?time{0}:*""").format(idx, state, comments[state], submit_id))
     idx += 1
     submit_id += 16

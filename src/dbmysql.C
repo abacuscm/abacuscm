@@ -872,7 +872,7 @@ bool MySQL::putSubmission(uint32_t submission_id, uint32_t user_id, uint32_t pro
 
 AttributeList MySQL::getSubmission(uint32_t submission_id) {
 	ostringstream query;
-	query << "SELECT submission_id, time, value, Submission.prob_id FROM User, ProblemAttributes, Submission WHERE User.user_id = Submission.user_id AND Submission.prob_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute = 'shortname'";
+	query << "SELECT submission_id, time, value, Submission.prob_id, `group` FROM User, ProblemAttributes, Submission WHERE User.user_id = Submission.user_id AND Submission.prob_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute = 'shortname'";
 	query << " AND submission_id = " << submission_id;
 
 	if(mysql_query(&_mysql, query.str().c_str())) {
@@ -892,6 +892,7 @@ AttributeList MySQL::getSubmission(uint32_t submission_id) {
 		attrs["time"] = row[1];
 		attrs["problem"] = row[2];
 		attrs["prob_id"] = row[3];
+		attrs["group_id"] = row[4];
 	}
 	mysql_free_result(res);
 
@@ -900,7 +901,7 @@ AttributeList MySQL::getSubmission(uint32_t submission_id) {
 
 SubmissionList MySQL::getSubmissions(uint32_t uid) {
 	ostringstream query;
-	query << "SELECT submission_id, time, value, Submission.prob_id FROM User, ProblemAttributes, Submission WHERE User.user_id = Submission.user_id AND Submission.prob_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute = 'shortname'";
+	query << "SELECT submission_id, time, value, Submission.prob_id, `group` FROM User, ProblemAttributes, Submission WHERE User.user_id = Submission.user_id AND Submission.prob_id = ProblemAttributes.problem_id AND ProblemAttributes.attribute = 'shortname'";
 
 	if(uid)
 		query << " AND User.user_id = " << uid;
@@ -926,6 +927,7 @@ SubmissionList MySQL::getSubmissions(uint32_t uid) {
 		attrs["time"] = row[1];
 		attrs["problem"] = row[2];
 		attrs["prob_id"] = row[3];
+		attrs["group_id"] = row[4];
 
 		lst.push_back(attrs);
 	}

@@ -105,7 +105,7 @@ public:
 };
 
 auto_ptr<MessageBlock> ActSubmit::int_process(ClientConnection *cc, const MessageBlock *mb) {
-	if(getTimerSupportModule()->contestStatus(Server::getId()) != TIMER_STATUS_STARTED)
+	if(getTimerSupportModule()->contestStatus(cc->getGroupId()) != TIMER_STATUS_STARTED)
 		return MessageBlock::error("You cannot submit solutions unless the contest is running");
 
 	if(mb->content_size() > MAX_SUBMISSION_SIZE) {

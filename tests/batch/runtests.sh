@@ -620,6 +620,8 @@ lang:Python
 <tests/solutions/whitespace.py
 ?ok
 
+### END OF GENERATED TESTS
+
 # TEST: Contestants must not be able to see problems with unmet dependencies.
 getproblems
 ?ok
@@ -700,6 +702,7 @@ getsubmissions
 ?problem0:test
 ?result0:4
 ?submission_id0:1
+?group_id0:1
 ?time0:*
 ?comment1:Compilation failed
 ?contesttime1:*
@@ -707,6 +710,7 @@ getsubmissions
 ?problem1:test
 ?result1:4
 ?submission_id1:17
+?group_id1:1
 ?time1:*
 ?comment2:Compilation failed
 ?contesttime2:*
@@ -714,6 +718,7 @@ getsubmissions
 ?problem2:test
 ?result2:4
 ?submission_id2:33
+?group_id2:1
 ?time2:*
 ?comment3:Compilation failed
 ?contesttime3:*
@@ -721,6 +726,7 @@ getsubmissions
 ?problem3:test
 ?result3:4
 ?submission_id3:49
+?group_id3:1
 ?time3:*
 ?comment4:Compilation failed
 ?contesttime4:*
@@ -728,6 +734,7 @@ getsubmissions
 ?problem4:test
 ?result4:4
 ?submission_id4:65
+?group_id4:1
 ?time4:*
 ?comment5:Deferred to judge
 ?contesttime5:*
@@ -735,6 +742,7 @@ getsubmissions
 ?problem5:test
 ?result5:5
 ?submission_id5:81
+?group_id5:1
 ?time5:*
 ?comment6:Deferred to judge
 ?contesttime6:*
@@ -742,6 +750,7 @@ getsubmissions
 ?problem6:test
 ?result6:5
 ?submission_id6:97
+?group_id6:1
 ?time6:*
 ?comment7:Deferred to judge
 ?contesttime7:*
@@ -749,6 +758,7 @@ getsubmissions
 ?problem7:test
 ?result7:5
 ?submission_id7:113
+?group_id7:1
 ?time7:*
 ?comment8:Compilation failed
 ?contesttime8:*
@@ -756,6 +766,7 @@ getsubmissions
 ?problem8:test
 ?result8:4
 ?submission_id8:129
+?group_id8:1
 ?time8:*
 ?comment9:Compilation failed
 ?contesttime9:*
@@ -763,6 +774,7 @@ getsubmissions
 ?problem9:test
 ?result9:4
 ?submission_id9:145
+?group_id9:1
 ?time9:*
 ?comment10:Deferred to judge
 ?contesttime10:*
@@ -770,6 +782,7 @@ getsubmissions
 ?problem10:test
 ?result10:5
 ?submission_id10:161
+?group_id10:1
 ?time10:*
 ?comment11:Abnormal termination of program
 ?contesttime11:*
@@ -777,6 +790,7 @@ getsubmissions
 ?problem11:test
 ?result11:3
 ?submission_id11:177
+?group_id11:1
 ?time11:*
 ?comment12:Abnormal termination of program
 ?contesttime12:*
@@ -784,6 +798,7 @@ getsubmissions
 ?problem12:test
 ?result12:3
 ?submission_id12:193
+?group_id12:1
 ?time12:*
 ?comment13:Abnormal termination of program
 ?contesttime13:*
@@ -791,6 +806,7 @@ getsubmissions
 ?problem13:test
 ?result13:3
 ?submission_id13:209
+?group_id13:1
 ?time13:*
 ?comment14:Abnormal termination of program
 ?contesttime14:*
@@ -798,6 +814,7 @@ getsubmissions
 ?problem14:test
 ?result14:3
 ?submission_id14:225
+?group_id14:1
 ?time14:*
 ?comment15:Abnormal termination of program
 ?contesttime15:*
@@ -805,6 +822,7 @@ getsubmissions
 ?problem15:test
 ?result15:3
 ?submission_id15:241
+?group_id15:1
 ?time15:*
 ?comment16:Deferred to judge
 ?contesttime16:*
@@ -812,6 +830,7 @@ getsubmissions
 ?problem16:test
 ?result16:5
 ?submission_id16:257
+?group_id16:1
 ?time16:*
 ?comment17:Compilation failed
 ?contesttime17:*
@@ -819,6 +838,7 @@ getsubmissions
 ?problem17:test
 ?result17:4
 ?submission_id17:273
+?group_id17:1
 ?time17:*
 ?comment18:Time limit exceeded
 ?contesttime18:*
@@ -826,6 +846,7 @@ getsubmissions
 ?problem18:test
 ?result18:2
 ?submission_id18:289
+?group_id18:1
 ?time18:*
 ?comment19:Time limit exceeded
 ?contesttime19:*
@@ -833,6 +854,7 @@ getsubmissions
 ?problem19:test
 ?result19:2
 ?submission_id19:305
+?group_id19:1
 ?time19:*
 ?comment20:Time limit exceeded
 ?contesttime20:*
@@ -840,6 +862,7 @@ getsubmissions
 ?problem20:test
 ?result20:2
 ?submission_id20:321
+?group_id20:1
 ?time20:*
 ?comment21:Time limit exceeded
 ?contesttime21:*
@@ -847,6 +870,7 @@ getsubmissions
 ?problem21:test
 ?result21:2
 ?submission_id21:337
+?group_id21:1
 ?time21:*
 ?comment22:Time limit exceeded
 ?contesttime22:*
@@ -854,6 +878,7 @@ getsubmissions
 ?problem22:test
 ?result22:2
 ?submission_id22:353
+?group_id22:1
 ?time22:*
 ?comment23:Abnormal termination of program
 ?contesttime23:*
@@ -861,6 +886,7 @@ getsubmissions
 ?problem23:test
 ?result23:3
 ?submission_id23:369
+?group_id23:1
 ?time23:*
 ?comment24:Abnormal termination of program
 ?contesttime24:*
@@ -868,6 +894,7 @@ getsubmissions
 ?problem24:test
 ?result24:3
 ?submission_id24:385
+?group_id24:1
 ?time24:*
 ?comment25:Correct answer
 ?contesttime25:*
@@ -875,6 +902,7 @@ getsubmissions
 ?problem25:test
 ?result25:0
 ?submission_id25:401
+?group_id25:1
 ?time25:*
 ?comment26:Correct answer
 ?contesttime26:*
@@ -882,6 +910,7 @@ getsubmissions
 ?problem26:test
 ?result26:0
 ?submission_id26:417
+?group_id26:1
 ?time26:*
 
 # TEST: Time penalties must not apply for failed compilation

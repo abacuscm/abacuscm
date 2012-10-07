@@ -24,12 +24,11 @@ protected:
 	virtual auto_ptr<MessageBlock> int_process(ClientConnection* cc, const MessageBlock*mb);
 };
 
-auto_ptr<MessageBlock> ActContesttime::int_process(ClientConnection*, const MessageBlock*) {
+auto_ptr<MessageBlock> ActContesttime::int_process(ClientConnection*cc, const MessageBlock*) {
 	TimerSupportModule *timer = getTimerSupportModule();
-	uint32_t server_id = Server::getId();
-	uint32_t contesttime = timer->contestTime(server_id);
+	uint32_t contesttime = timer->contestTime(cc->getGroupId());
 	uint32_t contestremain = timer->contestDuration() - contesttime;
-	bool running = timer->contestStatus(server_id) == TIMER_STATUS_STARTED;
+	bool running = timer->contestStatus(cc->getGroupId()) == TIMER_STATUS_STARTED;
 
 	ostringstream os;
 

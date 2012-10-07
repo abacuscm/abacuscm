@@ -38,6 +38,7 @@ void SubmissionSupportModule::init()
 bool SubmissionSupportModule::submissionToMB(DbCon *db, AttributeList &s, MessageBlock &mb, const std::string &suffix) {
 	uint32_t submission_id = strtoul(s["submission_id"].c_str(), NULL, 10);
 	time_t time = strtoull(s["time"].c_str(), NULL, 10);
+	uint32_t group_id = strtoul(s["group_id"].c_str(), NULL, 10);
 	TimerSupportModule *timer = getTimerSupportModule();
 	if (!timer) {
 		log(LOG_CRIT, "Could not get timer support module");
@@ -48,7 +49,7 @@ bool SubmissionSupportModule::submissionToMB(DbCon *db, AttributeList &s, Messag
 		mb[a->first + suffix] = a->second;
 
 	std::ostringstream time_str;
-	time_str << timer->contestTime(db->submission2server_id(submission_id), time);
+	time_str << timer->contestTime(group_id, time);
 	mb["contesttime" + suffix] = time_str.str();
 
 	RunResult resinfo;

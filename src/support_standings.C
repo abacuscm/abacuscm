@@ -73,6 +73,8 @@ bool SubDataLessThan(const SubData& s1, const SubData& s2)
 
 bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 {
+	(void) tm; // not currently used because postdated submissions are not in use
+
 	pthread_rwlock_wrlock(&_lock);
 
 	TimerSupportModule *timer = getTimerSupportModule();
@@ -109,8 +111,6 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 	/* First key is team id, second is problem id */
 	map<uint32_t, map<uint32_t, vector<SubData> > > problemdata;
 
-	time_t server_time = timer->contestTime(Server::getId(), tm);
-
 	SubmissionList::iterator s;
 	for(s = submissions.begin(); s != submissions.end(); ++s) {
 		uint32_t sub_id = strtoll((*s)["submission_id"].c_str(), NULL, 0);
@@ -123,27 +123,24 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 			if(state != COMPILE_FAILED && state != JUDGE && state != OTHER) { // we ignore compile failures, and judge deferals.
 				SubData tmp;
 
-				uint32_t team_id = db->submission2user_id(sub_id);
-				uint32_t server_id = db->submission2server_id(sub_id);
+				uint32_t user_id = db->submission2user_id(sub_id);
+				uint32_t group_id = usm->user_group(user_id);
 				tmp.correct = state == CORRECT;
-				tmp.time = timer->contestTime(server_id, strtoull((*s)["time"].c_str(), NULL, 0));
+				tmp.time = timer->contestTime(group_id, strtoull((*s)["time"].c_str(), NULL, 0));
 
+#if 0 // disabled until we can support per-group cached standings
 				if (tmp.time > server_time) {
 					if (!_postdated_submissions.count(sub_id)) {
-						Server::putTimedAction(new TimedStandingsUpdater(tmp.time, team_id, sub_id));
+						Server::putTimedAction(new TimedStandingsUpdater(tmp.time, user_id, sub_id));
 						_postdated_submissions.insert(sub_id);
 					}
-				} else {
-					uint32_t timeRemaining = duration - timer->contestTime(server_id, tm);
+				} else
+#endif
+				{
 					uint32_t tRemain = duration - tmp.time;
-
 					uint32_t prob_id = strtoll((*s)["prob_id"].c_str(), NULL, 0);
-					uint32_t team_id = db->submission2user_id(sub_id);
-
-					// TODO: This looks like a bug.  Suspect the check should be on tRemain only.
-					tmp.final_only = (timeRemaining < blinds) && (tRemain < blinds);
-
-					problemdata[team_id][prob_id].push_back(tmp);
+					tmp.final_only = tRemain < blinds;
+					problemdata[user_id][prob_id].push_back(tmp);
 				}
 			}
 		}
