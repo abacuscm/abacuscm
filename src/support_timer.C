@@ -11,6 +11,7 @@
 #include "dbcon.h"
 #include "logger.h"
 #include "acmconfig.h"
+#include "scoped_lock.h"
 
 #include <stdlib.h>
 #include <sstream>
@@ -120,38 +121,13 @@ int TimerSupportModule::contestStatus(uint32_t group_id, time_t real_time)
 	return status;
 }
 
-bool TimerSupportModule::nextScheduledStartStopAfter(uint32_t group_id, time_t after_time, time_t *next_time, int *next_action) {
-	if (!after_time)
-		after_time = time(NULL);
-
-	struct startstop_event* i = _evlist;
-	while (i && i->time <= after_time)
-		i = i->next;
-
-	while (i && i->group_id && i->group_id != group_id)
-		i = i-> next;
-
-	if (i) {
-		if (next_time)
-			*next_time = i->time;
-		if (next_action)
-			*next_action = i->action;
-
-		return true;
+std::vector<time_t> TimerSupportModule::allStartStopTimes() {
+	std::vector<time_t> ans;
+	struct startstop_event *i;
+	for (i = _evlist; i; i = i->next) {
+		ans.push_back(i->time);
 	}
-
-	uint32_t duration = contestDuration();
-	uint32_t contesttime = contestTime(group_id, after_time);
-
-	if(contesttime < duration) {
-		if (next_time)
-			*next_time = after_time + duration - contesttime;
-		if (next_action)
-			*next_action = TIMER_STOP;
-		return true;
-	}
-
-	return false;
+	return ans;
 }
 
 bool TimerSupportModule::scheduleStartStop(uint32_t group_id, time_t time, int action) {
@@ -190,6 +166,18 @@ bool TimerSupportModule::scheduleStartStop(uint32_t group_id, time_t time, int a
 out:
 	pthread_mutex_unlock(&_writelock);
 	return res;
+}
+
+void TimerSupportModule::updateGroupState(uint32_t group_id, time_t time, int &old_state, int &new_state) {
+	ScopedLock lock(&_group_state_lock);
+	if (!_group_state.count(group_id)) {
+		_group_state[group_id] = TIMER_STATUS_STOPPED;
+	}
+	old_state = _group_state[group_id];
+
+	new_state = contestStatus(group_id, time);
+	if (new_state != old_state)
+		_group_state[group_id] = new_state;
 }
 
 void TimerSupportModule::init()

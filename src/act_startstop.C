@@ -23,6 +23,7 @@
 
 #include <string>
 #include <memory>
+#include <map>
 
 using namespace std;
 
@@ -54,49 +55,44 @@ public:
 	virtual uint16_t message_type_id() const;
 };
 
+/**
+ * Executing this action simply checks the state and notifies any
+ * clients that need to be notified of changes. Due to corner cases
+ * some of them may end up doing nothing, but those are harmless.
+ */
 class StartStopAction : public TimedAction {
-private:
-	static StartStopAction *_current;
-
-	int _action;
-	/* This field is used to check that the DB hasn't changed in the
-	 * meantime.
-	 */
-	time_t _time;
 public:
-	StartStopAction(uint32_t time, uint32_t action);
+	explicit StartStopAction(uint32_t time);
 
 	virtual void perform();
 };
 
-StartStopAction* StartStopAction::_current = NULL;
-
-StartStopAction::StartStopAction(uint32_t time, uint32_t action)
+StartStopAction::StartStopAction(uint32_t time)
 : TimedAction(time)
 {
-	_time = time;
-	_action = action;
-	_current = this;
 }
 
 void StartStopAction::perform() {
-	if(this != _current)
+	UserSupportModule *usm = getUserSupportModule();
+	if (!usm) {
+		log(LOG_WARNING, "Could not get user support module");
 		return;
-
-	time_t time;
-	int act;
+	}
 	TimerSupportModule *timer = getTimerSupportModule();
 
-	if(timer->nextScheduledStartStopAfter(Server::getId(), _time - 1, &time, &act)) {
-		if(time == _time && act == _action) {
+	time_t time = processingTime();
+	// TODO: would be more efficient to query only the IDs. Could also
+	// store a group in the StartStopAction and only loop when there is
+	// the all group.
+	UserSupportModule::GroupList groups = usm->groupList();
+	for (UserSupportModule::GroupList::const_iterator i = groups.begin(); i != groups.end(); ++i) {
+		int old_state, new_state;
+		timer->updateGroupState(i->group_id, time, old_state, new_state);
+		if (old_state != new_state) {
 			MessageBlock mb("startstop");
-			mb["action"] = _action == TIMER_START ? "start" : "stop";
-			ClientEventRegistry::getInstance().triggerEvent("startstop", &mb);
+			mb["action"] = new_state == TIMER_STATUS_STARTED ? "start" : "stop";
+			ClientEventRegistry::getInstance().triggerGroupEvent("startstop", &mb, i->group_id);
 		}
-	}
-
-	if(timer->nextScheduledStartStopAfter(Server::getId(), _time, &time, &act)) {
-		Server::putTimedAction(new StartStopAction(time, act));
 	}
 }
 
@@ -180,6 +176,9 @@ uint32_t MsgStartStop::load(const uint8_t *buffer, uint32_t size) {
 }
 
 bool MsgStartStop::int_process() const {
+	time_t now = ::time(NULL);
+	bool future = _time > now;
+
 	TimerSupportModule *timer = getTimerSupportModule();
 	if(!timer)
 		return false;
@@ -188,36 +187,29 @@ bool MsgStartStop::int_process() const {
 	if(!db)
 		return false;
 
-	time_t now = ::time(NULL);
-
-	time_t old_next_time, new_next_time;
-	int old_next_action, new_next_action;
-
-	bool oldRunning = timer->contestStatus(Server::getId(), now) == TIMER_STATUS_STARTED;
-	bool old_valid = timer->nextScheduledStartStopAfter(Server::getId(), now, &old_next_time, &old_next_action);
-	bool dbres = timer->scheduleStartStop(_server_id, _time, _action);
-	bool newRunning = timer->contestStatus(Server::getId(), now) == TIMER_STATUS_STARTED;
-	bool new_valid = timer->nextScheduledStartStopAfter(Server::getId(), now, &new_next_time, &new_next_action);
-
+	bool dbres = timer->scheduleStartStop(_group_id, _time, _action);
 	db->release();db=NULL;
 	if (!dbres) return false;
 
-	if (oldRunning != newRunning)
-	{
-		MessageBlock mb("startstop");
-		mb["action"] = newRunning ? "start" : "stop";
-		ClientEventRegistry::getInstance().triggerEvent("startstop", &mb);
+	if (future) {
+		Server::putTimedAction(new StartStopAction(_time));
 	}
+	else {
+		// Might need to tell some groups of change immediately
+		StartStopAction act(now);
+		act.perform();
 
-	if (new_valid && (!old_valid || new_next_time < old_next_time)) {
-		Server::putTimedAction(new StartStopAction(new_next_time, new_next_action));
+		// Contest time may have changed, which can invalidate standings and
+		// the clock
 		MessageBlock mb("updateclock");
-		ClientEventRegistry::getInstance().triggerEvent("updateclock", &mb);
-	}
+		if (_group_id == 0)
+			ClientEventRegistry::getInstance().triggerEvent("updateclock", &mb);
+		else
+			ClientEventRegistry::getInstance().triggerGroupEvent("updateclock", &mb, _group_id);
 
-	/* Starts and stops can change contest time, so standings may be invalid */
-	StandingsSupportModule *standings = getStandingsSupportModule();
-	standings->updateStandings(0, 0);
+		StandingsSupportModule *standings = getStandingsSupportModule();
+		standings->updateStandings(0, 0);
+	}
 	return true;
 }
 
@@ -231,15 +223,24 @@ static void initialise_startstop_events() {
 		log(LOG_CRIT, "Unable to initialize start/stop times");
 		return;
 	}
-
-	time_t time;
-	int act;
-
-	if(!timer->nextScheduledStartStopAfter(Server::getId(), 0, &time, &act)) {
-		log(LOG_WARNING, "No scheduled starts/stops.  Contest expired or not yet configured?");
-	} else {
-		Server::putTimedAction(new StartStopAction(time, act));
+	UserSupportModule *usm = getUserSupportModule();
+	if (!usm) {
+		log(LOG_CRIT, "Unable to find user support module");
+		return;
 	}
+
+	time_t now = ::time(NULL);
+	UserSupportModule::GroupList groups = usm->groupList();
+
+	for (UserSupportModule::GroupList::const_iterator i = groups.begin(); i != groups.end(); ++i) {
+		int old_state, new_state;
+		timer->updateGroupState(i->group_id, now, old_state, new_state);
+	}
+
+	std::vector<time_t> events = timer->allStartStopTimes();
+	for (unsigned int i = 0; i < events.size(); i++)
+		if (events[i] > now)
+			Server::putTimedAction(new StartStopAction(events[i]));
 }
 
 static ActStartStop _act_startstop;

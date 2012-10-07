@@ -16,6 +16,8 @@
 #include "supportmodule.h"
 
 #include <pthread.h>
+#include <vector>
+#include <map>
 #include <stdint.h>
 
 #define TIMER_STATUS_STARTED	1
@@ -40,18 +42,31 @@ private:
 	struct startstop_event *_evlist;
 	pthread_mutex_t _writelock;
 
-	void dumpevlist();
+	// Maps group to the current contest state for that group. If the group is
+	// missing, the contest is assumed to be stopped. This is not internally
+	// populated at startup. Instead, act_startstop iterates over groups to
+	// populate it using updateGroupState.
+	std::map<uint32_t, int> _group_state;
+	pthread_mutex_t _group_state_lock;
 public:
 	virtual void init();
 
 	uint32_t contestDuration();
 	uint32_t contestTime(uint32_t group_id, time_t real_time = 0);
 	uint32_t contestRemaining(uint32_t group_id, time_t real_time = 0) { return contestDuration() - contestTime(group_id, real_time); }
+	int contestStatus(uint32_t group_id, time_t real_time = 0);
 
-	bool nextScheduledStartStopAfter(uint32_t group_id, time_t after_time, time_t *next_time, int *next_action);
+	// Increasing list of all times at which start/stop events are scheduled
+	std::vector<time_t> allStartStopTimes();
+
 	bool scheduleStartStop(uint32_t group_id, time_t time, int action);
 
-	int contestStatus(uint32_t group_id, time_t real_time = 0);
+	// Call this when the start/stop state for a group may be out-of-date.
+	// This must be called at server startup (for all groups), after
+	// scheduleStartStop for a time in the past, after creating a new group,
+	// and after a start/stop event actually occurs.
+	// The old and new state are returned.
+	virtual void updateGroupState(uint32_t group_id, time_t time, int &old_state, int &new_state);
 };
 
 DEFINE_SUPPORT_MODULE_GETTER(TimerSupportModule);

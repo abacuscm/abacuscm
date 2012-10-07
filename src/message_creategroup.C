@@ -11,6 +11,7 @@
 #include "message_type_ids.h"
 #include "logger.h"
 #include "usersupportmodule.h"
+#include "timersupportmodule.h"
 #include <cstring>
 
 using namespace std;
@@ -25,13 +26,17 @@ Message_CreateGroup::Message_CreateGroup(const std::string& groupname, uint32_t 
 
 bool Message_CreateGroup::int_process() const {
 	UserSupportModule *usm = getUserSupportModule();
+	TimerSupportModule *timer = getTimerSupportModule();
 
-	bool added = usm && usm->addGroup(_group_id, _groupname);
+	bool added = usm && timer && usm->addGroup(_group_id, _groupname);
 
 	if (added)
 		log(LOG_NOTICE, "Added group '%s'", _groupname.c_str());
 	else
 		log(LOG_ERR, "Failed adding group '%s'", _groupname.c_str());
+
+	int old_state, new_state;
+	timer->updateGroupState(_group_id, ::time(NULL), old_state, new_state);
 
 	return added;
 }
