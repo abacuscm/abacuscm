@@ -5,7 +5,7 @@
  * This file is distributed under GPLv2, please see
  * COPYING for more details.
  *
- * $Id: testcaseproblemmarker.h 448 2007-08-06 10:25:29Z bmerry $
+ * $Id$
  */
 #ifndef __INTERACTIVEPROBLEMMARKER_H__
 #define __INTERACTIVEPROBLEMMARKER_H__

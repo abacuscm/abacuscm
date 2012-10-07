@@ -5,7 +5,7 @@
  * This file is distributed under GPLv2, please see
  * COPYING for more details.
  *
- * $Id: balloon.C 368 2006-10-09 21:18:36Z bmerry $
+ * $Id$
  */
 #include "logger.h"
 #include "acmconfig.h"

@@ -5,7 +5,7 @@
  * This file is distributed under GPLv2, please see
  * COPYING for more details.
  *
- * $Id: prob_testcasedriventype.C 554 2009-10-05 12:06:39Z jkroon $
+ * $Id$
  */
 #include "compiledproblemtype.h"
 
