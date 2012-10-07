@@ -486,14 +486,14 @@ bool ServerConnection::changePassword(uint32_t id, string password) {
 	return simpleAction(mb);
 }
 
-bool ServerConnection::startStop(bool global, bool start, time_t time) {
+bool ServerConnection::startStop(uint32_t group_id, bool start, time_t time) {
 	MessageBlock mb("startstop");
 	ostringstream t;
 
 	t << time;
 	mb["action"] = start ? "start" : "stop";
 	mb["time"] = t.str();
-	mb["server_id"] = global ? "all" : "self";
+	mb["group_id"] = group_id;
 
 	return simpleAction(mb);
 }

@@ -67,7 +67,7 @@ uint32_t TimerSupportModule::contestDuration()
 	return duration;
 }
 
-uint32_t TimerSupportModule::contestTime(uint32_t server_id, time_t real_time)
+uint32_t TimerSupportModule::contestTime(uint32_t group_id, time_t real_time)
 {
 	uint32_t elapsed_time = 0;
 	uint32_t last_start_time = 0;
@@ -78,7 +78,7 @@ uint32_t TimerSupportModule::contestTime(uint32_t server_id, time_t real_time)
 
 	struct startstop_event* i;
 	for(i = _evlist; i && i->time <= real_time; i = i->next) {
-		if(!i->server_id || i->server_id == server_id) {
+		if(!i->group_id || i->group_id == group_id) {
 			if(i->action != status) {
 				status = i->action;
 
@@ -100,7 +100,7 @@ uint32_t TimerSupportModule::contestTime(uint32_t server_id, time_t real_time)
 	return elapsed_time;
 }
 
-int TimerSupportModule::contestStatus(uint32_t server_id, time_t real_time)
+int TimerSupportModule::contestStatus(uint32_t group_id, time_t real_time)
 {
 	int status = TIMER_STATUS_STOPPED;
 
@@ -109,18 +109,18 @@ int TimerSupportModule::contestStatus(uint32_t server_id, time_t real_time)
 
 	struct startstop_event* i;
 	for(i = _evlist; i && i->time <= real_time; i = i->next) {
-		if(!i->server_id || i->server_id == server_id)
+		if(!i->group_id || i->group_id == group_id)
 			status = i->action;
 	}
 
-	if(contestTime(server_id, real_time) >= contestDuration())
+	if(contestTime(group_id, real_time) >= contestDuration())
 		status = TIMER_STATUS_STOPPED;
 
 	log(LOG_DEBUG, "status=%d", status);
 	return status;
 }
 
-bool TimerSupportModule::nextScheduledStartStopAfter(uint32_t server_id, time_t after_time, time_t *next_time, int *next_action) {
+bool TimerSupportModule::nextScheduledStartStopAfter(uint32_t group_id, time_t after_time, time_t *next_time, int *next_action) {
 	if (!after_time)
 		after_time = time(NULL);
 
@@ -128,7 +128,7 @@ bool TimerSupportModule::nextScheduledStartStopAfter(uint32_t server_id, time_t 
 	while (i && i->time <= after_time)
 		i = i->next;
 
-	while (i && i->server_id && i->server_id != server_id)
+	while (i && i->group_id && i->group_id != group_id)
 		i = i-> next;
 
 	if (i) {
@@ -141,7 +141,7 @@ bool TimerSupportModule::nextScheduledStartStopAfter(uint32_t server_id, time_t 
 	}
 
 	uint32_t duration = contestDuration();
-	uint32_t contesttime = contestTime(server_id, after_time);
+	uint32_t contesttime = contestTime(group_id, after_time);
 
 	if(contesttime < duration) {
 		if (next_time)
@@ -154,11 +154,11 @@ bool TimerSupportModule::nextScheduledStartStopAfter(uint32_t server_id, time_t 
 	return false;
 }
 
-bool TimerSupportModule::scheduleStartStop(uint32_t server_id, time_t time, int action) {
+bool TimerSupportModule::scheduleStartStop(uint32_t group_id, time_t time, int action) {
 	bool res = false;
 	ostringstream query;
 
-	query << "REPLACE INTO ContestStartStop(server_id, action, time) VALUES(" << server_id << ", '"
+	query << "REPLACE INTO ContestStartStop(group_id, action, time) VALUES(" << group_id << ", '"
 		<< (action == TIMER_START ? "START" : "STOP") << "', " << time << ")";
 
 	pthread_mutex_lock(&_writelock);
@@ -181,7 +181,7 @@ bool TimerSupportModule::scheduleStartStop(uint32_t server_id, time_t time, int 
 		struct startstop_event *t = new startstop_event;
 		t->time = time;
 		t->action = action;
-		t->server_id = server_id;
+		t->group_id = group_id;
 		t->next = *i;
 		*i = t;
 	}
@@ -200,21 +200,21 @@ void TimerSupportModule::init()
 		return;
 	}
 
-	QueryResult res = db->multiRowQuery("SELECT server_id, action, time FROM ContestStartStop ORDER BY time DESC, server_id DESC");
+	QueryResult res = db->multiRowQuery("SELECT group_id, action, time FROM ContestStartStop ORDER BY time DESC, group_id DESC");
 	db->release(); db = NULL;
 
 	QueryResult::iterator i = res.begin();
 	for( ; i != res.end(); ++i) {
 		struct startstop_event* ev = new struct startstop_event;
 
-		ev->server_id = strtoul((*i)[0].c_str(), NULL, 0);
+		ev->group_id = strtoul((*i)[0].c_str(), NULL, 0);
 		ev->action = (*i)[1] == "START" ? TIMER_START : TIMER_STOP;
 		ev->time = strtoul((*i)[2].c_str(), NULL, 0);
 		ev->next = _evlist;
 
 		_evlist = ev;
 
-		log(LOG_DEBUG, "Initial timer event: server_id=%d, time=%lu, action=%d", ev->server_id, ev->time, ev->action);
+		log(LOG_DEBUG, "Initial timer event: group_id=%d, time=%lu, action=%d", ev->group_id, ev->time, ev->action);
 	}
 
 	dumpevlist();

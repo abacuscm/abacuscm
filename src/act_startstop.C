@@ -19,6 +19,7 @@
 #include "clienteventregistry.h"
 #include "timersupportmodule.h"
 #include "standingssupportmodule.h"
+#include "usersupportmodule.h"
 
 #include <string>
 #include <memory>
@@ -37,7 +38,7 @@ protected:
 
 class MsgStartStop : public Message {
 private:
-	uint32_t _server_id;
+	uint32_t _group_id;
 	uint32_t _time;
 	uint32_t _action; // way too big...
 protected:
@@ -48,7 +49,7 @@ protected:
 	virtual bool int_process() const;
 public:
 	MsgStartStop();
-	MsgStartStop(uint32_t server_id, uint32_t time, uint32_t action);
+	MsgStartStop(uint32_t group_id, uint32_t time, uint32_t action);
 
 	virtual uint16_t message_type_id() const;
 };
@@ -102,7 +103,7 @@ void StartStopAction::perform() {
 auto_ptr<MessageBlock> ActStartStop::int_process(ClientConnection* cc, const MessageBlock *mb) {
 	char *errpnt;
 
-	uint32_t server_id;
+	uint32_t group_id;
 	uint32_t time;
 	uint32_t action;
 
@@ -118,21 +119,19 @@ auto_ptr<MessageBlock> ActStartStop::int_process(ClientConnection* cc, const Mes
 	if(time == 0 || *errpnt)
 		return MessageBlock::error("Invalid start/stop time specified");
 
-	// note that an omitted or blank server_id translates to 0, meaning
-	// "all" servers.
-	string server_id_str = (*mb)["server_id"];
-	if (server_id_str == "all" || server_id_str == "")
-		server_id = 0;
-	else if (server_id_str == "self")
-		server_id = Server::getId();
+	// note that an omitted or blank group_id translates to 0, meaning
+	// all groups.
+	string group_id_str = (*mb)["group_id"];
+	if (group_id_str == "all" || group_id_str == "")
+		group_id = 0;
 	else
 	{
-		server_id = strtoll((*mb)["server_id"].c_str(), &errpnt, 0);
+		group_id = strtoll((*mb)["group_id"].c_str(), &errpnt, 0);
 		if(*errpnt)
-			return MessageBlock::error("Invalid server_id specified");
+			return MessageBlock::error("Invalid group_id specified");
 	}
 
-	return triggerMessage(cc, new MsgStartStop(server_id, time, action));
+	return triggerMessage(cc, new MsgStartStop(group_id, time, action));
 }
 
 auto_ptr<MessageBlock> ActSubscribeTime::int_process(ClientConnection* cc, const MessageBlock*) {
@@ -146,8 +145,8 @@ auto_ptr<MessageBlock> ActSubscribeTime::int_process(ClientConnection* cc, const
 MsgStartStop::MsgStartStop() {
 }
 
-MsgStartStop::MsgStartStop(uint32_t server_id, uint32_t time, uint32_t action) {
-	_server_id = server_id;
+MsgStartStop::MsgStartStop(uint32_t group_id, uint32_t time, uint32_t action) {
+	_group_id = group_id;
 	_time = time;
 	_action = action;
 }
@@ -161,7 +160,7 @@ uint32_t MsgStartStop::store(uint8_t *buffer, uint32_t size) {
 		return ~0U;
 
 	uint32_t *pos = (uint32_t*)buffer;
-	*pos++ = _server_id;
+	*pos++ = _group_id;
 	*pos++ = _time;
 	*pos++ = _action;
 	return 3 * sizeof(uint32_t);
@@ -172,11 +171,11 @@ uint32_t MsgStartStop::load(const uint8_t *buffer, uint32_t size) {
 		return ~0U;
 
 	const uint32_t *pos = (const uint32_t*)buffer;
-	_server_id = *pos++;
+	_group_id = *pos++;
 	_time = *pos++;
 	_action = *pos++;
 
-	log(LOG_DEBUG, "MsgStartStop: %d %d %d", _server_id, _time, _action);
+	log(LOG_DEBUG, "MsgStartStop: %d %d %d", _group_id, _time, _action);
 	return 3 * sizeof(uint32_t);
 }
 

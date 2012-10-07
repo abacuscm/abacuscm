@@ -29,7 +29,7 @@ class TimerSupportModule : public SupportModule {
 private:
 	struct startstop_event {
 		time_t time;
-		uint32_t server_id;
+		uint32_t group_id;
 		int action;
 		struct startstop_event *next;
 	};
@@ -45,13 +45,13 @@ public:
 	virtual void init();
 
 	uint32_t contestDuration();
-	uint32_t contestTime(uint32_t server_id, time_t real_time = 0);
-	uint32_t contestRemaining(uint32_t server_id, time_t real_time = 0) { return contestDuration() - contestTime(server_id, real_time); }
+	uint32_t contestTime(uint32_t group_id, time_t real_time = 0);
+	uint32_t contestRemaining(uint32_t group_id, time_t real_time = 0) { return contestDuration() - contestTime(group_id, real_time); }
 
-	bool nextScheduledStartStopAfter(uint32_t server_id, time_t after_time, time_t *next_time, int *next_action);
-	bool scheduleStartStop(uint32_t server_id, time_t time, int action);
+	bool nextScheduledStartStopAfter(uint32_t group_id, time_t after_time, time_t *next_time, int *next_action);
+	bool scheduleStartStop(uint32_t group_id, time_t time, int action);
 
-	int contestStatus(uint32_t server_id, time_t real_time = 0);
+	int contestStatus(uint32_t group_id, time_t real_time = 0);
 };
 
 DEFINE_SUPPORT_MODULE_GETTER(TimerSupportModule);

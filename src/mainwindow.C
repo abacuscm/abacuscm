@@ -1136,12 +1136,11 @@ void MainWindow::doAdminStartStop() {
 					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
 	}
 
-		bool global = dialog.server->currentItem() == 0;
 	if (start != NULL_TIME) {
-		_server_con.startStop(global, true, start);
+		_server_con.startStop(0, true, start);
 	}
 	if (stop != NULL_TIME) {
-		_server_con.startStop(global, false, stop);
+		_server_con.startStop(0, false, stop);
 	}
 }
 

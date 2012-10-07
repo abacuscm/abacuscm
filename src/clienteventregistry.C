@@ -124,6 +124,17 @@ void ClientEventRegistry::triggerEvent(const string &eventname, const MessageBlo
 		i->second->triggerEvent(mb);
 }
 
+void ClientEventRegistry::triggerGroupEvent(const string &eventname, const MessageBlock *mb, uint32_t group_id) {
+	pthread_mutex_lock(&_lock);
+	EventMap::iterator i = _eventmap.find(eventname);
+	pthread_mutex_unlock(&_lock);
+	if(i == _eventmap.end())
+		log(LOG_ERR, "Attempt to trigger unknown event '%s'",
+				eventname.c_str());
+	else
+		i->second->triggerGroupEvent(mb, group_id);
+}
+
 void ClientEventRegistry::broadcastEvent(uint32_t user_id, const PermissionTest &pt, const MessageBlock *mb) {
 	pthread_mutex_lock(&_lock);
 	for(ClientMap::iterator i = _clients.begin(); i != _clients.end(); ++i) {
@@ -163,6 +174,15 @@ void ClientEventRegistry::Event::triggerEvent(const MessageBlock *mb) {
 	ClientConnectionPool::iterator i;
 	for(i = _clients.begin(); i != _clients.end(); ++i)
 		(*i)->sendMessageBlock(mb);
+	pthread_mutex_unlock(&_lock);
+}
+
+void ClientEventRegistry::Event::triggerGroupEvent(const MessageBlock *mb, uint32_t group_id) {
+	pthread_mutex_lock(&_lock);
+	ClientConnectionPool::iterator i;
+	for(i = _clients.begin(); i != _clients.end(); ++i)
+		if ((*i)->getGroupId() == group_id)
+			(*i)->sendMessageBlock(mb);
 	pthread_mutex_unlock(&_lock);
 }
 

@@ -36,6 +36,7 @@ private:
 		~Event();
 
 		void triggerEvent(const MessageBlock* mb);
+		void triggerGroupEvent(const MessageBlock* mb, uint32_t group_id);
 		void triggerOne(const MessageBlock*mb, bool remove);
 
 		// registerClient and deregisterClient return true on success, and
@@ -69,6 +70,9 @@ public:
 
 	// Send message to clients registered via registerClient for the event
 	void triggerEvent(const std::string &eventname, const MessageBlock *mb);
+
+	// Like triggerEvent, but only for one group
+	void triggerGroupEvent(const std::string &eventname, const MessageBlock *mb, uint32_t group_id);
 
 	// Send message to all clients either with the given permissions, or with the
 	// given user id. If user_id is zero it is ignored. Note that clients do

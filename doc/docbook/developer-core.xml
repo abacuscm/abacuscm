@@ -844,7 +844,7 @@ action:<replaceable>action</replaceable> <co id="startstop.action.co"
     linkends="startstop.action"/>
 time:<replaceable>time</replaceable>     <co id="startstop.time.co"
     linkends="startstop.time"/>
-server_id:<replaceable>id</replaceable>  <co id="startstop.server_id.co"
+group_id:<replaceable>id</replaceable>  <co id="startstop.group_id.co"
     linkends="startstop.server_id"/></synopsis>
                 <calloutlist>
                     <callout id="startstop.action" arearefs="startstop.action.co">
@@ -855,9 +855,8 @@ server_id:<replaceable>id</replaceable>  <co id="startstop.server_id.co"
                     </callout>
                     <callout id="startstop.server_id" arearefs="startstop.server_id.co">
                         <para>
-                            A numeric ID, <literal>all</literal> for all servers, or
-                            <literal>self</literal> for the current server. If omitted, defaults
-                            to <literal>all</literal>.
+                            A numeric group ID or <literal>all</literal> for all groups.
+                            If omitted, defaults to <literal>all</literal>.
                         </para>
                     </callout>
                 </calloutlist>

@@ -135,7 +135,7 @@ public:
 	bool changePassword(std::string password);
 	bool changePassword(uint32_t id, std::string password);
 
-	bool startStop(bool global, bool start, time_t time);
+	bool startStop(uint32_t group_id, bool start, time_t time);
 
 	std::vector<std::string> getPermissions();
 	std::vector<std::string> getLanguages();
