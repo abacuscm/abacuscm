@@ -1088,6 +1088,9 @@ void MainWindow::doAdminStartStop() {
 	now = time(NULL);
 	localtime_r(&now, &start_tm);
 	localtime_r(&now, &stop_tm);
+	std::vector<GroupInfo> groups = _server_con.getGroups();
+	for (size_t i = 0; i < groups.size(); i++)
+		dialog.group->insertItem(QString::fromUtf8(groups[i].groupname.c_str()));
 	while (!correct)
 	{
 		if (dialog.exec())
@@ -1136,11 +1139,16 @@ void MainWindow::doAdminStartStop() {
 					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
 	}
 
+	int group_id;
+	if (dialog.group->currentItem() == 0)
+		group_id = 0; // all groups
+	else
+		group_id = groups[dialog.group->currentItem() - 1].id;
 	if (start != NULL_TIME) {
-		_server_con.startStop(0, true, start);
+		_server_con.startStop(group_id, true, start);
 	}
 	if (stop != NULL_TIME) {
-		_server_con.startStop(0, false, stop);
+		_server_con.startStop(group_id, false, stop);
 	}
 }
 
