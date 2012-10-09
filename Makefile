@@ -126,13 +126,16 @@ LIBS_markerd = ssl crypto pthread
 endif
 
 ifneq ($(filter admintools,$(mods)),)
-TARGET_BINS += balloon adduser addproblem standings batch extract_source make_submission
+TARGET_BINS += balloon adduser addgroup addproblem standings batch extract_source make_submission
 
 MODS_balloon = balloon $(CLIENT_MODS)
 LIBS_balloon = ssl crypto pthread
 
 MODS_adduser = createuser $(CLIENT_MODS)
 LIBS_adduser = ssl crypto pthread
+
+MODS_addgroup = creategroup $(CLIENT_MODS)
+LIBS_addgroup = ssl crypto pthread
 
 MODS_addproblem = createproblem $(CLIENT_MODS)
 LIBS_addproblem = ssl crypto pthread
