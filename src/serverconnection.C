@@ -493,7 +493,8 @@ bool ServerConnection::startStop(uint32_t group_id, bool start, time_t time) {
 	t << time;
 	mb["action"] = start ? "start" : "stop";
 	mb["time"] = t.str();
-	mb["group_id"] = group_id;
+	t.str(""); t << group_id;
+	mb["group_id"] = t.str();
 
 	return simpleAction(mb);
 }
