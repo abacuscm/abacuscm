@@ -973,6 +973,10 @@ void MainWindow::doChangePassword() {
 void MainWindow::doAdminCreateUser() {
 	AddUser add_user_dialog;
 
+	std::vector<GroupInfo> groups;
+	groups = _server_con.getGroups();
+	for (size_t i = 0; i < groups.size(); i++)
+		add_user_dialog.group->insertItem(QString::fromUtf8(groups[i].groupname.c_str()));
 	while(add_user_dialog.exec()) {
 		if(add_user_dialog.username->text() == "") {
 			QMessageBox("Username verify error",
@@ -992,7 +996,8 @@ void MainWindow::doAdminCreateUser() {
 		} else if(!_server_con.createuser(add_user_dialog.username->text(),
 					(const char *) add_user_dialog.friendlyname->text().utf8(),
 					add_user_dialog.pass1->text(),
-					add_user_dialog.type->currentText().lower(), 1)) {
+					add_user_dialog.type->currentText().lower(),
+					groups[add_user_dialog.group->currentItem()].id)) {
 			QMessageBox("Connection error",
 					"Error sending adduser request.",
 					QMessageBox::Critical, QMessageBox::Ok,
