@@ -1012,7 +1012,7 @@ void MainWindow::doAdminCreateUser() {
 void MainWindow::doAdminCreateGroup() {
 	AddGroup add_group_dialog;
 	while (add_group_dialog.exec()) {
-		if (add_group_dialog.groupname->text() = "") {
+		if (add_group_dialog.groupname->text() == "") {
 			QMessageBox("Group name error",
 					"The group cannot have a blank name",
 					QMessageBox::Warning, QMessageBox::Ok,
