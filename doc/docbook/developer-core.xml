@@ -845,7 +845,7 @@ action:<replaceable>action</replaceable> <co id="startstop.action.co"
 time:<replaceable>time</replaceable>     <co id="startstop.time.co"
     linkends="startstop.time"/>
 group_id:<replaceable>id</replaceable>  <co id="startstop.group_id.co"
-    linkends="startstop.server_id"/></synopsis>
+    linkends="startstop.group_id"/></synopsis>
                 <calloutlist>
                     <callout id="startstop.action" arearefs="startstop.action.co">
                         <para>Either <literal>start</literal> or <literal>stop</literal></para>
@@ -853,7 +853,7 @@ group_id:<replaceable>id</replaceable>  <co id="startstop.group_id.co"
                     <callout id="startstop.time" arearefs="startstop.time.co">
                         <para>A UNIX timestamp in seconds (integer)</para>
                     </callout>
-                    <callout id="startstop.server_id" arearefs="startstop.server_id.co">
+                    <callout id="startstop.group_id" arearefs="startstop.group_id.co">
                         <para>
                             A numeric group ID or <literal>all</literal> for all groups.
                             If omitted, defaults to <literal>all</literal>.

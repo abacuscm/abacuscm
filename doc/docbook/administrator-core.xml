@@ -228,7 +228,6 @@
     </section>
     <section id="administrator-core.server">
         <title>Configuring a server</title>
-        <para>TODO</para>
         <section id="administrator-core.server.database">
             <title>Preparing the database</title>
             <para>
@@ -355,8 +354,13 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
     <section id="administrator-core.adduser">
         <title>Adding users</title>
         <para>
-            TODO: more detailed instructions on the actual creation
-            process
+            There are two ways to add users: a command-line tool (convenient for
+            scripting the addition of multiple users) and the GUI. The
+            command-line tool is called <command>adduser</command>. Users have a username
+            (used to log in), a <quote>friendly</quote> name (shown in
+            standings, and which can use Unicode characters), a password, a
+            type and a group. Groups are described further in <xref
+                linkend="administrator-core.addgroup"/>.
         </para>
         <para>
             Abacus supports the following types of users:
@@ -441,6 +445,23 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
                 </listitem>
             </varlistentry>
         </variablelist>
+    </section>
+    <section id="administrator-core.addgroup">
+        <title>Groups</title>
+        <para>
+            Abacus allows users to be arranged into groups. At present the only
+            reason to do this is that the contest can be started and stopped
+            at different times for different groups. One use case is a
+            multi-site contest, where delays at one site require the contest
+            to be started later.
+        </para>
+        <para>
+            When the server is started for the first time, it creates a group
+            called <systemitem class="groupname">default</systemitem>.
+            Additional groups can be added with either the
+            <command>addgroup</command> command-line tool or through the GUI.
+            Once a group has been created, users can be added to it.
+        </para>
     </section>
     <section id="administrator-core.addproblem">
         <title>Adding problems</title>
@@ -589,6 +610,39 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
             units, making timing less accurate.
         </para>
     </section>
+    <section id="administrator-core.startstop">
+        <title>Starting and stopping the contest</title>
+        <para>
+            At present, the contest can only be started or stopped through the
+            GUI, although the <link
+                linkend="administrator-core.cmdline.batch">batch tool</link>
+            could be adapted to the purpose as well.
+        </para>
+        <para>
+            The start/stop mechanism is powerful but somewhat confusing, as the
+            contest can be run in multiple discontiguous pieces, and these
+            pieces can be per-group or global. It is possible to specify only
+            a start time or only a stop time in the dialog. Each start or stop
+            time is recorded in the database, and never deleted. When determining
+            the remaining time in the contest, all relevant start
+            or stop times are considered, and the contest is considered to
+            have resumed or paused at each such time, in sequence. For a
+            particular group, the relevant start/stop times are the global
+            ones plus the ones for that group.
+        </para>
+        <para>
+            This can be problematic if the database is carelessly populated.
+            For example, if a global start time is loaded, there is no way to
+            prevent all groups starting at that time. Setting a later start
+            time for one group will not override this. A partial workaround is
+            to add an additional stop time one second after the start time
+            (having two events at exactly the same time is not well tested and
+            has caused issues in the past). An alternative, heavier-weight fix
+            is to directly manipulate the database, after which it is
+            <emphasis>vital</emphasis> to restart the server so that its
+            internal cache of the start/stop times is updated.
+        </para>
+    </section>
     <section id="administrator-core.judging">
         <title>Judging</title>
         <para>TODO</para>
@@ -658,8 +712,8 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
             <filename>standings.html</filename>.
             The former requires CGI, but has the advantage that it will work
             even without Javascript enabled (but will not auto-update or have
-            any nice animations). If you use <filename>standings.pl</filename>
-            file, then <filename>standings.html</filename> is needed only to
+            any nice animations). If you use <filename>standings.pl</filename>,
+            then <filename>standings.html</filename> is needed only to
             provide a template.
         </para>
         <note>
