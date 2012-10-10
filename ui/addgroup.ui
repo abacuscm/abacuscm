@@ -100,9 +100,9 @@
         <property name="geometry">
             <rect>
                 <x>10</x>
-                <y>30</y>
+                <y>20</y>
                 <width>280</width>
-                <height>24</height>
+                <height>40</height>
             </rect>
         </property>
         <hbox>
