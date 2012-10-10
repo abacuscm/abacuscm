@@ -24,6 +24,7 @@
 #include <string>
 #include <memory>
 #include <map>
+#include <set>
 
 using namespace std;
 
@@ -182,6 +183,9 @@ bool MsgStartStop::int_process() const {
 	TimerSupportModule *timer = getTimerSupportModule();
 	if(!timer)
 		return false;
+	UserSupportModule *usm = getUserSupportModule();
+	if (!usm)
+		return false;
 
 	DbCon *db = DbCon::getInstance();
 	if(!db)
@@ -210,6 +214,20 @@ bool MsgStartStop::int_process() const {
 		StandingsSupportModule *standings = getStandingsSupportModule();
 		standings->updateStandings(0, 0);
 	}
+
+	/* The change may have caused the implicit stop time to change for some groups. */
+	UserSupportModule::GroupList groups = usm->groupList();
+	set<time_t> done;
+	for (UserSupportModule::GroupList::const_iterator i = groups.begin(); i != groups.end(); ++i) {
+		if (_group_id == 0 || _group_id == i->group_id) {
+			time_t end = timer->contestEndTime(i->group_id);
+			if (end > now) {
+				if (done.insert(end).second) // new to the set
+					Server::putTimedAction(new StartStopAction(end));
+			}
+		}
+	}
+
 	return true;
 }
 
@@ -235,6 +253,9 @@ static void initialise_startstop_events() {
 	for (UserSupportModule::GroupList::const_iterator i = groups.begin(); i != groups.end(); ++i) {
 		int old_state, new_state;
 		timer->updateGroupState(i->group_id, now, old_state, new_state);
+		time_t end = timer->contestEndTime(i->group_id);
+		if (end > now)
+			Server::putTimedAction(new StartStopAction(end));
 	}
 
 	std::vector<time_t> events = timer->allStartStopTimes();

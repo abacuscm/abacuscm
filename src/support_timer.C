@@ -123,6 +123,34 @@ int TimerSupportModule::contestStatus(uint32_t group_id, time_t real_time)
 	return status;
 }
 
+time_t TimerSupportModule::contestEndTime(uint32_t group_id) {
+	int status = TIMER_STATUS_STOPPED;
+	time_t remaining = contestDuration();
+	time_t last_start_time = 0;
+
+	struct startstop_event* i;
+	for(i = _evlist; i; i = i->next) {
+		if(!i->group_id || i->group_id == group_id) {
+			if(i->action != status) {
+				status = i->action;
+				if (status == TIMER_STATUS_STARTED)
+					last_start_time = i->time;
+				else {
+					time_t elapsed = i->time - last_start_time;
+					if (elapsed > remaining)
+						return last_start_time + remaining;
+					else
+						remaining -= elapsed;
+				}
+			}
+		}
+	}
+	if (status == TIMER_STATUS_STARTED)
+		return last_start_time + remaining;
+	else
+		return 0;
+}
+
 std::vector<time_t> TimerSupportModule::allStartStopTimes() {
 	std::vector<time_t> ans;
 	struct startstop_event *i;

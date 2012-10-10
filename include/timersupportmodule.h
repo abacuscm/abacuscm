@@ -55,6 +55,13 @@ public:
 	uint32_t contestTime(uint32_t group_id, time_t real_time = 0);
 	uint32_t contestRemaining(uint32_t group_id, time_t real_time = 0) { return contestDuration() - contestTime(group_id, real_time); }
 	int contestStatus(uint32_t group_id, time_t real_time = 0);
+	/* Returns the real time at which the contest timer will expire. It will return
+	 * 0 if it will never expire due to an explicit stop. This includes the case
+	 * where an explicit stop occurs as the timer reaches 0. It is intended to be
+	 * used to schedule a timed action to tell contestants that the contest is
+	 * stopped.
+	 */
+	time_t contestEndTime(uint32_t group_id);
 
 	// Increasing list of all times at which start/stop events are scheduled
 	std::vector<time_t> allStartStopTimes();
