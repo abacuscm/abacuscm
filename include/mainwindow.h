@@ -90,6 +90,7 @@ protected:
 	virtual void doFileDisconnect();
 	virtual void doForceRefresh();
 	virtual void doAdminCreateUser();
+	virtual void doAdminCreateGroup();
 	virtual void doAdminProblemConfig();
 	virtual void doAdminStartStop();
 	virtual void doSubmit();

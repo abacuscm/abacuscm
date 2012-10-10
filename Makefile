@@ -15,6 +15,7 @@ MODS_abacus = abacus $(CLIENT_MODS) \
 	guievent \
 	ui_mainwindowbase moc_ui_mainwindowbase mainwindow \
 	ui_adduser moc_ui_adduser \
+	ui_addgroup moc_ui_addgroup \
 	ui_compileroutputdialog moc_ui_compileroutputdialog \
 	ui_changepassworddialog moc_ui_changepassworddialog \
 	ui_clarificationrequest moc_ui_clarificationrequest \

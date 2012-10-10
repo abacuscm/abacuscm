@@ -14,6 +14,7 @@
 #include "dbcon.h"
 #include "logger.h"
 #include "ui_adduser.h"
+#include "ui_addgroup.h"
 #include "ui_submit.h"
 #include "ui_clarificationrequest.h"
 #include "ui_viewclarificationrequest.h"
@@ -1003,6 +1004,26 @@ void MainWindow::doAdminCreateUser() {
 					QMessageBox::Critical, QMessageBox::Ok,
 					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
 		} else {
+			break;
+		}
+	}
+}
+
+void MainWindow::doAdminCreateGroup() {
+	AddGroup add_group_dialog;
+	while (add_group_dialog.exec()) {
+		if (add_group_dialog.groupname->text() = "") {
+			QMessageBox("Group name error",
+					"The group cannot have a blank name",
+					QMessageBox::Warning, QMessageBox::Ok,
+					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+		} else if (!_server_con.creategroup((const char *) add_group_dialog.groupname->text().utf8())) {
+			QMessageBox("Connection error",
+					"Error with addgroup request.",
+					QMessageBox::Critical, QMessageBox::Ok,
+					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+		}
+		else {
 			break;
 		}
 	}
