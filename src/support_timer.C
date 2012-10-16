@@ -35,6 +35,19 @@ TimerSupportModule::~TimerSupportModule()
 	pthread_mutex_destroy(&_writelock);
 }
 
+void TimerSupportModule::dumpevlist()
+{
+	struct startstop_event* i = _evlist;
+
+	log(LOG_DEBUG, "Dumping timing event list");
+	while (i) {
+		log(LOG_DEBUG, "server=%d, time=%lu, action=%d",
+				i->server_id, i->time, i->action);
+		i = i->next;
+	}
+	log(LOG_DEBUG, "End of list.");
+}
+
 uint32_t TimerSupportModule::contestDuration()
 {
 	static bool warned = false;
@@ -172,6 +185,8 @@ bool TimerSupportModule::scheduleStartStop(uint32_t server_id, time_t time, int 
 		t->next = *i;
 		*i = t;
 	}
+
+	dumpevlist();
 out:
 	pthread_mutex_unlock(&_writelock);
 	return res;
@@ -201,4 +216,6 @@ void TimerSupportModule::init()
 
 		log(LOG_DEBUG, "Initial timer event: server_id=%d, time=%lu, action=%d", ev->server_id, ev->time, ev->action);
 	}
+
+	dumpevlist();
 }

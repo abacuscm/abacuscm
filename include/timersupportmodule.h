@@ -39,6 +39,8 @@ private:
 
 	struct startstop_event *_evlist;
 	pthread_mutex_t _writelock;
+
+	void dumpevlist();
 public:
 	virtual void init();
 
