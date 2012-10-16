@@ -13,6 +13,8 @@
 #include <cassert>
 #include <new>
 #include <fcntl.h>
+#include <unistd.h>
+
 #include "clientconnection.h"
 #include "logger.h"
 #include "acmconfig.h"
