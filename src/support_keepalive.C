@@ -39,7 +39,8 @@ void KeepaliveSupportModule::KeepaliveTimedAction::perform() {
 	Server::putTimedAction(new KeepaliveTimedAction(processingTime() + KEEPALIVE_INTERVAL));
 
 	MessageBlock keepalive("keepalive");
-	ClientEventRegistry::getInstance().broadcastEvent(0, USER_MASK_ALL, &keepalive);
+	ClientEventRegistry::getInstance().broadcastEvent(
+		0, PermissionTest::ANY, &keepalive);
 }
 
 DEFINE_SUPPORT_MODULE(KeepaliveSupportModule);

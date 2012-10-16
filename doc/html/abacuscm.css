@@ -1,0 +1,18 @@
+/* Grey background for listings */
+pre.synopsis, pre.programlisting, pre.screen
+{
+    background-color: #eeeeee;
+    padding: 1pt 3pt;
+}
+
+span.symbol, span.type, span.structname
+{
+    font-family: monospace;
+}
+
+/* Fixes overly large spacing in callout lists */
+div.calloutlist table tbody tr td p
+{
+    margin-top: 0pt;
+    margin-bottom: 0pt;
+}

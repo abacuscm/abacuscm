@@ -26,8 +26,7 @@ using namespace std;
 
 static Queue<uint32_t> *ack_queue;
 static Queue<TimedAction*> *timed_queue;
-static Queue<Socket*> *socket_queue;
-static SocketPool *socket_pool;
+static WaitableSet *waitable_set;
 
 uint32_t Server::server_id(const string& name)
 {
@@ -271,7 +270,7 @@ bool Server::hasMessage(uint32_t server_id, uint32_t message_id) {
 
 void Server::putAck(uint32_t server_id, uint32_t message_id, uint32_t ack_id) {
 	if(!ack_id) {
-		log(LOG_ERR, "ack_id == 0 cannot possibly be correct.  This could potentially happen if/when a server didn't initialise properly upon first creation (the first PeerMessage a server receives must be it's own initialisation message.  Please see the Q&A for more info.");
+		log(LOG_ERR, "ack_id == 0 cannot possibly be correct.  This could potentially happen if/when a server did not initialise properly upon first creation (the first PeerMessage a server receives must be its own initialisation message.  Please see the administrator's manual for more information.");
 		return;
 	}
 
@@ -305,27 +304,19 @@ void Server::putTimedAction(TimedAction* ta) {
 		timed_queue->enqueue(ta);
 }
 
-void Server::putSocket(Socket* s, bool immediate)
+void Server::putWaitable(Waitable* s, bool immediate)
 {
 	if (immediate) {
-		if (!socket_queue)
-			log(LOG_ERR, "socket_queue is not set!");
-		else
-			socket_queue->enqueue(s);
+		log(LOG_ERR, "TODO: putWaitable(immediate=true) not implemented!");
 	} else {
-		if (!socket_pool)
-			log(LOG_ERR, "socket_pool is not set!");
+		if (!waitable_set)
+			log(LOG_ERR, "waitable_set is not set!");
 		else
-			socket_pool->locked_insert(s);
+			waitable_set->add(s);
 	}
 }
 
-void Server::setSocketQueue(Queue<Socket*> *queue)
+void Server::setWaitableSet(WaitableSet *set)
 {
-	socket_queue = queue;
-}
-
-void Server::setSocketPool(SocketPool *pool)
-{
-	socket_pool = pool;
+	waitable_set = set;
 }

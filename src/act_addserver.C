@@ -14,23 +14,24 @@
 #include "message_createserver.h"
 #include "server.h"
 #include "misc.h"
+#include <memory>
 
 using namespace std;
 
 class ActAddServer : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
-bool ActAddServer::int_process(ClientConnection* cc, MessageBlock* mb) {
+auto_ptr<MessageBlock> ActAddServer::int_process(ClientConnection* cc, const MessageBlock* mb) {
 	if(Server::getId() != 1)
-		return cc->sendError("Can only add servers from the master server");
+		return MessageBlock::error("Can only add servers from the master server");
 
-	uint32_t user_id = cc->getProperty("user_id");
+	uint32_t user_id = cc->getUserId();
 
 	string servername = (*mb)["servername"];
 	if(servername == "")
-		return cc->sendError("Cannot specify an empty server name");
+		return MessageBlock::error("Cannot specify an empty server name");
 
 	log(LOG_NOTICE, "User %u requested addition of server '%s'", user_id,
 			servername.c_str());
@@ -38,11 +39,11 @@ bool ActAddServer::int_process(ClientConnection* cc, MessageBlock* mb) {
 	uint32_t server_id = Server::server_id(servername);
 
 	if(server_id)
-		return cc->sendError("Servername is already in use!");
+		return MessageBlock::error("Servername is already in use!");
 
 	server_id = Server::nextServerId();
 	if(server_id == ~0U)
-		return cc->sendError("Unable to determine next server_id");
+		return MessageBlock::error("Unable to determine next server_id");
 
 	Message_CreateServer *msg = new Message_CreateServer(servername, server_id);
 
@@ -57,7 +58,6 @@ bool ActAddServer::int_process(ClientConnection* cc, MessageBlock* mb) {
 
 static ActAddServer _act_addserver;
 
-static void init() __attribute__((constructor));
-static void init() {
-	ClientAction::registerAction(USER_TYPE_ADMIN, "addserver", &_act_addserver);
+extern "C" void abacuscm_mod_init() {
+	ClientAction::registerAction("addserver", PERMISSION_SERVER_ADMIN, &_act_addserver);
 }

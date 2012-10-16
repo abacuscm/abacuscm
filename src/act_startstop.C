@@ -21,17 +21,18 @@
 #include "standingssupportmodule.h"
 
 #include <string>
+#include <memory>
 
 using namespace std;
 
 class ActStartStop : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection*, MessageBlock*);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection*, const MessageBlock*);
 };
 
 class ActSubscribeTime : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection*, MessageBlock*);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection*, const MessageBlock*);
 };
 
 class MsgStartStop : public Message {
@@ -43,11 +44,11 @@ protected:
 	virtual uint32_t storageRequired();
 	virtual uint32_t store(uint8_t *buffer, uint32_t size);
 	virtual uint32_t load(const uint8_t *buffer, uint32_t size);
+
+	virtual bool int_process() const;
 public:
 	MsgStartStop();
 	MsgStartStop(uint32_t server_id, uint32_t time, uint32_t action);
-
-	virtual bool process() const;
 
 	virtual uint16_t message_type_id() const;
 };
@@ -98,7 +99,7 @@ void StartStopAction::perform() {
 	}
 }
 
-bool ActStartStop::int_process(ClientConnection* cc, MessageBlock *mb) {
+auto_ptr<MessageBlock> ActStartStop::int_process(ClientConnection* cc, const MessageBlock *mb) {
 	char *errpnt;
 
 	uint32_t server_id;
@@ -111,11 +112,11 @@ bool ActStartStop::int_process(ClientConnection* cc, MessageBlock *mb) {
 	} else if(t_action == "stop") {
 		action = TIMER_STOP;
 	} else
-		return cc->sendError("Invalid 'action', must be either 'start' or 'stop'");
+		return MessageBlock::error("Invalid 'action', must be either 'start' or 'stop'");
 
 	time = strtoll((*mb)["time"].c_str(), &errpnt, 0);
 	if(time == 0 || *errpnt)
-		return cc->sendError("Invalid start/stop time specified");
+		return MessageBlock::error("Invalid start/stop time specified");
 
 	// note that an omitted or blank server_id translates to 0, meaning
 	// "all" servers.
@@ -128,18 +129,18 @@ bool ActStartStop::int_process(ClientConnection* cc, MessageBlock *mb) {
 	{
 		server_id = strtoll((*mb)["server_id"].c_str(), &errpnt, 0);
 		if(*errpnt)
-			return cc->sendError("Invalid server_id specified");
+			return MessageBlock::error("Invalid server_id specified");
 	}
 
 	return triggerMessage(cc, new MsgStartStop(server_id, time, action));
 }
 
-bool ActSubscribeTime::int_process(ClientConnection* cc, MessageBlock*) {
+auto_ptr<MessageBlock> ActSubscribeTime::int_process(ClientConnection* cc, const MessageBlock*) {
 	if(ClientEventRegistry::getInstance().registerClient("startstop", cc)
 			&& ClientEventRegistry::getInstance().registerClient("updateclock", cc))
-		return cc->reportSuccess();
+		return MessageBlock::ok();
 	else
-		return cc->sendError("Unable to subscribe to the 'startstop' event");
+		return MessageBlock::error("Unable to subscribe to the 'startstop' event");
 }
 
 MsgStartStop::MsgStartStop() {
@@ -179,7 +180,7 @@ uint32_t MsgStartStop::load(const uint8_t *buffer, uint32_t size) {
 	return 3 * sizeof(uint32_t);
 }
 
-bool MsgStartStop::process() const {
+bool MsgStartStop::int_process() const {
 	TimerSupportModule *timer = getTimerSupportModule();
 	if(!timer)
 		return false;
@@ -249,16 +250,12 @@ static Message* StartStopFunctor() {
 	return new MsgStartStop();
 }
 
-static void init() __attribute__((constructor));
-static void init() {
-	ClientAction::registerAction(USER_TYPE_ADMIN, "startstop", &_act_startstop);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "subscribetime", &_act_subscribetime);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "subscribetime", &_act_subscribetime);
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "subscribetime", &_act_subscribetime);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "subscribetime", &_act_subscribetime);
+extern "C" void abacuscm_mod_init() {
+	ClientAction::registerAction("startstop", PERMISSION_START_STOP, &_act_startstop);
+	ClientAction::registerAction("subscribetime", PERMISSION_AUTH, &_act_subscribetime);
 	Message::registerMessageFunctor(TYPE_ID_STARTSTOP, StartStopFunctor);
-	ClientEventRegistry::getInstance().registerEvent("startstop");
-	ClientEventRegistry::getInstance().registerEvent("updateclock");
+	ClientEventRegistry::getInstance().registerEvent("startstop", PERMISSION_AUTH);
+	ClientEventRegistry::getInstance().registerEvent("updateclock", PERMISSION_AUTH);
 
 	initialise_startstop_events();
 }

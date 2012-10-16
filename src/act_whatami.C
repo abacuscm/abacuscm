@@ -7,49 +7,42 @@
  *
  * $Id$
  */
+#include <sstream>
 #include "clientaction.h"
 #include "clientconnection.h"
 #include "messageblock.h"
 #include "logger.h"
 #include "dbcon.h"
 #include "clienteventregistry.h"
+#include "permissionmap.h"
+
+#include <memory>
+
+using namespace std;
 
 class ActWhatAmI : public ClientAction {
-private:
-	std::map<uint32_t, std::string> _typemap;
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *);
-public:
-	ActWhatAmI();
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *);
 };
 
-ActWhatAmI::ActWhatAmI() {
-	_typemap[USER_TYPE_NONE] = "none";
-	_typemap[USER_TYPE_ADMIN] = "admin";
-	_typemap[USER_TYPE_JUDGE] = "judge";
-	_typemap[USER_TYPE_CONTESTANT] = "contestant";
-	_typemap[USER_TYPE_OBSERVER] = "observer";
-}
+auto_ptr<MessageBlock> ActWhatAmI::int_process(ClientConnection *cc, const MessageBlock *) {
+	auto_ptr<MessageBlock> resp(MessageBlock::ok());
 
-bool ActWhatAmI::int_process(ClientConnection *cc, MessageBlock *) {
-	uint32_t user_type = cc->getProperty("user_type");
-
-	MessageBlock resp("ok");
-	std::map<uint32_t, std::string>::const_iterator i = _typemap.find(user_type);
-	if (i != _typemap.end())
-		resp["type"] = i->second;
-	else
-		resp["type"] = "none";
-	return cc->sendMessageBlock(&resp);
+	const PermissionSet &perms = cc->permissions();
+	size_t pos = 0;
+	for (size_t j = 0; j < PERMISSION_COUNT; j++) {
+		if (perms[j]) {
+			std::ostringstream header;
+			header << "permission" << pos;
+			(*resp)[header.str()] = getPermissionName(static_cast<Permission>(j));
+			pos++;
+		}
+	}
+	return resp;
 }
 
 static ActWhatAmI _act_whatami;
 
-static void init() __attribute__((constructor));
-static void init() {
-	ClientAction::registerAction(USER_TYPE_NONE, "whatami", &_act_whatami);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "whatami", &_act_whatami);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "whatami", &_act_whatami);
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "whatami", &_act_whatami);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "whatami", &_act_whatami);
+extern "C" void abacuscm_mod_init() {
+	ClientAction::registerAction("whatami", PermissionTest::ANY, &_act_whatami);
 }

@@ -20,11 +20,14 @@
 
 #include <sstream>
 #include <string>
+#include <memory>
 #include <time.h>
+
+using namespace std;
 
 class ActGetClarifications : public ClientAction {
 protected:
-	bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
 /* Holds both requests and replies */
@@ -42,6 +45,8 @@ protected:
 	virtual uint32_t storageRequired();
 	virtual uint32_t store(uint8_t* buffer, uint32_t size);
 	virtual uint32_t load(const uint8_t* buffer, uint32_t size);
+
+	virtual bool int_process() const;
 public:
 	ClarificationMessage();
 	ClarificationMessage(uint32_t clarification_request_id,
@@ -55,38 +60,35 @@ public:
 				 const std::string& answer);
 	virtual ~ClarificationMessage();
 
-	virtual bool process() const;
-
 	virtual uint16_t message_type_id() const;
 };
 
 class ActClarificationRequest : public ClientAction {
 protected:
-	bool int_process(ClientConnection *cc, MessageBlock *sb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *sb);
 };
 
 class ActClarification : public ClientAction {
 protected:
-	bool int_process(ClientConnection *cc, MessageBlock *sb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *sb);
 };
 
-bool ActGetClarifications::int_process(ClientConnection *cc, MessageBlock *) {
+auto_ptr<MessageBlock> ActGetClarifications::int_process(ClientConnection *cc, const MessageBlock *) {
 	DbCon *db = DbCon::getInstance();
 	if (!db)
-		return cc->sendError("Error connecting to database");
+		return MessageBlock::error("Error connecting to database");
 
-	uint32_t uid = cc->getProperty("user_id");
-	uint32_t utype = cc->getProperty("user_type");
+	uint32_t uid = cc->getUserId();
 
 	ClarificationList lst;
 
-	if(utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_OBSERVER)
-		lst = db->getClarifications(uid);
-	else
+	if(cc->permissions()[PERMISSION_SEE_ALL_CLARIFICATIONS])
 		lst = db->getClarifications();
+	else
+		lst = db->getClarifications(uid);
 	db->release();db=NULL;
 
-	MessageBlock mb("ok");
+	auto_ptr<MessageBlock> mb(MessageBlock::ok());
 
 	ClarificationList::iterator s;
 	int c = 0;
@@ -97,34 +99,33 @@ bool ActGetClarifications::int_process(ClientConnection *cc, MessageBlock *) {
 
 		AttributeList::iterator a;
 		for(a = s->begin(); a != s->end(); ++a)
-			mb[a->first + cntr] = a->second;
+			(*mb)[a->first + cntr] = a->second;
 	}
 
-	return cc->sendMessageBlock(&mb);
+	return mb;
 }
 
 class ActGetClarificationRequests : public ClientAction {
 protected:
-	bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
-bool ActGetClarificationRequests::int_process(ClientConnection *cc, MessageBlock *) {
+auto_ptr<MessageBlock> ActGetClarificationRequests::int_process(ClientConnection *cc, const MessageBlock *) {
 	DbCon *db = DbCon::getInstance();
 	if (!db)
-		return cc->sendError("Error connecting to database");
+		return MessageBlock::error("Error connecting to database");
 
-	uint32_t uid = cc->getProperty("user_id");
-	uint32_t utype = cc->getProperty("user_type");
+	uint32_t uid = cc->getUserId();
 
 	ClarificationRequestList lst;
 
-	if(utype == USER_TYPE_CONTESTANT || utype == USER_TYPE_OBSERVER)
+	if(!cc->permissions()[PERMISSION_SEE_ALL_CLARIFICATION_REQUESTS])
 		lst = db->getClarificationRequests(uid);
 	else
 		lst = db->getClarificationRequests();
 	db->release();db=NULL;
 
-	MessageBlock mb("ok");
+	auto_ptr<MessageBlock> mb(MessageBlock::ok());
 
 	ClarificationRequestList::iterator s;
 	int c = 0;
@@ -135,10 +136,10 @@ bool ActGetClarificationRequests::int_process(ClientConnection *cc, MessageBlock
 
 		AttributeList::iterator a;
 		for(a = s->begin(); a != s->end(); ++a)
-			mb[a->first + cntr] = a->second;
+			(*mb)[a->first + cntr] = a->second;
 	}
 
-	return cc->sendMessageBlock(&mb);
+	return mb;
 }
 
 ClarificationMessage::ClarificationMessage() {
@@ -153,9 +154,9 @@ ClarificationMessage::ClarificationMessage() {
 }
 
 ClarificationMessage::ClarificationMessage(uint32_t clarification_request_id,
-					   uint32_t prob_id,
-					   uint32_t user_id,
-					   const std::string& question) {
+										   uint32_t prob_id,
+										   uint32_t user_id,
+										   const std::string& question) {
 	_request = 1;
 	_clarification_request_id = clarification_request_id;
 	_clarification_id = 0;
@@ -235,7 +236,7 @@ uint32_t ClarificationMessage::load(const uint8_t *buffer, uint32_t size) {
 	return pos - buffer;
 }
 
-bool ClarificationMessage::process() const {
+bool ClarificationMessage::int_process() const {
 	DbCon *db = DbCon::getInstance();
 	if (!db)
 		return false;
@@ -261,8 +262,10 @@ bool ClarificationMessage::process() const {
 				AttributeList::iterator a;
 				for(a = req.begin(); a != req.end(); ++a)
 					notify[a->first] = a->second;
-				ClientEventRegistry::getInstance().broadcastEvent(_user_id,
-																  USER_MASK_JUDGE | USER_MASK_ADMIN, &notify);
+				ClientEventRegistry::getInstance().broadcastEvent(
+					_user_id,
+					PERMISSION_SEE_ALL_CLARIFICATION_REQUESTS,
+					&notify);
 			}
 		}
 	}
@@ -290,10 +293,13 @@ bool ClarificationMessage::process() const {
 				for(a = c.begin(); a != c.end(); ++a)
 					notify[a->first] = a->second;
 				if (pub)
-					ClientEventRegistry::getInstance().broadcastEvent(0, USER_MASK_ALL & ~USER_MASK_MARKER, &notify);
+					ClientEventRegistry::getInstance().broadcastEvent(
+						0, PERMISSION_AUTH, &notify);
 				else
-					ClientEventRegistry::getInstance().broadcastEvent(strtoul(req["user_id"].c_str(), NULL, 10),
-																	  USER_MASK_JUDGE | USER_MASK_ADMIN, &notify);
+					ClientEventRegistry::getInstance().broadcastEvent(
+						strtoul(req["user_id"].c_str(), NULL, 10),
+						PERMISSION_SEE_ALL_CLARIFICATIONS,
+						&notify);
 			}
 		}
 	}
@@ -301,8 +307,8 @@ bool ClarificationMessage::process() const {
 	return result;
 }
 
-bool ActClarificationRequest::int_process(ClientConnection *cc, MessageBlock *mb) {
-	uint32_t user_id = cc->getProperty("user_id");
+auto_ptr<MessageBlock> ActClarificationRequest::int_process(ClientConnection *cc, const MessageBlock *mb) {
+	uint32_t user_id = cc->getUserId();
 	uint32_t prob_id = 0;
 	std::string prob_id_str = (*mb)["prob_id"];
 	std::string question = (*mb)["question"];
@@ -312,11 +318,11 @@ bool ActClarificationRequest::int_process(ClientConnection *cc, MessageBlock *mb
 		char *errptr;
 		prob_id = strtol((*mb)["prob_id"].c_str(), &errptr, 0);
 		if(*errptr || (*mb)["prob_id"] == "")
-			return cc->sendError("prob_id isn't a valid integer");
+			return MessageBlock::error("prob_id isn't a valid integer");
 
 		DbCon *db = DbCon::getInstance();
 		if(!db)
-			return cc->sendError("Unable to connect to database");
+			return MessageBlock::error("Unable to connect to database");
 		ProblemList probs = db->getProblems();
 		db->release();db=NULL;
 
@@ -325,41 +331,39 @@ bool ActClarificationRequest::int_process(ClientConnection *cc, MessageBlock *mb
 			if(*p == prob_id)
 				break;
 		if(p == probs.end())
-			return cc->sendError("Invalid prob_id - no such id");
+			return MessageBlock::error("Invalid prob_id - no such id");
 	}
 
 	uint32_t cr_id = Server::nextClarificationRequestId();
 	if(cr_id == ~0U)
-		return cc->sendError("Internal server error. Error obtaining new clarification request id");
+		return MessageBlock::error("Internal server error. Error obtaining new clarification request id");
 
 	ClarificationMessage *msg = new ClarificationMessage(cr_id, prob_id, user_id, question);
 	log(LOG_INFO, "User %u submitted clarification request for problem %u", user_id, prob_id);
-	if (!triggerMessage(cc, msg)) return false;
-
-	return true;
+	return triggerMessage(cc, msg);
 }
 
-bool ActClarification::int_process(ClientConnection *cc, MessageBlock *mb) {
-	uint32_t user_id = cc->getProperty("user_id");
+auto_ptr<MessageBlock> ActClarification::int_process(ClientConnection *cc, const MessageBlock *mb) {
+	uint32_t user_id = cc->getUserId();
 	std::string answer = (*mb)["answer"];
 
 	char *errptr;
 	uint32_t cr_id = strtol((*mb)["clarification_request_id"].c_str(), &errptr, 0);
 	if(*errptr || (*mb)["clarification_request_id"] == "")
-		return cc->sendError("clarification_request_id isn't a valid integer");
+		return MessageBlock::error("clarification_request_id isn't a valid integer");
 	DbCon *db = DbCon::getInstance();
 	if(!db)
-		return cc->sendError("Unable to connect to database");
+		return MessageBlock::error("Unable to connect to database");
 	AttributeList cr = db->getClarificationRequest(cr_id);
 	db->release();db=NULL;
 
 	if(cr.empty())
-		return cc->sendError("Invalid clarification_request_id - no such id");
+		return MessageBlock::error("Invalid clarification_request_id - no such id");
 
 	uint32_t pub = (*mb)["public"] == "1";
 	uint32_t c_id = Server::nextClarificationId();
 	if(c_id == ~0U)
-		return cc->sendError("Internal server error. Error obtaining new clarification id");
+		return MessageBlock::error("Internal server error. Error obtaining new clarification id");
 
 	ClarificationMessage *msg = new ClarificationMessage(cr_id, c_id, user_id, pub, answer);
 	log(LOG_INFO, "User %u submitted clarification %u for request %u", user_id, c_id, cr_id);
@@ -376,28 +380,14 @@ static ActGetClarificationRequests _act_getclarificationrequests;
 static ActClarificationRequest _act_clarificationrequest;
 static ActClarification _act_clarification;
 
-static void init() __attribute__((constructor));
-static void init() {
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getclarifications", &_act_getclarifications);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "getclarifications", &_act_getclarifications);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "getclarifications", &_act_getclarifications);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "getclarifications", &_act_getclarifications);
-
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "getclarificationrequests", &_act_getclarificationrequests);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "getclarificationrequests", &_act_getclarificationrequests);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "getclarificationrequests", &_act_getclarificationrequests);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "getclarificationrequests", &_act_getclarificationrequests);
-
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "clarificationrequest", &_act_clarificationrequest);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "clarificationrequest", &_act_clarificationrequest);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "clarificationrequest", &_act_clarificationrequest);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "clarificationrequest", &_act_clarificationrequest);
-
-	ClientAction::registerAction(USER_TYPE_JUDGE, "clarification", &_act_clarification);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "clarification", &_act_clarification);
+extern "C" void abacuscm_mod_init() {
+	ClientAction::registerAction("getclarifications", PERMISSION_AUTH, &_act_getclarifications);
+	ClientAction::registerAction("getclarificationrequests", PERMISSION_AUTH, &_act_getclarificationrequests);
+	ClientAction::registerAction("clarificationrequest", PERMISSION_CLARIFICATION_REQUEST, &_act_clarificationrequest);
+	ClientAction::registerAction("clarification", PERMISSION_CLARIFICATION_REPLY, &_act_clarification);
 
 	Message::registerMessageFunctor(TYPE_ID_CLARIFICATION, create_clarification_msg);
 
-	ClientEventRegistry::getInstance().registerEvent("updateclarifications");
-	ClientEventRegistry::getInstance().registerEvent("updateclarificationrequests");
+	ClientEventRegistry::getInstance().registerEvent("updateclarifications", PERMISSION_AUTH);
+	ClientEventRegistry::getInstance().registerEvent("updateclarificationrequests", PERMISSION_AUTH);
 }

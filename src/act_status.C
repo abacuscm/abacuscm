@@ -14,27 +14,27 @@
 #include "timersupportmodule.h"
 #include "misc.h"
 
+#include <memory>
+
+using namespace std;
+
 class ActRunning : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
-bool ActRunning::int_process(ClientConnection *cc, MessageBlock*) {
-	MessageBlock mb("ok");
+auto_ptr<MessageBlock> ActRunning::int_process(ClientConnection *, const MessageBlock*) {
+	auto_ptr<MessageBlock> mb(MessageBlock::ok());
 	if(getTimerSupportModule()->contestStatus(Server::getId()) == TIMER_STATUS_STARTED)
-		mb["status"] = "running";
+		(*mb)["status"] = "running";
 	else
-		mb["status"] = "stopped";
+		(*mb)["status"] = "stopped";
 
-	return cc->sendMessageBlock(&mb);
+	return mb;
 }
 
 static ActRunning _act_running;
 
-static void init() __attribute__((constructor));
-static void init() {
-	ClientAction::registerAction(USER_TYPE_ADMIN, "conteststatus", &_act_running);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "conteststatus", &_act_running);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "conteststatus", &_act_running);
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "conteststatus", &_act_running);
+extern "C" void abacuscm_mod_init() {
+	ClientAction::registerAction("conteststatus", PERMISSION_AUTH, &_act_running);
 }

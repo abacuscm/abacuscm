@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN" "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<book>
+    <title>Abacus Contest Manager</title>
+    <bookinfo>
+        <author>
+            <firstname>Bruce</firstname>
+            <surname>Merry</surname>
+            <email>bmerry@users.sourceforge.net</email>
+        </author>
+        <author>
+            <firstname>Max</firstname>
+            <surname>Rabkin</surname>
+            <email>max.rabkin@gmail.com</email>
+        </author>
+        <copyright>
+            <year>2010</year>
+            <year>2011</year>
+            <holder>Bruce Merry</holder>
+            <holder>Jaco Kroon</holder>
+            <holder>Carl Hultquist</holder>
+            <holder>Max Rabkin</holder>
+        </copyright>
+    </bookinfo>
+    <chapter id="contestant">
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="contestant.xml" xpointer="xpointer(//article/articleinfo/title)"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="contestant.xml" xpointer="xpointer(//article/section)"/>
+    </chapter>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="administrator-core.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="administrator-webapp.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="developer-core.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="developer-webapp.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="licensing.xml"/>
+</book>

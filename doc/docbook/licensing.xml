@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN" "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<chapter id="licensing">
+    <title>Licensing</title>
+    <section id="licensing.abacuscm">
+        <title>AbacusCM</title>
+        <para>
+            This program is free software; you can redistribute it and/or
+            modify it under the terms of the GNU General Public License
+            as published by the Free Software Foundation; version 2
+            of the License.
+        </para>
+        <para>
+            This program is distributed in the hope that it will be useful,
+            but WITHOUT ANY WARRANTY; without even the implied warranty of
+            MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+            GNU General Public License for more details.
+        </para>
+        <para>
+            You should have received a copy of the GNU General Public License
+            along with this program; if not, write to the Free Software
+            Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+            02110-1301, USA.
+        </para>
+    </section>
+    <section id="licensing.jquery-ui">
+        <title>jQuery UI</title>
+        <para>
+            This software contains portions of <ulink
+                url="http://jqueryui.com/">jQuery UI</ulink>, which is
+            distributed under the following terms (MIT license):
+        </para>
+        <para>
+            This software consists of voluntary contributions made by many
+            individuals (AUTHORS.txt, <ulink
+                url="http://jqueryui.com/about"/>) For exact
+            contribution history, see the revision history and logs, available
+            at <ulink url="http://jquery-ui.googlecode.com/svn/"/>
+        </para>
+        <para>
+            Permission is hereby granted, free of charge, to any person
+            obtaining a copy of this software and associated documentation
+            files (the "Software"), to deal in the Software without
+            restriction, including without limitation the rights to use, copy,
+            modify, merge, publish, distribute, sublicense, and/or sell copies
+            of the Software, and to permit persons to whom the Software is
+            furnished to do so, subject to the following conditions:
+        </para>
+        <para>
+            The above copyright notice and this permission notice shall be
+            included in all copies or substantial portions of the Software.
+        </para>
+        <para>
+            THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+            EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+            MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+            NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+            HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+            WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+            OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+            DEALINGS IN THE SOFTWARE.
+        </para>
+    </section>
+    <section id="licensing.jquery">
+        <title>jQuery</title>
+        <para>
+            The AbacusCM source distribution includes components of
+            <ulink url="http://www.jquery.org/">jQuery</ulink>, which is
+            distributed under the MIT license above.
+        </para>
+    </section>
+    <section id="licensing.jquery-alerts">
+        <title>jQuery Alerts</title>
+        <para>
+            This software contains portions of <ulink
+                url="http://abeautifulsite.net/blog/2008/12/jquery-alert-dialogs/">jQuery
+                Alerts</ulink>, which is distributed under both the <ulink
+                url="http://www.opensource.org/licenses/gpl-3.0.html">GNU
+                General Public License version 3</ulink> and the <ulink
+                url="http://www.opensource.org/licenses/mit-license.php">MIT
+                license</ulink>.
+        </para>
+    </section>
+    <section id="licensing.cometd-javascript">
+        <title>cometd</title>
+        <para>
+            This software contains Javascript code from <ulink
+                url="http://www.cometd.org/">cometd</ulink>, which is licensed
+            under both the <ulink
+                url="http://www.opensource.org/licenses/apache2.0">Apache
+                2.0</ulink> and the <ulink
+                url="http://www.opensource.org/licenses/mit-license.php">MIT
+                license</ulink>.
+        </para>
+    </section>
+    <section id="licensing.docbook-xml">
+        <title>DocBook XSL Stylesheets</title>
+        <para>
+            The documentation for this software includes images that form part
+            of the <ulink
+                url="http://docbook.sourceforge.net/release/xsl/current/doc/">Docbook
+                XSL stylesheets</ulink>, which is distributed under the
+            following terms:
+        </para>
+        <para>
+            Permission is hereby granted, free of charge, to any person
+            obtaining a copy of this software and associated documentation
+            files (the <quote>Software</quote>), to deal in the Software without
+            restriction, including without limitation the rights to use, copy,
+            modify, merge, publish, distribute, sublicense, and/or sell copies
+            of the Software, and to permit persons to whom the Software is
+            furnished to do so, subject to the following conditions:
+        </para>
+        <para>
+            The above copyright notice and this permission notice shall be
+            included in all copies or substantial portions of the Software.
+        </para>
+        <para>
+            Except as contained in this notice, the names of individuals
+            credited with contribution to this software shall not be used in
+            advertising or otherwise to promote the sale, use or other
+            dealings in this Software without prior written authorization from
+            the individuals in question.
+        </para>
+        <para>
+            Any stylesheet derived from this Software that is publically
+            distributed will be identified with a different name and the
+            version strings in any derived Software will be changed so that no
+            possibility of confusion between the derived package and this
+            Software will exist.
+        </para>
+    </section>
+    <section>
+        <title>File uploader</title>
+        <para>
+            This software contains portions of <ulink
+                url="http://github.com/valums/file-uploader">File
+                Uploader</ulink>, which is distributed under the GNU General
+            Public License, version 2 or later.
+        </para>
+    </section>
+    <section>
+        <title>Icons</title>
+        <para>
+            The connection status icons (<filename>connected.png</filename>
+            and <filename>disconnected.png</filename>) were downloaded from
+            <ulink
+                url="http://www.easyvectors.com/browse/other/9f6520f14dc7b7a7eb25a85f01628d39-button-green-clip-art">here</ulink>
+            and <ulink
+                url="http://www.easyvectors.com/browse/other/button-red-clip-art">here</ulink>,
+            and are free for commercial use.
+        </para>
+    </section>
+</chapter>

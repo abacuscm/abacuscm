@@ -1,0 +1,802 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN" "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<chapter id="administrator-core">
+    <title>Administrator manual for AbacusCM core</title>
+    <section id="administrator-core.introduction">
+        <title>Introduction</title>
+        <para>
+            For partially historical reasons, AbacusCM consists of two largely
+            independent parts. Firstly, there is a core, which is written in
+            C++ and consists of the server, the marker code, a Qt client, and
+            a selection of command-line tools. Secondly, there is a web
+            application which contestants can use to interface with the
+            server, avoiding the need for the Qt client to be distributed to
+            contestants.
+        </para>
+        <para>
+            This chapter discusses only the core part. Administrators wishing
+            to deploy the web interface should first follow the instructions
+            in this chapter before reading <xref
+                linkend="administrator-webapp"/>.
+        </para>
+    </section>
+    <section id="administrator-core.build">
+        <title>Building abacuscm</title>
+        <section id="administrator-core.build.requirements">
+            <title>Requirements</title>
+            <para>
+                Before you can compile AbacusCM you need the following pieces
+                of software installed:
+            </para>
+            <itemizedlist>
+                <listitem>
+                    <para><command>g++</command> (3.3, 3.4 and 4.4 have all worked at various
+                        times).</para>
+                </listitem>
+                <listitem>
+                    <para>
+                        <application>Qt</application> 3 (only required for the
+                        GUI client).
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        <application>OpenSSL</application> (any version should
+                        work).
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        <application>MySQL</application> 4.1 or later (only
+                        required for the server). In theory any RDB could
+                        work, but currently only MySQL is supported.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        GNU <command>make</command>. The build process uses
+                        patterns and other features only supported by GNU
+                        <command>make</command>.
+                    </para>
+                </listitem>
+            </itemizedlist>
+            <para>
+                TODO: add notes about tools to build the documentation.
+            </para>
+        </section>
+        <section id="administrator-core.build.compile">
+            <title>Compiling</title>
+            <para>
+                If you want to compile everything, just run
+                <command>make</command>.
+            </para>
+            <para>
+                If you only want to compile certain components, copy
+                <filename>Makefile.conf.sample</filename> to
+                <filename>Makefile.conf</filename> and edit it (there are
+                details in the file). From here you should be able to run
+                <command>make</command> and only get what you want.
+            </para>
+        </section>
+    </section>
+    <section id="administrator-core.certificates">
+        <title>Generating certificates</title>
+        <para>
+            Abacus uses X.509 certificates to allow clients to check that they
+            are connecting to a genuine server, and have not been subjected to
+            a man-in-the-middle attack. To run a contest, you will need a
+            certificate authority (CA) certificate, and a certificate per
+            server signed by that certificate authority.
+        </para>
+        <para>
+            Note that at present, the client will happily connect to any
+            server that has a certificate signed by the CA. You should thus
+            <emphasis>not</emphasis> have your server certificates signed by a
+            public CA, as anyone else whose certificate has been signed by
+            that CA would be able to accept connections from clients. Instead,
+            you should generate your own CA certificate, and distribute
+            <filename>cacert.crt</filename> to
+            the clients (see <xref linkend="administrator-core.client"/>).
+        </para>
+        <para>
+            To create the CA certificate, enter the <filename
+                class="directory">certs</filename> directory and run
+        </para>
+        <screen><userinput>./makeca.sh</userinput></screen>
+        <para>
+            This will run for a while and then prompt for some details, you
+            can mostly just fill in here whatever you want.  Be warned though
+            that <parameter>Server Name</parameter> isn't exactly what you
+            expect it to be. This is the CN field, and should probably be
+            something like <userinput>AbacusCM CA</userinput>.
+        </para>
+        <para>
+            Once you have created the CA certificate, you need to create a
+            certificate for each server. Theoretically this could be done using
+            certificate requests but this has not been implemented yet as
+            <application>ssh</application> has proven adequate for
+            distributing certificates securely.
+        </para>
+        <para>
+            To create a key for a server you should use the
+            <filename>addserver.sh</filename> script (in <filename
+                class="directory">certs</filename>. This script takes a single
+            parameter, the name of the certificate (usually a short name for
+            the server) e.g.,
+        </para>
+        <screen><userinput>./addserver.sh <replaceable>pug</replaceable></userinput></screen>
+        <para>
+            This will create a key and a certificate request for
+            <replaceable>pug</replaceable> and then proceed to sign that
+            request with the previously generated CA.  Again, you can enter
+            just about any details when prompted. You should however, enter
+            the fully qualified domain name when asked for <parameter>Server
+                name</parameter> (the name that users of the AbacusCM client
+            will enter when connecting to the server). Also be sure to enter a
+            <parameter>State or Province Name</parameter> or it will fail.
+        </para>
+        <para>
+            When the script is done it will symlink the keys and certificates
+            into <filename class="directory">certs</filename> as
+            <filename><replaceable>servername</replaceable>.crt</filename> and
+            <filename><replaceable>servername</replaceable>.key</filename>.
+            You will need to set up the server configuration file to reference
+            them (see <xref linkend="administrator-core.server"/>).
+        </para>
+    </section>
+    <section id="administrator-core.client">
+        <title>Configuring the client</title>
+        <para>
+            Running the abacuscm client requires three things:
+        </para>
+        <itemizedlist>
+            <listitem>
+                <para>
+                    The binary, compiled to <filename>bin/abacus</filename>.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    A certificate used to sign the servers. Contestant
+                    administrators should refer to <xref
+                        linkend="administrator-core.certificates"/> for information
+                    about generating certificates. Anyone else configuring a
+                    client should ask the contest administrator for the
+                    certificate.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    A configuration file. There is a sample configuration file
+                    in <filename>conf/client.conf.sample</filename>. The
+                    client will look for configuration in the following places
+                    (if more than one is found, settings in later files
+                    override those in earlier files):
+                </para>
+                <itemizedlist>
+                    <listitem>
+                        <para><filename>/etc/abacus/client.conf</filename></para>
+                    </listitem>
+                    <listitem>
+                        <para><filename>~/.abacus</filename></para>
+                    </listitem>
+                    <listitem>
+                        <para><filename>abacus.conf</filename> in the current
+                            directory</para>
+                    </listitem>
+                </itemizedlist>
+                <para>
+                    There are two settings you may need to change from the
+                    example configuration file:
+                </para>
+                <itemizedlist>
+                    <listitem>
+                        <para>
+                            Change <parameter>address</parameter> to the
+                            hostname of the default abacuscm server.
+                        </para>
+                    </listitem>
+                    <listitem>
+                        <para>
+                            Change <parameter>cacert</parameter> to the path
+                            to the certificate. Using an absolute path is more
+                            robust, as a relative path will be interpreted
+                            relative to the working directory from which
+                            <command>abacus</command> was started, rather than
+                            the configuration file.
+                        </para>
+                    </listitem>
+                </itemizedlist>
+            </listitem>
+        </itemizedlist>
+        <para>
+            The script <filename>misc/installclient.sh</filename> will install
+            <filename>bin/abacus</filename> to <filename
+                class="directory">/usr/local/bin</filename> and the sample
+            configuration file to
+            <filename>/etc/abacus/client.conf</filename>. You can run this as
+            <systemitem class="username">root</systemitem> to install for
+            all users. It is suggested that if you do this,
+            you place the certificate at
+            <filename>/etc/abacus/cacert.crt</filename>, but this is purely a
+            convention.
+        </para>
+        <para>
+            Of course, it is also possible to run the client directly from
+            the source directory.
+        </para>
+    </section>
+    <section id="administrator-core.server">
+        <title>Configuring a server</title>
+        <para>TODO</para>
+        <section id="administrator-core.server.database">
+            <title>Preparing the database</title>
+            <para>
+                Each server needs its own database. Currently only MySQL is
+                supported as a database backend. The minimal set of privileges
+                is not currently known, and so currently all privileges are
+                given to the database user.
+            </para>
+            <para>
+                Assuming the MySQL server is running on localhost, you can
+                create the database as follows:
+            </para>
+            <screen><prompt># </prompt><userinput>mysql -u root -p -h localhost</userinput>
+<prompt>&gt; </prompt><userinput>create database abacus;</userinput>
+<prompt>&gt; </prompt><userinput>grant all privileges on abacus.* \
+    to abacus@localhost identified by '<replaceable>password</replaceable>';</userinput>
+<prompt>&gt; </prompt><userinput>quit;</userinput></screen>
+            <para>
+                Once the database has been created you need to load the base
+                structure from <filename>db/structure.sql</filename>:
+            </para>
+            <screen><prompt># </prompt><userinput>mysql -u abacus -p -h localhost abacus &lt; db/structure.sql</userinput>
+<computeroutput>Password:</computeroutput></screen>
+            <para>
+                If everything went well you now have a blank database from
+                where the contest can be run. If you want to reset the database
+                in future (after setting up the server configuration file), you
+                can just chdir into <filename class="directory">db</filename>
+                and run
+            </para>
+            <screen><userinput>./reload_sql.sh <optional><replaceable>server.conf</replaceable></optional></userinput></screen>
+        </section>
+        <section id="administrator-core.server.config">
+            <title>Server configuration file</title>
+            <para>
+                You should use the default configuration file
+                (<filename>conf/server.conf.sample</filename>) as a starting
+                point.  You should change the following settings:
+            </para>
+            <procedure>
+                <step>
+                    <para>
+                        Change the settings in the
+                        <literal>[mysql]</literal> section to match the
+                        details of your MySQL server and the account created
+                        in <xref linkend="administrator-core.server.database"/>.
+                    </para>
+                </step>
+                <step>
+                    <para>
+                        In the <literal>[clientlistener]</literal> section,
+                        change the <parameter>x509</parameter> and
+                        <parameter>private</parameter> options to the server
+                        certificate and private key (see <xref
+                            linkend="administrator-core.certificates"/>).
+                    </para>
+                </step>
+                <step>
+                    <para>
+                        In the <literal>[initialisation]</literal> section,
+                        make sure the <parameter>type</parameter> is
+                        <literal>master</literal>, and that the
+                        <parameter>name</parameter> matches the parameter
+                        passed to <command>addserver.sh</command>.
+                    </para>
+                </step>
+                <step>
+                    <para>
+                        Set <parameter>admin_password</parameter> to a
+                        password that the contest administrator will use. Note
+                        that this only takes effect the first time the server
+                        is started. After that, the password is stored in the
+                        database, and this setting has no effect. It need not
+                        be the same as the database password.
+                    </para>
+                </step>
+                <step>
+                    <para>
+                        In the <literal>[init_attribs]</literal> section,
+                        set <parameter>ip</parameter> to the IP address of the
+                        server.
+                    </para>
+                </step>
+            </procedure>
+        </section>
+        <section id="administrator-core.server.keys">
+            <title>Server encryption keys</title>
+            <para>
+                You will need to generate a secret key that is used for
+                server-to-server encryption (if there are multiple servers in
+                a contest, they must all use the same secret key). This can be
+                done as follows:
+            </para>
+            <screen><prompt># </prompt><userinput>dd if=/dev/random of=conf/rijndael.key bs=32 count=1</userinput>
+<prompt># </prompt><userinput>dd if=/dev/random of=conf/rijndael.iv bs=16 count=1</userinput></screen>
+        </section>
+        <section id="administrator-core.server.running">
+            <title>Running the server</title>
+            <para>
+                The server can be started as follows (if no configuration file
+                is specified on the command line,
+                <filename>/etc/abacus/server.conf</filename> is used):
+            </para>
+            <screen><prompt># </prompt><userinput>bin/abacusd <optional>conf/server.conf</optional></userinput>
+<computeroutput>Sun Nov 28 13:11:50 2010 [INFO]: Loading module dbmysql
+...
+Sun Nov 28 19:13:07 2010 [NOTICE]: Added server '<replaceable>pug</replaceable>'
+Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
+            <para>
+                To shut down the server, press
+                <keycombo>
+                    <keycap>Ctrl</keycap>
+                    <keycap>C</keycap>
+                </keycombo>. This will gracefully save the server state and
+                disconnect all clients. Starting the server again will restore
+                the state.
+            </para>
+        </section>
+    </section>
+    <section id="administrator-core.multiserver">
+        <title>Multi-server contests</title>
+        <para>TODO</para>
+    </section>
+    <section id="administrator-core.adduser">
+        <title>Adding users</title>
+        <para>
+            TODO: more detailed instructions on the actual creation
+            process
+        </para>
+        <para>
+            Abacus supports the following types of users:
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term>Contestant</term>
+                <listitem>
+                    <para>
+                        Contestants are the regular users of the system, who
+                        make submissions and show up in the standings.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Observer</term>
+                <listitem>
+                    <para>
+                        Observers are unofficial contestants. Like contestants,
+                        they can submit solutions, but they don't show up in
+                        the contestants' view of standings. Observers do not
+                        have any special access to information like the secret
+                        inputs or the last-hour standings, but they can choose
+                        to view standings that include other observers.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Proctor</term>
+                <listitem>
+                    <para>
+                        This type is user was created specifically for contests
+                        where the judges are off-site while prizes are awarded
+                        on-site before the results are officially published.
+                        This type of user cannot submit, but does have access
+                        to the full standings.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Judge</term>
+                <listitem>
+                    <para>
+                        Judges are responsible for answering clarification
+                        requests and passing judgement where the automated
+                        marking software does not make a decision. They are
+                        given access to privileged information (such as the
+                        secret inputs and expected outputs, the full list of
+                        submissions, the current standings etc), but cannot
+                        take administrative actions such as starting or
+                        stopping the contest.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Marker</term>
+                <listitem>
+                    <para>
+                        This user type is only intended for the automated
+                        marking software to use. Judges should not use this
+                        user type.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Administrator</term>
+                <listitem>
+                    <para>
+                        The administrator has almost limitless power, although
+                        to prevent accidents, is not allowed to submit
+                        solutions. The administrator is the only user type
+                        that can create problems, create users, start or stop
+                        the contest, override incorrect judging, etc.
+                    </para>
+                    <para>
+                        Due to some quirks in the way marking conflicts are
+                        resolved, it is currently recommended to only ever use
+                        the administrator account created when abacus is
+                        initialised, with username <systemitem
+                            class="username">admin</systemitem>.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </section>
+    <section id="administrator-core.addproblem">
+        <title>Adding problems</title>
+        <section id="administrator-core.addproblem.interactive">
+            <title>Interactive problems</title>
+            <para>TODO</para>
+        </section>
+        <section id="administrator-core.addproblem.dependencies">
+            <title>Problem dependencies</title>
+            <para>TODO</para>
+        </section>
+    </section>
+    <section id="administrator-core.marking">
+        <title>Configuring the markers</title>
+        <para>
+            The simplest way to install a marker is to run
+            <filename>misc/installmarker.sh</filename> (this requires you to
+            be <systemitem class="username">root</systemitem>, and then edit
+            the configuration file. Note that the installation process will
+            create a group called <systemitem
+                class="groupname">markerd</systemitem> and a setuid
+            binary called <filename>runlimit</filename> that is executable by
+            this group.
+        </para>
+        <para>
+            The marker will need an Abacus account. You can create one though
+            the GUI (using the <systemitem class="username">admin</systemitem>
+            account, or you can use the command-line
+            <command>adduser</command> tool:
+        </para>
+        <screen><userinput>bin/adduser <replaceable>abacus.conf</replaceable> admin <replaceable>adminpass</replaceable> \
+    <replaceable>marker1</replaceable> "<replaceable>Marker A</replaceable>" <replaceable>markpass</replaceable> marker</userinput></screen>
+        <para>
+            There are several configuration file options you will need to
+            change:
+        </para>
+        <procedure>
+            <step>
+                <para>
+                    In the <literal>[server]</literal> section, configure
+                    <parameter>address</parameter> and
+                    <parameter>cacert</parameter> as described in <xref
+                        linkend="administrator-core.client"/>. Also set the
+                    <parameter>username</parameter> and
+                    <parameter>password</parameter> to the Abacus marker
+                    account. You can use the
+                    same account for several marker machines, but
+                    troubleshooting will be easier if each marker machine uses
+                    its own account.
+                </para>
+            </step>
+            <step>
+                <para>
+                    In the <literal>[compilers]</literal>,
+                    <literal>[java]</literal> and <literal>[python]</literal>
+                    sections, configure the paths to the compilers and
+                    interpreters. The <literal>[java]</literal>
+                    <parameter>policy</parameter> must point at the policy
+                    file provided with the abacuscm source bundle.
+                </para>
+            </step>
+            <step>
+                <para>
+                    In the <literal>[marker]</literal> section, the
+                    <parameter>workdir</parameter> is used as the argument to
+                    <function>mkdtemp</function>. If the marker has lots of
+                    spare memory, it would make sense to use a <systemitem
+                        class="filesystem">tmpfs</systemitem> filesystem.
+                    Additionally, <parameter>runlimit</parameter> must be set
+                    to the path to the <filename>runlimit</filename> binary.
+                </para>
+            </step>
+        </procedure>
+        <para>
+            The marker can be run under a normal user account, as long as that
+            user is in the <systemitem class="groupname">markerd</systemitem>
+            group. Since members of this group can run the
+            <filename>runlimit</filename> setuid binary, only trusted users
+            should be placed in this group.
+        </para>
+        <para>
+            Once everything is configured, the marker is started by running
+        </para>
+        <screen><userinput><command>markerd</command> <optional><replaceable>marker.conf</replaceable></optional></userinput></screen>
+        <para>
+            This will connect to the server and mark solutions. If the
+            connection fails, it will automatically reconnect to the server.
+            If the file <filename>/etc/abacus/marker.conf</filename> exists,
+            it is used to obtain options regardless of whether a configuration
+            file is provided on the command-line. If both are present, options
+            in the command-line configuration file take precedence.
+        </para>
+        <para>
+            The marker is designed to have only one instance running on a
+            system. It is possible to run multiple instances by using a
+            different configuration file for each instance, with different
+            users and groups (to prevent marked solutions from interfering
+            with each other). This is not recommended, as solutions undergoing
+            evaluation may contend for memory bandwidth or CPU execution
+            units, making timing less accurate.
+        </para>
+    </section>
+    <section id="administrator-core.judging">
+        <title>Judging</title>
+        <para>TODO</para>
+    </section>
+    <section id="administrator-core.online-standings">
+        <title>Online standings</title>
+        <para>
+            The <command>standings</command> is used to generate standings that
+            can be viewed from a web browser, with automatic updates. To set
+            this up, follow these steps:
+        </para>
+        <procedure>
+            <step>
+                <para>
+                    Copy <filename>misc/standings/standings.pl</filename> to a
+                    <filename class="directory">cgi-bin</filename> directory
+                    (if you have the rights to do so).
+                </para>
+            </step>
+            <step>
+                <para>
+                    Tweak the settings at the top of
+                    <filename>standings.pl</filename>.
+                </para>
+            </step>
+            <step id="administrator-core.online-standings.non-cgi">
+                <para>
+                    Copy the other files from <filename
+                        class="directory">misc/standings</filename> to a
+                    normal web server directory.
+                </para>
+            </step>
+            <step>
+                <para>
+                    Make any tweaks to <filename>standings.html</filename>
+                    <filename>standings.css</filename> to your taste (leave in
+                    the magic HTML comments, which are used by the Perl script to fill in
+                    content).
+                </para>
+            </step>
+            <step>
+                <para>
+                    Run
+                </para>
+                <screen><command>bin/standings <replaceable>client.conf</replaceable> <replaceable>/www-data</replaceable>/standings.txt</command></screen>
+                <para>
+                    where <replaceable>/www-data</replaceable> is the
+                    directory where the files were placed in <xref
+                        linkend="administrator-core.online-standings.non-cgi"/>. If
+                    the filename is omitted, it will write to
+                    <filename>standings.txt</filename> in the current
+                    directory.
+                </para>
+                <para>
+                    This will prompt you for a username and passwork to
+                    connect to the server. You can use any account, but the
+                    standings display will be whatever that account is
+                    authorised. Thus, if you want the online standings to
+                    reflect the contestants' view, use a dummy contestant
+                    account.
+                </para>
+            </step>
+        </procedure>
+        <para>
+            You can now point a web browser at either
+            <filename>standings.pl</filename> or
+            <filename>standings.html</filename>.
+            The former requires CGI, but has the advantage that it will work
+            even without Javascript enabled (but will not auto-update or have
+            any nice animations). If you use <filename>standings.pl</filename>
+            file, then <filename>standings.html</filename> is needed only to
+            provide a template.
+        </para>
+        <note>
+            <para>
+                The files in <filename
+                    class="directory">misc/standings/js</filename> are
+                third-party and contains their own licenses.
+            </para>
+        </note>
+    </section>
+    <section id="administrator-core.cmdline">
+        <title>Other command-line tools</title>
+        <section id="administrator-core.cmdline.batch">
+            <title>Batch</title>
+            <para>
+                The tool <filename>bin/batch</filename> is intended primarily
+                for testing abacus itself, although it can be used to automate
+                tasks that would normally be done through the GUI, and for
+                which there is currently no command-line tool. It is invoked
+                as
+            </para>
+            <cmdsynopsis>
+                <command>bin/batch</command>
+                <arg choice="plain"><replaceable>configfile</replaceable></arg>
+                <arg><replaceable>batchfile</replaceable></arg>
+            </cmdsynopsis>
+            <para>
+                The <replaceable>configfile</replaceable> is a client config
+                file, as would be used by the abacus client.
+                The <replaceable>batchfile</replaceable> contains messages to
+                send to the server. If omitted, standard input is used
+                instead.
+            </para>
+            <para>
+                Messages are specified in the form
+            </para>
+            <synopsis><replaceable>type</replaceable>
+<replaceable>key</replaceable>:<replaceable>value</replaceable>
+<replaceable>key</replaceable>:<replaceable>value</replaceable>
+&hellip;</synopsis>
+            <para>
+                There may optionally be a blank line between messages, but
+                <emphasis>NOT</emphasis> within a message. A blank line also
+                flushes the current message, which may be convenient if using
+                it interactively. Lines beginning with a <literal>#</literal>
+                are ignored.
+            </para>
+            <para>
+                For details of the valid types and keys, refer to <xref
+                    linkend="developer-core.csprotocol.client"/>. As an example, the
+                first message will generally be
+            </para>
+            <screen><userinput>auth
+user:<replaceable>username</replaceable>
+pass:<replaceable>password</replaceable></userinput></screen>
+            <para>
+                in order to log in.
+            </para>
+            <para>
+                It is also possible to set content to send with messages. This
+                can be done in two ways:
+            </para>
+            <orderedlist>
+                <listitem>
+                    <para>
+                        Add a line of the form
+                        <userinput>&lt;<replaceable>filename</replaceable></userinput>.
+                        This file will be sucked in and appended to the content
+                        block of the message. This is suitable for use with the
+                        <type>submit</type> message type.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Add a line of the form
+                        <userinput><replaceable>key</replaceable>&lt;<replaceable>filename</replaceable></userinput>.
+                        The file will again be sucked in and appended to the
+                        content block, but a header line for
+                        <parameter>key</parameter> will also be generated to
+                        indicate the location within the content block and the
+                        base filename. This is suitable for use with the
+                        <type>setprobattrs</type> message type.
+                    </para>
+                </listitem>
+            </orderedlist>
+            <para>
+                It is possible to make assertions about the values returned
+                from commands. This can be used for testing Abacus, as well as
+                for sanity-checking the results. To do this, immediately
+                follow the message with the expected reply, with each line
+                prefixed by a <literal>?</literal> e.g.
+            </para>
+            <synopsis>getusers
+?ok
+?id0:1
+?username0:admin
+?id1:17
+?username1:test1</synopsis>
+            <para>
+                In some cases, the exact values won't be known. A value of
+                <literal>*</literal> will match any value; a line of the form
+                <literal>?*:*</literal> will accept any headers. At present,
+                attached content is ignored when doing comparisons (although
+                you can use <literal>content-length:*</literal> to assert that
+                there is attached content.
+            </para>
+            <note>
+                <para>
+                    There must not be a blank line between the message and the
+                    expected response.
+                </para>
+            </note>
+        </section>
+        <section>
+            <title>Other</title>
+            <para>TODO: finish</para>
+        </section>
+    </section>
+    <section id="administrator-core.troubleshooting">
+        <title>Trouble-shooting</title>
+        <section id="administrator-core.troubleshooting.ack_id">
+            <title><computeroutput>ack_id == 0 cannot possibly be correct</computeroutput></title>
+            <para>
+                The complete error message would read:
+                <computeroutput>
+                    ack_id == 0 cannot possibly be correct.  This could
+                    potentially happen if/when a server did not initialise
+                    properly upon first creation (the first PeerMessage a
+                    server receives must be its own initialisation message.
+                    Please see the administrator's manual for more
+                    information.
+                </computeroutput>
+            </para>
+            <para>
+                Abacus sends the message to create a particular server to that
+                particular server directly after creating that server.  It does
+                this from all existing servers to increase the chances of this
+                message getting through as it is of critical importance that
+                this is the first message to get there.
+            </para>
+            <para>
+                Unfortunately if this should fail it will mean that there is no
+                way to ensure that it is that particular message that gets
+                re-sent (well, not that I'm aware off &mdash; other than to
+                perhaps connect a priority to the NoAcks).  Consequently the
+                servers that are up will tend to send some other message upon
+                reconnect.  There are two possibly ways to "fix" this.
+            </para>
+            <itemizedlist>
+                <listitem>
+                    <para>Delete the records from <database
+                            class="table">PeerMessageNoAck</database> that
+                        refers to PeerMessage records earlier than that of the
+                        <type>addserver</type> message.  You need to know
+                        exactly what the message id is for this to work.  This
+                        can be done on a live running server.  If you only had
+                        one server up and running, you need to put these
+                        records back when you are done.  This can be done with
+                        the SQL statement:
+                    </para>
+                    <screen><userinput>INSERT INTO PeerMessageNoAck SELECT \
+    server_id, message_id, <replaceable>server</replaceable>, 0 FROM PeerMessage;</userinput></screen>
+                    <para>
+                        where <replaceable>server</replaceable> is the numeric
+                        id of the server to be added.  This will cause too many
+                        messages to be resent, but your server will be up.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        You can put a record into the <database
+                            class="table">Server</database> table on the
+                        affected server, i.e., the one that does not want to
+                        initialise.  This record needs to contain the correct
+                        name and ID of the server.  This part can be done on a
+                        running server.  The processing of the
+                        <type>addserver</type> message will fail.  This is
+                        non-critical (in this case).  Shut down the server,
+                        delete the added record and restart the abacus daemon.
+                        All should now be well.
+                    </para>
+                </listitem>
+            </itemizedlist>
+        </section>
+    </section>
+</chapter>

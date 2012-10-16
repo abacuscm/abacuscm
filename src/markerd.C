@@ -36,6 +36,7 @@ static void server_close(const MessageBlock*, void*) {
 }
 
 int main(int argc, char **argv) {
+	ServerConnection::init();
 	/* Guarantee a standard style of error messages from tools */
 	setenv("LC_ALL", "C", 1);
 

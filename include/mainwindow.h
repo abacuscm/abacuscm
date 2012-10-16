@@ -17,10 +17,12 @@
 #include "ui_logindialog.h"
 
 #include "serverconnection.h"
+#include "permissions.h"
 
 #include <map>
 #include <set>
 #include <string>
+#include <vector>
 #include <utility>
 #include <qiconset.h>
 
@@ -49,7 +51,8 @@ private:
 
 	ServerConnection _server_con;
 
-	std::string _active_type;
+	PermissionSet _active_permissions;
+	std::string _active_user;
 
 	std::set<uint32_t> _subscribed_problems;
 
@@ -63,8 +66,7 @@ private:
 	std::map<uint32_t, SubmissionItem *> submissionMap;
 	std::map<uint32_t, StandingItem *> standingMap;
 
-	void triggerType(std::string type, bool status);
-	void switchType(std::string type);
+	void switchPermissions(const std::vector<std::string> &permissions);
 
 	/* Indicate that a tab does/does not have new information */
 	void setAlert(QWidget *tab);
@@ -122,8 +124,6 @@ public:
 
 	virtual void updateStandings() { updateStandings(NULL); }
 	virtual void updateSubmissions() { updateSubmissions(NULL); }
-
-	std::string getActiveType();
 };
 
 #endif

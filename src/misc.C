@@ -15,7 +15,7 @@ const char * const runMessages[OTHER + 1] = {
 	"Time limit exceeded",
 	"Abnormal termination of program",
 	"Compilation failed",
-	"Defered to judge",
+	"Deferred to judge",
 	"Format error",
 	"Other - contact a judge"
 };

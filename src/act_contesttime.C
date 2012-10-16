@@ -15,40 +15,39 @@
 #include "misc.h"
 
 #include <sstream>
+#include <memory>
+
+using namespace std;
 
 class ActContesttime : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection* cc, MessageBlock*mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection* cc, const MessageBlock*mb);
 };
 
-bool ActContesttime::int_process(ClientConnection* cc, MessageBlock*) {
+auto_ptr<MessageBlock> ActContesttime::int_process(ClientConnection*, const MessageBlock*) {
 	TimerSupportModule *timer = getTimerSupportModule();
 	uint32_t server_id = Server::getId();
 	uint32_t contesttime = timer->contestTime(server_id);
 	uint32_t contestremain = timer->contestDuration() - contesttime;
 	bool running = timer->contestStatus(server_id) == TIMER_STATUS_STARTED;
 
-	std::ostringstream os;
+	ostringstream os;
 
-	MessageBlock res("ok");
-	res["running"] = running ? "yes" : "no";
+	auto_ptr<MessageBlock> res(MessageBlock::ok());
+	(*res)["running"] = running ? "yes" : "no";
 
 	os << contesttime;
-	res["time"] = os.str();
+	(*res)["time"] = os.str();
 
 	os.str("");
 	os << contestremain;
-	res["remain"] = os.str();
+	(*res)["remain"] = os.str();
 
-	return cc->sendMessageBlock(&res);
+	return res;
 }
 
 static ActContesttime _act_contesttime;
 
-static void init() __attribute__((constructor));
-static void init() {
-	ClientAction::registerAction(USER_TYPE_ADMIN, "contesttime", &_act_contesttime);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "contesttime", &_act_contesttime);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "contesttime", &_act_contesttime);
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "contesttime", &_act_contesttime);
+extern "C" void abacuscm_mod_init() {
+	ClientAction::registerAction("contesttime", PERMISSION_AUTH, &_act_contesttime);
 }

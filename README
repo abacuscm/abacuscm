@@ -1,0 +1,3 @@
+The documentation is maintained in DocBook. To build it, change directory to
+doc/docbook and run make, then look for the documentation in doc/html. A PDF
+can be built by running `make pdf'.

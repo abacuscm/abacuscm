@@ -18,6 +18,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <netdb.h>
+#include <set>
 
 #include "peermessenger.h"
 #include "logger.h"
@@ -86,7 +87,7 @@ private:
 		UDTCPPeerMessenger* _messenger;
 	public:
 		UDPReceiver(int sock, UDTCPPeerMessenger* messenger);
-		bool process();
+		virtual short socket_process();
 	};
 
 	class TCPRetriever : public Socket {
@@ -101,7 +102,7 @@ private:
 		TCPRetriever(UDTCPPeerMessenger* messenger, uint32_t server_id, uint32_t message_id, uint32_t size, uint32_t init_server);
 		~TCPRetriever();
 
-		bool process();
+		virtual short socket_process();
 		void addSourceServer(uint32_t server);
 	};
 
@@ -137,11 +138,11 @@ static void log_ciphers(const OBJ_NAME *name, void*);
 
 UDTCPPeerMessenger::UDPReceiver::UDPReceiver(int sock, UDTCPPeerMessenger *messenger)
 {
-	sockfd() = sock;
+	initialise(sock, POLLIN);
 	_messenger = messenger;
 }
 
-bool UDTCPPeerMessenger::UDPReceiver::process()
+short UDTCPPeerMessenger::UDPReceiver::socket_process()
 {
 	ssize_t bytes_received;
 	int packet_size, tlen;
@@ -153,19 +154,19 @@ bool UDTCPPeerMessenger::UDPReceiver::process()
 		struct st_frame frame;
 	};
 
-	bytes_received = recvfrom(sockfd(), inbuffer, BUFFER_SIZE + MAX_BLOCKSIZE,
+	bytes_received = recvfrom(getSock(), inbuffer, BUFFER_SIZE + MAX_BLOCKSIZE,
 			MSG_TRUNC, (struct sockaddr*)&from, &fromlen);
 	if(bytes_received == -1) {
 		if(errno != EINTR)
 			lerror("recvfrom");
-		return errno != EBADF;
+		return (errno != EBADF) ? POLLIN : 0;
 	}
 
 	if(bytes_received > BUFFER_SIZE + MAX_BLOCKSIZE) {
 		log(LOG_WARNING, "Discarding frame of size %u since it is "
 				"bigger than the buffer (%d bytes)",
 				(unsigned)bytes_received, BUFFER_SIZE + MAX_BLOCKSIZE);
-		return true;
+		return POLLIN;
 	}
 
 	EVP_CIPHER_CTX dec_ctx;
@@ -231,7 +232,7 @@ bool UDTCPPeerMessenger::UDPReceiver::process()
 
 	EVP_CIPHER_CTX_cleanup(&dec_ctx);
 
-	return true;
+	return POLLIN;
 }
 
 UDTCPPeerMessenger::TCPRetriever::TCPRetriever(UDTCPPeerMessenger* messenger, uint32_t server_id, uint32_t message_id, uint32_t size, uint32_t init_server)
@@ -247,7 +248,7 @@ UDTCPPeerMessenger::TCPRetriever::~TCPRetriever()
 {
 }
 
-bool UDTCPPeerMessenger::TCPRetriever::process()
+short UDTCPPeerMessenger::TCPRetriever::socket_process()
 {
 	uint8_t *blob = (uint8_t*)malloc(_size);
 	uint32_t pos = 0;
@@ -260,7 +261,7 @@ bool UDTCPPeerMessenger::TCPRetriever::process()
 	if (!blob) {
 		log (LOG_CRIT, "Error allocating %d bytes of memory for receiving blob.", _size);
 		_messenger->removeTCPReceiver(_server_id, _message_id);
-		return false;
+		return 0;
 	}
 
 	str << _server_id;
@@ -372,7 +373,7 @@ quit:
 		free(blob);
 	if (ctx)
 		SSL_CTX_free(ctx);
-	return false;
+	return 0;
 }
 
 void UDTCPPeerMessenger::TCPRetriever::addSourceServer(uint32_t server)
@@ -400,7 +401,7 @@ void UDTCPPeerMessenger::notifyTCPMessage(uint32_t server_id, uint32_t message_i
 	if (tr != _tcp_retrievers[server_id].end())
 		tr->second->addSourceServer(sending_server);
 	else
-		Server::putSocket(_tcp_retrievers[server_id][message_id] = new TCPRetriever(this, server_id, message_id, size, sending_server), true);
+		Server::putWaitable(_tcp_retrievers[server_id][message_id] = new TCPRetriever(this, server_id, message_id, size, sending_server), true);
 }
 
 UDTCPPeerMessenger::UDTCPPeerMessenger() {
@@ -559,7 +560,7 @@ bool UDTCPPeerMessenger::startup() {
 		goto err;
 	}
 
-	Server::putSocket(new UDPReceiver(_sock, this));
+	Server::putWaitable(new UDPReceiver(_sock, this));
 
 	log(LOG_INFO, "UDTCPPeerMessenger started up");
 	return true;
@@ -816,7 +817,7 @@ private:
 
 	uint32_t auth_cred;
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 public:
 	TCPTransmitAction();
 	~TCPTransmitAction();
@@ -839,7 +840,7 @@ TCPTransmitAction::~TCPTransmitAction()
 	pthread_mutex_destroy(&_lock_map);
 }
 
-bool TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
+auto_ptr<MessageBlock> TCPTransmitAction::int_process(ClientConnection *, const MessageBlock *mb)
 {
 #if 0
 	// NOTE: This authentication is WEAK!! TODO
@@ -849,12 +850,14 @@ bool TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
 		return false;
 #endif
 
+	auto_ptr<MessageBlock> resp;
+
 	uint32_t server_id = strtoull((*mb)["server_id"].c_str(), NULL, 10);
 	uint32_t message_id = strtoull((*mb)["message_id"].c_str(), NULL, 10);
 	uint32_t skip = strtoull((*mb)["skip"].c_str(), NULL, 10);
 
 	if (!server_id || !message_id)
-		return false;
+		return MessageBlock::error("Ill-formed message");
 
 	MessageContainer *mc = NULL;
 	{
@@ -872,7 +875,7 @@ bool TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
 		if (!mc) {
 			DbCon *db = DbCon::getInstance();
 			if (!db)
-				return false;
+				return MessageBlock::error("Could not connect to database");
 
 			ostringstream query;
 			query << "SELECT message_type_id, time, signature, data FROM PeerMessage WHERE server_id=" << server_id << " AND message_id=" << message_id;
@@ -881,7 +884,7 @@ bool TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
 			db->release(); db = NULL;
 
 			if (row.empty())
-				return false;
+				return MessageBlock::error("Message not found");
 
 			uint8_t *signature = new uint8_t[row[2].length()];
 			uint8_t *data = new uint8_t[row[3].length()];
@@ -906,13 +909,14 @@ bool TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
 
 	ostringstream str;
 
-	bool ret;
 	if (skip < mc->blob_size) {
-		MessageBlock rt("udtcppeermessageput");
-		rt.setContent((char*)mc->message_blob + skip, mc->blob_size - skip, false); /* SHARED DATA COPY */
-		ret = cc->sendMessageBlock(&rt);
-	} else
-		ret = false;
+		resp.reset(new MessageBlock("udtcppeermessageput"));
+		resp->setContent((char*)mc->message_blob + skip, mc->blob_size - skip, false); /* SHARED DATA COPY */
+	} else {
+		// TODO: what should happen here? It used to say
+		// ret = false;
+		resp = MessageBlock::error("skip < block_size");
+	}
 
 	{
 		ScopedLock _(&_lock_map);
@@ -925,8 +929,7 @@ bool TCPTransmitAction::int_process(ClientConnection *cc, MessageBlock *mb)
 				_message_map.erase(s);
 		}
 	}
-
-	return ret;
+	return resp;
 }
 
 static TCPTransmitAction _act_getmsg;
@@ -940,10 +943,8 @@ static void log_ciphers(const OBJ_NAME *name, void*) {
 //////////////////////////////////////////////////////////////
 static UDTCPPeerMessenger _udtcpPeerMessenger;
 
-static void udtcp_peer_messenger_init() __attribute__ ((constructor));
-static void udtcp_peer_messenger_init()
-{
-	ClientAction::registerAction(USER_TYPE_NONE, "udtcppeermessageget", &_act_getmsg);
+extern "C" void abacuscm_mod_init() {
+	ClientAction::registerAction("udtcppeermessageget", !PERMISSION_AUTH, &_act_getmsg);
 	// double check that gcc actually did the right thing with the __attribute__ ((packed)).
 	// If we don't register the messenger abacusd will detect it and abort.
 	if(sizeof(st_frame) != ST_FRAME_SIZE)

@@ -1,7 +1,0 @@
-# Run this one after batch1.in and batch2.in. It connects as a judge and
-# examines some things.
-
-getsubmissionsource
-submission_id:1
-
-standings

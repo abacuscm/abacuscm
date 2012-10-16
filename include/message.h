@@ -14,6 +14,7 @@
 # include <config.h>
 #endif
 #include <stdint.h>
+#include <semaphore.h>
 #include <map>
 
 #define MESSAGE_SIGNATURE_SIZE		128
@@ -43,11 +44,16 @@ private:
 	uint8_t *_signature;
 	uint32_t _blob_size;
 	struct st_blob *_blob;
+	sem_t   *_watcher;
 
 	bool buildMessage(uint32_t server_id, uint32_t message_id,
 			uint32_t time, uint8_t *signature, uint8_t *data,
 			uint32_t data_len, struct st_blob *blob, uint32_t blob_size);
 	void makeBlob();
+
+	// Prevent copying
+	Message(const Message &);
+	Message &operator =(const Message &);
 protected:
 	/**
 	 * This function needs to return the size requirements for
@@ -91,19 +97,26 @@ protected:
 	 * strings there need to be in a particular area of a buffer.
 	 */
 	bool checkStringTerms(const uint8_t* buf, uint32_t sz, uint32_t nzeros = 1);
+
+	/**
+	 * This function is the core of message processing. The generic boilerplate
+	 * (recording processing in the database and waking up appropriate callers)
+	 * is handled by Message::process.
+	 */
+	virtual bool int_process() const = 0;
 public:
 	Message();
 	virtual ~Message();
 
-	/**
-	 * This function is a placeholder for implementing the
-	 * functionality required to act upon the message.
-	 */
-	virtual bool process() const = 0;
+	uint32_t server_id() const { return _server_id; }
+	uint32_t message_id() const { return _message_id; }
+	uint32_t time() const { return _time; }
 
-	uint32_t server_id() const { return _server_id; };
-	uint32_t message_id() const { return _message_id; };
-	uint32_t time() const { return _time; };
+	/**
+	 * Processes the message and records it as processed in the database.
+	 * Also notifies any semaphore set with setWatcher.
+	 */
+	bool process();
 
 	/**
 	 * This function needs to return the message_type_id for
@@ -148,6 +161,13 @@ public:
 	 * This buffer won't be encrypted.
 	 */
 	bool getData(const uint8_t ** buffer, uint32_t *size) const;
+
+	/**
+	 * Requests notification after the message is processed. The given
+	 * semaphore is posted. Note that there can only be one watcher per
+	 * message.
+	 */
+	void setWatcher(sem_t *watcher);
 
 	/**
 	 * All subclasses of Message should get registered via this call.

@@ -29,6 +29,7 @@
 #include "ui_compileroutputdialog.h"
 #include "misc.h"
 #include "score.h"
+#include "permissions.h"
 #include "alert.xpm"
 #include "quiet.xpm"
 
@@ -802,30 +803,50 @@ void MainWindow::setAlert(QWidget *tab) {
 		maintabs->setTabIconSet(tab, alertIcon);
 }
 
-void MainWindow::triggerType(std::string type, bool status) {
-	if(type == "admin") {
-		signalAdminControls(status);
-		signalJudgeControls(status);
-	} else if(type == "judge")
-		signalJudgeControls(status);
-	else if(type == "contestant")
-		signalContestantControls(status);
-	else if(type == "observer")
-		signalObserverControls(status);
-	else
-		log(LOG_ERR, "Unknown control-type '%s'.", type.c_str());
-}
+void MainWindow::switchPermissions(const std::vector<std::string> &permissions) {
+	static void (MainWindow::* const handlers[PERMISSION_COUNT])(bool) = {
+		&MainWindow::signalAuthControls,
+		&MainWindow::signalSubmitControls,
+		&MainWindow::signalClarificationRequestControls,
+		&MainWindow::signalClarificationReplyControls,
+		&MainWindow::signalChangePasswordControls,
+		&MainWindow::signalInStandingsControls,
+		&MainWindow::signalSeeStandingsControls,
+		&MainWindow::signalSeeAllStandingsControls,
+		&MainWindow::signalSeeFinalStandingsControls,
+		&MainWindow::signalSeeAllClarificationRequestsControls,
+		&MainWindow::signalSeeAllClarificationsControls,
+		&MainWindow::signalSeeAllSubmissionsControls,
+		&MainWindow::signalSeeAllProblemsControls,
+		&MainWindow::signalSeeProblemDetailsControls,
+		&MainWindow::signalSeeSubmissionDetailsControls,
+		&MainWindow::signalSeeUserIdControls,
+		&MainWindow::signalMarkControls,
+		&MainWindow::signalJudgeControls,
+		&MainWindow::signalJudgeOverrideControls,
+		&MainWindow::signalUserAdminControls,
+		&MainWindow::signalProblemAdminControls,
+		&MainWindow::signalServerAdminControls,
+		&MainWindow::signalStartStopControls
+	};
 
-void MainWindow::switchType(std::string type) {
-	log(LOG_DEBUG, "Changing active type from '%s' to '%s'",
-			_active_type.c_str(), type.c_str());
-	if(_active_type != "")
-		triggerType(_active_type, false);
+	PermissionSet new_perms;
+	for (std::size_t i = 0; i < permissions.size(); i++) {
+		Permission perm = getPermissionValue(permissions[i]);
+		if (perm == PERMISSION_INVALID) {
+			log(LOG_WARNING, "Unknown permission '%s'", permissions[i].c_str());
+		}
+		else {
+			new_perms[perm] = true;
+		}
+	}
+	_active_permissions = new_perms;
 
-	_active_type = type;
-
-	if(_active_type != "")
-		triggerType(_active_type, true);
+	for (std::size_t i = 0; i < PERMISSION_COUNT; i++) {
+		log(LOG_DEBUG, "Setting permission for '%s' to %s",
+			getPermissionName(static_cast<Permission>(i)), new_perms[i] ? "true" : "false");
+		(this->*handlers[i])(new_perms[i]);
+	}
 }
 
 void MainWindow::doTimer() {
@@ -861,13 +882,9 @@ void MainWindow::doFileConnect() {
 			std::string uname = _login_dialog.username->text();
 			std::string pass = _login_dialog.password->text();
 			if(_server_con.auth(uname, pass)) {
-				std::string type = _server_con.whatAmI();
-				switchType(type);
-				fileConnectAction->setEnabled(false);
-				fileDisconnectAction->setEnabled(true);
-				abacusForce_RefreshAction->setEnabled(true);
-				changePasswordAction->setEnabled(true);
-				clarifyButton->setEnabled(true);
+				_active_user = uname;
+				std::vector<std::string> permissions = _server_con.getPermissions();
+				switchPermissions(permissions);
 
 				_server_con.registerEventCallback("updatesubmissions", updateSubmissionsFunctor, NULL);
 				_server_con.registerEventCallback("updatestandings", updateStandingsFunctor, NULL);
@@ -902,26 +919,22 @@ void MainWindow::doFileDisconnect() {
 		return;
 	}
 
-	fileConnectAction->setEnabled(true);
-	fileDisconnectAction->setEnabled(false);
-	abacusForce_RefreshAction->setEnabled(false);
-	changePasswordAction->setEnabled(false);
-	clarifyButton->setEnabled(false);
 	setQuiet(tabAbacus);
 	setQuiet(tabStandings);
 	setQuiet(tabClarificationRequests);
 	setQuiet(tabClarifications);
 	setQuiet(tabSubmissions);
 
-	switchType("");
+	switchPermissions(std::vector<std::string>());
 	doForceRefresh();
 }
 
 void MainWindow::doChangePassword() {
 	ChangePasswordDialog change_password_dialog;
 	vector<UserInfo> users;
+	bool any_user = _active_permissions[PERMISSION_USER_ADMIN];
 
-	if (_active_type == "admin")
+	if (any_user)
 	{
 		users = _server_con.getUsers();
 		for(vector<UserInfo>::iterator i = users.begin(); i != users.end(); i++)
@@ -939,7 +952,7 @@ void MainWindow::doChangePassword() {
 		}
 
 		bool result = false;
-		if (_active_type == "admin")
+		if (any_user)
 		{
 			int index = change_password_dialog.user->currentItem();
 			result = _server_con.changePassword(users[index].id, password);
@@ -1133,7 +1146,7 @@ void MainWindow::doAdminStartStop() {
 }
 
 void MainWindow::doSubmit() {
-	vector<ProblemInfo> probs = _server_con.getSubmissibleProblems();
+	vector<ProblemInfo> probs = _server_con.getProblems();
 	if(probs.empty()) {
 		QMessageBox::critical(this, "Error", "There are no active problems to submit solutions for!", "O&k");
 		return;
@@ -1204,7 +1217,7 @@ void MainWindow::doSubmit() {
 // choose the correct problem id from the list. If submission_id is specified, then we automatically
 // populate the request's text with a header that includes the submission id.
 void MainWindow::clarificationRequest(uint32_t submission_id, uint32_t prob_id) {
-	vector<ProblemInfo> probs = _server_con.getSubmissibleProblems();
+	vector<ProblemInfo> probs = _server_con.getProblems();
 
 	ClarificationRequest cr;
 
@@ -1259,7 +1272,7 @@ void MainWindow::doClarificationRequest() {
 void MainWindow::doShowClarificationRequest(QListViewItem *item) {
 	ViewClarificationRequestSub vcr(atol(item->text(0)), &_server_con);
 
-	if (_active_type == "contestant" || _active_type == "observer")
+	if (!_active_permissions[PERMISSION_CLARIFICATION_REPLY])
 		vcr.reply->setEnabled(false);
 	assert(item->rtti() == RTTI_CLARIFICATION_REQUEST);
 	const ClarificationRequestItem *cri = static_cast<const ClarificationRequestItem *>(item);
@@ -1330,21 +1343,26 @@ void MainWindow::customEvent(QCustomEvent *ev) {
 }
 
 void MainWindow::updateStatus(const MessageBlock *) {
-	if (_active_type == "")
+	if (!_active_permissions[PERMISSION_AUTH])
 	{
 		status->setText("Not connected");
+		setCaption("Abacus");
 		projected_stop = 0;
 		clock->setText("");
-	} else if (_server_con.contestRunning()) {
-		time_t remain = _server_con.contestRemain();
-		time_t now = time(NULL);
-		projected_stop = remain + now;
-		status->setText("Contest running");
-		clock->setText("");  // timer event will update it
 	} else {
-		status->setText("Contest stopped");
-		projected_stop = 0;
-		clock->setText("");
+		string caption = "Abacus - " + _active_user;
+		setCaption(QString::fromUtf8(caption.c_str()));
+		if (_server_con.contestRunning()) {
+			time_t remain = _server_con.contestRemain();
+			time_t now = time(NULL);
+			projected_stop = remain + now;
+			status->setText("Contest running");
+			clock->setText("");  // timer event will update it
+		} else {
+			status->setText("Contest stopped");
+			projected_stop = 0;
+			clock->setText("");
+		}
 	}
 }
 
@@ -1359,7 +1377,7 @@ public:
 };
 
 void MainWindow::sortStandings() {
-	bool non_contestant = _active_type != "contestant" && nonContestInStandingsAction->isOn();
+	bool non_contestant = nonContestInStandingsAction->isOn();
 
 	vector<StandingItem *> ordered;
 	CompareStanding compare;
@@ -1449,13 +1467,10 @@ void MainWindow::updateStandings(const MessageBlock *mb) {
 		StandingItem *&item = standingMap[id];
 		if (item == NULL)
 			item = new StandingItem(standings);
-		/* Check that we have newer information, not something out-of-order */
-		if (!Score::CompareAttempts()(cur, *item)) {
-			/* Only alert on correct submissions */
-			if (cur.getTotalSolved() > item->getTotalSolved())
-				changed = item;
-			*item = cur;
-		}
+		/* Only alert on correct submissions */
+		if (cur.getTotalSolved() > item->getTotalSolved())
+			changed = item;
+		*item = cur;
 	}
 
 	sortStandings();
@@ -1529,14 +1544,14 @@ void MainWindow::updateSubmissions(const MessageBlock *mb) {
 	std::map<string, bool> is_subscribed;
 	std::vector<ProblemInfo> problems;
 
-	bool filter = (_active_type == "judge" || _active_type == "admin") && judgesShowOnlySubscribedSubmissionsAction->isOn();
+	bool filter = judgesShowOnlySubscribedSubmissionsAction->isOn();
 	set<int> wanted_states = getWantedStates();
 
 	if (mb == NULL || !mb->hasAttribute("submission_id")) {
 		log(LOG_DEBUG, "Doing full submissions update");
 		SubmissionList list;
 
-		if (_active_type != "") // first check that we're connected
+		if (_active_permissions[PERMISSION_AUTH]) // first check that we're connected
 			list = _server_con.getSubmissions();
 
 		/* Clear out the list, included anything filtered away */
@@ -1568,7 +1583,7 @@ void MainWindow::updateSubmissions(const MessageBlock *mb) {
 }
 
 void MainWindow::refilterSubmissions() {
-	bool filter = (_active_type == "judge" || _active_type == "admin") && judgesShowOnlySubscribedSubmissionsAction->isOn();
+	bool filter = judgesShowOnlySubscribedSubmissionsAction->isOn();
 	set<int> wanted_states = getWantedStates();
 
 	map<uint32_t, SubmissionItem *>::iterator i;
@@ -1586,7 +1601,7 @@ void MainWindow::refilterSubmissions() {
 }
 
 void MainWindow::submissionHandler(QListViewItem *item) {
-	if (_active_type == "judge" || _active_type == "admin") {
+	if (_active_permissions[PERMISSION_SEE_SUBMISSION_DETAILS]) {
 		JudgeDecisionDialog judgeDecisionDialog;
 		uint32_t submission_id = strtoll(item->text(0), NULL, 0);
 		uint32_t fileCount = _server_con.countMarkFiles(submission_id);
@@ -1651,7 +1666,7 @@ void MainWindow::submissionHandler(QListViewItem *item) {
 			}
 		}
 	}
-	else if (_active_type == "contestant" || _active_type == "observer") {
+	else {
 		if (item->text(4) == "Compilation failed") {
 			CompilerOutputDialog compilerOutputDialog;
 			string name;
@@ -1721,11 +1736,16 @@ void MainWindow::updateClarifications(const MessageBlock *mb) {
 		/* Replace if already present, otherwise add */
 		uint32_t id = strtoull((*mb)["id"].c_str(), NULL, 10);
 		ClarificationItem *&item = clarificationMap[id];
-		if (!item)
+		bool notify = false;
+		if (!item) {
 			item = new ClarificationItem(clarifications);
+			/* A new clarification, rather than a duplicate */
+			notify = true;
+		}
 
 		setClarification(item, *mb);
-		setAlert(tabClarifications);
+		if (notify)
+			setAlert(tabClarifications);
 	}
 	clarifications->sort();
 	clarificationRequests->sort();
@@ -1775,11 +1795,16 @@ void MainWindow::updateClarificationRequests(const MessageBlock *mb) {
 		/* Replace if already present, otherwise add */
 		uint32_t id = strtoull((*mb)["id"].c_str(), NULL, 10);
 		ClarificationRequestItem *&item = clarificationRequestMap[id];
-		if (!item)
+		bool notify = false;
+		if (!item) {
 			item = new ClarificationRequestItem(clarificationRequests);
+			/* A new clarification, rather than a duplicate */
+			notify = true;
+		}
 
 		setClarificationRequest(item, *mb);
-		setAlert(tabClarificationRequests);
+		if (notify)
+			setAlert(tabClarificationRequests);
 	}
 	clarificationRequests->sort();
 }
@@ -1794,8 +1819,4 @@ void MainWindow::doForceRefresh() {
 
 void MainWindow::serverDisconnect(const MessageBlock *) {
 	doFileDisconnect();
-}
-
-std::string MainWindow::getActiveType() {
-	return _active_type;
 }

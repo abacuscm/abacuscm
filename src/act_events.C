@@ -14,35 +14,38 @@
 #include "clienteventregistry.h"
 #include "misc.h"
 
+#include <memory>
+
+using namespace std;
+
 class Act_ClientEventRegistry : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
-bool Act_ClientEventRegistry::int_process(ClientConnection* cc, MessageBlock* mb) {
+auto_ptr<MessageBlock> Act_ClientEventRegistry::int_process(ClientConnection* cc, const MessageBlock* mb) {
 	ClientEventRegistry& evReg = ClientEventRegistry::getInstance();
 
-	std::string action = (*mb)["action"];
-	std::string event = (*mb)["event"];
+	string action = (*mb)["action"];
+	string event = (*mb)["event"];
 
 	if(action == "subscribe") {
 		if(evReg.registerClient(event, cc))
-			return cc->reportSuccess();
+			return MessageBlock::ok();
 		else
-			return cc->sendError("No such event");
+			return MessageBlock::error("No such event or permission denied");
 	} else if(action == "unsubscribe") {
-		evReg.deregisterClient(event, cc);
-		return cc->reportSuccess();
+		if (evReg.deregisterClient(event, cc))
+			return MessageBlock::ok();
+		else
+			return MessageBlock::error("No such event or permission denied");
 	} else
-		return cc->sendError("Unknown action");
+		return MessageBlock::error("Unknown action");
 }
 
 static Act_ClientEventRegistry _act_eventreg;
 
-static void init() __attribute__((constructor));
-static void init() {
-	ClientAction::registerAction(USER_TYPE_ADMIN, "eventmap", &_act_eventreg);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "eventmap", &_act_eventreg);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "eventmap", &_act_eventreg);
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "eventmap", &_act_eventreg);
+extern "C" void abacuscm_mod_init() {
+	// No permissions required because each event specifies who may register
+	ClientAction::registerAction("eventmap", PermissionTest::ANY, &_act_eventreg);
 }

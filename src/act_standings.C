@@ -20,50 +20,32 @@
 #include <list>
 #include <string>
 #include <sstream>
+#include <memory>
 
 using namespace std;
 
 class ActStandings : public ClientAction {
-private:
-	typedef map<uint32_t, string> TypesMap;
-	TypesMap typenames;
 protected:
-	virtual bool int_process(ClientConnection*, MessageBlock*mb);
-public:
-	ActStandings();
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection*, const MessageBlock*mb);
 };
 
-ActStandings::ActStandings()
-{
-	typenames[USER_TYPE_ADMIN] = "Admin";
-	typenames[USER_TYPE_JUDGE] = "Judge";
-	typenames[USER_TYPE_CONTESTANT] = "Contestant";
-	typenames[USER_TYPE_OBSERVER] = "Observer";
-}
-
-bool ActStandings::int_process(ClientConnection *cc, MessageBlock *) {
+auto_ptr<MessageBlock> ActStandings::int_process(ClientConnection *cc, const MessageBlock *) {
 	StandingsSupportModule *standings = getStandingsSupportModule();
-	UserSupportModule *usm = getUserSupportModule();
 	if (!standings)
-		return cc->sendError("Misconfigured Server - unable to calculate standings.");
-	if (!usm)
-		return cc->sendError("Misconfigured Server - unable to calculate standings.");
+		return MessageBlock::error("Misconfigured Server - unable to calculate standings.");
 
-	uint32_t uType = cc->getProperty("user_type");
+	bool final = cc->permissions()[PERMISSION_SEE_FINAL_STANDINGS];
+	bool see_all = cc->permissions()[PERMISSION_SEE_ALL_STANDINGS];
 
-	MessageBlock mb("ok");
-	if (!standings->getStandings(uType, 0, mb))
-		return cc->sendError("failed to get standings");
+	auto_ptr<MessageBlock> mb(MessageBlock::ok());
+	if (!standings->getStandings(0, final, see_all, *mb))
+		return MessageBlock::error("failed to get standings");
 
-	return cc->sendMessageBlock(&mb);
+	return mb;
 }
 
 static ActStandings _act_standings;
 
-static void init() __attribute__((constructor));
-static void init() {
-	ClientAction::registerAction(USER_TYPE_ADMIN, "standings", &_act_standings);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "standings", &_act_standings);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "standings", &_act_standings);
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "standings", &_act_standings);
+extern "C" void abacuscm_mod_init() {
+	ClientAction::registerAction("standings", PERMISSION_AUTH, &_act_standings);
 }

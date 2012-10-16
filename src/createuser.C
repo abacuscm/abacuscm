@@ -32,6 +32,7 @@ int main(int argc, char **argv) {
 	string newpassword = argv[6];
 	string type = argv[7];
 
+	ServerConnection::init();
 	ServerConnection _server_con;
 
 	Config &conf = Config::getConfig();

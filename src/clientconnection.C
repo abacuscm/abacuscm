@@ -12,6 +12,7 @@
 
 #include <cassert>
 #include <new>
+#include <fcntl.h>
 #include "clientconnection.h"
 #include "logger.h"
 #include "acmconfig.h"
@@ -32,11 +33,18 @@ const SSL_METHOD *ClientConnection::_method = NULL;
 SSL_CTX *ClientConnection::_context = NULL;
 
 ClientConnection::ClientConnection(int sock) {
-	sockfd() = sock;
 	_tssl = NULL;
 	_ssl = NULL;
 	_message = NULL;
-	pthread_mutex_init(&_write_lock, NULL);
+	_user_id = 0;
+	// TODO: error checking
+	pipe(_write_notify);
+	fcntl(_write_notify[0], F_SETFL, O_NONBLOCK);
+	fcntl(_write_notify[1], F_SETFL, O_NONBLOCK);
+	_write_progress = 0;
+	// This might be more generous than necessary, but if we get one early
+	// wakeup it won't hurt.
+	initialise(sock, POLLIN | POLLOUT);
 }
 
 ClientConnection::~ClientConnection() {
@@ -58,10 +66,11 @@ ClientConnection::~ClientConnection() {
 		_tssl = NULL;
 	}
 
-	pthread_mutex_destroy(&_write_lock);
+	close(_write_notify[0]);
+	close(_write_notify[1]);
 }
 
-bool ClientConnection::initiate_ssl() {
+short ClientConnection::initiate_ssl() {
 	assert(_tssl == NULL);
 	if(!_ssl) {
 		_ssl = SSL_new(_context);
@@ -70,7 +79,7 @@ bool ClientConnection::initiate_ssl() {
 			goto err;
 		}
 
-		if(!SSL_set_fd(_ssl, sockfd())) {
+		if(!SSL_set_fd(_ssl, getSock())) {
 			log_ssl_errors("SSL_set_fd");
 			goto err;
 		}
@@ -85,16 +94,17 @@ bool ClientConnection::initiate_ssl() {
 				goto err;
 			}
 			_ssl = NULL;
-			break;
+			// Success
+			return 0;
 		case SSL_ERROR_WANT_READ:
+			return POLLIN;
 		case SSL_ERROR_WANT_WRITE:
-			break;
+			return POLLOUT;
 		default:
 			log_ssl_errors_with_err("SSL_accept", err);
 			goto err;
 	}
 
-	return true;
 err:
 	if(_ssl) {
 		SSL_free(_ssl);
@@ -105,10 +115,10 @@ err:
 		_tssl = NULL;
 	}
 
-	return false;
+	return -1;
 }
 
-bool ClientConnection::process_data() {
+short ClientConnection::read_data() {
 	char buffer[CLIENT_BFR_SIZE];
 	ThreadSSL::Status status;
 	while(0 < (status = _tssl->read(buffer, CLIENT_BFR_SIZE, ThreadSSL::NONBLOCK)).processed) {
@@ -120,13 +130,11 @@ bool ClientConnection::process_data() {
 
 			int res2 = _message->addBytes(pos, res);
 			if(res2 < 0)
-				return false;
+				return -1;
 			if(res2 > 0) {
-				bool proc_res = ClientAction::process(this, _message);
+				ClientAction::process(this, _message);
 				delete _message;
 				_message = NULL;
-				if(!proc_res)
-					return false;
 				pos += res2;
 				res -= res2;
 			} else
@@ -135,50 +143,112 @@ bool ClientConnection::process_data() {
 	}
 
 	switch(status.err) {
-		case SSL_ERROR_NONE:
 		case SSL_ERROR_WANT_READ:
+			return POLLIN;
 		case SSL_ERROR_WANT_WRITE:
-			return true;
+			return POLLOUT;
+		case SSL_ERROR_NONE:
+			// Can this happen? Implies no data was actually read.
+			// Fall through for now
 		case SSL_ERROR_ZERO_RETURN:
 			// connection shut down
-			return false;
+			return -1;
 		default:
 			log_ssl_errors_with_err("SSL_read", status.err);
-			return false;
+			return -1;
 	}
 }
 
-bool ClientConnection::process() {
-	if(!_tssl)
-		return initiate_ssl();
-	else
-		return process_data();
+short ClientConnection::write_data() {
+	char dummy[64];
+	// Drain the wakeup queue
+	while (read(_write_notify[0], dummy, sizeof(dummy)) > 0) {
+		// Do nothing
+	}
 
-	return false;
+	while (true) {
+		if (_write_msg.empty()) {
+			if (_write_queue.empty()) {
+				return 0; // caller must wait until more is enqueued
+			}
+			_write_msg = _write_queue.dequeue();
+		}
+		ThreadSSL::Status status;
+		size_t remain = _write_msg.size() - _write_progress;
+		assert(remain > 0);
+		status = _tssl->write(_write_msg.data() + _write_progress, remain, ThreadSSL::NONBLOCK);
+		if (status.processed == 0) {
+			switch (status.err) {
+			case SSL_ERROR_WANT_READ:
+				return POLLIN;
+			case SSL_ERROR_WANT_WRITE:
+				return POLLOUT;
+			case SSL_ERROR_NONE:
+				// Can this happen? Implies no data was actually read.
+				// Fall through for now
+			case SSL_ERROR_ZERO_RETURN:
+				// connection shut down
+				return -1;
+			default:
+				log_ssl_errors_with_err("SSL_write", status.err);
+				return -1;
+			}
+		}
+		_write_progress += status.processed;
+		if (_write_progress == _write_msg.size()) {
+			_write_progress = 0;
+			_write_msg = "";
+		}
+	}
 }
 
-bool ClientConnection::sendError(const std::string& message) {
-	MessageBlock mb("err");
-	mb["msg"] = message;
-	return sendMessageBlock(&mb);
+vector<pollfd> ClientConnection::int_process() {
+	vector<pollfd> fds;
+	if(!_tssl) {
+		short status = initiate_ssl();
+		if (status == -1)
+			return fds; // error
+		else if (status > 0) {
+			fds.push_back(pollfd());
+			fds.back().fd = getSock();
+			fds.back().events = status;
+			return fds;
+		}
+	}
+
+	/* If we get here, the connection was established */
+
+	short read_status = read_data();
+	if (read_status < 0)
+		return fds; // error
+
+	short write_status = write_data();
+	if (write_status < 0)
+		return fds; // error
+
+	// TODO: check for SSL_pending after the write and go back to reading?
+
+	if (read_status | write_status) {
+		fds.push_back(pollfd());
+		fds.back().fd = getSock();
+		fds.back().events = read_status | write_status;
+	}
+	if (write_status == 0) { // asked to wait for more incoming data
+		fds.push_back(pollfd());
+		fds.back().fd = _write_notify[0];
+		fds.back().events = POLLIN;
+	}
+	return fds;
 }
 
-bool ClientConnection::reportSuccess() {
-	MessageBlock mb("ok");
-	return sendMessageBlock(&mb);
-}
-
-bool ClientConnection::sendMessageBlock(const MessageBlock *mb) {
-	/* Note: the ThreadSSL lock only protects readers and writers from each
-	 * other. We need need the _write_lock to prevent the data from multiple
-	 * concurrent callers to this function from becoming interleaved.
-	 */
-	pthread_mutex_lock(&_write_lock);
-	bool res = mb->writeToSSL(_tssl);
-	pthread_mutex_unlock(&_write_lock);
-	if(!res)
-		log(LOG_NOTICE, "Failed to write MessageBlock to client - not sure what this means though");
-	return res;
+void ClientConnection::sendMessageBlock(const MessageBlock *mb) {
+	string raw = mb->getRaw();
+	if (!raw.empty()) {
+		char dummy = 0;
+		_write_queue.enqueue(raw);
+		// Wake up anyone who might be waiting for data
+		write(_write_notify[1], &dummy, 1);
+	}
 }
 
 bool ClientConnection::init() {
@@ -240,22 +310,18 @@ err:
 	return false;
 }
 
-uint32_t ClientConnection::setProperty(const std::string& prop, uint32_t val) {
-	uint32_t oldval = _props[prop];
-	_props[prop] = val;
-	return oldval;
+void ClientConnection::setUserId(uint32_t id) {
+	_user_id = id;
 }
 
-uint32_t ClientConnection::getProperty(const std::string& prop) {
-	return _props[prop];
+uint32_t ClientConnection::getUserId() const {
+	return _user_id;
 }
 
-uint32_t ClientConnection::delProperty(const std::string& prop) {
-	uint32_t oldval = 0;
-	ClientProps::iterator i = _props.find(prop);
-	if(i != _props.end()) {
-		oldval = i->second;
-		_props.erase(i);
-	}
-	return oldval;
+PermissionSet &ClientConnection::permissions() {
+	return _permissions;
+}
+
+const PermissionSet &ClientConnection::permissions() const {
+	return _permissions;
 }

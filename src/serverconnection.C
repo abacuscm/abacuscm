@@ -439,10 +439,10 @@ bool ServerConnection::auth(string username, string password) {
 	return simpleAction(mb);
 }
 
-string ServerConnection::whatAmI() {
+vector<string> ServerConnection::getPermissions() {
 	MessageBlock mb("whatami");
 
-	return stringAction(mb, "type");
+	return vectorAction(mb, "permission");
 }
 
 bool ServerConnection::createuser(string username, string friendlyname, string password, string type) {
@@ -680,16 +680,8 @@ bool ServerConnection::getSubmissionSource(uint32_t submission_id, char **buffer
 }
 
 vector<ProblemInfo> ServerConnection::getProblems() {
-	return _getProblems("getproblems");
-}
-
-vector<ProblemInfo> ServerConnection::getSubmissibleProblems() {
-	return _getProblems("getsubmissibleproblems");
-}
-
-vector<ProblemInfo> ServerConnection::_getProblems(std::string query) {
 	vector<ProblemInfo> response;
-	MessageBlock mb(query);
+	MessageBlock mb("getproblems");
 
 	MessageBlock *res = sendMB(&mb);
 	if(!res)
@@ -920,8 +912,9 @@ Grid ServerConnection::getStandings() {
 }
 
 bool ServerConnection::watchBalloons(bool yesno) {
-	MessageBlock mb("balloonnotify");
+	MessageBlock mb("eventmap");
 
+	mb["event"] = "balloon";
 	if(yesno)
 		mb["action"] = "subscribe";
 	else
@@ -1239,8 +1232,7 @@ void* ServerConnection::keepalive_spawner(void *p) {
 	return ((ServerConnection*)p)->keepalive_thread();
 }
 
-static void init() __attribute__((constructor));
-static void init() {
+void ServerConnection::init() {
 	SSL_library_init();
 	SSL_load_error_strings();
 	RAND_load_file("/dev/urandom", 4096);

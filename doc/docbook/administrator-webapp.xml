@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN" "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<chapter id="administrator-webapp">
+    <title>Administrator manual for the web application</title>
+    <section id="administrator-webapp.introduction">
+        <title>Introduction</title>
+        <para>TODO</para>
+    </section>
+    <section id="administrator-webapp.requirements">
+        <title>Requirements</title>
+        <para>
+            The following software is needed to compile and run the web
+            application. Servlet containers other than
+            <application>Jetty</application> may work, but this is untested,
+            and the configuration instructions may be Jetty-specific.
+        </para>
+        <itemizedlist>
+            <listitem>
+                <para><application>Java Development Kit</application>, at least
+                    version 6.
+                </para>
+            </listitem>
+            <listitem>
+                <para><application>Jetty</application>, the web server (only
+                    version 6.x has been tested; newer versions might or might
+                    not work).
+                </para>
+            </listitem>
+            <listitem>
+                <para><application>Maven 2</application>, which is the build
+                    system for the web application.
+                </para>
+            </listitem>
+            <listitem>
+                <para><application>GNU Make</application></para>
+            </listitem>
+            <listitem>
+                <para>xsltproc</para>
+            </listitem>
+            <listitem>
+                <para>xmllint</para>
+            </listitem>
+            <listitem>
+                <para>It is highly recommended that the HTML DTDs are installed
+                    locally (e.g. in Ubuntu this is in the
+                    <systemitem>w3c-dtd-html</systemitem> package). Otherwise,
+                    these will be fetched from the internet on each build,
+                    which can be very slow.
+                </para>
+            </listitem>
+        </itemizedlist>
+        <para>
+            <application>Maven</application> will also download assorted Java
+            packages the first time it is run, so an internet connection will
+            be required. After the first time it should be possible to build
+            while offline.
+        </para>
+    </section>
+    <section id="administrator-webapp.build">
+        <title>Building</title>
+        <para>All building is done from the <filename
+                class="directory">webapp</filename> directory. First run
+        </para>
+        <screen><prompt>$ </prompt><userinput>make -C src/main/xml</userinput></screen>
+        <para>
+            to build the HTML files. If this takes a long time, double-check
+            that you have HTML DTDs installed locally.
+        </para>
+        <para>
+            Next, build the web application by running
+        </para>
+        <screen><prompt>$ </prompt><userinput>mvn</userinput></screen>
+        <para>
+            This will produce
+            <filename>target/abacuscm-1.0-SNAPSHOT.war</filename>, and will
+            also place a copy in <filename
+                class="directory">$<envar>HOME</envar>/.m2//repository/abacuscm/abacuscm/1.0-SNAPSHOT/</filename>.
+        </para>
+    </section>
+    <section id="administrator-webapp.configuration">
+        <title>Configuration</title>
+        <para>
+            The first thing you will need to do is configure a Jetty server to
+            start up. The process for doing this will vary between platforms,
+            but on Ubuntu you will most likely need to edit
+            <filename>/etc/default/jetty</filename> to change
+            <varname>NO_START</varname> to zero, and possibly to edit other
+            parameters there as well.
+        </para>
+        <para>
+            Note that getting Jetty to run on a standard HTTP port (80) is
+            non-trivial; it is probably best to get all the setup done before
+            trying to switch it over to a standard port.
+        </para>
+        <para>
+            You should also ensure that Jetty is set up for hot deployment from
+            a directory like <filename
+                class="directory">/etc/jetty/contexts</filename>; this might
+            require uncommenting some configuration options in
+            <filename>/etc/jetty/jetty.xml</filename>, but again, this is
+            platform-specific.
+        </para>
+        <section id="administrator-webapp.configuration.keystore">
+            <title>Creating the keystore</title>
+            <para>
+                When the web application (on the web server side) connects to
+                the abacus server, it needs to be able to verify the
+                certificate presented by the abacus server. For this, it needs
+                the certificate for the CA used to sign that certificate
+                (generated in <xref
+                    linkend="administrator-core.certificates"/>; it
+                also needs to be imported into a Java keystore.
+            </para>
+            <para>
+                This can be done as follows:
+            </para>
+            <screen><prompt>$ </prompt><userinput>keytool -importcert -alias abacuscert -file <replaceable>cacert.crt</replaceable> \
+    -keystore <replaceable>abacus_keystore</replaceable> -noprompt</userinput>
+<computeroutput>Enter keystore password:
+Re-enter new password:
+Certificate was added to keystore</computeroutput></screen>
+            <para>
+                Since the keystore contains only a certificate and no keys,
+                the password does not need to be secure (and probably should
+                not be a secure password used elsewhere, since it will be
+                stored in plain text in a configuration file).
+            </para>
+            <para>
+                Refer to <xref
+                    linkend="administrator-webapp.configuration.context"/> for
+                information about how to point the web application at this new
+                keystore.
+            </para>
+        </section>
+        <section id="administrator-webapp.configuration.context">
+            <title>Configuring the context</title>
+            <para>
+                In the directory configured for hot context deployment (e.g.,
+                <filename class="directory">/etc/jetty/contexts</filename>,
+                create an XML file with the following contents (the filename
+                is arbitrary; we use <filename>abacuscm.xml</filename>):
+            </para>
+            <programlisting language="xml">&lt;?xml version="1.0"  encoding="ISO-8859-1"?&gt;
+&lt;!DOCTYPE Configure
+    PUBLIC "-//Mort Bay Consulting//DTD Configure//EN"
+    "http://jetty.mortbay.org/configure.dtd"&gt;
+&lt;Configure class="org.mortbay.jetty.webapp.WebAppContext"&gt;
+  &lt;Set name="contextPath"&gt;<replaceable>/contextPath</replaceable>&lt;/Set&gt;
+  &lt;Set name="war"&gt;<filename><replaceable>/path/to/war</replaceable></filename>&lt;/Set&gt;
+  &lt;Set name="overrideDescriptor"&gt;&lt;SystemProperty name="jetty.home"
+      default="." /&gt;<filename><replaceable>/etc/abacuscm-secret-web.xml</replaceable></filename>&lt;/Set&gt;
+&lt;/Configure&gt;</programlisting>
+            <para>
+                The <varname>contextPath</varname> is the path
+                within the server URL at which clients will access the web
+                application, while
+                <filename><replaceable>/path/to/war</replaceable></filename>
+                is the path to the <filename class="extension">.war</filename>
+                file created by the build. Note that this file will need to be
+                accessible to Jetty, in which case it may be necessary to copy
+                it from where it was built to a deployment area.
+            </para>
+            <note>
+                <para>
+                    Although this is a <quote>hot</quote> deployment, only
+                    this XML configuration file is scanned for changes. If you
+                    change the <filename class="extension">.war</filename>
+                    file, you will need to <command>touch</command> this file
+                    (or restart Jetty) to trigger an update.
+                </para>
+            </note>
+            <para>
+                The <varname>overrideDescriptor</varname> can be set to any
+                path, which points to a file containing extra configuration
+                data specific to this deployment. It should contain the
+                following:
+            </para>
+            <programlisting language="xml">
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;web-app xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+             http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+         version="2.5"&gt;
+
+    &lt;servlet&gt;
+        &lt;servlet-name&gt;initializer&lt;/servlet-name&gt;
+        &lt;init-param&gt;
+            &lt;param-name&gt;abacusHost&lt;/param-name&gt;
+            &lt;param-value&gt;<replaceable>host name</replaceable>&lt;/param-value&gt;
+        &lt;/init-param&gt;
+        &lt;init-param&gt;
+            &lt;param-name&gt;abacusPort&lt;/param-name&gt;
+            &lt;param-value&gt;<replaceable>port number</replaceable>&lt;/param-value&gt;
+        &lt;/init-param&gt;
+        &lt;init-param&gt;
+            &lt;param-name&gt;trustStoreURL&lt;/param-name&gt;
+            &lt;param-value&gt;<replaceable>URL</replaceable>&lt;/param-value&gt;
+        &lt;/init-param&gt;
+        &lt;init-param&gt;
+            &lt;param-name&gt;trustStorePassword&lt;/param-name&gt;
+            &lt;param-value&gt;<replaceable>password</replaceable>&lt;/param-value&gt;
+        &lt;/init-param&gt;
+    &lt;/servlet&gt;
+&lt;/web-app&gt;
+            </programlisting>
+            <para>
+                The <varname>abacusHost</varname> and
+                <varname>abacusPort</varname> parameters are optional, and
+                default to <systemitem class="server">localhost</systemitem>
+                and 7368 respectively.
+            </para>
+            <para>The <varname>trustStoreURL</varname> must be the URL of the
+                keystore configured in <xref
+                    linkend="administrator-webapp.configuration.keystore"/>.
+                If the file is on the local machine, it must use a
+                <systemitem>file://</systemitem> URL rather than a filename.
+            </para>
+        </section>
+        <section id="administrator-webapp.configuration.connector">
+            <title>Choosing the right connector</title>
+            <para>
+                Depending on the configuration files provided by your
+                platform, Jetty may be using a sub-optimal method to handle
+                large numbers of connections. You should use
+                <classname>SelectChannelConnector</classname> or
+                <classname>SSLSelectChannelConnector</classname> to avoid
+                creating a separate thread per connection. See the <ulink
+                    url="http://docs.codehaus.org/display/JETTY/Configuring+Connectors">Jetty
+                    documentation</ulink> for more information.
+            </para>
+        </section>
+        <section id="administrator-webapp.configuration.ports">
+            <title>Running Jetty on standard ports</title>
+            <para>TODO</para>
+        </section>
+    </section>
+</chapter>

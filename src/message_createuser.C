@@ -29,7 +29,7 @@ Message_CreateUser::Message_CreateUser(const std::string& username, const std::s
 Message_CreateUser::~Message_CreateUser() {
 }
 
-bool Message_CreateUser::process() const {
+bool Message_CreateUser::int_process() const {
 	UserSupportModule *usm = getUserSupportModule();
 
 	bool added = usm && usm->addUser(_user_id, _username, _friendlyname, _password, _type);

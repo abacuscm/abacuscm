@@ -814,12 +814,12 @@ ProblemList MySQL::getDependentProblemsPending(uint32_t user_id, uint32_t proble
 	ProblemList dependent_problems = getProblemDependencies(problem_id);
 	for (ProblemList::iterator it = dependent_problems.begin(); it != dependent_problems.end(); it++)
 	{
-        uint32_t dependent_problem_id = *it;
+		uint32_t dependent_problem_id = *it;
 		if (!hasSolved(user_id, dependent_problem_id)) {
 			result.push_back(dependent_problem_id);
 		}
 	}
-    return result;
+	return result;
 }
 
 bool MySQL::isSubmissionAllowed(uint32_t user_id, uint32_t problem_id) {
@@ -874,7 +874,7 @@ SubmissionList MySQL::getSubmissions(uint32_t uid) {
 	if(uid)
 		query << " AND User.user_id = " << uid;
 
-	query << " ORDER BY time";
+	query << " ORDER BY submission_id";
 
 	if(mysql_query(&_mysql, query.str().c_str())) {
 		log_mysql_error();
@@ -1553,8 +1553,8 @@ static void thread_deinit(void* initialised)
 		mysql_thread_end();
 }
 
-static void init() __attribute__((constructor));
-static void init() {
+
+extern "C" void abacuscm_mod_init() {
 	pthread_key_create(&_called_thread_init, thread_deinit);
 }
 
@@ -1566,7 +1566,6 @@ void abacuscm_mod_init()
 	pthread_setspecific(_called_thread_init, MYSQL_THREAD_STATE_SERVER_INIT);
 }
 
-static void deinit() __attribute__((destructor));
-static void deinit() {
+extern "C" void abacuscm_mod_done() {
 	mysql_library_end();
 }

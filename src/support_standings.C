@@ -19,6 +19,7 @@
 #include "timedaction.h"
 #include "server.h"
 #include "misc.h"
+#include "permissionmap.h"
 
 #include <string>
 #include <cassert>
@@ -54,23 +55,6 @@ StandingsSupportModule::StandingsSupportModule()
 
 StandingsSupportModule::~StandingsSupportModule()
 {
-}
-
-uint32_t StandingsSupportModule::getStandingsFlags(uint32_t user_type) {
-	switch (user_type) {
-	case USER_TYPE_MARKER:
-		return 0;
-	case USER_TYPE_CONTESTANT:
-		return STANDINGS_FLAG_SEND;
-	case USER_TYPE_OBSERVER:
-		return STANDINGS_FLAG_SEND | STANDINGS_FLAG_OBSERVER;
-	case USER_TYPE_JUDGE:
-	case USER_TYPE_ADMIN:
-		return STANDINGS_FLAG_SEND | STANDINGS_FLAG_FINAL | STANDINGS_FLAG_OBSERVER;
-	default:
-		assert(false);
-		return 0;
-	}
 }
 
 typedef struct
@@ -173,10 +157,12 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 	for(t = problemdata.begin(); t != problemdata.end(); ++t) {
 		// 0/1 indices are for contestants/final standings
 		StandingsData teamdata[2];
+		UserType user_type = static_cast<UserType>(usm->usertype(t->first));
+		const PermissionSet &user_perms = PermissionMap::getInstance()->getPermissions(user_type);
 		teamdata[0].time = 0;
-		teamdata[0].user_type = usm->usertype(t->first);
+		teamdata[0].in_standings = user_perms[PERMISSION_IN_STANDINGS];
 		teamdata[1].time = 0;
-		teamdata[1].user_type = teamdata[0].user_type;
+		teamdata[1].in_standings = teamdata[0].in_standings;
 		map<uint32_t, vector<SubData> >::iterator p;
 		for(p = t->second.begin(); p != t->second.end(); ++p) {
 			int tries = 0;
@@ -184,7 +170,7 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 			uint32_t correct_time = 0;
 
 			vector<SubData> &subs = p->second;
-			sort(subs.begin(), subs.end(), SubDataLessThan);
+			stable_sort(subs.begin(), subs.end(), SubDataLessThan);
 
 			vector<SubData>::iterator s;
 			s = subs.begin();
@@ -220,20 +206,38 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 			}
 		}
 	}
-	pthread_rwlock_unlock(&_lock);
 
-	for (uint32_t type = USER_TYPE_ADMIN; type <= USER_TYPE_OBSERVER; type++) {
-		uint32_t flags = getStandingsFlags(type);
-		if (!(flags & STANDINGS_FLAG_SEND))
-			continue;
-		int w = (flags & STANDINGS_FLAG_FINAL) ? 1 : 0;
+	for (int w = 0; w < 2; w++)
 		if (have_update[w]) {
-			MessageBlock mb("updatestandings");
-			if (getStandings(type, uid, mb)
-				&& mb["nrows"] != "0")
-				ClientEventRegistry::getInstance().broadcastEvent(0, 1 << type, &mb);
+			for (int see_all = 0; see_all < 2; see_all++) {
+				PermissionTest pt = PERMISSION_SEE_STANDINGS;
+				if (w)
+					pt = pt && PERMISSION_SEE_FINAL_STANDINGS;
+				else
+					pt = pt && !PERMISSION_SEE_FINAL_STANDINGS;
+
+				if (see_all)
+					pt = pt && PERMISSION_SEE_ALL_STANDINGS;
+				else
+					pt = pt && !PERMISSION_SEE_ALL_STANDINGS;
+
+				MessageBlock mb("updatestandings");
+				if (getStandingsInternal(uid, w, see_all, mb, true)
+					&& mb["nrows"] != "0")
+					ClientEventRegistry::getInstance().broadcastEvent(0, pt, &mb);
+			}
 		}
-	}
+
+	/* Note: this lock must be held until after the update broadcast, because
+	 * clients assume that standings updates are monotonicly providing newer
+	 * information. If the lock is not held, then concurrent calls to
+	 * updateStandings can return results out-of-order as they race to enqueue
+	 * the broadcast messages.
+	 *
+	 * Because broadcastEvent simply enqueues the broadcast to other threads,
+	 * it should not block for any significant amount of time.
+	 */
+	pthread_rwlock_unlock(&_lock);
 
 	return true;
 }
@@ -244,10 +248,8 @@ static string cell_name(int row, int col) {
 	return name.str();
 }
 
-bool StandingsSupportModule::getStandings(uint32_t user_type, uint32_t uid, MessageBlock &mb)
+bool StandingsSupportModule::getStandingsInternal(uint32_t uid, bool final, bool see_all, MessageBlock &mb, bool caller_locks)
 {
-	uint32_t flags = getStandingsFlags(user_type);
-
 	UserSupportModule *usm = getUserSupportModule();
 	if (!usm) {
 		log(LOG_CRIT, "Error obtaining UserSupportModule.");
@@ -285,9 +287,10 @@ bool StandingsSupportModule::getStandings(uint32_t user_type, uint32_t uid, Mess
 		mb["ncols"] = ncols_str.str();
 	}
 
-	pthread_rwlock_rdlock(&_lock);
+	if (!caller_locks)
+		pthread_rwlock_rdlock(&_lock);
 	const Standings &standings =
-		(flags & STANDINGS_FLAG_FINAL) ? _final_standings : _contestant_standings;
+		final ? _final_standings : _contestant_standings;
 
 	int r = 0;
 
@@ -301,8 +304,7 @@ bool StandingsSupportModule::getStandings(uint32_t user_type, uint32_t uid, Mess
 		last = standings.end();
 	}
 	for(i = first; i != last; ++i) {
-		if (i->second.user_type != USER_TYPE_CONTESTANT
-			&& !(flags & STANDINGS_FLAG_OBSERVER))
+		if (!see_all && !i->second.in_standings)
 			continue;
 		++r;
 
@@ -313,7 +315,7 @@ bool StandingsSupportModule::getStandings(uint32_t user_type, uint32_t uid, Mess
 		mb[cell_name(r, STANDING_RAW_ID)] = val.str();
 		mb[cell_name(r, STANDING_RAW_USERNAME)] = usm->username(i->first);
 		mb[cell_name(r, STANDING_RAW_FRIENDLYNAME)] = usm->friendlyname(i->first);
-		mb[cell_name(r, STANDING_RAW_CONTESTANT)] = (i->second.user_type == USER_TYPE_CONTESTANT ? "1" : "0");
+		mb[cell_name(r, STANDING_RAW_CONTESTANT)] = (i->second.in_standings ? "1" : "0");
 
 		val.str("");
 		val << i->second.time;
@@ -346,8 +348,13 @@ bool StandingsSupportModule::getStandings(uint32_t user_type, uint32_t uid, Mess
 		mb["nrows"] = row.str();
 	}
 
-	pthread_rwlock_unlock(&_lock);
+	if (!caller_locks)
+		pthread_rwlock_unlock(&_lock);
 	return true;
+}
+
+bool StandingsSupportModule::getStandings(uint32_t uid, bool final, bool see_all, MessageBlock &mb) {
+	return getStandingsInternal(uid, final, see_all, mb, false);
 }
 
 void StandingsSupportModule::timedUpdate(time_t time, uint32_t uid, uint32_t submission_id) {
@@ -375,6 +382,6 @@ void StandingsSupportModule::init() {
 	if (blinds > duration / 2)
 		log(LOG_WARNING, "Blinds is longer than half the contest - this is most likely wrong.");
 
-	ClientEventRegistry::getInstance().registerEvent("updatestandings");
+	ClientEventRegistry::getInstance().registerEvent("updatestandings", PERMISSION_SEE_STANDINGS);
 	updateStandings(0, 0);
 }

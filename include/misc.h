@@ -30,7 +30,7 @@ typedef enum {
 	COMPILE_FAILED = 4,
 	JUDGE = 5,
 	FORMAT_ERROR = 6,
-	OTHER = 7,
+	OTHER = 7
 } RunResult;
 
 typedef enum {
@@ -40,6 +40,7 @@ typedef enum {
 	USER_TYPE_CONTESTANT = 3,
 	USER_TYPE_MARKER = 4,
 	USER_TYPE_OBSERVER = 5,
+	USER_TYPE_PROCTOR = 6
 } UserType;
 
 /* Column numbering for standings client-server messages. Note: if you
@@ -56,12 +57,20 @@ typedef enum {
 	STANDING_RAW_SOLVED = 6
 } StandingColumnRaw;
 
-static const int USER_MASK_ADMIN = 1 << USER_TYPE_ADMIN;
-static const int USER_MASK_JUDGE = 1 << USER_TYPE_JUDGE;
-static const int USER_MASK_CONTESTANT = 1 << USER_TYPE_CONTESTANT;
-static const int USER_MASK_MARKER = 1 << USER_TYPE_MARKER;
-static const int USER_MASK_OBSERVER = 1 << USER_TYPE_OBSERVER;
-static const int USER_MASK_ALL = USER_MASK_ADMIN | USER_MASK_JUDGE | USER_MASK_CONTESTANT | USER_MASK_MARKER | USER_MASK_OBSERVER;
+static const unsigned int USER_MASK_NONE = 1 << USER_TYPE_NONE;
+static const unsigned int USER_MASK_ADMIN = 1 << USER_TYPE_ADMIN;
+static const unsigned int USER_MASK_JUDGE = 1 << USER_TYPE_JUDGE;
+static const unsigned int USER_MASK_CONTESTANT = 1 << USER_TYPE_CONTESTANT;
+static const unsigned int USER_MASK_MARKER = 1 << USER_TYPE_MARKER;
+static const unsigned int USER_MASK_OBSERVER = 1 << USER_TYPE_OBSERVER;
+static const unsigned int USER_MASK_PROCTOR = 1 << USER_TYPE_PROCTOR;
+
+// All logged in types
+static const unsigned int USER_MASK_ALL = USER_MASK_ADMIN | USER_MASK_JUDGE | USER_MASK_CONTESTANT | USER_MASK_MARKER | USER_MASK_OBSERVER | USER_MASK_PROCTOR;
+// All types except a marker
+static const unsigned int USER_MASK_NOMARKER = USER_MASK_ALL & ~USER_MASK_MARKER;
+// All types that are involved in running the contest
+static const unsigned int USER_MASK_MANAGER = USER_MASK_JUDGE | USER_MASK_ADMIN;
 
 extern const char * const runMessages[OTHER + 1];
 extern const char * const runCodes[OTHER + 1];

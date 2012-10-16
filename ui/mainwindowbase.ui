@@ -682,14 +682,14 @@
         <action name="adminAdd_ServerAction"/>
         <action name="adminProblem_ConfigAction"/>
         <action name="adminContestAction"/>
-        <item text="&amp;Contest" name="popupMenu_10" accel="">
+        <item text="&amp;Contest" name="popupMenu_11" accel="">
             <action name="adminContestStartAction"/>
         </item>
     </item>
     <item text="&amp;Judges" name="Judges">
         <action name="judgesSubscribeToProblemsAction"/>
         <action name="Action"/>
-        <item text="Submission States" name="popupMenu_13" accel="">
+        <item text="Submission States" name="popupMenu_14" accel="">
             <action name="stateFilterUnmarkedAction"/>
             <action name="stateFilterJudgeAction"/>
             <action name="stateFilterWrongAction"/>
@@ -1178,37 +1178,37 @@
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalAdminControls(bool)</signal>
+        <signal>signalServerAdminControls(bool)</signal>
         <receiver>adminAdd_ServerAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalAdminControls(bool)</signal>
+        <signal>signalUserAdminControls(bool)</signal>
         <receiver>adminCreate_UserAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalAdminControls(bool)</signal>
+        <signal>signalStartStopControls(bool)</signal>
         <receiver>adminContestStartAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalAdminControls(bool)</signal>
+        <signal>signalProblemAdminControls(bool)</signal>
         <receiver>adminProblem_ConfigAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalContestantControls(bool)</signal>
+        <signal>signalSubmitControls(bool)</signal>
         <receiver>submissionButton</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalContestantControls(bool)</signal>
+        <signal>signalClarificationRequestControls(bool)</signal>
         <receiver>submissionClarificationButton</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
@@ -1226,13 +1226,13 @@
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalJudgeControls(bool)</signal>
+        <signal>signalSeeAllSubmissionsControls(bool)</signal>
         <receiver>judgesSubscribeToProblemsAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalJudgeControls(bool)</signal>
+        <signal>signalClarificationReplyControls(bool)</signal>
         <receiver>submissionClarificationButton</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
@@ -1268,7 +1268,7 @@
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalJudgeControls(bool)</signal>
+        <signal>signalSeeAllSubmissionsControls(bool)</signal>
         <receiver>judgesShowOnlySubscribedSubmissionsAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
@@ -1280,7 +1280,7 @@
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalJudgeControls(bool)</signal>
+        <signal>signalSeeAllSubmissionsControls(bool)</signal>
         <receiver>judgesNotify_about_Correct_SubmissionsAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
@@ -1292,91 +1292,61 @@
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalJudgeControls(bool)</signal>
+        <signal>signalSeeAllSubmissionsControls(bool)</signal>
         <receiver>stateFilterUnmarkedAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalJudgeControls(bool)</signal>
+        <signal>signalSeeAllSubmissionsControls(bool)</signal>
         <receiver>stateFilterJudgeAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalJudgeControls(bool)</signal>
+        <signal>signalSeeAllSubmissionsControls(bool)</signal>
         <receiver>stateFilterWrongAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalJudgeControls(bool)</signal>
+        <signal>signalSeeAllSubmissionsControls(bool)</signal>
         <receiver>stateFilterFormatErrorAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalJudgeControls(bool)</signal>
+        <signal>signalSeeAllSubmissionsControls(bool)</signal>
         <receiver>stateFilterCorrectAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalJudgeControls(bool)</signal>
+        <signal>signalSeeAllSubmissionsControls(bool)</signal>
         <receiver>stateFilterTimeExceededAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalJudgeControls(bool)</signal>
+        <signal>signalSeeAllSubmissionsControls(bool)</signal>
         <receiver>stateFilterCompileAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalJudgeControls(bool)</signal>
+        <signal>signalSeeAllSubmissionsControls(bool)</signal>
         <receiver>stateFilterOtherAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalJudgeControls(bool)</signal>
+        <signal>signalSeeAllSubmissionsControls(bool)</signal>
         <receiver>stateFilterAbnormalAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
     <connection>
         <sender>MainWindowBase</sender>
-        <signal>signalJudgeControls(bool)</signal>
-        <receiver>nonContestInStandingsAction</receiver>
-        <slot>setEnabled(bool)</slot>
-    </connection>
-    <connection>
-        <sender>MainWindowBase</sender>
-        <signal>signalObserverControls(bool)</signal>
-        <receiver>nonContestInStandingsAction</receiver>
-        <slot>setEnabled(bool)</slot>
-    </connection>
-    <connection>
-        <sender>MainWindowBase</sender>
-        <signal>signalObserverControls(bool)</signal>
-        <receiver>judgesNotify_about_Correct_SubmissionsAction</receiver>
-        <slot>setEnabled(bool)</slot>
-    </connection>
-    <connection>
-        <sender>MainWindowBase</sender>
-        <signal>signalObserverControls(bool)</signal>
-        <receiver>submissionButton</receiver>
-        <slot>setEnabled(bool)</slot>
-    </connection>
-    <connection>
-        <sender>MainWindowBase</sender>
-        <signal>signalObserverControls(bool)</signal>
-        <receiver>submissionClarificationButton</receiver>
-        <slot>setEnabled(bool)</slot>
-    </connection>
-    <connection>
-        <sender>MainWindowBase</sender>
-        <signal>signalObserverControls(bool)</signal>
+        <signal>signalSeeAllStandingsControls(bool)</signal>
         <receiver>nonContestInStandingsAction</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
@@ -1446,12 +1416,61 @@
         <receiver>MainWindowBase</receiver>
         <slot>doForceRefresh()</slot>
     </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalAuthControls(bool)</signal>
+        <receiver>fileDisconnectAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalAuthControls(bool)</signal>
+        <receiver>fileConnectAction</receiver>
+        <slot>setDisabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalAuthControls(bool)</signal>
+        <receiver>abacusForce_RefreshAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalChangePasswordControls(bool)</signal>
+        <receiver>changePasswordAction</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>MainWindowBase</sender>
+        <signal>signalClarificationRequestControls(bool)</signal>
+        <receiver>clarifyButton</receiver>
+        <slot>setEnabled(bool)</slot>
+    </connection>
 </connections>
 <signals>
-    <signal>signalAdminControls(bool)</signal>
+    <signal>signalAuthControls(bool)</signal>
+    <signal>signalSubmitControls(bool)</signal>
+    <signal>signalClarificationRequestControls(bool)</signal>
+    <signal>signalClarificationReplyControls(bool)</signal>
+    <signal>signalChangePasswordControls(bool)</signal>
+    <signal>signalInStandingsControls(bool)</signal>
+    <signal>signalSeeStandingsControls(bool)</signal>
+    <signal>signalSeeAllStandingsControls(bool)</signal>
+    <signal>signalSeeFinalStandingsControls(bool)</signal>
+    <signal>signalSeeAllClarificationRequestsControls(bool)</signal>
+    <signal>signalSeeAllClarificationsControls(bool)</signal>
+    <signal>signalSeeAllSubmissionsControls(bool)</signal>
+    <signal>signalSeeAllProblemsControls(bool)</signal>
+    <signal>signalSeeProblemDetailsControls(bool)</signal>
+    <signal>signalSeeSubmissionDetailsControls(bool)</signal>
+    <signal>signalSeeUserIdControls(bool)</signal>
+    <signal>signalMarkControls(bool)</signal>
     <signal>signalJudgeControls(bool)</signal>
-    <signal>signalContestantControls(bool)</signal>
-    <signal>signalObserverControls(bool)</signal>
+    <signal>signalJudgeOverrideControls(bool)</signal>
+    <signal>signalUserAdminControls(bool)</signal>
+    <signal>signalProblemAdminControls(bool)</signal>
+    <signal>signalServerAdminControls(bool)</signal>
+    <signal>signalStartStopControls(bool)</signal>
 </signals>
 <slots>
     <slot access="protected" specifier="pure virtual">doHelpAbout()</slot>

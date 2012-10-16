@@ -18,22 +18,23 @@
 
 #include <string>
 #include <sstream>
+#include <memory>
 
 using namespace std;
 
 class ActPasswd : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
 class ActIdPasswd : public ClientAction { /* Change other user's password */
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
 class ActGetUsers : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
 class PasswdMessage : public Message {
@@ -44,54 +45,54 @@ protected:
 	virtual uint32_t storageRequired();
 	virtual uint32_t store(uint8_t *buffer, uint32_t size);
 	virtual uint32_t load(const uint8_t *buffer, uint32_t size);
+
+	virtual bool int_process() const;
 public:
 	PasswdMessage();
 	PasswdMessage(uint32_t user_id, const string& newpass);
 
-	virtual bool process() const;
-
 	virtual uint16_t message_type_id() const { return TYPE_ID_UPDATEPASS; }
 };
 
-bool ActPasswd::int_process(ClientConnection *cc, MessageBlock *mb) {
+auto_ptr<MessageBlock> ActPasswd::int_process(ClientConnection *cc, const MessageBlock *mb) {
 	UserSupportModule *usm = getUserSupportModule();
-	uint32_t user_id = cc->getProperty("user_id");
+	uint32_t user_id = cc->getUserId();
 	string newpass = (*mb)["newpass"];
 
 	if (newpass == "")
-		return cc->sendError("Cannot have a blank password!");
+		return MessageBlock::error("Cannot have a blank password!");
 
 	if ((newpass = usm->hashpw(user_id, newpass)) == "")
-		return cc->sendError("Error hashing password.");
+		return MessageBlock::error("Error hashing password.");
 
 	return triggerMessage(cc, new PasswdMessage(user_id, newpass));
 }
 
-bool ActIdPasswd::int_process(ClientConnection *cc, MessageBlock *mb) {
+auto_ptr<MessageBlock> ActIdPasswd::int_process(ClientConnection *cc, const MessageBlock *mb) {
 	UserSupportModule *usm = getUserSupportModule();
 	char *errptr;
 	uint32_t user_id = strtol((*mb)["user_id"].c_str(), &errptr, 0);
 	if(*errptr || (*mb)["user_id"] == "")
-		return cc->sendError("user_id isn't a valid integer");
+		return MessageBlock::error("user_id isn't a valid integer");
 
 	string newpass = (*mb)["newpass"];
 	if (newpass == "")
-		return cc->sendError("Cannot have a blank password!");
+		return MessageBlock::error("Cannot have a blank password!");
 
 	if ((newpass = usm->hashpw(user_id, newpass)) == "")
-		return cc->sendError("Invalid user id or hashing error.");
+		return MessageBlock::error("Invalid user id or hashing error.");
 
 	return triggerMessage(cc, new PasswdMessage(user_id, newpass));
 }
 
-bool ActGetUsers::int_process(ClientConnection *cc, MessageBlock *) {
+auto_ptr<MessageBlock> ActGetUsers::int_process(ClientConnection *, const MessageBlock *) {
 	UserSupportModule *usm = getUserSupportModule();
 	if(!usm)
-		return cc->sendError("Misconfigured server, no UserSupportModule!");
+		return MessageBlock::error("Misconfigured server, no UserSupportModule!");
 
 	UserSupportModule::UserList lst = usm->list();
 
-	MessageBlock res("ok");
+	auto_ptr<MessageBlock> res(MessageBlock::ok());
 
 	UserSupportModule::UserList::iterator s;
 	int c = 0;
@@ -101,11 +102,11 @@ bool ActGetUsers::int_process(ClientConnection *cc, MessageBlock *) {
 		std::string cntr = tmp.str();
 
 		tmp.str(""); tmp << s->user_id;
-		res["id" + cntr] = tmp.str();
-		res["username" + cntr] = s->username;
+		(*res)["id" + cntr] = tmp.str();
+		(*res)["username" + cntr] = s->username;
 	}
 
-	return cc->sendMessageBlock(&res);
+	return res;
 }
 
 PasswdMessage::PasswdMessage() {
@@ -147,7 +148,7 @@ uint32_t PasswdMessage::load(const uint8_t *buffer, uint32_t size) {
 	return storageRequired();
 }
 
-bool PasswdMessage::process() const {
+bool PasswdMessage::int_process() const {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return false;
@@ -167,14 +168,9 @@ static Message* create_passwd_msg() {
 	return new PasswdMessage();
 }
 
-static void init() __attribute__((constructor));
-static void init() {
-	ClientAction::registerAction(USER_TYPE_ADMIN, "passwd", &_act_passwd);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "passwd", &_act_passwd);
-	ClientAction::registerAction(USER_TYPE_OBSERVER, "passwd", &_act_passwd);
-	ClientAction::registerAction(USER_TYPE_CONTESTANT, "passwd", &_act_passwd);
-	ClientAction::registerAction(USER_TYPE_MARKER, "passwd", &_act_passwd);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "id_passwd", &_act_id_passwd);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "getusers", &_act_get_users);
+extern "C" void abacuscm_mod_init() {
+	ClientAction::registerAction("passwd", PERMISSION_CHANGE_PASSWORD, &_act_passwd);
+	ClientAction::registerAction("id_passwd", PERMISSION_USER_ADMIN, &_act_id_passwd);
+	ClientAction::registerAction("getusers", PERMISSION_USER_ADMIN, &_act_get_users);
 	Message::registerMessageFunctor(TYPE_ID_UPDATEPASS, create_passwd_msg);
 }

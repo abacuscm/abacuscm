@@ -48,7 +48,7 @@ typedef struct {
 
 class ServerConnection {
 	// In batch.C, to allow it to call sendMB directly
-	friend void batch_sendMB(ServerConnection &_server_con, MessageBlock *&mb, std::vector<std::string> &content);
+	friend void batch_sendMB(ServerConnection &_server_con, MessageBlock *&mb, MessageBlock *&expect, std::vector<std::string> &content, std::vector<std::string> &expect_content);
 private:
 	struct CallbackData {
 		EventCallback func;
@@ -125,17 +125,16 @@ public:
 	static Grid gridFromMB(const MessageBlock &mb);
 
 	bool auth(std::string username, std::string password);
-	std::string whatAmI();
 	bool createuser(std::string username, std::string friendlyname, std::string password, std::string type);
 	bool changePassword(std::string password);
 	bool changePassword(uint32_t id, std::string password);
 
 	bool startStop(bool global, bool start, time_t time);
 
+	std::vector<std::string> getPermissions();
 	std::vector<std::string> getLanguages();
 	std::vector<std::string> getProblemTypes();
 	std::vector<ProblemInfo> getProblems();
-	std::vector<ProblemInfo> getSubmissibleProblems();
 	std::string getProblemDescription(std::string problemtype);
 
 	std::vector<UserInfo> getUsers();
@@ -173,8 +172,7 @@ public:
 	bool registerEventCallback(std::string event, EventCallback func, void *custom);
 	bool deregisterEventCallback(std::string event, EventCallback func);
 
-private:
-	std::vector<ProblemInfo> _getProblems(std::string query);
+	static void init();
 };
 
 #endif

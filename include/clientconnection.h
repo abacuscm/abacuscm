@@ -14,10 +14,13 @@
 #include <openssl/ssl.h>
 #include <string>
 #include <map>
+#include <vector>
 #include <pthread.h>
 
 #include "socket.h"
 #include "threadssl.h"
+#include "permissions.h"
+#include "queue.h"
 
 #define CLIENT_BFR_SIZE			512
 
@@ -25,8 +28,6 @@ class MessageBlock;
 
 class ClientConnection : public Socket {
 private:
-	typedef std::map<std::string, uint32_t> ClientProps;
-
 	/* The type returned by TLSv1_method and accepted by SSL_CTX_NEW changed
 	 * somewhere between 0.9.8 and 1.0.0c. For now assume it was with the major
 	 * revision.
@@ -38,6 +39,13 @@ private:
 #endif
 	static SSL_CTX *_context;
 
+	/* Out-going data
+	 */
+	std::string _write_msg;      // data that is on its way out
+	std::size_t _write_progress; // amount of _out_msg that has been sent
+	Queue<std::string> _write_queue;  // messages waiting to be sent
+	int _write_notify[2];        // pipe pair for waking up on data
+
 	/* The connection is a state machine:
 	 * 1. Uninitialised: _tssl = NULL, _ssl = NULL
 	 * 2. Connecting: _tssl = NULL, _ssl != NULL
@@ -47,25 +55,48 @@ private:
 	SSL *_ssl;
 
 	MessageBlock *_message;
-	ClientProps _props;
 
-	pthread_mutex_t _write_lock;
+	uint32_t _user_id;
+	PermissionSet _permissions;
 
-	bool initiate_ssl();
-	bool process_data();
+	/**
+	 * Attempts to open the SSL connection, but will not block. Returns:
+	 * <0 on terminal failure
+	 *  0 on success (connection open)
+	 * >0 a pollfd events mask to wait for on the socket.
+	 */
+	short initiate_ssl();
+
+	/**
+	 * Attempts to read data from the connection, but will not block. Returns:
+	 * <0 on failure (kill off the connection)
+	 * >0 a pollfd events mask to wait for on the socket.
+	 */
+	short read_data();
+
+	/**
+	 * Attempts to write data to the connection, but will not block. Returns:
+	 * <0 on failure (kill off the connection)
+	 *  0 to wait for more data to be added to the queue
+	 * >0 a pollfd events mask to wait for on the socket.
+	 */
+	short write_data();
 public:
 	ClientConnection(int sockfd);
 	virtual ~ClientConnection();
 
-	virtual bool process();
+	virtual std::vector<pollfd> int_process();
 
-	bool sendError(const std::string& message);
-	bool reportSuccess();
-	bool sendMessageBlock(const MessageBlock *mb);
+	// Needs to be implemented since we inherit from Socket, but will never
+	// be called since we overload int_process.
+	virtual short socket_process() { return 0; }
 
-	uint32_t setProperty(const std::string& prop, uint32_t value);
-	uint32_t getProperty(const std::string& prop); // const ... (fails)
-	uint32_t delProperty(const std::string& prop);
+	void sendMessageBlock(const MessageBlock *mb);
+
+	uint32_t getUserId() const;
+	void setUserId(uint32_t user_id);
+	PermissionSet &permissions();
+	const PermissionSet &permissions() const;
 
 	static bool init();
 };

@@ -14,42 +14,24 @@
 # include <config.h>
 #endif
 #include <sys/types.h>
+#include "waitable.h"
 
-#include <set>
-
-class Socket;
-
-class SocketPool : public std::set<Socket*> {
-private:
-	pthread_mutex_t _lock;
-public:
-	SocketPool();
-	~SocketPool();
-
-	void lock();
-	void unlock();
-
-	void locked_insert(Socket* s) { lock(); insert(s); unlock(); }
-};
-
-class Socket {
+class Socket : public Waitable {
 private:
 	int _sock;
 protected:
-	int& sockfd() { return _sock; };
+	int getSock() const { return _sock; }
 public:
 	Socket();
 	virtual ~Socket();
 
-	/**
-	 * returns true or false.
-	 * true:   re-add to the idle_pool.
-	 * false:  delete object.
-	 */
-	virtual bool process() = 0;
+	void initialise(int sock, short revents);
+	virtual std::vector<pollfd> int_process();
 
-	void addToSet(int *n, fd_set *set);
-	bool isInSet(fd_set *set);
+	// Subclases can implement this instead of int_process. It will turn
+	// the result into a pollfd using the return value as the events member,
+	// with _sock being the file descriptor.
+	virtual short socket_process() = 0;
 };
 
 #endif

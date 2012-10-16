@@ -12,6 +12,7 @@
 #include "threadssl.h"
 
 #include <sstream>
+#include <string>
 #include <cassert>
 
 using namespace std;
@@ -33,6 +34,7 @@ MessageBlock::MessageBlock() {
 
 MessageBlock::MessageBlock(const MessageBlock &mb) {
 	_message = mb._message;
+	_message_id = mb._message_id;
 	_headers = mb._headers;
 	_content_length = mb._content_length;
 	if (mb._content) {
@@ -54,6 +56,27 @@ MessageBlock::MessageBlock(const MessageBlock &mb) {
 MessageBlock::~MessageBlock() {
 	if(_content && _content_private)
 		delete []_content;
+}
+
+auto_ptr<MessageBlock> MessageBlock::error(const std::string &msg) {
+	auto_ptr<MessageBlock> mb(new MessageBlock("err"));
+	(*mb)["msg"] = msg;
+	return mb;
+}
+
+auto_ptr<MessageBlock> MessageBlock::ok() {
+	return auto_ptr<MessageBlock>(new MessageBlock("ok"));
+}
+
+
+const string& MessageBlock::operator[] (const std::string& name) const {
+	MessageHeaders::const_iterator i = _headers.find(name);
+	if(i != _headers.end())
+		return i->second;
+	else {
+		static const std::string empty("");
+		return empty;
+	}
 }
 
 bool MessageBlock::setContent(const char* data, int size, bool make_private_copy) {
@@ -85,7 +108,7 @@ bool MessageBlock::setContent(const char* data, int size, bool make_private_copy
 
 void MessageBlock::dump() const {
 	MessageHeaders::const_iterator i;
-	log(LOG_DEBUG, "Dumping message: %s", _message.c_str());
+	log(LOG_DEBUG, "Dumping message: %s %s", _message.c_str(), _message_id.c_str());
 	for(i = _headers.begin(); i != _headers.end(); i++)
 		log(LOG_DEBUG, "%s:%s", i->first.c_str(), i->second.c_str());
 	if(_content_length)
@@ -135,8 +158,18 @@ int MessageBlock::addBytes(const char* bytes, int count) {
 				bytes += nl_pos + 1;
 				count -= nl_pos + 1;
 
-				if(_message == "")
-					_message = line;
+				if(_message == "") {
+					string::size_type p = line.find(' ');
+					if (p != string::npos)
+					{
+						_message = line.substr(0, p);
+						_message_id = line.substr(p + 1);
+					}
+					else
+					{
+						_message = line;
+					}
+				}
 				else if(line == "") {
 //					log(LOG_DEBUG, "Empty line, end of headers");
 					MessageHeaders::iterator i = _headers.find("content-length");
@@ -182,22 +215,24 @@ bool MessageBlock::writeBlockToSSL(const char *buffer, int length, ThreadSSL *ss
 	return true;
 }
 
-bool MessageBlock::writeToSSL(ThreadSSL* ssl) const {
-	ostringstream init_block;
-	init_block << _message << '\n';
+string MessageBlock::getRaw() const {
+	ostringstream block;
+	block << _message;
+	if (!_message_id.empty())
+		block << ' ' << _message_id;
+	block << '\n';
 	for(MessageHeaders::const_iterator i = _headers.begin(); i != _headers.end(); ++i)
-		init_block << i->first << ':' << i->second << '\n';
-	init_block << '\n';
+		block << i->first << ':' << i->second << '\n';
+	block << '\n';
 
-	string headerblock = init_block.str();
-	int length = headerblock.length();
-	const char *buffer = headerblock.c_str();
+	if (_content) {
+		block.write(_content, _content_length);
+	}
 
-	if(!writeBlockToSSL(buffer, length, ssl))
-		return false;
+	return block.str();
+}
 
-	if(_content)
-		return writeBlockToSSL(_content, _content_length, ssl);
-
-	return true;
+bool MessageBlock::writeToSSL(ThreadSSL* ssl) const {
+	string raw = getRaw();
+	return writeBlockToSSL(raw.data(), raw.size(), ssl);
 }

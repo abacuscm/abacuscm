@@ -24,8 +24,8 @@
 
 template<class T> class Queue;
 class TimedAction;
-class SocketPool;
-class Socket;
+class WaitableSet;
+class Waitable;
 
 class Server {
 public:
@@ -44,9 +44,8 @@ public:
 	static void setAckQueue(Queue<uint32_t> *ack_queue);
 	static void putTimedAction(TimedAction *action);
 	static void setTimedQueue(Queue<TimedAction*> *queue);
-	static void setSocketQueue(Queue<Socket*> *queue);
-	static void setSocketPool(SocketPool *pool);
-	static void putSocket(Socket*, bool queue_immediate = false);
+	static void setWaitableSet(WaitableSet *set);
+	static void putWaitable(Waitable*, bool queue_immediate = false);
 };
 
 #endif

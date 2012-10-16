@@ -689,9 +689,7 @@ static void log_ciphers(const OBJ_NAME *name, void*) {
 //////////////////////////////////////////////////////////////
 static UDPPeerMessenger _udpPeerMessenger;
 
-static void udp_peer_messenger_init() __attribute__ ((constructor));
-static void udp_peer_messenger_init()
-{
+extern "C" void abacuscm_mod_init() {
 	// double check that gcc actually did the right thing with the __attribute__ ((packed)).
 	// If we don't register the messenger abacusd will detect it and abort.
 	if(sizeof(st_frame) != ST_FRAME_SIZE)

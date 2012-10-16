@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <iterator>
 #include <sstream>
+#include <memory>
 #include <sys/types.h>
 #include <regex.h>
 #include <time.h>
@@ -33,7 +34,7 @@ class ActSetProbAttrs : public ClientAction {
 private:
 	regex_t _file_reg;
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 public:
 	ActSetProbAttrs();
 	~ActSetProbAttrs();
@@ -41,12 +42,12 @@ public:
 
 class ActGetProbAttrs : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection* cc, MessageBlock* mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection* cc, const MessageBlock* mb);
 };
 
 class ActGetProblemFile : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection* cc, MessageBlock* mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection* cc, const MessageBlock* mb);
 };
 
 class ProbMessage : public Message {
@@ -76,6 +77,8 @@ protected:
 	virtual uint32_t storageRequired();
 	virtual uint32_t store(uint8_t *buffer, uint32_t size);
 	virtual uint32_t load(const uint8_t *buffer, uint32_t size);
+
+	virtual bool int_process() const;
 public:
 	ProbMessage();
 	ProbMessage(uint32_t prob_id, const string& type, ProblemList &deps);
@@ -87,7 +90,6 @@ public:
 	bool addFileAttrib(const string& name, const string& filename, const char* buffer, uint32_t len);
 	bool keepFileAttrib(const string& name);
 
-	virtual bool process() const;
 	virtual uint16_t message_type_id() const { return TYPE_ID_PROBLEMUPDATE; };
 };
 
@@ -319,7 +321,7 @@ bool ProbMessage::keepFileAttrib(const string& name) {
 	return true;
 }
 
-bool ProbMessage::process() const {
+bool ProbMessage::int_process() const {
 	DbCon *db = DbCon::getInstance();
 	if(!db)
 		return false;
@@ -425,21 +427,21 @@ ActSetProbAttrs::~ActSetProbAttrs() {
 	regfree(&_file_reg);
 }
 
-#define act_error(x)	{ delete msg; return cc->sendError(x); }
-bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
+#define act_error(x)	do { delete msg; return MessageBlock::error(x); } while (false)
+auto_ptr<MessageBlock> ActSetProbAttrs::int_process(ClientConnection *cc, const MessageBlock *mb) {
 	uint32_t prob_id = atol((*mb)["prob_id"].c_str());
 
 	string prob_type = (*mb)["prob_type"];
 	if(prob_id && prob_type == "") {
 		DbCon *db = DbCon::getInstance();
 		if(!db)
-			return cc->sendError("Error obtaining connection to database");
+			return MessageBlock::error("Error obtaining connection to database");
 		prob_type = db->getProblemType(prob_id);
 		db->release();db=NULL;
 	}
 
 	if(prob_type == "")
-		return cc->sendError("You must specify prob_type for new problems");
+		return MessageBlock::error("You must specify prob_type for new problems");
 
 	string prob_deps = (*mb)["prob_dependencies"];
 	ProblemList deps;
@@ -454,7 +456,7 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 
 	string attr_desc = ProblemType::getProblemDescription(prob_type);
 	if(attr_desc == "")
-		return cc->sendError("Invalid prob_type or internal server error");
+		return MessageBlock::error("Invalid prob_type or internal server error");
 
 	// this crap should be rewritten to make use of regular expressions
 	// for example 'a S' relates to ^a$ for an attribute name, any attributes
@@ -511,7 +513,7 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 				if(file_attr_desc == "-") {
 					// TODO: Find a better heuristic.
 					if(prob_id == 0)
-						act_error("You cannot 'keep' a file that was never available to begin with.  This applies to 'new' problems only")
+						act_error("You cannot 'keep' a file that was never available to begin with.  This applies to 'new' problems only");
 					else
 						msg->keepFileAttrib(attr);
 				} else {
@@ -568,47 +570,47 @@ bool ActSetProbAttrs::int_process(ClientConnection *cc, MessageBlock *mb) {
 }
 #undef act_error
 
-bool ActGetProbAttrs::int_process(ClientConnection* cc, MessageBlock*mb) {
+auto_ptr<MessageBlock> ActGetProbAttrs::int_process(ClientConnection*, const MessageBlock*mb) {
 	char *errpnt;
 	uint32_t prob_id = strtoll((*mb)["prob_id"].c_str(), &errpnt, 0);
 	if(!prob_id || *errpnt)
-		return cc->sendError("Invalid problem Id");
+		return MessageBlock::error("Invalid problem Id");
 
 	DbCon *db = DbCon::getInstance();
 	if(!db)
-		return cc->sendError("Error connecting to database");
+		return MessageBlock::error("Error connecting to database");
 	string prob_type = db->getProblemType(prob_id);
 	AttributeList attrs = db->getProblemAttributes(prob_id);
 	db->release();db=NULL;
 
 	if(attrs.empty() || prob_type == "")
-		return cc->sendError("No such problem");
+		return MessageBlock::error("No such problem");
 
-	MessageBlock res("ok");
+	auto_ptr<MessageBlock> res(MessageBlock::ok());
 
 	AttributeList::iterator i;
 	for(i = attrs.begin(); i != attrs.end(); ++i) {
-		res[i->first] = i->second;
+		(*res)[i->first] = i->second;
 	}
-	res["prob_type"] = prob_type;
+	(*res)["prob_type"] = prob_type;
 
-	return cc->sendMessageBlock(&res);
+	return res;
 }
 
-bool ActGetProblemFile::int_process(ClientConnection* cc, MessageBlock* mb) {
+auto_ptr<MessageBlock> ActGetProblemFile::int_process(ClientConnection*, const MessageBlock* mb) {
 	char *errpnt;
 	uint32_t prob_id = strtoll((*mb)["prob_id"].c_str(), &errpnt, 0);
 	string file = (*mb)["file"];
 
 	if(!prob_id || *errpnt)
-		return cc->sendError("Invalid problem Id");
+		return MessageBlock::error("Invalid problem Id");
 
 	if(file == "")
-		return cc->sendError("You have not specified which 'file' you'd like");
+		return MessageBlock::error("You have not specified which 'file' you'd like");
 
 	DbCon *db = DbCon::getInstance();
 	if(!db)
-		return cc->sendError("Error connecting to database");
+		return MessageBlock::error("Error connecting to database");
 
 	uint8_t *dataptr;
 	uint32_t datalen;
@@ -617,14 +619,14 @@ bool ActGetProblemFile::int_process(ClientConnection* cc, MessageBlock* mb) {
 	db->release();db=NULL;
 
 	if(!dbres)
-		return cc->sendError("You have specified an invalid problem id");
+		return MessageBlock::error("You have specified an invalid problem id");
 
-	MessageBlock res("ok");
-	res.setContent((const char*)dataptr, (int)datalen);
+	auto_ptr<MessageBlock> res(MessageBlock::ok());
+	res->setContent((const char*)dataptr, (int)datalen);
 
 	delete []dataptr;
 
-	return cc->sendMessageBlock(&res);
+	return res;
 }
 
 static ActSetProbAttrs _act_setprobattrs;
@@ -635,14 +637,9 @@ static Message* create_prob_message() {
 	return new ProbMessage();
 }
 
-static void init() __attribute__((constructor));
-static void init() {
-	ClientAction::registerAction(USER_TYPE_ADMIN, "setprobattrs", &_act_setprobattrs);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "getprobattrs", &_act_getprobattrs);
-	ClientAction::registerAction(USER_TYPE_MARKER, "getprobattrs", &_act_getprobattrs);
-	ClientAction::registerAction(USER_TYPE_MARKER, "getprobfile", &_act_getprobfile);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "getprobattrs", &_act_getprobattrs);
-	ClientAction::registerAction(USER_TYPE_JUDGE, "getprobfile", &_act_getprobfile);
-	ClientAction::registerAction(USER_TYPE_ADMIN, "getprobfile", &_act_getprobfile);
+extern "C" void abacuscm_mod_init() {
+	ClientAction::registerAction("setprobattrs", PERMISSION_PROBLEM_ADMIN, &_act_setprobattrs);
+	ClientAction::registerAction("getprobattrs", PERMISSION_SEE_PROBLEM_DETAILS, &_act_getprobattrs);
+	ClientAction::registerAction("getprobfile",  PERMISSION_SEE_PROBLEM_DETAILS, &_act_getprobfile);
 	Message::registerMessageFunctor(TYPE_ID_PROBLEMUPDATE, create_prob_message);
 }

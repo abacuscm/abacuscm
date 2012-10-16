@@ -13,17 +13,22 @@
 #include "logger.h"
 #include "dbcon.h"
 #include "clienteventregistry.h"
+#include "permissionmap.h"
+#include "markers.h"
+
+#include <memory>
+
+using namespace std;
 
 class ActAuth : public ClientAction {
 protected:
-	virtual bool int_process(ClientConnection *cc, MessageBlock *mb);
+	virtual auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb);
 };
 
-bool ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
+auto_ptr<MessageBlock> ActAuth::int_process(ClientConnection *cc, const MessageBlock *mb) {
 	DbCon *db = DbCon::getInstance();
 	if(!db) {
-		cc->sendError("Unable to connect to database.");
-		return false;
+		return MessageBlock::error("Unable to connect to database.");
 	}
 
 	uint32_t user_id;
@@ -32,21 +37,27 @@ bool ActAuth::int_process(ClientConnection *cc, MessageBlock *mb) {
 	db->release();db=NULL;
 
 	if(result < 0)
-		return cc->sendError("Database error.");
+		return MessageBlock::error("Database error.");
 	else if(result == 0)
-		return cc->sendError("Authentication failed.  Invalid username and/or password.");
+		return MessageBlock::error("Authentication failed.  Invalid username and/or password.");
 	else {
+		if (cc->getUserId() != 0) {
+			// Client was already logged in - fake disconnection
+			ClientEventRegistry::getInstance().deregisterClient(cc);
+			Markers::getInstance().preemptMarker(cc);
+		}
 		log(LOG_INFO, "User '%s' successfully logged in on client connection %p.", (*mb)["user"].c_str(), cc);
-		cc->setProperty("user_id", user_id);
-		cc->setProperty("user_type", user_type);
+		cc->setUserId(user_id);
+		cc->permissions() = PermissionMap::getInstance()->getPermissions(static_cast<UserType>(user_type));
 		ClientEventRegistry::getInstance().registerClient(cc);
-		return cc->reportSuccess();
+		auto_ptr<MessageBlock> ret = MessageBlock::ok();
+		(*ret)["user"] = (*mb)["user"];
+		return ret;
 	}
 }
 
 static ActAuth _act_auth;
 
-static void init() __attribute__((constructor));
-static void init() {
-	ClientAction::registerAction(USER_TYPE_NONE, "auth", &_act_auth);
+extern "C" void abacuscm_mod_init() {
+	ClientAction::registerAction("auth", PermissionTest::ANY, &_act_auth);
 }

@@ -33,7 +33,7 @@ class StandingsSupportModule : public SupportModule {
 public:
 	typedef struct
 	{
-		uint32_t user_type;
+		bool in_standings;                 // user has PERMISSION_IN_STANDINGS
 		uint32_t time;
 		std::map<uint32_t, int32_t> tries; // sign bit indicates whether correctness has been achieved or not.
 	} StandingsData;
@@ -41,15 +41,6 @@ public:
 	/* Maps user id to that user's standings */
 	typedef std::map<uint32_t, StandingsData> Standings;
 private:
-	/* Each user type has an associated set of flags saying what permissions
-	 * they have.
-	 */
-	enum StandingsFlag {
-		STANDINGS_FLAG_SEND = 1,       /* Get standings at all */
-		STANDINGS_FLAG_FINAL = 2,      /* See standings in last hour */
-		STANDINGS_FLAG_OBSERVER = 4    /* See standings for unofficial entrants */
-	};
-
 	pthread_rwlock_t _lock;
 	Standings _final_standings;
 	Standings _contestant_standings;
@@ -58,13 +49,16 @@ private:
 	/* Set of submission IDs for which we've created timed actions to add back later. */
 	std::set<uint32_t> _postdated_submissions;
 
-	static uint32_t getStandingsFlags(uint32_t user_type);
-
 	/* Callback for TimedStandingsUpdater */
 	void timedUpdate(time_t time, uint32_t uid, uint32_t submission_id);
 
 	StandingsSupportModule();
 	virtual ~StandingsSupportModule();
+
+	/* Equivalent to getStandings, but optionally allows the caller to
+	 * handle locking.
+	 */
+	bool getStandingsInternal(uint32_t uid, bool final, bool see_all, MessageBlock &mb, bool caller_locks);
 
 	friend class TimedStandingsUpdater;
 public:
@@ -76,11 +70,12 @@ public:
 	bool updateStandings(uint32_t uid, time_t tm);
 
 	/* Takes a copy of the standings and adds it to mb.
-	 * user_type is the type of the requesting user
 	 * uid is the for whose status should be reported, or 0 to get the full
 	 * standings list.
+	 * If final is true, include last-hour results.
+	 * If see_all is false, show only users with PERMISSION_IN_STANDINGS.
 	 */
-	bool getStandings(uint32_t user_type, uint32_t uid, MessageBlock &mb);
+	bool getStandings(uint32_t uid, bool final, bool see_all, MessageBlock &mb);
 
 	virtual void init();
 };
