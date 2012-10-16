@@ -286,7 +286,7 @@ bool StandingsSupportModule::getStandings(uint32_t user_type, uint32_t uid, Mess
 	}
 
 	pthread_rwlock_rdlock(&_lock);
-	const Standings &standings = 
+	const Standings &standings =
 		(flags & STANDINGS_FLAG_FINAL) ? _final_standings : _contestant_standings;
 
 	int r = 0;
@@ -360,7 +360,7 @@ void StandingsSupportModule::init() {
 
 	TimerSupportModule *timer = getTimerSupportModule();
 
-	uint32_t duration;
+	time_t duration;
 	if(!timer) {
 		log(LOG_CRIT, "Error obtaining TimerSupportModule.");
 		duration = 5 * 60 * 60;
