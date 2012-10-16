@@ -16,6 +16,7 @@
 #include "dbcon.h"
 
 #include <sstream>
+#include <unistd.h>
 
 Markers Markers::_instance;
 

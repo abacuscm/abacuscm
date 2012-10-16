@@ -19,6 +19,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <time.h>
+#include <unistd.h>
 
 using namespace std;
 
