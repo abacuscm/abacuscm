@@ -1556,11 +1556,6 @@ static void thread_deinit(void* initialised)
 
 extern "C" void abacuscm_mod_init() {
 	pthread_key_create(&_called_thread_init, thread_deinit);
-}
-
-extern "C"
-void abacuscm_mod_init()
-{
 	mysql_library_init(0, NULL, NULL);
 	DbCon::registerFunctor(MySQLFunctor);
 	pthread_setspecific(_called_thread_init, MYSQL_THREAD_STATE_SERVER_INIT);
