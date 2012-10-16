@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <netdb.h>
+#include <string.h>
 
 #include "clientlistener.h"
 #include "clientconnection.h"
