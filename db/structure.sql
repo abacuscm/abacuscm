@@ -29,9 +29,9 @@ CREATE TABLE `Clarification` (
   `text` text CHARACTER SET utf8,
   PRIMARY KEY  (`clarification_id`),
   KEY `clarification_req_id` (`clarification_req_id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `Clarification_ibfk_2` FOREIGN KEY (`clarification_req_id`) REFERENCES `ClarificationRequest` (`clarification_req_id`) ON UPDATE CASCADE,
-  CONSTRAINT `Clarification_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `User` (`user_id`) ON UPDATE CASCADE
+  KEY `user_id` (`user_id`)
+--  CONSTRAINT `Clarification_ibfk_2` FOREIGN KEY (`clarification_req_id`) REFERENCES `ClarificationRequest` (`clarification_req_id`) ON UPDATE CASCADE,
+--  CONSTRAINT `Clarification_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `User` (`user_id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
@@ -47,8 +47,8 @@ CREATE TABLE `ClarificationRequest` (
   `text` text CHARACTER SET utf8,
   PRIMARY KEY  (`clarification_req_id`),
   KEY `user_id` (`user_id`),
-  KEY `problem_id` (`problem_id`),
-  CONSTRAINT `ClarificationRequest_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `User` (`user_id`) ON UPDATE CASCADE
+  KEY `problem_id` (`problem_id`)
+--  CONSTRAINT `ClarificationRequest_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `User` (`user_id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
@@ -94,10 +94,10 @@ CREATE TABLE `PeerMessageNoAck` (
   `lastsent` int(10) unsigned default NULL,
   PRIMARY KEY  (`server_id`,`message_id`,`ack_server_id`),
   KEY `lastsent` (`lastsent`),
-  KEY `ack_server_id` (`ack_server_id`),
-  CONSTRAINT `PeerMessageNoAck_ibfk_3` FOREIGN KEY (`ack_server_id`) REFERENCES `Server` (`server_id`) ON UPDATE CASCADE,
-  CONSTRAINT `PeerMessageNoAck_ibfk_1` FOREIGN KEY (`server_id`) REFERENCES `Server` (`server_id`) ON UPDATE CASCADE,
-  CONSTRAINT `PeerMessageNoAck_ibfk_2` FOREIGN KEY (`server_id`, `message_id`) REFERENCES `PeerMessage` (`server_id`, `message_id`) ON UPDATE CASCADE
+  KEY `ack_server_id` (`ack_server_id`)
+--  CONSTRAINT `PeerMessageNoAck_ibfk_3` FOREIGN KEY (`ack_server_id`) REFERENCES `Server` (`server_id`) ON UPDATE CASCADE,
+--  CONSTRAINT `PeerMessageNoAck_ibfk_1` FOREIGN KEY (`server_id`) REFERENCES `Server` (`server_id`) ON UPDATE CASCADE,
+--  CONSTRAINT `PeerMessageNoAck_ibfk_2` FOREIGN KEY (`server_id`, `message_id`) REFERENCES `PeerMessage` (`server_id`, `message_id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
@@ -121,8 +121,8 @@ CREATE TABLE `ProblemAttributes` (
   `problem_id` int(11) NOT NULL default '0',
   `attribute` varchar(128) NOT NULL default '',
   `value` varchar(255) default NULL,
-  PRIMARY KEY  (`problem_id`,`attribute`),
-  CONSTRAINT `ProblemAttributes_ibfk_1` FOREIGN KEY (`problem_id`) REFERENCES `Problem` (`problem_id`) ON UPDATE CASCADE
+  PRIMARY KEY  (`problem_id`,`attribute`)
+--  CONSTRAINT `ProblemAttributes_ibfk_1` FOREIGN KEY (`problem_id`) REFERENCES `Problem` (`problem_id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
@@ -133,9 +133,9 @@ DROP TABLE IF EXISTS `ProblemDependencies`;
 CREATE TABLE `ProblemDependencies` (
   `problem_id` int(11) NOT NULL default '0',
   `dependent_problem_id` int(11) NOT NULL default '0',
-  PRIMARY KEY (`problem_id`,`dependent_problem_id`),
-  CONSTRAINT `ProblemDependencies_ibfk_1` FOREIGN KEY (`problem_id`) REFERENCES `Problem` (`problem_id`) ON UPDATE CASCADE,
-  CONSTRAINT `ProblemDependencies_ibfk_2` FOREIGN KEY (`dependent_problem_id`) REFERENCES `Problem` (`problem_id`) ON UPDATE CASCADE
+  PRIMARY KEY (`problem_id`,`dependent_problem_id`)
+--  CONSTRAINT `ProblemDependencies_ibfk_1` FOREIGN KEY (`problem_id`) REFERENCES `Problem` (`problem_id`) ON UPDATE CASCADE,
+--  CONSTRAINT `ProblemDependencies_ibfk_2` FOREIGN KEY (`dependent_problem_id`) REFERENCES `Problem` (`problem_id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
@@ -147,8 +147,8 @@ CREATE TABLE `ProblemFileData` (
   `problem_id` int(11) NOT NULL default '0',
   `attribute` varchar(128) NOT NULL default '',
   `data` longblob,
-  PRIMARY KEY  (`problem_id`,`attribute`),
-  CONSTRAINT `ProblemFileData_ibfk_1` FOREIGN KEY (`problem_id`) REFERENCES `Problem` (`problem_id`) ON UPDATE CASCADE
+  PRIMARY KEY  (`problem_id`,`attribute`)
+--  CONSTRAINT `ProblemFileData_ibfk_1` FOREIGN KEY (`problem_id`) REFERENCES `Problem` (`problem_id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
@@ -172,8 +172,8 @@ CREATE TABLE `ServerAttributes` (
   `server_id` int(10) unsigned NOT NULL default '0',
   `attribute` varchar(16) NOT NULL default '',
   `value` varchar(64) default NULL,
-  PRIMARY KEY  (`server_id`,`attribute`),
-  CONSTRAINT `ServerAttributes_ibfk_1` FOREIGN KEY (`server_id`) REFERENCES `Server` (`server_id`) ON UPDATE CASCADE
+  PRIMARY KEY  (`server_id`,`attribute`)
+--  CONSTRAINT `ServerAttributes_ibfk_1` FOREIGN KEY (`server_id`) REFERENCES `Server` (`server_id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
@@ -191,9 +191,9 @@ CREATE TABLE `Submission` (
   `language` varchar(16) default NULL,
   PRIMARY KEY  (`submission_id`),
   KEY `user_id` (`user_id`),
-  KEY `prob_id` (`prob_id`),
-  CONSTRAINT `Submission_ibfk_2` FOREIGN KEY (`prob_id`) REFERENCES `Problem` (`problem_id`) ON UPDATE CASCADE,
-  CONSTRAINT `Submission_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `User` (`user_id`) ON UPDATE CASCADE
+  KEY `prob_id` (`prob_id`)
+--  CONSTRAINT `Submission_ibfk_2` FOREIGN KEY (`prob_id`) REFERENCES `Problem` (`problem_id`) ON UPDATE CASCADE,
+--  CONSTRAINT `Submission_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `User` (`user_id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
@@ -209,9 +209,9 @@ CREATE TABLE `SubmissionMark` (
   `remark` varchar(255) default NULL,
   `server_id` int(11) default NULL,
   PRIMARY KEY  (`submission_id`,`marker_id`),
-  KEY `marker_id` (`marker_id`),
-  CONSTRAINT `SubmissionMark_ibfk_2` FOREIGN KEY (`marker_id`) REFERENCES `User` (`user_id`) ON UPDATE CASCADE,
-  CONSTRAINT `SubmissionMark_ibfk_1` FOREIGN KEY (`submission_id`) REFERENCES `Submission` (`submission_id`) ON UPDATE CASCADE
+  KEY `marker_id` (`marker_id`)
+--  CONSTRAINT `SubmissionMark_ibfk_2` FOREIGN KEY (`marker_id`) REFERENCES `User` (`user_id`) ON UPDATE CASCADE,
+--  CONSTRAINT `SubmissionMark_ibfk_1` FOREIGN KEY (`submission_id`) REFERENCES `Submission` (`submission_id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
@@ -225,9 +225,9 @@ CREATE TABLE `SubmissionMarkFile` (
   `name` varchar(255) NOT NULL default '',
   `content` longblob,
   PRIMARY KEY  (`submission_id`,`marker_id`,`name`),
-  KEY `marker_id` (`marker_id`),
-  CONSTRAINT `SubmissionMarkFile_ibfk_2` FOREIGN KEY (`marker_id`) REFERENCES `User` (`user_id`) ON UPDATE CASCADE,
-  CONSTRAINT `SubmissionMarkFile_ibfk_1` FOREIGN KEY (`submission_id`) REFERENCES `Submission` (`submission_id`) ON UPDATE CASCADE
+  KEY `marker_id` (`marker_id`)
+--  CONSTRAINT `SubmissionMarkFile_ibfk_2` FOREIGN KEY (`marker_id`) REFERENCES `User` (`user_id`) ON UPDATE CASCADE,
+--  CONSTRAINT `SubmissionMarkFile_ibfk_1` FOREIGN KEY (`submission_id`) REFERENCES `Submission` (`submission_id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
