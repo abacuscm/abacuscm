@@ -14,6 +14,7 @@ checksumseed = 1976534597
 cipher = aes256
 keyfile = conf/rijndael.key
 ivfile = conf/rijndael.iv
+cacert = conf/cacert.crt
 # These timings is in micro seconds.
 init_delay = 1000
 min_delay = 100
