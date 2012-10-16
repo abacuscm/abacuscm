@@ -247,7 +247,8 @@ CREATE TABLE `User` (
   PRIMARY KEY  (`user_id`),
   UNIQUE KEY `user_id` (`user_id`),
   UNIQUE KEY `username` (`username`),
-  CONSTRAINT `User_ibfk_1` FOREIGN KEY (`group`) REFERENCES `Group` (`group_id`)
+  KEY `group` (`group`)
+--  CONSTRAINT `User_ibfk_1` FOREIGN KEY (`group`) REFERENCES `Group` (`group_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
