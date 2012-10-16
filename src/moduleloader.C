@@ -35,6 +35,11 @@ bool ModuleLoader::loadModule(string modname, bool global __attribute__((unused)
 		return false;
 	}
 
+	void (*initf)() = (void (*)())dlsym(mod, "abacuscm_mod_init");
+	if (initf)
+		initf();
+	log(LOG_INFO, "Loaded module %s", modname.c_str());
+
 	return true;
 }
 
