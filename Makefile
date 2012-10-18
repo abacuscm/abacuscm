@@ -30,7 +30,7 @@ MODS_abacus = abacus $(CLIENT_MODS) \
 	ui_clarificationreply moc_ui_clarificationreply \
 	ui_viewclarificationreply moc_ui_viewclarificationreply
 
-LIBS_abacus = ssl crypto pthread
+LIBS_abacus = ssl crypto pthread rt
 NEED_QT3=1
 bin/abacus : LDFLAGS += $(QT_LDFLAGS)
 bin/abacus : CFLAGS += $(QT_CFLAGS)
@@ -123,35 +123,35 @@ MODS_markerd += userprog \
 	testcaseproblemmarker \
 	interactiveproblemmarker \
 	sigsegv
-LIBS_markerd = ssl crypto pthread
+LIBS_markerd = ssl crypto pthread rt
 endif
 
 ifneq ($(filter admintools,$(mods)),)
 TARGET_BINS += balloon adduser addgroup addproblem standings batch extract_source make_submission
 
 MODS_balloon = balloon $(CLIENT_MODS)
-LIBS_balloon = ssl crypto pthread
+LIBS_balloon = ssl crypto pthread rt
 
 MODS_adduser = createuser $(CLIENT_MODS)
-LIBS_adduser = ssl crypto pthread
+LIBS_adduser = ssl crypto pthread rt
 
 MODS_addgroup = creategroup $(CLIENT_MODS)
-LIBS_addgroup = ssl crypto pthread
+LIBS_addgroup = ssl crypto pthread rt
 
 MODS_addproblem = createproblem $(CLIENT_MODS)
-LIBS_addproblem = ssl crypto pthread
+LIBS_addproblem = ssl crypto pthread rt
 
 MODS_batch = batch $(CLIENT_MODS)
-LIBS_batch = ssl crypto pthread
+LIBS_batch = ssl crypto pthread rt
 
 MODS_standings = standings $(CLIENT_MODS)
-LIBS_standings = ssl crypto pthread
+LIBS_standings = ssl crypto pthread rt
 
 MODS_extract_source = extract_source $(CLIENT_MODS)
-LIBS_extract_source = ssl crypto pthread
+LIBS_extract_source = ssl crypto pthread rt
 
 MODS_make_submission = make_submission $(CLIENT_MODS)
-LIBS_make_submission = ssl crypto pthread
+LIBS_make_submission = ssl crypto pthread rt
 endif
 
 ifeq ($(builddocs),yes)

@@ -1,5 +1,4 @@
 # Should be included from other Makefiles.
-# $Id: Makefile.inc 3771 2009-07-06 07:04:14Z jkroon $
 
 # 0 == debug off, anything else switches DEBUG on
 DEBUG ?= 1
@@ -18,9 +17,17 @@ AR := ar
 RANLIB ?= ranlib
 
 CFLAGS ?= -W -Wall
+LDFLAGS ?=
 
 CFLAGS += -Iinclude
-LDFLAGS += -rdynamic -Llib -lrt -ldl
+LDFLAGS += -rdynamic -Llib
+
+OPTIM ?= -O2
+
+ifneq ($(EXTRA_MODULE_DIRS),)
+CFLAGS += $(foreach D,$(EXTRA_MODULE_DIRS),-I$(D)/include)
+LDFLAGS += $(foreach D,$(EXTRA_MODULE_DIRS),-L$(D)/lib)
+endif
 
 ifneq ($(EXTRA_FLAGS),)
 CFLAGS += $(EXTRA_FLAGS)
@@ -36,13 +43,14 @@ endif
 CFLAGS += $(OPTIM)
 CFLAGS += $(DEFS)
 
-RPATHDIR := $(PWD)/lib
+RPATHDIR ?= $(EXTRA_RPATHDIR) $(PWD)/lib
 
-LATEX?=latex
-DVIPS?=dvips
-DVIPDF?=dvipdf
-SVN?=svn
-GIT?=git
+INCDIRS := $(shell [ -d include ] && find include -type d | sed -e 's:^include::')
+
+LATEX ?= latex
+DVIPS ?= dvips
+DVIPDF ?= dvipdf
+GIT ?= git
 
 PREFIX ?= /usr
 BINDIR ?= $(PREFIX)/bin
@@ -140,7 +148,7 @@ CFLAGS += $(OPTIM)
 endif
 
 ifneq ($(RPATHDIR),)
-LDFLAGS += -Wl,-rpath,$(shell readlink -f "$(RPATHDIR)")
+LDFLAGS += $(foreach RD,$(RPATHDIR),-Wl,-rpath,$(shell readlink -f "$(RD)"))
 endif
 
 ifneq ($(VERBOSE),)
@@ -202,18 +210,34 @@ deps/TEX_%.td : tex/%.tex | deps/.d
 	$(SHOWCL)>$@
 	$(SHOWCL)echo "TEXDEPS_$*=$<" >> $@
 	$(SHOWCL)sed -nre 's:.*\\(input|include)\{(([^.}]|\.[^t}]|\.t[^e}]|\.te[^x}])+)(\.tex)?}.*:\2:p' < $< | sort -u | sed -e 's:.*:-include deps/TEX_\0.td\nTEXDEPS_$*+=$$(TEXDEPS_\0):' >> $@
+	$(SHOWCL)sed -nre 's:.*\\includegraphics([[][^]]*[]])?\{([^}]*)\}.*:\2:p' < $< | sort -u | sed -e 's:.*:TEX_IMG_$*+=tex/\0:' >> $@
+	$(SHOWCL)sed -nre 's:.*\\epsfig\{file=([^,}]+)[,}].*:\1:p' < $< | sort -u | sed -e 's:.*:TEX_IMG_$*+=tex/\0:' >> $@
+	$(SHOWCL)echo 'TEXDEPS_$*+=$$(TEX_IMG_$*)' >> $@
+	$(SHOWCL)echo 'TEXIMAGES+=$$(TEX_IMG_$*)' >> $@
 
 deps/%.td : | tex/%.tex deps/.d
 	@echo -e "\t[TEXDEP] $@"
 	$(SHOWCL)>$@
 	$(SHOWCL)echo "-include deps/TEX_$*.td" >>$@
-	$(SHOWCL)echo 'doc/$*.dvi : $$(TEXDEPS_$*)' >>$@
+	$(SHOWCL)echo 'tex-tmp/$*.dvi : $$(TEXDEPS_$*)' >>$@
+
+$.eps : %.dia
+	@echo -e "\t[DIA] $<"
+	$(SHOWCL)dia --export $@ $<
+
+%.eps : %.jpg
+	@echo -e "\t[EPS] $<"
+	$(SHOWCL)convert $< $@
+
+%.eps : %.png
+	@echo -e "\t[EPS] $<"
+	$(SHOWCL)convert $< $@
 
 .PRECIOUS: tex-tmp/%.log
 tex-tmp/%.dvi tex-tmp/%.aux tex-tmp/%.log tex-tmp/%.toc : tex/%.tex | tex-tmp/.d
 	@echo -e "\t[TEX] $@"
-	$(SHOWCL)$(LATEX) -output-directory $(dir $@) -interaction $(TEXMODE) -halt-on-error $<
-	$(SHOWCL)$(LATEX) -output-directory $(dir $@) -interaction $(TEXMODE) -halt-on-error $<
+	$(SHOWCL)$(LATEX) -output-directory $(dir $@) -interaction $(TEXMODE) -halt-on-error $< >/dev/null
+	$(SHOWCL)$(LATEX) -output-directory $(dir $@) -interaction $(TEXMODE) -halt-on-error $< >/dev/null
 
 doc/%.pdf : tex-tmp/%.dvi | doc/.d
 	@echo -e "\t[PDF] $@"
@@ -223,10 +247,11 @@ doc/%.ps : tex-tmp/%.dvi | doc/.d
 	@echo -e "\t[PS] $@"
 	$(SHOWCL)$(DVIPS) -o $@ $<
 
+.PRECIOUS: tex/%_log.tex
 tex/%_log.tex : tex/%.tex
 	@echo -e "\t[TEXLOG] $<"
 	$(SHOWCL)echo '\begin{itemize}' >$@
-	$(SHOWCL)$(SVN) log $< | sed -nre ' /^-----------*$$/ d' -e 's/^r([0-9]+) \| ([^|]*) \| [^ ]+ ([^ ]+) .*\(([^)]+)\).*$$/\\item Rev \1 by \2 at \3 on \4/p' -e '/^\\item/d' -e 's/^.+$$/\\\\\0/p' >>$@
+	$(SHOWCL)$(GIT) log --format=format:"\\item %ad (%an): %s" $< >>$@
 	$(SHOWCL)echo '\end{itemize}' >>$@
 
 .PRECIOUS: %/.d
@@ -287,6 +312,11 @@ clean :
 	$(SHOWCL)rm -f ui/*~
 	@echo -e "\t[RM] tex-tmp/"
 	$(SHOWCL)rm -rf tex-tmp
+ifneq ($(TEXIMAGES),)
+	# Unfortunately this doesn't work because it relies on the depfiles...
+	@echo -e "\t[RM]" $(TEXIMAGES)
+	$(SHOWCL)rm $(TEXIMAGES)
+endif
 
 .PHONY: distclean
 distclean : clean
@@ -331,11 +361,10 @@ ifneq ($(MOD_TARGET),)
 endif
 	@echo "All installed."
 
-
 ##########################################
 # This whole thing is to determine whether we need the depfiles or not.
 #
-NODEP_TARGETS := clean distclean
+NODEP_TARGETS += clean distclean
 depinc := 1
 ifneq (,$(filter $(NODEP_TARGETS),$(MAKECMDGOALS)))
 depinc := 0
@@ -345,6 +374,5 @@ depinc := 1
 endif
 
 ifeq ($(depinc),1)
-#$(error $(depfiles))
 -include $(depfiles)
 endif
