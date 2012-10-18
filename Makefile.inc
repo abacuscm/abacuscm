@@ -5,6 +5,13 @@
 DEBUG ?= 1
 STATIC ?= 0
 
+TOPDIR ?= $(PWD)
+
+# Figure out PKGNAME - override from elsewhere if possible.
+PKGDIRNAME = $(lastword $(subst /, ,$(shell readlink -f $(TOPDIR))))
+PKGNAME ?= $(shell echo "$(PKGDIRNAME)" | sed -re 's/(-[0-9]+)*$$//')
+PKGVERSION ?= $(shell echo "$(PKGDIRNAME)" | sed -nre 's/^([^-]|-[0-9]*[^0-9-])+-([0-9]+(-[0-9]+)?)$$/\2/p')
+
 # This is a C++ based lib.  End of story.
 CC := g++
 AR := ar
@@ -29,13 +36,23 @@ endif
 CFLAGS += $(OPTIM)
 CFLAGS += $(DEFS)
 
-LIBDIR := $(PWD)/lib
+RPATHDIR := $(PWD)/lib
 
 LATEX?=latex
 DVIPS?=dvips
 DVIPDF?=dvipdf
-
 SVN?=svn
+GIT?=git
+
+PREFIX ?= /usr
+BINDIR ?= $(PREFIX)/bin
+SBINDIR ?= $(PREFIX)/sbin
+LIBDIR ?= $(PREFIX)/lib
+INCDIR ?= $(PREFIX)/include
+MODDIR ?= $(PREFIX)/share/$(PKGNAME)
+ETCDIR ?= $(PREFIX)/etc
+
+DESTDIR ?= /
 
 # Naming as per tex(1).
 export TEXINPUTS=tex:$(TOPDIR)/tex:tex-tmp:
@@ -122,8 +139,8 @@ ifneq ($(OPTIM),)
 CFLAGS += $(OPTIM)
 endif
 
-ifneq ($(LIBDIR),)
-LDFLAGS += -Wl,-rpath,$(shell readlink -f "$(LIBDIR)")
+ifneq ($(RPATHDIR),)
+LDFLAGS += -Wl,-rpath,$(shell readlink -f "$(RPATHDIR)")
 endif
 
 ifneq ($(VERBOSE),)
@@ -289,6 +306,31 @@ endif
 	$(SHOWCL)rm -rf lib
 	@echo -e "\t[RM] modules/"
 	$(SHOWCL)rm -rf modules
+
+.PHONY: install
+install : all
+	@echo "Preparing to install into $(DESTDIR)."
+ifneq ($(BIN_TARGET),)
+	@echo -e "\t[DIR] $(BINDIR)"
+	$(SHOWCL)install -d "$(DESTDIR)$(BINDIR)"
+	$(SHOWCL)$(foreach B,$(BIN_TARGET),echo -e "\t[BIN] $(B)"; install $(B) "$(DESTDIR)$(BINDIR)";)
+endif
+ifneq ($(LIB_TARGET_SO),)
+	@echo -e "\t[DIR] $(LIBDIR)"
+	$(SHOWCL)install -d "$(DESTDIR)$(LIBDIR)"
+	$(SHOWCL)$(foreach L,$(LIB_TARGET_SO),echo -e "\t[LIB] $(L)"; install "$(L)" "$(DESTDIR)$(LIBDIR)";)
+	$(SHOWCL)$(foreach L,$(LIB_TARGET_A),echo -e "\t[LIB] $(L)"; install -m0644 "$(L)" "$(DESTDIR)$(LIBDIR)";)
+endif
+ifneq ($(INCDIRS),)
+	$(SHOWCL)$(foreach D,$(INCDIRS),echo -e "\t[DIR] $(INCDIR)$(D)"; install -d "$(DESTDIR)$(INCDIR)$(D)"; $(foreach F,$(shell find "include$(D)" -maxdepth 1 -type f),echo -e "\t[INC] $(F)"; install -m0644 "$(F)" "$(DESTDIR)$(INCDIR)$(D)";))
+endif
+ifneq ($(MOD_TARGET),)
+	@echo -e "\t[DIR] $(MODDIR)"
+	$(SHOWCL)install -d "$(DESTDIR)$(MODDIR)"
+	$(SHOWCL)$(foreach M,$(MOD_TARGET),echo -e "\t[MOD] $(M)"; install $(M) "$(DESTDIR)$(MODDIR)";)
+endif
+	@echo "All installed."
+
 
 ##########################################
 # This whole thing is to determine whether we need the depfiles or not.
