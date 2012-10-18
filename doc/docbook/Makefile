@@ -1,12 +1,12 @@
-HTML_TARGETS = ../html/abacuscm-web.html ../html/contestant-web.html ../html/contestant-qt.html
-PDF_TARGETS = abacuscm-web.pdf contestant-web.pdf contestant-qt.pdf
+HTML_TARGETS = ../html/abacuscm-web.html ../html/contestant-web.html ../html/contestant-qt.html ../html/contestant-web-icpcsa.html ../html/contestant-qt-icpcsa.html
+PDF_TARGETS = abacuscm-web.pdf contestant-web.pdf contestant-qt.pdf contestant-web-icpcsa.pdf contestant-qt-icpcsa.pdf
 TARGETS = $(HTML_TARGETS) $(PDF_TARGETS)
 SOURCES = abacuscm.xml \
 	  contestant.xml \
 	  administrator-core.xml administrator-webapp.xml \
 	  developer-core.xml developer-webapp.xml \
 	  licensing.xml
-CLEANFILES = $(TARGETS) abacuscm-web.xml contestant-web.xml abacuscm-web.fo contestant-web.fo
+CLEANFILES = $(TARGETS) $(foreach base, abacuscm contestant, $(foreach profile, qt web qt-icpcsa web-icpcsa, $(foreach suff, xml fo, $(base)-$(profile).$(suff))))
 
 XMLLINT = xmllint
 XSLTPROC = xsltproc

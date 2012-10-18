@@ -16,6 +16,7 @@
         <copyright>
             <year>2010</year>
             <year>2011</year>
+            <year>2012</year>
             <holder>Bruce Merry</holder>
             <holder>Jaco Kroon</holder>
             <holder>Carl Hultquist</holder>
@@ -125,7 +126,7 @@
     </section>
     <section id="contestant.solutions">
         <title>Writing your solution</title>
-        <para>
+        <para condition="java">
             If you are using Java, you can call your main class whatever you
             like, but it must be the <emphasis>first</emphasis> class in the
             file. You can include support classes after it, but they should
@@ -133,15 +134,18 @@
         </para>
         <para>
             Your solution will read from standard input
-            (<code language="c">stdin</code>,
-            <code language="c++">cin</code>,
-            <code language="java">System.in</code> or
-            <code language="python">sys.stdin</code>, depending on language)
+            (<phrase condition="cxx"><code language="c">stdin</code>,
+                <code language="c++">cin</code>,
+             </phrase><phrase condition="java"><code language="java">System.in</code>,
+             </phrase><phrase condition="python">
+                <code language="python">sys.stdin</code>,
+            </phrase> depending on language)
             and write to standard output
-            (<code language="c">stdout</code>,
-            <code language="c++">cout</code>,
-            <code language="java">System.out</code> or
-            <code language="python">sys.stdout</code>).
+            (<phrase condition="cxx"><code language="c">stdout</code>,
+                <code language="c++">cout</code>,
+            </phrase><phrase condition="java"><code language="java">System.out</code>,
+            </phrase><phrase condition="python"><code language="python">sys.stdout</code>
+            </phrase> again depending on language).
             Your solution is tested by an automated marker, so you must be
             careful to input only what is asked for, and output only what is
             asked for. In particular, do not print prompts or messages like
@@ -159,20 +163,20 @@
                 is 6, and that the variable <varname>x</varname> is the value
                 to be output).
             </para>
-            <example id="contestant.solutions.float.python">
+            <example id="contestant.solutions.float.python" condition="python">
                 <title>Floating-point output in Python</title>
                 <programlisting language="python"><![CDATA[print "Case #%d: %.6f" % (caseNum, x)]]></programlisting>
             </example>
-            <example id="contestant.solutions.float.java">
+            <example id="contestant.solutions.float.java" condition="java">
                 <title>Floating-point output in Java</title>
                 <programlisting language="java"><![CDATA[System.out.println(String.format(
     "Case #%d: %.6f", caseNum, x));]]></programlisting>
             </example>
-            <example id="contestant.solutions.float.cxx.stdio">
+            <example id="contestant.solutions.float.cxx.stdio" condition="cxx">
                 <title>Floating-point output in C++ with stdio</title>
                 <programlisting language="c++"><![CDATA[printf("Case #%d: %.6f\n", caseNum, x);]]></programlisting>
             </example>
-            <example id="contestant.solutions.float.cxx.iostream">
+            <example id="contestant.solutions.float.cxx.iostream" condition="cxx">
                 <title>Floating-point output in C++ with iostreams</title>
                 <programlisting language="c++"><![CDATA[cout.precision(6);
 cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
@@ -207,21 +211,24 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                 <term><computeroutput>Compilation failure</computeroutput></term>
                 <listitem>
                     <para>
-                        Your submission did not compile. This can happen with
+                        Your submission did not compile.
+                        <phrase condition="cxx">This can happen with
                         C++ in particular, because the marker might not be
-                        using the same version of the compiler. To assist you,
-                        you can
+                        using the same version of the compiler.</phrase>
+                        To assist you, you can
                         <phrase condition="qt">double-click</phrase>
                         <phrase condition="web">click</phrase>
                         on the submission to get the compiler output.
-                        In many cases you just need to add a
-                        <code>#include</code> statement. There is no time
-                        penalty for compilation failures. Note that since
+                        <phrase condition="cxx">In many cases you just need to add a
+                            <code language="c++">#include</code> statement.</phrase>
+                        There is no time
+                        penalty for compilation failures.
+                        <phrase condition="python"> Note that since
                         Python is an interpreted language, there are no
                         compilation errors &mdash; so be particularly careful
                         before submitting, as what would be a compilation error
                         in another language will be a run-time error in Python
-                        and will cost you penalty time.
+                        and will cost you penalty time.</phrase>
                     </para>
                 </listitem>
             </varlistentry>
@@ -240,12 +247,13 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                 <listitem>
                     <para>
                         Your program has crashed for some reason. Possible
-                        reasons include using too much memory, writing an
-                        excessive amount of output, throwing an uncaught
-                        exception, using illegal memory in C++, and returning a
-                        non-zero exit code (in particular, your
+                        reasons include
+                        <phrase condition="cxx">using illegal memory in C++,
+                            returning a non-zero exit code (in particular, your
                         <function>main</function> function in C++ must return
-                        0).
+                        0),</phrase> using too much memory, writing an
+                        excessive amount of output and throwing an uncaught
+                        exception.
                     </para>
                 </listitem>
             </varlistentry>
