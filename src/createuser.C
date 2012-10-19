@@ -20,8 +20,8 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-	if(argc != 9) {
-		cerr << "USAGE: " << *argv << " config username password newaccount newname newpassword type group\n";
+	if (argc < 8) {
+		cerr << "USAGE: " << *argv << " config username password newaccount newname newpassword type [group]\n";
 		return -1;
 	}
 
@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 	string newfriendlyname = argv[5];
 	string newpassword = argv[6];
 	string type = argv[7];
-	string group = argv[8];
+	string group = argc >= 9 ? argv[8] : "default";
 
 	ServerConnection::init();
 	ServerConnection _server_con;
