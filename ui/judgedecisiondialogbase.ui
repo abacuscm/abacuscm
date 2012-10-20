@@ -1,179 +1,111 @@
-<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
-<class>JudgeDecisionDialogBase</class>
-<widget class="QDialog">
-    <property name="name">
-        <cstring>JudgeDecisionDialogBase</cstring>
-    </property>
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0" stdsetdef="1">
+  <author></author>
+  <comment></comment>
+  <exportmacro></exportmacro>
+  <class>JudgeDecisionDialogBase</class>
+  <widget class="QDialog" name="JudgeDecisionDialogBase">
     <property name="geometry">
-        <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>667</width>
-            <height>555</height>
-        </rect>
+      <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>667</width>
+        <height>555</height>
+      </rect>
     </property>
-    <property name="caption">
-        <string>Submission review</string>
+    <property name="windowTitle">
+      <string>Submission review</string>
     </property>
-    <grid>
-        <property name="name">
-            <cstring>unnamed</cstring>
-        </property>
-        <widget class="QSplitter" row="0" column="0">
-            <property name="name">
-                <cstring>splitter3</cstring>
+    <layout class="QGridLayout">
+      <item row="0" column="0">
+        <widget class="QSplitter" name="splitter3">
+          <property name="orientation">
+            <enum>Qt::Vertical</enum>
+          </property>
+          <widget class="QComboBox" name="FileSelector"/>
+          <widget class="Q3TextBrowser" name="FileData">
+            <property name="enabled">
+              <bool>true</bool>
             </property>
+            <property name="sizePolicy">
+              <sizepolicy>
+                <hsizetype>7</hsizetype>
+                <vsizetype>7</vsizetype>
+                <horstretch>1</horstretch>
+                <verstretch>1</verstretch>
+              </sizepolicy>
+            </property>
+            <property name="font">
+              <font>
+                <family>Monospace</family>
+                <pointsize>13</pointsize>
+              </font>
+            </property>
+            <property name="textFormat">
+              <enum>Qt::PlainText</enum>
+            </property>
+          </widget>
+          <widget class="QSplitter" name="splitter1">
             <property name="orientation">
-                <enum>Vertical</enum>
+              <enum>Qt::Horizontal</enum>
             </property>
-            <widget class="QComboBox">
-                <property name="name">
-                    <cstring>FileSelector</cstring>
-                </property>
+            <widget class="QPushButton" name="DeferButton">
+              <property name="text">
+                <string>Defer decision</string>
+              </property>
             </widget>
-            <widget class="QTextBrowser">
-                <property name="name">
-                    <cstring>FileData</cstring>
-                </property>
-                <property name="enabled">
-                    <bool>true</bool>
-                </property>
-                <property name="sizePolicy">
-                    <sizepolicy>
-                        <hsizetype>7</hsizetype>
-                        <vsizetype>7</vsizetype>
-                        <horstretch>1</horstretch>
-                        <verstretch>1</verstretch>
-                    </sizepolicy>
-                </property>
-                <property name="font">
-                    <font>
-                        <family>Monospace</family>
-                        <pointsize>13</pointsize>
-                    </font>
-                </property>
-                <property name="textFormat">
-                    <enum>PlainText</enum>
-                </property>
+            <widget class="QPushButton" name="CorrectButton">
+              <property name="text">
+                <string>Correct</string>
+              </property>
             </widget>
-            <widget class="QSplitter">
-                <property name="name">
-                    <cstring>splitter1</cstring>
-                </property>
-                <property name="orientation">
-                    <enum>Horizontal</enum>
-                </property>
-                <spacer>
-                    <property name="name">
-                        <cstring>spacer4</cstring>
-                    </property>
-                    <property name="orientation">
-                        <enum>Horizontal</enum>
-                    </property>
-                    <property name="sizeType">
-                        <enum>Expanding</enum>
-                    </property>
-                    <property name="sizeHint">
-                        <size>
-                            <width>100</width>
-                            <height>20</height>
-                        </size>
-                    </property>
-                </spacer>
-                <widget class="QPushButton">
-                    <property name="name">
-                        <cstring>DeferButton</cstring>
-                    </property>
-                    <property name="text">
-                        <string>Defer decision</string>
-                    </property>
-                </widget>
-                <widget class="QPushButton">
-                    <property name="name">
-                        <cstring>CorrectButton</cstring>
-                    </property>
-                    <property name="text">
-                        <string>Correct</string>
-                    </property>
-                </widget>
-                <widget class="QPushButton">
-                    <property name="name">
-                        <cstring>WrongButton</cstring>
-                    </property>
-                    <property name="text">
-                        <string>Wrong</string>
-                    </property>
-                </widget>
-                <widget class="QPushButton">
-                    <property name="name">
-                        <cstring>FormatErrorButton</cstring>
-                    </property>
-                    <property name="text">
-                        <string>Format Error</string>
-                    </property>
-                </widget>
-                <spacer>
-                    <property name="name">
-                        <cstring>spacer4_2</cstring>
-                    </property>
-                    <property name="orientation">
-                        <enum>Horizontal</enum>
-                    </property>
-                    <property name="sizeType">
-                        <enum>Expanding</enum>
-                    </property>
-                    <property name="sizeHint">
-                        <size>
-                            <width>100</width>
-                            <height>20</height>
-                        </size>
-                    </property>
-                </spacer>
+            <widget class="QPushButton" name="WrongButton">
+              <property name="text">
+                <string>Wrong</string>
+              </property>
             </widget>
+            <widget class="QPushButton" name="FormatErrorButton">
+              <property name="text">
+                <string>Format Error</string>
+              </property>
+            </widget>
+          </widget>
         </widget>
-    </grid>
-</widget>
-<connections>
+      </item>
+    </layout>
+  </widget>
+  <layoutdefault spacing="6" margin="11"/>
+  <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
+  <connections>
     <connection>
-        <sender>FileSelector</sender>
-        <signal>activated(const QString&amp;)</signal>
-        <receiver>JudgeDecisionDialogBase</receiver>
-        <slot>FileSelector_activated(const QString&amp;)</slot>
+      <sender>FileSelector</sender>
+      <signal>activated(QString)</signal>
+      <receiver>JudgeDecisionDialogBase</receiver>
+      <slot>FileSelector_activated(QString)</slot>
     </connection>
     <connection>
-        <sender>DeferButton</sender>
-        <signal>pressed()</signal>
-        <receiver>JudgeDecisionDialogBase</receiver>
-        <slot>deferred()</slot>
+      <sender>DeferButton</sender>
+      <signal>pressed()</signal>
+      <receiver>JudgeDecisionDialogBase</receiver>
+      <slot>deferred()</slot>
     </connection>
     <connection>
-        <sender>CorrectButton</sender>
-        <signal>pressed()</signal>
-        <receiver>JudgeDecisionDialogBase</receiver>
-        <slot>correct()</slot>
+      <sender>CorrectButton</sender>
+      <signal>pressed()</signal>
+      <receiver>JudgeDecisionDialogBase</receiver>
+      <slot>correct()</slot>
     </connection>
     <connection>
-        <sender>WrongButton</sender>
-        <signal>pressed()</signal>
-        <receiver>JudgeDecisionDialogBase</receiver>
-        <slot>wrong()</slot>
+      <sender>WrongButton</sender>
+      <signal>pressed()</signal>
+      <receiver>JudgeDecisionDialogBase</receiver>
+      <slot>wrong()</slot>
     </connection>
     <connection>
-        <sender>FormatErrorButton</sender>
-        <signal>pressed()</signal>
-        <receiver>JudgeDecisionDialogBase</receiver>
-        <slot>formatError()</slot>
+      <sender>FormatErrorButton</sender>
+      <signal>pressed()</signal>
+      <receiver>JudgeDecisionDialogBase</receiver>
+      <slot>formatError()</slot>
     </connection>
-</connections>
-<variables>
-    <variable access="public">std::map&lt;std::string, std::string&gt; data;</variable>
-</variables>
-<slots>
-    <slot access="protected" specifier="pure virtual">FileSelector_activated( const QString &amp; key )</slot>
-    <slot access="protected" specifier="pure virtual">deferred()</slot>
-    <slot access="protected" specifier="pure virtual">correct()</slot>
-    <slot access="protected" specifier="pure virtual">wrong()</slot>
-    <slot access="protected" specifier="pure virtual">formatError()</slot>
-</slots>
-<layoutdefaults spacing="6" margin="11"/>
-</UI>
+  </connections>
+</ui>

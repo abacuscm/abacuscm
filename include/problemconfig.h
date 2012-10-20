@@ -19,20 +19,21 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <Qt/qdialog.h>
 
 class QWidget;
 class QGridLayout;
 class QLineEdit;
 class QSpinBox;
 class QComboBox;
-class QListBox;
+class Q3ListBox;
 
-class ProblemConfig : public ProblemConfigBase {
+class ProblemConfig : public Ui_ProblemConfigBase, public QDialog {
 private:
 	typedef std::map<std::string, QLineEdit*> StringAttrsMap;
 	typedef std::map<std::string, QComboBox*> ComboAttrsMap;
 	typedef std::map<std::string, QSpinBox*> IntAttrsMap;
-	typedef std::map<std::string, QListBox*> ListAttrsMap;
+	typedef std::map<std::string, Q3ListBox*> ListAttrsMap;
 
 	StringAttrsMap _strings;
 	ComboAttrsMap _enums;

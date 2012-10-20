@@ -1,189 +1,181 @@
-<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
-<class>LoginDialog</class>
-<widget class="QDialog">
-    <property name="name">
-        <cstring>LoginDialog</cstring>
-    </property>
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0" stdsetdef="1">
+  <author></author>
+  <comment></comment>
+  <exportmacro></exportmacro>
+  <class>LoginDialog</class>
+  <widget class="QDialog" name="LoginDialog">
     <property name="geometry">
-        <rect>
-            <x>7</x>
-            <y>9</y>
-            <width>368</width>
-            <height>163</height>
-        </rect>
+      <rect>
+        <x>7</x>
+        <y>9</y>
+        <width>368</width>
+        <height>163</height>
+      </rect>
     </property>
     <property name="sizePolicy">
-        <sizepolicy>
-            <hsizetype>0</hsizetype>
-            <vsizetype>0</vsizetype>
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-        </sizepolicy>
+      <sizepolicy>
+        <hsizetype>0</hsizetype>
+        <vsizetype>0</vsizetype>
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+      </sizepolicy>
     </property>
-    <property name="caption">
-        <string>Connect to Server</string>
+    <property name="windowTitle">
+      <string>Connect to Server</string>
     </property>
     <property name="sizeGripEnabled">
-        <bool>true</bool>
+      <bool>true</bool>
     </property>
     <property name="modal">
-        <bool>true</bool>
+      <bool>true</bool>
     </property>
-    <grid>
-        <property name="name">
-            <cstring>unnamed</cstring>
-        </property>
-        <property name="resizeMode">
-            <enum>Fixed</enum>
-        </property>
-        <widget class="QLayoutWidget" row="4" column="0" rowspan="1" colspan="2">
-            <property name="name">
-                <cstring>Layout1</cstring>
-            </property>
-            <hbox>
-                <property name="name">
-                    <cstring>unnamed</cstring>
-                </property>
-                <property name="margin">
-                    <number>0</number>
-                </property>
-                <property name="spacing">
-                    <number>6</number>
-                </property>
-                <spacer>
-                    <property name="name">
-                        <cstring>Horizontal Spacing2</cstring>
-                    </property>
-                    <property name="orientation">
-                        <enum>Horizontal</enum>
-                    </property>
-                    <property name="sizeType">
-                        <enum>Expanding</enum>
-                    </property>
-                    <property name="sizeHint">
-                        <size>
-                            <width>20</width>
-                            <height>20</height>
-                        </size>
-                    </property>
-                </spacer>
-                <widget class="QPushButton">
-                    <property name="name">
-                        <cstring>buttonOk</cstring>
-                    </property>
-                    <property name="text">
-                        <string>&amp;OK</string>
-                    </property>
-                    <property name="accel">
-                        <string></string>
-                    </property>
-                    <property name="autoDefault">
-                        <bool>true</bool>
-                    </property>
-                    <property name="default">
-                        <bool>true</bool>
-                    </property>
-                </widget>
-                <widget class="QPushButton">
-                    <property name="name">
-                        <cstring>buttonCancel</cstring>
-                    </property>
-                    <property name="text">
-                        <string>&amp;Cancel</string>
-                    </property>
-                    <property name="accel">
-                        <string></string>
-                    </property>
-                    <property name="autoDefault">
-                        <bool>true</bool>
-                    </property>
-                </widget>
-            </hbox>
-        </widget>
-        <widget class="QLabel" row="0" column="0">
-            <property name="name">
-                <cstring>textLabel1</cstring>
-            </property>
-            <property name="text">
-                <string>Server:</string>
-            </property>
-        </widget>
-        <widget class="QLabel" row="1" column="0">
-            <property name="name">
-                <cstring>textLabel2</cstring>
-            </property>
-            <property name="text">
-                <string>Service (Port):</string>
-            </property>
-        </widget>
-        <widget class="QLabel" row="2" column="0">
-            <property name="name">
-                <cstring>textLabel3</cstring>
-            </property>
-            <property name="text">
-                <string>Username:</string>
-            </property>
-        </widget>
-        <widget class="QLabel" row="3" column="0">
-            <property name="name">
-                <cstring>textLabel4</cstring>
-            </property>
-            <property name="text">
-                <string>Password:</string>
-            </property>
-        </widget>
-        <widget class="QLineEdit" row="0" column="1">
-            <property name="name">
-                <cstring>serverName</cstring>
-            </property>
-            <property name="minimumSize">
+    <layout class="QGridLayout">
+      <property name="resizeMode">
+        <enum>Fixed</enum>
+      </property>
+      <item row="4" column="0" rowspan="1" colspan="2">
+        <layout class="QHBoxLayout">
+          <property name="margin">
+            <number>0</number>
+          </property>
+          <property name="spacing">
+            <number>6</number>
+          </property>
+          <item>
+            <spacer name="Horizontal Spacing2">
+              <property name="sizeHint">
                 <size>
-                    <width>250</width>
-                    <height>0</height>
+                  <width>20</width>
+                  <height>20</height>
                 </size>
-            </property>
+              </property>
+              <property name="sizeType">
+                <enum>QSizePolicy::Expanding</enum>
+              </property>
+              <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+              </property>
+            </spacer>
+          </item>
+          <item>
+            <widget class="QPushButton" name="buttonOk">
+              <property name="text">
+                <string>&amp;OK</string>
+              </property>
+              <property name="shortcut">
+                <string/>
+              </property>
+              <property name="autoDefault">
+                <bool>true</bool>
+              </property>
+              <property name="default">
+                <bool>true</bool>
+              </property>
+            </widget>
+          </item>
+          <item>
+            <widget class="QPushButton" name="buttonCancel">
+              <property name="text">
+                <string>&amp;Cancel</string>
+              </property>
+              <property name="shortcut">
+                <string/>
+              </property>
+              <property name="autoDefault">
+                <bool>true</bool>
+              </property>
+            </widget>
+          </item>
+        </layout>
+      </item>
+      <item row="0" column="0">
+        <widget class="QLabel" name="textLabel1">
+          <property name="text">
+            <string>Server:</string>
+          </property>
+          <property name="wordWrap">
+            <bool>false</bool>
+          </property>
         </widget>
-        <widget class="QLineEdit" row="1" column="1">
-            <property name="name">
-                <cstring>service</cstring>
-            </property>
+      </item>
+      <item row="1" column="0">
+        <widget class="QLabel" name="textLabel2">
+          <property name="text">
+            <string>Service (Port):</string>
+          </property>
+          <property name="wordWrap">
+            <bool>false</bool>
+          </property>
         </widget>
-        <widget class="QLineEdit" row="2" column="1">
-            <property name="name">
-                <cstring>username</cstring>
-            </property>
+      </item>
+      <item row="2" column="0">
+        <widget class="QLabel" name="textLabel3">
+          <property name="text">
+            <string>Username:</string>
+          </property>
+          <property name="wordWrap">
+            <bool>false</bool>
+          </property>
         </widget>
-        <widget class="QLineEdit" row="3" column="1">
-            <property name="name">
-                <cstring>password</cstring>
-            </property>
-            <property name="echoMode">
-                <enum>Password</enum>
-            </property>
+      </item>
+      <item row="3" column="0">
+        <widget class="QLabel" name="textLabel4">
+          <property name="text">
+            <string>Password:</string>
+          </property>
+          <property name="wordWrap">
+            <bool>false</bool>
+          </property>
         </widget>
-    </grid>
-</widget>
-<connections>
-    <connection>
-        <sender>buttonOk</sender>
-        <signal>clicked()</signal>
-        <receiver>LoginDialog</receiver>
-        <slot>accept()</slot>
-    </connection>
-    <connection>
-        <sender>buttonCancel</sender>
-        <signal>clicked()</signal>
-        <receiver>LoginDialog</receiver>
-        <slot>reject()</slot>
-    </connection>
-</connections>
-<tabstops>
+      </item>
+      <item row="0" column="1">
+        <widget class="QLineEdit" name="serverName">
+          <property name="minimumSize">
+            <size>
+              <width>250</width>
+              <height>0</height>
+            </size>
+          </property>
+        </widget>
+      </item>
+      <item row="1" column="1">
+        <widget class="QLineEdit" name="service"/>
+      </item>
+      <item row="2" column="1">
+        <widget class="QLineEdit" name="username"/>
+      </item>
+      <item row="3" column="1">
+        <widget class="QLineEdit" name="password">
+          <property name="echoMode">
+            <enum>QLineEdit::Password</enum>
+          </property>
+        </widget>
+      </item>
+    </layout>
+  </widget>
+  <layoutdefault spacing="6" margin="11"/>
+  <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
+  <tabstops>
     <tabstop>serverName</tabstop>
     <tabstop>service</tabstop>
     <tabstop>username</tabstop>
     <tabstop>password</tabstop>
     <tabstop>buttonOk</tabstop>
     <tabstop>buttonCancel</tabstop>
-</tabstops>
-<layoutdefaults spacing="6" margin="11"/>
-</UI>
+  </tabstops>
+  <connections>
+    <connection>
+      <sender>buttonOk</sender>
+      <signal>clicked()</signal>
+      <receiver>LoginDialog</receiver>
+      <slot>accept()</slot>
+    </connection>
+    <connection>
+      <sender>buttonCancel</sender>
+      <signal>clicked()</signal>
+      <receiver>LoginDialog</receiver>
+      <slot>reject()</slot>
+    </connection>
+  </connections>
+</ui>

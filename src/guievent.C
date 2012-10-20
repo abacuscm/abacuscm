@@ -10,12 +10,12 @@
 #include "guievent.h"
 #include "messageblock.h"
 
-#include <qapplication.h>
-#include <qevent.h>
+#include <Qt/qapplication.h>
+#include <Qt/qevent.h>
 
 QWidget* GUIEvent::_receiver;
 
-GUIEvent::GUIEvent(const MessageBlock *mb) : QCustomEvent(QEvent::User) {
+GUIEvent::GUIEvent(const MessageBlock *mb) : QEvent(QEvent::User) {
 	/* The callback happens asynchronously after the ServerConnection has
 	 * freed the memory, so we need to keep a copy.
 	 */

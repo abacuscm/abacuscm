@@ -15,8 +15,8 @@
 #include "logger.h"
 #include "guievent.h"
 
-#include <qapplication.h>
-#include <qmessagebox.h>
+#include <Qt/qapplication.h>
+#include <Qt/qmessagebox.h>
 #include <stdlib.h>
 #include <string>
 #include <openssl/ssl.h>
@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
 
 	QApplication application(argc, argv);
 	MainWindow mainwindow;
-	application.setMainWidget(&mainwindow);
+	//application.setMainWidget(&mainwindow);
 	mainwindow.show();
 
 	return application.exec();

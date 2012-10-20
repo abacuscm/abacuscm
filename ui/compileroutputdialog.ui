@@ -1,72 +1,59 @@
-<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
-<class>CompilerOutputDialog</class>
-<widget class="QDialog">
-    <property name="name">
-        <cstring>CompilerOutputDialog</cstring>
-    </property>
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0" stdsetdef="1">
+  <author></author>
+  <comment></comment>
+  <exportmacro></exportmacro>
+  <class>CompilerOutputDialog</class>
+  <widget class="QDialog" name="CompilerOutputDialog">
     <property name="geometry">
+      <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>667</width>
+        <height>555</height>
+      </rect>
+    </property>
+    <property name="windowTitle">
+      <string>Compiler output</string>
+    </property>
+    <widget class="QPushButton" name="okButton">
+      <property name="geometry">
         <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>667</width>
-            <height>555</height>
+          <x>560</x>
+          <y>520</y>
+          <width>101</width>
+          <height>31</height>
         </rect>
-    </property>
-    <property name="caption">
-        <string>Compiler output</string>
-    </property>
-    <widget class="QPushButton">
-        <property name="name">
-            <cstring>okButton</cstring>
-        </property>
-        <property name="geometry">
-            <rect>
-                <x>560</x>
-                <y>520</y>
-                <width>101</width>
-                <height>31</height>
-            </rect>
-        </property>
-        <property name="text">
-            <string>Ok</string>
-        </property>
+      </property>
+      <property name="text">
+        <string>Ok</string>
+      </property>
     </widget>
-    <widget class="QTextBrowser">
-        <property name="name">
-            <cstring>FileData</cstring>
-        </property>
-        <property name="enabled">
-            <bool>true</bool>
-        </property>
-        <property name="geometry">
-            <rect>
-                <x>0</x>
-                <y>10</y>
-                <width>661</width>
-                <height>510</height>
-            </rect>
-        </property>
-        <property name="textFormat">
-            <enum>PlainText</enum>
-        </property>
+    <widget class="Q3TextBrowser" name="FileData">
+      <property name="enabled">
+        <bool>true</bool>
+      </property>
+      <property name="geometry">
+        <rect>
+          <x>0</x>
+          <y>10</y>
+          <width>661</width>
+          <height>510</height>
+        </rect>
+      </property>
+      <property name="textFormat">
+        <enum>Qt::PlainText</enum>
+      </property>
     </widget>
-</widget>
-<connections>
+  </widget>
+  <layoutdefault spacing="6" margin="11"/>
+  <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
+  <connections>
     <connection>
-        <sender>okButton</sender>
-        <signal>pressed()</signal>
-        <receiver>CompilerOutputDialog</receiver>
-        <slot>accept()</slot>
+      <sender>okButton</sender>
+      <signal>pressed()</signal>
+      <receiver>CompilerOutputDialog</receiver>
+      <slot>accept()</slot>
     </connection>
-</connections>
-<variables>
-    <variable access="public">std::map&lt;std::string, char *&gt; data;</variable>
-</variables>
-<slots>
-    <slot>FileSelector_activated( const QString &amp; key )</slot>
-    <slot access="protected">deferred()</slot>
-    <slot access="protected">correct()</slot>
-    <slot access="protected">wrong()</slot>
-</slots>
-<layoutdefaults spacing="6" margin="11"/>
-</UI>
+  </connections>
+</ui>

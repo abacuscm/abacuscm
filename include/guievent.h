@@ -14,11 +14,11 @@
 # include <config.h>
 #endif
 
-#include <qevent.h>
+#include <Qt/qevent.h>
 
 struct MessageBlock;
 
-class GUIEvent : public QCustomEvent {
+class GUIEvent : public QEvent {
 private:
 	static QWidget* _receiver;
 

@@ -16,7 +16,7 @@
 #include "ui_viewclarificationrequest.h"
 #include "serverconnection.h"
 
-class ViewClarificationRequestSub : public ViewClarificationRequest {
+class ViewClarificationRequestSub : public Ui_ViewClarificationRequest, public QDialog {
 private:
 	uint32_t _clarification_request_id;
 	ServerConnection *_server_con;

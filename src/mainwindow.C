@@ -8,53 +8,52 @@
  * $Id$
  */
 #include "mainwindow.h"
-#include "ui_aboutdialog.h"
+#include "aboutdialog.h"
 
 #include "acmconfig.h"
 #include "dbcon.h"
 #include "logger.h"
-#include "ui_adduser.h"
-#include "ui_addgroup.h"
-#include "ui_submit.h"
-#include "ui_clarificationrequest.h"
-#include "ui_viewclarificationrequest.h"
-#include "ui_viewclarificationreply.h"
-#include "ui_changepassworddialog.h"
-#include "ui_problemsubscription.h"
-#include "ui_startstopdialog.h"
+#include "adduser.h"
+#include "addgroup.h"
+#include "submit.h"
+#include "clarificationrequest.h"
+#include "viewclarificationreply.h"
+#include "changepassworddialog.h"
+#include "problemsubscription.h"
+#include "startstopdialog.h"
 #include "viewclarificationrequestsub.h"
 #include "problemconfig.h"
 #include "guievent.h"
 #include "messageblock.h"
 #include "judgedecisiondialog.h"
-#include "ui_compileroutputdialog.h"
+#include "compileroutputdialog.h"
 #include "misc.h"
 #include "score.h"
 #include "permissions.h"
 #include "alert.xpm"
 #include "quiet.xpm"
 
-#include <qlineedit.h>
-#include <qmessagebox.h>
-#include <qaction.h>
-#include <qcombobox.h>
-#include <qinputdialog.h>
-#include <qstring.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <qfiledialog.h>
-#include <qpushbutton.h>
-#include <qlistview.h>
-#include <qtextedit.h>
-#include <qbuttongroup.h>
-#include <qcheckbox.h>
-#include <qlayout.h>
-#include <qcombobox.h>
-#include <qlabel.h>
-#include <qtextbrowser.h>
-#include <qtimer.h>
-#include <qtabwidget.h>
+#include <Qt/qlineedit.h>
+#include <Qt/qmessagebox.h>
+#include <Qt/qaction.h>
+#include <Qt/qcombobox.h>
+#include <Qt/qinputdialog.h>
+#include <Qt/qstring.h>
+#include <Qt/q3filedialog.h>
+#include <Qt/qpushbutton.h>
+#include <Qt/q3listview.h>
+#include <Qt/q3textedit.h>
+#include <Qt/q3buttongroup.h>
+#include <Qt/qcheckbox.h>
+#include <Qt/qlayout.h>
+#include <Qt/qcombobox.h>
+#include <Qt/qlabel.h>
+#include <Qt/q3textbrowser.h>
+#include <Qt/qtimer.h>
+#include <Qt/qtabwidget.h>
 
+#include <unistd.h>
+#include <fcntl.h>
 #include <time.h>
 #include <set>
 #include <string>
@@ -83,7 +82,7 @@ NotifyEvent::NotifyEvent(const string& caption, const string& text, QMessageBox:
 }
 
 void NotifyEvent::process(QWidget *parent) {
-	QMessageBox(_caption, _text, _icon, QMessageBox::Ok, QMessageBox::NoButton, QMessageBox::NoButton, parent).exec();
+	QMessageBox(_icon, QString::fromStdString(_caption), QString::fromStdString(_text), QMessageBox::Ok, parent).exec();
 }
 
 static void window_log(int priority, const char* format, va_list ap) {
@@ -190,9 +189,9 @@ static string summary_string(const string &s)
  * - automatic conversion of times
  * - the ability to set the item visible or invisible
  */
-class SmartListViewItem : public QListViewItem {
+class SmartListViewItem : public Q3ListViewItem {
 private:
-	QListView *_parent;
+	Q3ListView *_parent;
 	bool _visible;
 
 	/* Internal copy of texts (in UTF-8), needed for when the list item
@@ -207,14 +206,14 @@ protected:
 	void setValueDuration(int col, uint32_t duration);
 
 public:
-	explicit SmartListViewItem(QListView *parent);
+	explicit SmartListViewItem(Q3ListView *parent);
 
 	void setVisible(bool visible);
 	bool isVisible() const { return _visible; }
 };
 
-SmartListViewItem::SmartListViewItem(QListView *parent)
-	: QListViewItem(parent), _parent(parent), _visible(true) {
+SmartListViewItem::SmartListViewItem(Q3ListView *parent)
+	: Q3ListViewItem(parent), _parent(parent), _visible(true) {
 	assert(parent != NULL);
 }
 
@@ -278,7 +277,7 @@ private:
 		COLUMN_QUESTION = 4
 	};
 public:
-	explicit ClarificationRequestItem(QListView *parent);
+	explicit ClarificationRequestItem(Q3ListView *parent);
 
 	uint32_t getId() const { return _id; }
 	time_t getTime() const { return _time; }
@@ -293,10 +292,10 @@ public:
 	void setQuestion(const string &question);
 
 	virtual int rtti() const { return RTTI_CLARIFICATION_REQUEST; }
-	virtual int compare(QListViewItem *other, int col, bool ascending) const;
+	virtual int compare(Q3ListViewItem *other, int col, bool ascending) const;
 };
 
-ClarificationRequestItem::ClarificationRequestItem(QListView *parent) :
+ClarificationRequestItem::ClarificationRequestItem(Q3ListView *parent) :
 	SmartListViewItem(parent),
 	_id(0), _time(0), _problem(""), _answered(false), _question("") {
 }
@@ -326,9 +325,9 @@ void ClarificationRequestItem::setQuestion(const string &question) {
 	setValue(COLUMN_QUESTION, summary_string(question).c_str());
 }
 
-int ClarificationRequestItem::compare(QListViewItem *other, int col, bool ascending) const {
+int ClarificationRequestItem::compare(Q3ListViewItem *other, int col, bool ascending) const {
 	if (other == NULL || other->rtti() != rtti())
-		return QListViewItem::compare(other, col, ascending);
+		return Q3ListViewItem::compare(other, col, ascending);
 
 	const ClarificationRequestItem *i = static_cast<const ClarificationRequestItem *>(other);
 	switch (col) {
@@ -339,7 +338,7 @@ int ClarificationRequestItem::compare(QListViewItem *other, int col, bool ascend
 	case COLUMN_ANSWERED:
 		return comparator(_answered, i->_answered);
 	default:
-		return QListViewItem::compare(other, col, ascending);
+		return Q3ListViewItem::compare(other, col, ascending);
 	}
 }
 
@@ -362,7 +361,7 @@ private:
 	};
 
 public:
-	explicit ClarificationItem(QListView *parent);
+	explicit ClarificationItem(Q3ListView *parent);
 
 	uint32_t getId() const { return _id; }
 	uint32_t getRequestId() const { return _request_id; }
@@ -379,10 +378,10 @@ public:
 	void setAnswer(const string &answer);
 
 	virtual int rtti() const { return RTTI_CLARIFICATION; }
-	virtual int compare(QListViewItem *other, int col, bool ascending) const;
+	virtual int compare(Q3ListViewItem *other, int col, bool ascending) const;
 };
 
-ClarificationItem::ClarificationItem(QListView *parent) :
+ClarificationItem::ClarificationItem(Q3ListView *parent) :
 	SmartListViewItem(parent),
 	_id(0), _request_id(0), _time(0), _problem(""), _question(""), _answer("") {
 }
@@ -416,9 +415,9 @@ void ClarificationItem::setAnswer(const string &answer) {
 	setValue(COLUMN_ANSWER, summary_string(answer).c_str());
 }
 
-int ClarificationItem::compare(QListViewItem *other, int col, bool ascending) const {
+int ClarificationItem::compare(Q3ListViewItem *other, int col, bool ascending) const {
 	if (other == NULL || other->rtti() != rtti())
-		return QListViewItem::compare(other, col, ascending);
+		return Q3ListViewItem::compare(other, col, ascending);
 
 	const ClarificationItem *i = static_cast<const ClarificationItem *>(other);
 	switch (col) {
@@ -427,7 +426,7 @@ int ClarificationItem::compare(QListViewItem *other, int col, bool ascending) co
 	case COLUMN_TIME:
 		return comparator(_time, i->_time);
 	default:
-		return QListViewItem::compare(other, col, ascending);
+		return Q3ListViewItem::compare(other, col, ascending);
 	}
 }
 
@@ -449,7 +448,7 @@ private:
 		COLUMN_STATUS = 4
 	};
 public:
-	explicit SubmissionItem(QListView *parent);
+	explicit SubmissionItem(Q3ListView *parent);
 
 	void setId(uint32_t id);
 	void setProblemId(uint32_t problem_id);
@@ -468,10 +467,10 @@ public:
 	const string &getStatus() const { return _status; }
 
 	virtual int rtti() const { return RTTI_SUBMISSION; }
-	virtual int compare(QListViewItem *other, int col, bool ascending) const;
+	virtual int compare(Q3ListViewItem *other, int col, bool ascending) const;
 };
 
-SubmissionItem::SubmissionItem(QListView *parent) :
+SubmissionItem::SubmissionItem(Q3ListView *parent) :
 	SmartListViewItem(parent),
 	_id(0), _contest_time(0), _time(0), _problem(""), _status("") {
 }
@@ -509,9 +508,9 @@ void SubmissionItem::setStatus(const string &status) {
 	setValue(COLUMN_STATUS, status);
 }
 
-int SubmissionItem::compare(QListViewItem *other, int col, bool ascending) const {
+int SubmissionItem::compare(Q3ListViewItem *other, int col, bool ascending) const {
 	if (other == NULL || other->rtti() != rtti())
-		return QListViewItem::compare(other, col, ascending);
+		return Q3ListViewItem::compare(other, col, ascending);
 
 	const SubmissionItem *i = static_cast<const SubmissionItem *>(other);
 	switch (col) {
@@ -522,7 +521,7 @@ int SubmissionItem::compare(QListViewItem *other, int col, bool ascending) const
 	case COLUMN_TIME:
 		return comparator(_time, i->_time);
 	default:
-		return QListViewItem::compare(other, col, ascending);
+		return Q3ListViewItem::compare(other, col, ascending);
 	}
 }
 
@@ -545,7 +544,7 @@ public:
 		COLUMN_SOLVED = 5  // start of variable number of columns
 	};
 
-	explicit StandingItem(QListView *parent);
+	explicit StandingItem(Q3ListView *parent);
 	StandingItem &operator =(const Score &s);
 
 	void setPlace(int place);
@@ -558,10 +557,10 @@ public:
 	int getPlace() const { return _place; }
 
 	virtual int rtti() const { return RTTI_SUBMISSION; }
-	virtual int compare(QListViewItem *other, int col, bool ascending) const;
+	virtual int compare(Q3ListViewItem *other, int col, bool ascending) const;
 };
 
-StandingItem::StandingItem(QListView *parent) :
+StandingItem::StandingItem(Q3ListView *parent) :
 	SmartListViewItem(parent),
 	_place(0) {
 }
@@ -631,9 +630,9 @@ void StandingItem::setSolved(int problem, int attempts) {
 	setValue(COLUMN_TOTAL_SOLVED, getTotalSolved());
 }
 
-int StandingItem::compare(QListViewItem *other, int col, bool ascending) const {
+int StandingItem::compare(Q3ListViewItem *other, int col, bool ascending) const {
 	if (other == NULL || other->rtti() != rtti())
-		return QListViewItem::compare(other, col, ascending);
+		return Q3ListViewItem::compare(other, col, ascending);
 
 	const StandingItem *i = static_cast<const StandingItem *>(other);
 	Score::CompareRankingStable ranking;
@@ -656,7 +655,7 @@ int StandingItem::compare(QListViewItem *other, int col, bool ascending) const {
 			return 0;
 	case COLUMN_USERNAME:
 	case COLUMN_FRIENDLYNAME:
-		return QListViewItem::compare(other, col, ascending);
+		return Q3ListViewItem::compare(other, col, ascending);
 	default: // a problem column
 		{
 			size_t p = col - COLUMN_SOLVED;
@@ -758,8 +757,8 @@ MainWindow::MainWindow() {
 
 	ThreadSSL::initialise();
 
-	_login_dialog.serverName->setText(config["server"]["address"]);
-	_login_dialog.service->setText(config["server"]["service"]);
+	_login_dialog.serverName->setText(QString::fromStdString(config["server"]["address"]));
+	_login_dialog.service->setText(QString::fromStdString(config["server"]["service"]));
 
 	clarifications->setSorting(1, FALSE);
 	clarificationRequests->setSorting(1, FALSE);
@@ -771,8 +770,8 @@ MainWindow::MainWindow() {
 	standings->setColumnAlignment(StandingItem::COLUMN_TOTAL_SOLVED, Qt::AlignRight);
 	standings->setColumnAlignment(StandingItem::COLUMN_TOTAL_TIME, Qt::AlignRight);
 
-	quietIcon = QIconSet(QPixmap(quiet_xpm));
-	alertIcon = QIconSet(QPixmap(alert_xpm));
+	quietIcon = QIcon(QPixmap(quiet_xpm));
+	alertIcon = QIcon(QPixmap(alert_xpm));
 	setQuiet(tabAbacus);
 	setQuiet(tabStandings);
 	setQuiet(tabClarificationRequests);
@@ -875,13 +874,13 @@ void MainWindow::doHelpAbout() {
 void MainWindow::doFileConnect() {
 	_login_dialog.password->setText("");
 	if(_login_dialog.exec()) {
-		std::string sname = _login_dialog.serverName->text();
-		std::string service = _login_dialog.service->text();
+		std::string sname = _login_dialog.serverName->text().toStdString();
+		std::string service = _login_dialog.service->text().toStdString();
 		if(_server_con.connect(sname, service)) {
 			_server_con.registerEventCallback("close", server_disconnect, NULL);
 
-			std::string uname = _login_dialog.username->text();
-			std::string pass = _login_dialog.password->text();
+			std::string uname = _login_dialog.username->text().toStdString();
+			std::string pass = _login_dialog.password->text().toStdString();
 			if(_server_con.auth(uname, pass)) {
 				_active_user = uname;
 				std::vector<std::string> permissions = _server_con.getPermissions();
@@ -900,7 +899,7 @@ void MainWindow::doFileConnect() {
 
 				QMessageBox("Connected", "You are now connected to the server",
 						QMessageBox::Information, QMessageBox::Ok,
-						QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+						Qt::NoButton, Qt::NoButton, this).exec();
 			} else {
 				_server_con.deregisterEventCallback("close", server_disconnect);
 				_server_con.disconnect();
@@ -908,8 +907,8 @@ void MainWindow::doFileConnect() {
 
 		} else
 			QMessageBox("Connection error", "Error connecting to the server",
-					QMessageBox::Critical, QMessageBox::Ok, QMessageBox::NoButton,
-					QMessageBox::NoButton, this).exec();
+					QMessageBox::Critical, QMessageBox::Ok, Qt::NoButton,
+					Qt::NoButton, this).exec();
 	}
 }
 
@@ -939,16 +938,15 @@ void MainWindow::doChangePassword() {
 	{
 		users = _server_con.getUsers();
 		for(vector<UserInfo>::iterator i = users.begin(); i != users.end(); i++)
-			change_password_dialog.user->insertItem(i->username);
+			change_password_dialog.user->insertItem(QString::fromStdString(i->username));
 		change_password_dialog.user->setEnabled(true);
 	}
 
 	if (change_password_dialog.exec()) {
-		std::string password = change_password_dialog.password->text();
-		if (password != change_password_dialog.confirm->text()) {
-			QMessageBox("Password mismatch", "The two passwords entered must be the same!",
-					QMessageBox::Critical, QMessageBox::Ok,
-					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+		std::string password = change_password_dialog.password->text().toStdString();
+		if (password != change_password_dialog.confirm->text().toStdString()) {
+			QMessageBox(QMessageBox::Critical, "Password mismatch", "The two passwords entered must be the same!",
+					QMessageBox::Ok, this).exec();
 			return;
 		}
 
@@ -962,9 +960,8 @@ void MainWindow::doChangePassword() {
 			result = _server_con.changePassword(password);
 
 		if (result)
-			QMessageBox("Password changed!", "Password successfully changed",
-					QMessageBox::Information, QMessageBox::Ok,
-					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+			QMessageBox(QMessageBox::Information, "Password changed!", "Password successfully changed",
+					QMessageBox::Ok, this).exec();
 
 		// No need to report an error - the server will have sent us a more
 		// specific error
@@ -983,26 +980,26 @@ void MainWindow::doAdminCreateUser() {
 			QMessageBox("Username verify error",
 					"You cannot have a blank username",
 					QMessageBox::Warning, QMessageBox::Ok,
-					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+					Qt::NoButton, Qt::NoButton, this).exec();
 		} else if(add_user_dialog.pass1->text() != add_user_dialog.pass2->text()) {
 			QMessageBox("Password verify error",
 					"The passwords you typed did not match",
 					QMessageBox::Warning, QMessageBox::Ok,
-					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+					Qt::NoButton, Qt::NoButton, this).exec();
 		} else if(add_user_dialog.pass1->text() == "") {
 			QMessageBox("Password verify error",
 					"You cannot have an empty password",
 					QMessageBox::Warning, QMessageBox::Ok,
-					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
-		} else if(!_server_con.createuser(add_user_dialog.username->text(),
+					Qt::NoButton, Qt::NoButton, this).exec();
+		} else if(!_server_con.createuser(add_user_dialog.username->text().toStdString(),
 					(const char *) add_user_dialog.friendlyname->text().utf8(),
-					add_user_dialog.pass1->text(),
-					add_user_dialog.type->currentText().lower(),
+					add_user_dialog.pass1->text().toStdString(),
+					add_user_dialog.type->currentText().lower().toStdString(),
 					groups[add_user_dialog.group->currentItem()].id)) {
 			QMessageBox("Connection error",
 					"Error sending adduser request.",
 					QMessageBox::Critical, QMessageBox::Ok,
-					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+					Qt::NoButton, Qt::NoButton, this).exec();
 		} else {
 			break;
 		}
@@ -1016,12 +1013,12 @@ void MainWindow::doAdminCreateGroup() {
 			QMessageBox("Group name error",
 					"The group cannot have a blank name",
 					QMessageBox::Warning, QMessageBox::Ok,
-					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+					Qt::NoButton, Qt::NoButton, this).exec();
 		} else if (!_server_con.creategroup((const char *) add_group_dialog.groupname->text().utf8())) {
 			QMessageBox("Connection error",
 					"Error with addgroup request.",
 					QMessageBox::Critical, QMessageBox::Ok,
-					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+					Qt::NoButton, Qt::NoButton, this).exec();
 		}
 		else {
 			break;
@@ -1046,7 +1043,7 @@ void MainWindow::doAdminProblemConfig() {
 			QStringList lst;
 			vector<string>::iterator i;
 			for(i = prob_types.begin(); i != prob_types.end(); ++i)
-				lst << *i;
+				lst << QString::fromStdString(*i);
 
 			bool ok;
 			QString res = QInputDialog::getItem("Problem type", "Please select the type of problem", lst, 0, false, &ok, this);
@@ -1162,7 +1159,7 @@ void MainWindow::doAdminStartStop() {
 		if (!correct)
 			QMessageBox("Error", "Please enter at least one of the start and end times as HH:MM:SS. If entering both times, then the start time should be earlier than the end time.",
 					QMessageBox::Warning, QMessageBox::Ok,
-					QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+					Qt::NoButton, Qt::NoButton, this).exec();
 	}
 
 	int group_id;
@@ -1196,7 +1193,7 @@ void MainWindow::doSubmit() {
 	}
 	if (!_submit_file_dialog)
 	{
-		_submit_file_dialog = new QFileDialog(_submit_dialog);
+		_submit_file_dialog = new Q3FileDialog(_submit_dialog);
 		connect(_submit_dialog->browse, SIGNAL( clicked() ),
 			_submit_file_dialog, SLOT( exec() ));
 		connect(_submit_file_dialog, SIGNAL( fileSelected(const QString&) ),
@@ -1209,7 +1206,7 @@ void MainWindow::doSubmit() {
 	_submit_dialog->problemSelection->clear();
 	vector<ProblemInfo>::iterator i;
 	for(i = probs.begin(); i != probs.end(); ++i) {
-		QString text = i->code + ": " + i->name;
+		QString text = QString::fromStdString(i->code + ": " + i->name);
 		_submit_dialog->problemSelection->insertItem(text);
 		if (text == old_text) new_item = i - probs.begin();
 	}
@@ -1221,8 +1218,9 @@ void MainWindow::doSubmit() {
 	_submit_dialog->language->clear();
 	vector<string>::iterator j;
 	for(j = languages.begin(); j != languages.end(); ++j) {
-		_submit_dialog->language->insertItem(*j);
-		if (*j == old_text) new_item = j - languages.begin();
+		_submit_dialog->language->insertItem(QString::fromStdString(*j));
+		if (*j == old_text.toStdString())
+			new_item = j - languages.begin();
 	}
 	_submit_dialog->language->setCurrentItem(new_item);
 
@@ -1236,7 +1234,7 @@ void MainWindow::doSubmit() {
 		}
 
 		uint32_t prob_id = probs[_submit_dialog->problemSelection->currentItem()].id;
-		std::string lang = _submit_dialog->language->currentText();
+		std::string lang = _submit_dialog->language->currentText().toStdString();
 
 		/* The error paths here each log an error, so we don't need to check
 		 * the return value.
@@ -1257,7 +1255,7 @@ void MainWindow::clarificationRequest(uint32_t submission_id, uint32_t prob_id) 
 	vector<ProblemInfo>::iterator i;
 	cr.problemSelection->insertItem("General");
 	for(i = probs.begin(); i != probs.end(); ++i) {
-		cr.problemSelection->insertItem(i->code + ": " + i->name);
+		cr.problemSelection->insertItem(QString::fromStdString(i->code + ": " + i->name));
 		if (i->id == prob_id) {
 			// This is the problem id we have been passed, so set this entry
 			// as the current selection.
@@ -1270,7 +1268,7 @@ void MainWindow::clarificationRequest(uint32_t submission_id, uint32_t prob_id) 
 		// text in the clarification request.
 		ostringstream s;
 		s << "[Submission " << submission_id << "]\n";
-		cr.question->setText(s.str());
+		cr.question->setText(QString::fromStdString(s.str()));
 	}
 
 	if(cr.exec()) {
@@ -1285,7 +1283,7 @@ void MainWindow::doRequestSubmissionClarification() {
 	// The user has asked for a clarification request from the submissions window. If
 	// they have a submission selected, then we use that information to populate the
 	// initial information in the request.
-	QListViewItem *submission = submissions->selectedItem();
+	Q3ListViewItem *submission = submissions->selectedItem();
 	if (submission == NULL) {
 		// Nothing selected? Display the default clarification request form.
 		clarificationRequest(~0U, ~0U);
@@ -1302,7 +1300,7 @@ void MainWindow::doClarificationRequest() {
 	clarificationRequest(~0U, ~0U);
 }
 
-void MainWindow::doShowClarificationRequest(QListViewItem *item) {
+void MainWindow::doShowClarificationRequest(Q3ListViewItem *item) {
 	ViewClarificationRequestSub vcr(atol(item->text(0)), &_server_con);
 
 	if (!_active_permissions[PERMISSION_CLARIFICATION_REPLY])
@@ -1314,7 +1312,7 @@ void MainWindow::doShowClarificationRequest(QListViewItem *item) {
 	vcr.exec();
 }
 
-void MainWindow::doShowClarificationReply(QListViewItem *item) {
+void MainWindow::doShowClarificationReply(Q3ListViewItem *item) {
 	ViewClarificationReply vcr;
 
 	assert(item->rtti() == RTTI_CLARIFICATION);
@@ -1367,7 +1365,7 @@ void MainWindow::tabChanged(QWidget* newtab) {
 	setQuiet(newtab);
 }
 
-void MainWindow::customEvent(QCustomEvent *ev) {
+void MainWindow::customEvent(QEvent *ev) {
 	GUIEvent *guiev = dynamic_cast<GUIEvent*>(ev);
 	if(guiev)
 		guiev->process(this);
@@ -1471,9 +1469,9 @@ void MainWindow::updateStandings(const MessageBlock *mb) {
 	int table_col = StandingItem::COLUMN_SOLVED;
 	for (advance(cell, STANDING_RAW_SOLVED); cell != row->end(); ++cell) {
 		if (table_col >= standings->columns())
-			standings->addColumn(*cell);
+			standings->addColumn(QString::fromStdString(*cell));
 		else
-			standings->setColumnText(table_col, *cell);
+			standings->setColumnText(table_col, QString::fromStdString(*cell));
 		standings->setColumnAlignment(table_col, Qt::AlignRight);
 		table_col++;
 	}
@@ -1633,7 +1631,7 @@ void MainWindow::refilterSubmissions() {
 	submissions->sort();
 }
 
-void MainWindow::submissionHandler(QListViewItem *item) {
+void MainWindow::submissionHandler(Q3ListViewItem *item) {
 	if (_active_permissions[PERMISSION_SEE_SUBMISSION_DETAILS]) {
 		JudgeDecisionDialog judgeDecisionDialog;
 		uint32_t submission_id = strtoll(item->text(0), NULL, 0);
@@ -1662,7 +1660,7 @@ void MainWindow::submissionHandler(QListViewItem *item) {
 		vector<ProblemInfo> problems = _server_con.getProblems();
 		uint32_t problemId = 0;
 		for (uint32_t p = 0; p < problems.size(); p++)
-			if (item->text(3) == problems[p].code) {
+			if (item->text(3).toStdString() == problems[p].code) {
 				problemId = problems[p].id;
 				break;
 			}
@@ -1714,7 +1712,7 @@ void MainWindow::submissionHandler(QListViewItem *item) {
 				log(LOG_DEBUG, "Uh-oh, something went wrong when getting file from server");
 				QMessageBox("Failed to fetch compilation log", "There was a problem fetching your compilation log",
 						QMessageBox::Critical, QMessageBox::Ok,
-						QMessageBox::NoButton, QMessageBox::NoButton, this).exec();
+						Qt::NoButton, Qt::NoButton, this).exec();
 				return;
 			}
 			compilerOutputDialog.FileData->setText(QString::fromUtf8(data));

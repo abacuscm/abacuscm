@@ -14,7 +14,7 @@
 # include <config.h>
 #endif
 #include "ui_mainwindowbase.h"
-#include "ui_logindialog.h"
+#include "logindialog.h"
 
 #include "serverconnection.h"
 #include "permissions.h"
@@ -24,12 +24,13 @@
 #include <string>
 #include <vector>
 #include <utility>
-#include <qiconset.h>
+#include <Qt/qicon.h>
+#include <Qt/qmainwindow.h>
 
 class QCheckBox;
-class QListViewItem;
+class Q3ListViewItem;
 class QTimer;
-class QFileDialog;
+class Q3FileDialog;
 class Submit;
 class ClarificationRequestItem;
 class ClarificationItem;
@@ -41,13 +42,15 @@ typedef struct {
 	QString msg;
 } LogMessage;
 
-class MainWindow : public MainWindowBase {
+class MainWindow : public QMainWindow, public Ui::MainWindowBase {
+	Q_OBJECT
+
 private:
-	QIconSet quietIcon, alertIcon;
+	QIcon quietIcon, alertIcon;
 
 	LoginDialog _login_dialog;
 	Submit *_submit_dialog;
-	QFileDialog *_submit_file_dialog;
+	Q3FileDialog *_submit_file_dialog;
 
 	ServerConnection _server_con;
 
@@ -96,18 +99,18 @@ protected:
 	virtual void doSubmit();
 	virtual void doRequestSubmissionClarification();
 	virtual void doClarificationRequest();
-	virtual void doShowClarificationRequest(QListViewItem*);
-	virtual void doShowClarificationReply(QListViewItem*);
+	virtual void doShowClarificationRequest(Q3ListViewItem*);
+	virtual void doShowClarificationReply(Q3ListViewItem*);
 	virtual void doTimer();
 	virtual void tabChanged(QWidget*);
 	virtual void doChangePassword();
 	virtual void doJudgeSubscribeToProblems();
-	virtual void submissionHandler(QListViewItem *);
+	virtual void submissionHandler(Q3ListViewItem *);
 	virtual void toggleBalloonPopups(bool);
 	virtual void sortStandings();
 	virtual void refilterSubmissions();
 
-	virtual void customEvent(QCustomEvent *ev);
+	virtual void customEvent(QEvent *ev);
 public:
 	MainWindow();
 	~MainWindow();
@@ -125,6 +128,32 @@ public:
 
 	virtual void updateStandings() { updateStandings(NULL); }
 	virtual void updateSubmissions() { updateSubmissions(NULL); }
+
+signals:
+	void signalAuthControls(bool);
+	void signalSubmitControls(bool);
+	void signalClarificationRequestControls(bool);
+	void signalClarificationReplyControls(bool);
+	void signalChangePasswordControls(bool);
+	void signalInStandingsControls(bool);
+	void signalSeeStandingsControls(bool);
+	void signalSeeAllStandingsControls(bool);
+	void signalSeeFinalStandingsControls(bool);
+	void signalSeeAllClarificationRequestsControls(bool);
+	void signalSeeAllClarificationsControls(bool);
+	void signalSeeAllSubmissionsControls(bool);
+	void signalSeeAllProblemsControls(bool);
+	void signalSeeProblemDetailsControls(bool);
+	void signalSeeSubmissionDetailsControls(bool);
+	void signalSeeUserIdControls(bool);
+	void signalMarkControls(bool);
+	void signalJudgeControls(bool);
+	void signalJudgeOverrideControls(bool);
+	void signalUserAdminControls(bool);
+	void signalProblemAdminControls(bool);
+	void signalServerAdminControls(bool);
+	void signalStartStopControls(bool);
+
 };
 
 #endif

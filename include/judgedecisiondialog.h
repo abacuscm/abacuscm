@@ -17,16 +17,21 @@
 
 #include "ui_judgedecisiondialogbase.h"
 #include "misc.h"
-#include <qstring.h>
+#include <Qt/qstring.h>
 #include <string>
-#include <qtextbrowser.h>
+#include <Qt/q3textbrowser.h>
+#include <Qt/qdialog.h>
+#include <map>
+#include <string>
 
-class JudgeDecisionDialog : public JudgeDecisionDialogBase
+class JudgeDecisionDialog : public Ui_JudgeDecisionDialogBase, public QDialog
 {
 private:
 	RunResult _result;
 
 	void setResult(RunResult result) { _result = result; }
+public:
+	std::map<std::string, std::string> data;
 
 protected:
 	virtual void deferred() { reject(); }
@@ -38,7 +43,7 @@ protected:
 		if (key == "Select file to view...")
 			FileData->setText("");
 		else {
-			const std::string &text = data[key];
+			const std::string &text = data[key.toStdString()];
 			std::string display = "";
 			for (std::string::size_type i = 0; i < text.length(); i++) {
 				if (::isprint(text[i]) || ::isspace(text[i]))
@@ -50,7 +55,7 @@ protected:
 					display += buffer;
 				}
 			}
-			FileData->setText(display);
+			FileData->setText(QString::fromStdString(display));
 		}
 	}
 

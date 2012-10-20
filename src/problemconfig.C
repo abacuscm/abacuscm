@@ -10,22 +10,22 @@
 #include "problemconfig.h"
 #include "logger.h"
 
-#include <qlayout.h>
-#include <qframe.h>
-#include <qlabel.h>
-#include <qpushbutton.h>
-#include <qlineedit.h>
-#include <qspinbox.h>
-#include <qcombobox.h>
-#include <qfiledialog.h>
-#include <qlistbox.h>
+#include <Qt/qlayout.h>
+#include <Qt/q3frame.h>
+#include <Qt/qlabel.h>
+#include <Qt/qpushbutton.h>
+#include <Qt/qlineedit.h>
+#include <Qt/qspinbox.h>
+#include <Qt/qcombobox.h>
+#include <Qt/q3filedialog.h>
+#include <Qt/q3listbox.h>
 
 #include <sstream>
 
 #define KEEP_STRING "Keep current file"
 
 ProblemConfig::ProblemConfig(QWidget *parent)
-	:ProblemConfigBase(parent)
+	:Ui_ProblemConfigBase(), QDialog(parent)
 {
 }
 
@@ -50,7 +50,7 @@ bool ProblemConfig::addAttribute(QGridLayout *g, std::string attr_name, std::str
 			QGridLayout *subgrid = createCompoundGrid(type.substr(1, type.length() - 2), NULL, attr_name + ".");
 			if(!subgrid)
 				return false;
-			QLabel * l = new QLabel(attr_name, prop_data);
+			QLabel * l = new QLabel(QString::fromStdString(attr_name), prop_data);
 			l->setAlignment((l->alignment() & ~Qt::AlignVCenter) | Qt::AlignTop);
 			int row = g->numRows();
 			g->addWidget(l, row, 0);
@@ -58,7 +58,7 @@ bool ProblemConfig::addAttribute(QGridLayout *g, std::string attr_name, std::str
 		}; return true;
 	case 'F':
 		{
-			QFrame *frame = new QFrame(prop_data);
+			Q3Frame *frame = new Q3Frame(prop_data);
 			QHBoxLayout *layout = new QHBoxLayout(frame);
 
 			QLineEdit *lineedit = new QLineEdit(frame);
@@ -68,7 +68,7 @@ bool ProblemConfig::addAttribute(QGridLayout *g, std::string attr_name, std::str
 			QPushButton *pushbutton = new QPushButton("Browse", frame);
 			layout->addWidget(pushbutton);
 
-			QFileDialog *fdiag = new QFileDialog(frame);
+			Q3FileDialog *fdiag = new Q3FileDialog(frame);
 			connect(fdiag, SIGNAL( fileSelected ( const QString & ) ), lineedit, SLOT( setText ( const QString & ) ));
 			connect(pushbutton, SIGNAL( clicked() ), fdiag, SLOT( exec() ));
 
@@ -83,7 +83,7 @@ bool ProblemConfig::addAttribute(QGridLayout *g, std::string attr_name, std::str
 				size_t epos = type.find(',', i);
 				if(epos == std::string::npos)
 					epos = type.length() - 1;
-				combo->insertItem(type.substr(i, epos - i));
+				combo->insertItem(QString::fromStdString(type.substr(i, epos - i)));
 				i = epos + 1;
 			}
 			control = combo;
@@ -91,16 +91,16 @@ bool ProblemConfig::addAttribute(QGridLayout *g, std::string attr_name, std::str
 		}; break;
 	case '[':
 		{
-			QListBox *list = new QListBox(prop_data);
+			Q3ListBox *list = new Q3ListBox(prop_data);
 			size_t i = 1;
 			while (i < type.length()) {
 				size_t epos = type.find(',', i);
 				if (epos == std::string::npos)
 					epos = type.length() - 1;
-				list->insertItem(type.substr(i, epos - i));
+				list->insertItem(QString::fromStdString(type.substr(i, epos - i)));
 				i = epos + 1;
 			}
-			list->setSelectionMode(QListBox::Multi);
+			list->setSelectionMode(Q3ListBox::Multi);
 			control = list;
 			_lists[attr_name] = list;
 		}; break;
@@ -114,7 +114,7 @@ bool ProblemConfig::addAttribute(QGridLayout *g, std::string attr_name, std::str
 
 	int row = g->numRows();
 
-	g->addWidget(new QLabel(attr_name, prop_data), row, 0);
+	g->addWidget(new QLabel(QString::fromStdString(attr_name), prop_data), row, 0);
 
 	QPushButton *b = new QPushButton("?", prop_data);
 	b->setMaximumWidth(30);
@@ -205,12 +205,12 @@ bool ProblemConfig::getProblemAttributes(AttributeMap &normal, AttributeMap &fil
 	for (l = _lists.begin(); l != _lists.end(); ++l) {
 		bool got_one = false;
 		std::ostringstream value;
-        QListBox *list = l->second;
+        Q3ListBox *list = l->second;
 		for (size_t j = 0; j < list->count(); j++)
 			if (list->isSelected(j)) {
 				if (got_one)
 					value << ",";
-				value << list->text(j);
+				value << list->text(j).toStdString();
 				got_one = true;
 			}
 		normal[l->first] = value.str();
@@ -224,10 +224,10 @@ std::vector<std::string> ProblemConfig::getDependencies()
 	std::vector<std::string> deps;
 	ListAttrsMap::iterator it = _lists.find("dependencies");
 	if (it != _lists.end()) {
-        QListBox *dependencies = it->second;
+        Q3ListBox *dependencies = it->second;
 		for (size_t i = 0; i < dependencies->count(); i++)
 			if (dependencies->isSelected(i))
-				deps.push_back(dependencies->text(i));
+				deps.push_back(dependencies->text(i).toStdString());
 	}
 	return deps;
 }

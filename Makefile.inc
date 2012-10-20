@@ -66,24 +66,12 @@ DESTDIR ?= /
 export TEXINPUTS=tex:$(TOPDIR)/tex:tex-tmp:
 export DVIPSHEADERS=doc:$(TOPDIR)/tex:
 
-ifneq ($(NEED_QT3),)
-UIC:=$(shell for i in $$(which -a uic 2>&1); do $$i -version 2>&1 | awk '{ print $$NF }' | grep -q '^3\.' && echo $$i && break; done)
-MOC:=$(shell for i in $$(which -a moc 2>&1); do $$i -v 2>&1 | awk '{ print $$NF }' | grep -q '^3\.' && echo $$i && break; done)
-QT_CFLAGS:=$(shell pkg-config qt-mt --cflags)
-QT_LDFLAGS:=$(shell  pkg-config qt-mt --libs)
-endif
+UIC=uic
+MOC=moc
+QT_CFLAGS=-I/usr/include/qt4 -DQT3_SUPPORT
+QT_LDFLAGS=-L/usr/lib/qt4
 
 -include $(TOPDIR)/Makefile.extra
-
-# Some checks for ensuring the applicable executables has been located.
-ifneq ($(NEED_QT3),)
-ifeq ($(UIC),)
-$(error Error locating uic executable for Qt3 - please set UIC= in Makefile.extra)
-endif
-ifeq ($(MOC),)
-$(error Error locating moc executable for Qt3 - please set MOC= in Makefile.extra)
-endif
-endif
 
 ##############################################################################################
 #### From here on there should be no reason to change unless you know what you are doing. ####
@@ -260,7 +248,7 @@ tex/%_log.tex : tex/%.tex
 	$(SHOWCL)mkdir -p $(dir $@)
 	@touch $@
 
-ifneq ($(NEED_QT3),)
+.PRECIOUS : src/ui_%.C src/moc_%.C include/ui_%.h
 include/ui_%.h : ui/%.ui
 	@echo -e "\t[UIC] $@"
 	$(SHOWCL)$(UIC) $< -o $@
@@ -269,11 +257,9 @@ src/moc_%.C : include/%.h
 	@echo -e "\t[MOC] $@"
 	$(SHOWCL)$(MOC) $< -o $@
 
+#$(SHOWCL)$(UIC) -impl ui_$*.h $< -o $@
 src/ui_%.C : ui/%.ui
-	$(SHOWCL)$(UIC) -impl ui_$*.h $< -o $@
-
-.PRECIOUS : src/ui_%.C src/moc_%.C include/ui_%.h
-endif
+	@echo "" >$@
 
 ##########################################
 # Dependancy files.  For example, we need a way to tell make

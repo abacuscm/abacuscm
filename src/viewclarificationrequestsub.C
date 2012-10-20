@@ -8,14 +8,14 @@
  * $Id$
  */
 #include "viewclarificationrequestsub.h"
-#include "ui_clarificationreply.h"
+#include "clarificationreply.h"
 
 #include "logger.h"
 #include "messageblock.h"
-#include <qlabel.h>
-#include <qtextbrowser.h>
-#include <qtextedit.h>
-#include <qcombobox.h>
+#include <Qt/qlabel.h>
+#include <Qt/q3textbrowser.h>
+#include <Qt/q3textedit.h>
+#include <Qt/qcombobox.h>
 
 ViewClarificationRequestSub::ViewClarificationRequestSub(uint32_t id, ServerConnection *server_con) {
 	_clarification_request_id = id;
