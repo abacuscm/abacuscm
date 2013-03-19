@@ -56,4 +56,4 @@ marker = yes
 
 [contest]
 duration = 18000
-languages = C,C++,Python,Java
+languages = C,C++,Python 2.x,Python 3.x,Java
