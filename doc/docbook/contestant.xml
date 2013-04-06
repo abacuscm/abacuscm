@@ -50,7 +50,8 @@
         </para>
         <para condition="web">
             <application>Abacus</application> is accessed through the
-            <application>Firefox</application> web browser.
+            <emphasis role="strong"><application>Firefox</application> web
+            browser</emphasis>.
             Depending on your local installation, there may be a direct link
             on the desktop. Other browsers may be available but are not
             supported.
@@ -82,7 +83,7 @@
             <guilabel>Clarifications</guilabel> tab (you can
             <phrase condition="qt">double-click</phrase>
             <phrase condition="web">click</phrase>
-            on clarification requests and clarifications to see the full
+            on a clarification request or clarification to see its full
             text).
         </para>
         <para>
