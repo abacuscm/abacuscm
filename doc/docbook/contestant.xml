@@ -132,7 +132,12 @@
             If you are using Java, you can call your main class whatever you
             like, but it must be the <emphasis>first</emphasis> class in the
             file. You can include support classes after it, but they should
-            not be <symbol>public</symbol>.
+            not be <symbol>public</symbol>. <application>Abacus</application>
+            determines the package and class name from the contents of the file,
+            so you must not use the keywords
+            <code language="java">package</code> or
+            <code language="java">class</code> in comments before the main class
+            declaration.
         </para>
         <para>
             Your solution will read from standard input
