@@ -21,8 +21,8 @@
 using namespace std;
 
 enum PythonVersion {
-    PYTHON2x = 2, // Python 2.x
-    PYTHON3x = 3  // Python 3.x
+	PYTHON2x = 2, // Python 2.x
+	PYTHON3x = 3  // Python 3.x
 };
 
 /** Get the internal name of a version of Python.
@@ -30,36 +30,36 @@ enum PythonVersion {
  *  Python 3.x is called "python3".
  */
 string version_codename(PythonVersion v) {
-    switch (v) {
-        case PYTHON2x:
-            return "python";
-        case PYTHON3x:
-            return "python3";
-        default:
-            log(LOG_ERR, "Invalid value for PythonVersion in version_codename: %d. Defaulting to 2.", (int)v);
-            return "python";
-    }
+	switch (v) {
+    case PYTHON2x:
+        return "python";
+    case PYTHON3x:
+        return "python3";
+    default:
+        log(LOG_ERR, "Invalid value for PythonVersion in version_codename: %d. Defaulting to 2.", (int)v);
+        return "python";
+	}
 }
 
 /** Get the source extension of a version of Python.
  */
 string version_extension(PythonVersion v) {
-    switch (v) {
-        case PYTHON2x:
-            return ".py";
-        case PYTHON3x:
-            return ".py3";
-        default:
-            log(LOG_ERR, "Invalid value for PythonVersion in version_extension: %d. Defaulting to 2.", (int)v);
-            return ".py";
-    }
+	switch (v) {
+    case PYTHON2x:
+        return ".py";
+    case PYTHON3x:
+        return ".py3";
+    default:
+        log(LOG_ERR, "Invalid value for PythonVersion in version_extension: %d. Defaulting to 2.", (int)v);
+        return ".py";
+	}
 }
 
 class Python_UserProg : public UserProg {
 private:
 	string _progname;
 	string _dir;
-    PythonVersion _version;
+	PythonVersion _version;
 
 public:
 	Python_UserProg(PythonVersion v);
@@ -86,7 +86,7 @@ void Python_UserProg::setRootDir(string root) {
 
 list<string> Python_UserProg::getProgramArgv() {
 	list<string> argv;
-    string version = version_codename(_version);
+	string version = version_codename(_version);
 	string interpreter = Config::getConfig()[version]["interpreter"];
 	if (interpreter == "") {
 		log(LOG_INFO, "[%s][interpreter] not set, defaulting to /usr/bin/%s", version.c_str(), version.c_str());
