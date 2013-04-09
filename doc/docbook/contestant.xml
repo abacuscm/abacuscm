@@ -176,7 +176,7 @@
             </example>
             <example id="contestant.solutions.float.python3" condition="python3">
                 <title>Floating-point output in Python 3.x</title>
-                <programlisting language="python"><![CDATA[print("Case #{}: %{:.6f}".format(caseNum, x))]]></programlisting>
+                <programlisting language="python"><![CDATA[print("Case #{}: {:.6f}".format(caseNum, x))]]></programlisting>
             </example>
             <example id="contestant.solutions.float.java" condition="java">
                 <title>Floating-point output in Java</title>
