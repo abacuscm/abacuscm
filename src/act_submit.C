@@ -510,6 +510,7 @@ auto_ptr<MessageBlock> ActGetSubmissionSource::int_process(ClientConnection *cc,
 
 	auto_ptr<MessageBlock> result_mb(MessageBlock::ok());
 	result_mb->setContent(content, length);
+	(*result_mb)["lang"] = language;
 
 	return result_mb;
 }
