@@ -182,7 +182,8 @@ getlanguages
 ?ok
 ?language0:C++
 ?language1:Java
-?language2:Python
+?language2:Python 2.x
+?language3:Python 3.x
 
 getprobtypes
 ?ok
@@ -496,7 +497,7 @@ lang:C++
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/do_nothing.py
 ?ok
 
@@ -520,7 +521,7 @@ lang:Java
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/empty.py
 ?ok
 
@@ -538,7 +539,7 @@ lang:Java
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/exception.py
 ?ok
 
@@ -550,7 +551,7 @@ lang:C++
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/infinite_stream.py
 ?ok
 
@@ -574,7 +575,7 @@ lang:C++
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/sleep_forever.py
 ?ok
 
@@ -592,7 +593,7 @@ lang:Java
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/spin_forever.py
 ?ok
 
@@ -604,19 +605,19 @@ lang:C++
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/wrong_retcode.py
 ?ok
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/exact.py
 ?ok
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/whitespace.py
 ?ok
 
