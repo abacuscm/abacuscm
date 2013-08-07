@@ -319,8 +319,8 @@
                 a contest, they must all use the same secret key). This can be
                 done as follows:
             </para>
-            <screen><prompt># </prompt><userinput>dd if=/dev/random of=conf/rijndael.key bs=32 count=1</userinput>
-<prompt># </prompt><userinput>dd if=/dev/random of=conf/rijndael.iv bs=16 count=1</userinput></screen>
+            <screen><prompt># </prompt><userinput>dd if=/dev/random of=conf/rijndael.key bs=1 count=32</userinput>
+<prompt># </prompt><userinput>dd if=/dev/random of=conf/rijndael.iv bs=1 count=16</userinput></screen>
         </section>
         <section id="administrator-core.server.running">
             <title>Running the server</title>
