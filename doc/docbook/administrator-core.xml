@@ -228,38 +228,6 @@
     </section>
     <section id="administrator-core.server">
         <title>Configuring a server</title>
-        <section id="administrator-core.server.database">
-            <title>Preparing the database</title>
-            <para>
-                Each server needs its own database. Currently only MySQL is
-                supported as a database backend. The minimal set of privileges
-                is not currently known, and so currently all privileges are
-                given to the database user.
-            </para>
-            <para>
-                Assuming the MySQL server is running on localhost, you can
-                create the database as follows:
-            </para>
-            <screen><prompt># </prompt><userinput>mysql -u root -p -h localhost</userinput>
-<prompt>&gt; </prompt><userinput>create database abacus;</userinput>
-<prompt>&gt; </prompt><userinput>grant all privileges on abacus.* \
-    to abacus@localhost identified by '<replaceable>password</replaceable>';</userinput>
-<prompt>&gt; </prompt><userinput>quit;</userinput></screen>
-            <para>
-                Once the database has been created you need to load the base
-                structure from <filename>db/structure.sql</filename>:
-            </para>
-            <screen><prompt># </prompt><userinput>mysql -u abacus -p -h localhost abacus &lt; db/structure.sql</userinput>
-<computeroutput>Password:</computeroutput></screen>
-            <para>
-                If everything went well you now have a blank database from
-                where the contest can be run. If you want to reset the database
-                in future (after setting up the server configuration file), you
-                can just chdir into <filename class="directory">db</filename>
-                and run
-            </para>
-            <screen><userinput>./reload_sql.sh <optional><replaceable>server.conf</replaceable></optional></userinput></screen>
-        </section>
         <section id="administrator-core.server.config">
             <title>Server configuration file</title>
             <para>
@@ -272,8 +240,9 @@
                     <para>
                         Change the settings in the
                         <literal>[mysql]</literal> section to match the
-                        details of your MySQL server and the account created
-                        in <xref linkend="administrator-core.server.database"/>.
+                        details of your MySQL server and the account you will use
+                        (see <xref linkend="administrator-core.server.database"/> for
+                        details).
                     </para>
                 </step>
                 <step>
@@ -308,10 +277,39 @@
                     <para>
                         In the <literal>[init_attribs]</literal> section,
                         set <parameter>ip</parameter> to the IP address of the
-                        server.
+                        server. The default is fine unless you are running a
+                        multi-server contest.
                     </para>
                 </step>
             </procedure>
+        </section>
+        <section id="administrator-core.server.database">
+            <title>Preparing the database</title>
+            <para>
+                Each server needs its own database. Currently only MySQL is
+                supported as a database backend. The minimal set of privileges
+                is not currently known, and so currently all privileges are
+                given to the database user.
+            </para>
+            <para>
+                Assuming the MySQL server is running on localhost, you can
+                create the database as follows:
+            </para>
+            <screen><prompt># </prompt><userinput>mysql -u root -p -h localhost</userinput>
+<prompt>&gt; </prompt><userinput>create database abacus;</userinput>
+<prompt>&gt; </prompt><userinput>grant all privileges on abacus.* \
+    to abacus@localhost identified by '<replaceable>password</replaceable>';</userinput>
+<prompt>&gt; </prompt><userinput>quit;</userinput></screen>
+            <para>
+                Once the database has been created you need to load the base
+                structure:
+            </para>
+            <screen><prompt># </prompt><userinput>db/reload_sql.sh <replaceable>conf/server.conf</replaceable></userinput></screen>
+            <para>
+                If everything went well you now have a blank database from
+                where the contest can be run. You can run the same command again later
+                to reset the database to its initial state.
+            </para>
         </section>
         <section id="administrator-core.server.keys">
             <title>Server encryption keys</title>
