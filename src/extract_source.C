@@ -133,15 +133,18 @@ int main(int argc, char **argv) {
         // Finally, retrieve the source
         uint32_t sourceLength;
         char *source;
+        uint32_t languageLength;
+        char *language;
         log(LOG_DEBUG, "Retrieving source for submission %u", submission_id);
-        if (!_server_con.getSubmissionSource(submission_id, &source, &sourceLength))
+        if (!_server_con.getSubmissionSource(submission_id, &source, &sourceLength, &language, &languageLength))
         {
             log(LOG_ERR, "Failed to retrieve source");
             _server_con.disconnect();
             return 1;
         }
 
-        cout << string(source, sourceLength);
+	cerr << "LANGUAGE: " << string(language, languageLength) << endl;
+	cout << string(source, sourceLength);
 
 	_server_con.disconnect();
 	return 0;

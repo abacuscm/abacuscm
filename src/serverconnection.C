@@ -672,7 +672,7 @@ bool ServerConnection::getProblemFile(uint32_t prob_id, string attrib, char **bu
 	return true;
 }
 
-bool ServerConnection::getSubmissionSource(uint32_t submission_id, char **bufferptr, uint32_t *bufferlen) {
+bool ServerConnection::getSubmissionSource(uint32_t submission_id, char **bufferptr, uint32_t *bufferlen, char **langbufferptr, uint32_t *langbufferlen) {
 	ostringstream str;
 
 	MessageBlock mb("getsubmissionsource");
@@ -686,6 +686,12 @@ bool ServerConnection::getSubmissionSource(uint32_t submission_id, char **buffer
 	*bufferlen = ret->content_size();
 	*bufferptr = new char[(*bufferlen)];
 	memcpy(*bufferptr, ret->content(), *bufferlen);
+
+	if (langbufferptr && langbufferlen) {
+		*langbufferlen = (*ret)["lang"].length();
+		*langbufferptr = new char[*langbufferlen];
+		memcpy(*langbufferptr, (*ret)["lang"].data(), *langbufferlen);
+	}
 
 	delete ret;
 	return true;
