@@ -111,38 +111,65 @@
                 </executions>
             </plugin>
 
-            <!-- Can't figure out how to beat it into actually using
-                 a catalog file, so disabling.
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>xml-maven-plugin</artifactId>
+                <version>1.0</version>
                 <executions>
                     <execution>
                         <goals>
                             <goal>transform</goal>
+                            <goal>validate</goal>
                         </goals>
                     </execution>
                 </executions>
                 <configuration>
-                    <catalogs>
-                        <catalog>/etc/xml/catalog</catalog>
-                    </catalogs>
                     <validationSets>
                         <validationSet>
                             <dir>src/main/xml</dir>
-                            <systemId>http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd</systemId>
+                            <includes>
+                                <include>index*.html</include>
+                                <include>standings.html</include>
+                            </includes>
+                            <publicId>-//W3C//DTD XHTML 1.0 Strict//EN</publicId>
                         </validationSet>
                     </validationSets>
                     <transformationSets>
                         <transformationSet>
                             <dir>src/main/xml</dir>
-                            <includes><include>*.html</include></includes>
-                            <stylesheet>src/main/xml/insert-manual.xsl</stylesheet>
+                            <includes>
+                                <include>index*.html</include>
+                                <include>standings.html</include>
+                            </includes>
+                            <stylesheet>src/main/xml/merge.xsl</stylesheet>
+                            <outputProperties>
+                                <outputProperty>
+                                    <name>method</name>
+                                    <value>html</value>
+                                </outputProperty>
+                            </outputProperties>
                         </transformationSet>
                     </transformationSets>
+                    <catalogs>
+                        <catalog>/etc/xml/catalog</catalog>
+                    </catalogs>
                 </configuration>
             </plugin>
-            -->
+
+            <plugin>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>2.3</version>
+                <configuration>
+                    <webResources>
+                        <resource>
+                            <directory>${project.build.directory}/generated-resources/xml/xslt</directory>
+                            <includes>
+                                <include>*.html</include>
+                            </includes>
+                        </resource>
+                    </webResources>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
