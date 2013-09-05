@@ -55,7 +55,10 @@
 		return padNumber(hours) + ':' + padNumber(minutes) + ':' + padNumber(seconds);
 	}
 
-	this.parseUtf8 = function(byteArray){
+	this.parseUtf8 = function(byteArray) {
+		if (typeof byteArray === 'undefined') {
+			return '';
+		}
 		var result = new Array;
 		for(var a, b, i = -1, l = byteArray.length, o = String.fromCharCode; ++i < l;) {
 			var k = byteArray[i];

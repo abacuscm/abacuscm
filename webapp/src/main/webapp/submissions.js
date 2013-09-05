@@ -214,7 +214,7 @@
 				// clarification request process -- if so, then we do not
 				// show anything else.
 				if (!isRequestingClarification())
-					showSubmission(submissionId);
+					showSubmission(getSubmissionById(submissionId));
 			}
 		);
 

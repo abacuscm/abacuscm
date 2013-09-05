@@ -21,7 +21,8 @@
 (function($) {
 	var submissionFiles = new Array();
 
-	this.showSubmission = function (submissionId) {
+	this.showSubmission = function (submission) {
+		submissionId = submission.submission_id;
 		sendMessageBlock({
 				name: 'fetchfile',
 				headers: {
@@ -44,7 +45,18 @@
 									index: '' + i
 								}
 							},
-							fetchFileHandler
+							getFileHandler
+						);
+					}
+					if (hasPermission('see_problem_details')) {
+						sendMessageBlock({
+								name: 'getprobfile',
+								headers: {
+									prob_id: submission.prob_id,
+									file: 'testcase.output'
+								}
+							},
+							function (msg) { getFileHandler(msg, 'Expected output'); }
 						);
 					}
 					sendMessageBlock({
@@ -53,7 +65,7 @@
 								submission_id: submissionId
 							}
 						},
-						getSubmissionSourceHandler
+						function (msg) { getFileHandler(msg, 'Contestant source'); }
 					);
 					// Once all the files have been retrieved, show the submission dialog
 					queueHandler(submissionId, showSubmissionHandler);
@@ -64,27 +76,13 @@
 		);
 	}
 
-	var fetchFileHandler = function (msg) {
+	var getFileHandler = function (msg, name) {
 		if (msg.data.name == 'ok') {
-			content = msg.data.content;
-			if (typeof content === 'undefined')
-				content = '';
-			else
-				content = parseUtf8(content);
-			submissionFiles.push({name: msg.data.headers.name, content: content});
-		}
-		else
-			defaultHandler(msg);
-	}
-
-	var getSubmissionSourceHandler = function (msg) {
-		if (msg.data.name == 'ok') {
-			content = msg.data.content;
-			if (typeof content === 'undefined')
-				content = '';
-			else
-				content = parseUtf8(content);
-			submissionFiles.push({name: 'Contestant source', content: content});
+			content = parseUtf8(msg.data.content);
+			if (typeof name === 'undefined') {
+				name = msg.data.headers.name;
+			}
+			submissionFiles.push({name: name, content: content});
 		}
 		else
 			defaultHandler(msg);
