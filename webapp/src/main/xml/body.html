@@ -108,9 +108,19 @@
         </p>
     </div>
     <div id="submission-result-dialog">
+        <p id="submission-result-dialog-selector">
+            <select id="submission-result-dialog-file">
+                <option value="-1">Select a file...</option>
+            </select>
+        </p>
         <pre id="submission-result-dialog-contents"></pre>
-        <p>
+        <p id="submission-result-dialog-buttons-contestant">
             <button id="submission-result-dialog-ok" class="abacus-button ui-state-default">OK</button>
+        </p>
+        <p id="submission-result-dialog-buttons-judge">
+            <button id="submission-result-dialog-correct" class="abacus-button ui-state-default">Correct</button>
+            <button id="submission-result-dialog-wrong" class="abacus-button ui-state-default">Wrong</button>
+            <button id="submission-result-dialog-format-error" class="abacus-button ui-state-default">Format Error</button>
         </p>
     </div>
     <div id="tabs" class="ui-tabs">

@@ -72,6 +72,7 @@
                                 <jsSourceFile>problems.js</jsSourceFile>
                                 <jsSourceFile>standings.js</jsSourceFile>
                                 <jsSourceFile>submissions.js</jsSourceFile>
+                                <jsSourceFile>show_submission.js</jsSourceFile>
                             </jsSourceFiles>
                             <jsFinalFile>abacus.js</jsFinalFile>
                         </configuration>

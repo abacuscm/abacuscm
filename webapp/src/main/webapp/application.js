@@ -360,7 +360,7 @@
 			modal: true,
 			position: 'center',
 			resizable: 'true',
-			title: 'Compilation failure', // FIXME: make this more generic when extending the web interface to support judging
+			title: 'Submission result',
 			width: 'auto',
 			height: 'auto',
 		});

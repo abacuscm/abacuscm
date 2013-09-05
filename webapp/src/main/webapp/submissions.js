@@ -1,4 +1,4 @@
-/*  Copyright (C) 2010-2011  Bruce Merry and Carl Hultquist
+/*  Copyright (C) 2010-2011, 2013  Bruce Merry and Carl Hultquist
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@
 		);
 	}
 
-	getSubmissionsReplyHandler = function(msg) {
+	var getSubmissionsReplyHandler = function(msg) {
 		if (msg.data.name != 'ok') {
 			// Ick. What do we do here? For now, spam a popup and return.
 			window.jAlert('Error updating submissions: ' + msg.data.headers.msg);
@@ -84,7 +84,7 @@
 	}
 
 	this.updateSubmissions = function(msg) {
-		// First check if this is submission that we already know about.
+		// First check if this is a submission that we already know about.
 		var id = msg.data.headers.submission_id;
 		var index;
 		var updating = false;
@@ -139,8 +139,9 @@
 		for (var i = 0; i < submissions.length; i++) {
 			var submission = submissions[i];
 			var commentClass = '';
-			var rowClass = '';
-			
+			var rowClass = 'submission-row';
+			var allowClick = hasPermission('judge');
+
 			// FIXME: this switch statement is ugly, and we should really
 			// base it on result enums instead of strings. However, the
 			// QT client code does string comparisons so I'm following
@@ -148,24 +149,23 @@
 			switch (submission.comment) {
 			case 'Compilation failed':
 				commentClass = 'submission-compilation-failed';
-				rowClass = 'submission-row-clickable submission-row';
+				allowClick = true;
 				break;
 			case 'Abnormal termination of program':
 			case 'Wrong answer':
 			case 'Time limit exceeded':
 			case 'Format error':
 				commentClass = 'submission-wrong';
-				rowClass = 'submission-row';
 				break;
 			case 'Correct answer':
 				commentClass = 'submission-correct';
-				rowClass = 'submission-row';
 				break;
 			default:
 				commentClass = '';
-				rowClass = 'submission-row';
 				break;
 			}
+			if (allowClick)
+				rowClass = 'submission-row-clickable ' + rowClass;
 
 			html += '<tr class="' + rowClass + '">' +
 				'<td>' + escapeHTML(submission.submission_id) + '</td>' +
@@ -205,21 +205,16 @@
 		);
 		$('tr.submission-row-clickable').click(
 			function() {
-				// This should only ever be called for compilation failures.
-				// Do an extra check just to be sure...
 				var submissionId = $($(this).children()[0]).text();
-				var submission = getSubmissionById(submissionId);
-				if (submission.comment == "Compilation failed") {
-					// We have a minor UI foible whereby clicking on the
-					// "request clarification" button for a compilation failure
-					// triggers both the clarification request and the failure
-					// display code. Since the clarification request should take
-					// preference, do a quick check here to see if we have
-					// kicked off the clarification request process -- if so,
-					// then we do not show the compilation failure.
-					if (!isRequestingClarification())
-						showCompilationFailure(submissionId);
-				}
+				// We have a minor UI foible whereby clicking on the
+				// "request clarification" button triggers both the
+				// clarification request and the this code. Since the
+				// clarification request should take preference, do a quick
+				// check here to see if we have kicked off the
+				// clarification request process -- if so, then we do not
+				// show anything else.
+				if (!isRequestingClarification())
+					showSubmission(submissionId);
 			}
 		);
 
@@ -242,25 +237,6 @@
 					$(this).removeClass('ui-state-active');
 				}
 			);
-	}
-
-	function showCompilationFailure(submissionId) {
-		sendMessageBlock({
-				name: 'fetchfile',
-				headers: {
-					request: 'data',
-					submission_id: submissionId,
-					index: '0'
-				}
-			},
-			showCompilationFailureHandler
-		);
-
-	}
-
-	function showCompilationFailureHandler(msg) {
-		$('#submission-result-dialog-contents').html(escapeHTML(parseUtf8(msg.data.content)));
-		$('#submission-result-dialog').dialog('open');
 	}
 
 	function makeSubmissionHandler(msg) {
@@ -342,10 +318,6 @@
 
 	$(document).ready(function() {
 		newUploader();
-
-		$('#submission-result-dialog-ok').click(function(event) {
-			$('#submission-result-dialog').dialog('close');
-		});
 
 		$('#submissions-make-submission').click(function(event) {
 			// In order to display the submission dialog, we need to query for
