@@ -73,6 +73,11 @@
 			submission.prob_id = msg.data.headers['prob_id' + i];
 			submission.problem = msg.data.headers['problem' + i];
 			submission.comment = msg.data.headers['comment' + i];
+			submission.result = msg.data.headers['result' + i];
+			if (submission.result == 'PENDING')
+				submission.result = RunStatus.PENDING;
+			else
+				submission.result = parseInt(submission.result);
 
 			items.push(submission);
 
@@ -142,22 +147,18 @@
 			var rowClass = 'submission-row';
 			var allowClick = hasPermission('judge');
 
-			// FIXME: this switch statement is ugly, and we should really
-			// base it on result enums instead of strings. However, the
-			// QT client code does string comparisons so I'm following
-			// suit for the moment.
-			switch (submission.comment) {
-			case 'Compilation failed':
+			switch (submission.result) {
+			case RunResult.COMPILE_FAILED:
 				commentClass = 'submission-compilation-failed';
 				allowClick = true;
 				break;
-			case 'Abnormal termination of program':
-			case 'Wrong answer':
-			case 'Time limit exceeded':
-			case 'Format error':
+			case RunResult.ABNORMAL:
+			case RunResult.WRONG:
+			case RunResult.TIME_EXCEEDED:
+			case RunResult.FORMAT_ERROR:
 				commentClass = 'submission-wrong';
 				break;
-			case 'Correct answer':
+			case RunResult.CORRECT:
 				commentClass = 'submission-correct';
 				break;
 			default:

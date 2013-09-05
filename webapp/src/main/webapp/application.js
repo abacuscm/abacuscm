@@ -31,6 +31,33 @@
 		).dialog('open');
 	}
 
+	this.RunResult = {
+		PENDING: -1,
+		CORRECT: 0,
+		WRONG: 1,
+		TIME_EXCEEDED: 2,
+		ABNORMAL: 3,
+		COMPILE_FAILED: 4,
+		JUDGE: 5,
+		FORMAT_ERROR: 6,
+		OTHER: 7
+	};
+
+	var runMessages = [
+		'Pending',
+		'Correct answer',
+		'Wrong answer',
+		'Time limit exceeded',
+		'Abnormal termination of program',
+		'Compilation failed',
+		'Deferred to judge',
+		'Format error',
+		'Other - contact a judge'
+	];
+	this.runResultString = function (runResult) {
+		return runMessages[runResult + 1];
+	}
+
 	var hmsToString = function(hours, minutes, seconds) {
 		return padNumber(hours) + ':' + padNumber(minutes) + ':' + padNumber(seconds);
 	}

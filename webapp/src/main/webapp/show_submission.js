@@ -71,7 +71,7 @@
 					queueHandler(submissionId, showSubmissionHandler);
 				}
 				else
-					defaultHandler(msg);
+					defaultReplyHandler(msg);
 			}
 		);
 	}
@@ -85,7 +85,7 @@
 			submissionFiles.push({name: name, content: content});
 		}
 		else
-			defaultHandler(msg);
+			defaultReplyHandler(msg);
 	}
 
 	var showSubmissionHandler = function (msg) {
@@ -94,13 +94,44 @@
 			var name = submissionFiles[i].name;
 			html += '<option value="' + i + '">' + escapeHTML(name) + '</option>';
 		}
-		$('#submission-result-dialog-file').html(html);
-		$('#submission-result-dialog-file').val(0);
-		$('#submission-result-dialog-file').on('change keypress keyup', selectFileHandler);
-		$('#submission-result-dialog-file').change();
-		var judge = hasPermission('judge');
-		$('#submission-result-dialog-buttons-contestant').toggle(!judge);
-		$('#submission-result-dialog-buttons-judge').toggle(judge);
+		$('#submission-result-dialog-file')
+			.html(html)
+			.val(0)
+			.on('change keypress keyup', selectFileHandler)
+			.change();
+		if (hasPermission('judge')) {
+			$('#submission-result-dialog').dialog({
+					buttons: [
+						{
+							text: 'Defer',
+							click: function() { $(this).dialog('close'); }
+						},
+						{
+							text: 'Correct',
+							click: function() { mark(submissionId, RunResult.CORRECT); }
+						},
+						{
+							text: 'Wrong',
+							click: function() { mark(submissionId, RunResult.WRONG); }
+						},
+						{
+							text: 'Format error',
+							click: function() { mark(submissionId, RunResult.FORMAT_ERROR); }
+						}
+					]
+				}
+			);
+		}
+		else {
+			$('#submission-result-dialog').dialog({
+					buttons: [
+						{
+							text: 'Ok',
+							click: function() { $(this).dialog('close'); }
+						}]
+				}
+			);
+		}
 		$('#submission-result-dialog').dialog('open');
 	}
 
@@ -111,10 +142,29 @@
 		}
 	}
 
-	$(document).ready(function() {
-		$('#submission-result-dialog-ok').click(function(event) {
+	var mark = function (submissionId, runResult) {
+		sendMessageBlock({
+				name: 'mark',
+				headers: {
+					submission_id: submissionId,
+					result: '' + runResult,
+					comment: runResultString(runResult)
+				}
+			},
+			markHandler
+		);
+	}
+
+	var markHandler = function (msg) {
+		if (msg.data.name == 'ok') {
 			$('#submission-result-dialog').dialog('close');
-		});
+		}
+		else {
+			defaultReplyHandler(msg);
+		}
+	}
+
+	$(document).ready(function() {
 		// Hack to work around https://bugzilla.mozilla.org/show_bug.cgi?id=82711 on Firefox
 		$('#submission-result-dialog-contents')[0].wrap = 'off';
 	});
