@@ -76,7 +76,7 @@
 		}
 		$('#submission-result-dialog-file').html(html);
 		$('#submission-result-dialog-file').val(0);
-		$('#submission-result-dialog-file').change(selectFileHandler);
+		$('#submission-result-dialog-file').on('change keypress keyup', selectFileHandler);
 		$('#submission-result-dialog-file').change();
 		var judge = hasPermission('judge');
 		$('#submission-result-dialog-buttons-contestant').toggle(!judge);

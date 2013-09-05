@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Copyright (C) 2010-2011  Bruce Merry and Carl Hultquist
+  Copyright (C) 2010-2011, 2013  Bruce Merry and Carl Hultquist
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -86,15 +86,15 @@
                         <configuration>
                             <cssSourceDir>jquery</cssSourceDir>
                             <cssSourceFiles>
-                                <cssSourceFile>jquery-ui-1.8.9.custom.css</cssSourceFile>
+                                <cssSourceFile>jquery-ui-1.10.3.custom.min.css</cssSourceFile>
                                 <cssSourceFile>jquery.alerts.css</cssSourceFile>
                             </cssSourceFiles>
                             <cssFinalFile>common.css</cssFinalFile>
                             <jsSourceDir>.</jsSourceDir>
                             <jsSourceFiles>
-                                <jsSourceFile>jquery/jquery-1.4.4.min.js</jsSourceFile>
+                                <jsSourceFile>jquery/jquery-1.10.2.min.js</jsSourceFile>
                                 <jsSourceFile>jquery/jquery.json-2.2.js</jsSourceFile>
-                                <jsSourceFile>jquery/jquery-ui-1.8.9.custom.min.js</jsSourceFile>
+                                <jsSourceFile>jquery/jquery-ui-1.10.3.custom.min.js</jsSourceFile>
                                 <jsSourceFile>org/cometd.js</jsSourceFile>
                                 <jsSourceFile>jquery/jquery.cometd.js</jsSourceFile>
                                 <jsSourceFile>jquery/jquery.alerts.js</jsSourceFile>
