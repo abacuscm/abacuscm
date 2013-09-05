@@ -44,9 +44,17 @@
 									index: '' + i
 								}
 							},
-							fetchfileHandler
+							fetchFileHandler
 						);
 					}
+					sendMessageBlock({
+							name: 'getsubmissionsource',
+							headers: {
+								submission_id: submissionId
+							}
+						},
+						getSubmissionSourceHandler
+					);
 					// Once all the files have been retrieved, show the submission dialog
 					queueHandler(submissionId, showSubmissionHandler);
 				}
@@ -56,13 +64,27 @@
 		);
 	}
 
-	var fetchfileHandler = function (msg) {
-		if (msg.data.name == 'ok')
-		{
+	var fetchFileHandler = function (msg) {
+		if (msg.data.name == 'ok') {
 			content = msg.data.content;
 			if (typeof content === 'undefined')
 				content = '';
+			else
+				content = parseUtf8(content);
 			submissionFiles.push({name: msg.data.headers.name, content: content});
+		}
+		else
+			defaultHandler(msg);
+	}
+
+	var getSubmissionSourceHandler = function (msg) {
+		if (msg.data.name == 'ok') {
+			content = msg.data.content;
+			if (typeof content === 'undefined')
+				content = '';
+			else
+				content = parseUtf8(content);
+			submissionFiles.push({name: 'Contestant source', content: content});
 		}
 		else
 			defaultHandler(msg);
@@ -87,7 +109,7 @@
 	var selectFileHandler = function () {
 		var idx = $(this).val();
 		if (idx >= 0 && idx < submissionFiles.length) {
-			$('#submission-result-dialog-contents').val(parseUtf8(submissionFiles[idx].content));
+			$('#submission-result-dialog-contents').val(submissionFiles[idx].content);
 		}
 	}
 
