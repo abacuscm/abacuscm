@@ -87,7 +87,7 @@
 	var selectFileHandler = function () {
 		var idx = $(this).val();
 		if (idx >= 0 && idx < submissionFiles.length) {
-			$('#submission-result-dialog-contents').html(escapeHTML(parseUtf8(submissionFiles[idx].content)));
+			$('#submission-result-dialog-contents').val(parseUtf8(submissionFiles[idx].content));
 		}
 	}
 

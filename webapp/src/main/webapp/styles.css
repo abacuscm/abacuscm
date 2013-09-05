@@ -1,4 +1,4 @@
-/*  Copyright (C) 2010-2011  Bruce Merry and Carl Hultquist
+/*  Copyright (C) 2010-2011, 2013  Bruce Merry and Carl Hultquist
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -72,7 +72,7 @@ div#body { padding: 5pt 5pt; }
 .submission-wrong   { color: red; }
 .submission-compilation-failed { color: orange; }
 
-#submission-result-dialog-contents { white-space: pre-wrap; }
+#submission-result-dialog-contents { font-family: monospace; font-size: small; }
 
 /* Clarification requests */
 
