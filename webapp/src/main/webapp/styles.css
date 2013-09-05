@@ -72,7 +72,12 @@ div#body { padding: 5pt 5pt; }
 .submission-wrong   { color: red; }
 .submission-compilation-failed { color: orange; }
 
-#submission-result-dialog-contents { font-family: monospace; font-size: small; }
+#submission-result-dialog-contents {
+    font-family: monospace;
+    font-size: small;
+    white-space: pre;
+    overflow: auto;
+}
 
 /* Clarification requests */
 

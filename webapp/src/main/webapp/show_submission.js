@@ -95,6 +95,8 @@
 		$('#submission-result-dialog-ok').click(function(event) {
 			$('#submission-result-dialog').dialog('close');
 		});
+		// Hack to work around https://bugzilla.mozilla.org/show_bug.cgi?id=82711 on Firefox
+		$('#submission-result-dialog-contents')[0].wrap = 'off';
 	});
 
 })(jQuery);
