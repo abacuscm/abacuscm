@@ -451,7 +451,7 @@
 			draggable: true,
 			modal: true,
 			position: 'center',
-			resizable: 'true',
+			resizable: false,
 			title: 'Details of clarification request',
 			width: 'auto',
 			height: 'auto',

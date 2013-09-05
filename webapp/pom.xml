@@ -28,6 +28,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.1</version>
                 <configuration>
                     <source>1.6</source>
                     <target>1.6</target>
@@ -47,8 +48,8 @@
 
             <plugin>
                 <groupId>com.samaxes.maven</groupId>
-                <artifactId>maven-minify-plugin</artifactId>
-                <version>1.3.1</version>
+                <artifactId>minify-maven-plugin</artifactId>
+                <version>1.7.1</version>
                 <executions>
                     <execution>
                         <id>abacus-ui</id>
@@ -87,7 +88,6 @@
                             <cssSourceDir>jquery</cssSourceDir>
                             <cssSourceFiles>
                                 <cssSourceFile>jquery-ui-1.10.3.custom.min.css</cssSourceFile>
-                                <cssSourceFile>jquery.alerts.css</cssSourceFile>
                             </cssSourceFiles>
                             <cssFinalFile>common.css</cssFinalFile>
                             <jsSourceDir>.</jsSourceDir>
@@ -97,19 +97,10 @@
                                 <jsSourceFile>jquery/jquery-ui-1.10.3.custom.min.js</jsSourceFile>
                                 <jsSourceFile>org/cometd.js</jsSourceFile>
                                 <jsSourceFile>jquery/jquery.cometd.js</jsSourceFile>
-                                <jsSourceFile>jquery/jquery.alerts.js</jsSourceFile>
                                 <jsSourceFile>org/cometd/AckExtension.js</jsSourceFile>
                                 <jsSourceFile>org/cometd/TimeSyncExtension.js</jsSourceFile>
-                                <!--
-                                <jsSourceFile>org/cometd/ReloadExtension.js</jsSourceFile>
-                                <jsSourceFile>org/cometd/TimeStampExtension.js</jsSourceFile>
-                                -->
                                 <jsSourceFile>jquery/jquery.cometd-ack.js</jsSourceFile>
                                 <jsSourceFile>jquery/jquery.cometd-timesync.js</jsSourceFile>
-                                <!--
-                                <jsSourceFile>jquery/jquery.cometd-reload.js</jsSourceFile>
-                                <jsSourceFile>jquery/jquery.cometd-timestamp.js</jsSourceFile>
-                                -->
                             </jsSourceFiles>
                             <jsFinalFile>common.js</jsFinalFile>
                         </configuration>
@@ -165,18 +156,18 @@
         <dependency>
             <groupId>org.cometd.java</groupId>
             <artifactId>bayeux-api</artifactId>
-            <version>2.0.0</version>
+            <version>2.6.0</version>
         </dependency>
         <dependency>
             <groupId>org.cometd.javascript</groupId>
             <artifactId>cometd-javascript-jquery</artifactId>
-            <version>2.0.0</version>
+            <version>2.6.0</version>
             <type>war</type>
         </dependency>
         <dependency>
             <groupId>org.cometd.java</groupId>
             <artifactId>cometd-java-server</artifactId>
-            <version>2.0.0</version>
+            <version>2.6.0</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>

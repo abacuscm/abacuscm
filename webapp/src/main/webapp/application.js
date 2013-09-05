@@ -1,4 +1,4 @@
-/*  Copyright (C) 2010-2011  Bruce Merry and Carl Hultquist
+/*  Copyright (C) 2010-2011, 2013  Bruce Merry and Carl Hultquist
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,6 +15,22 @@
  */
 
 (function($) {
+	window.jAlert = function(msg, title, callback) {
+		if (title == null)
+			title = "Alert";
+		if (callback == null)
+			callback = function (result) { return false; };
+
+		$("#alert-dialog-text").text(msg);
+		$("#alert-dialog").dialog({
+				title: title,
+				buttons: {
+					"Ok": function (result) { $(this).dialog('close'); callback(result); }
+				}
+			}
+		).dialog('open');
+	}
+
 	var hmsToString = function(hours, minutes, seconds) {
 		return padNumber(hours) + ':' + padNumber(minutes) + ':' + padNumber(seconds);
 	}
@@ -306,6 +322,19 @@
 		// Initialisation -- we need to set up the properties of some
 		// reusable dialogs, and initially hide some things.
 
+		// General alert dialog
+		$('#alert-dialog').dialog({
+			disabled: false,
+			autoOpen: false,
+			closeOnEscape: true,
+			draggable: true,
+			modal: true,
+			position: 'center',
+			title: 'Alert',
+			width: 'auto',
+			height: 'auto'
+		});
+
 		// Login dialog
 		$('#login-dialog').dialog({
 			disabled: false,
@@ -330,10 +359,10 @@
 			draggable: true,
 			modal: true,
 			position: 'center',
-			resizable: 'true',
+			resizable: false,
 			title: 'Request clarification',
 			width: 'auto',
-			height: 'auto',
+			height: 'auto'
 		});
 
 		// Submission dialog
@@ -344,11 +373,11 @@
 			draggable: true,
 			modal: true,
 			position: 'center',
-			resizable: 'true',
+			resizable: false,
 			close: submissionDialogClose,
 			title: 'Make submission',
 			width: 'auto',
-			height: 'auto',
+			height: 'auto'
 		});
 
 		// Submission result dialog
@@ -359,10 +388,10 @@
 			draggable: true,
 			modal: true,
 			position: 'center',
-			resizable: 'true',
+			resizable: false,
 			title: 'Submission result',
 			width: 'auto',
-			height: 'auto',
+			height: 'auto'
 		});
 
 		$('#waiting').hide();

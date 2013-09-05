@@ -1,27 +1,86 @@
-/**
- * Dual licensed under the Apache License 2.0 and the MIT license.
- * $Revision$ $Date: 2010-07-05 22:37:15 +0200 (Mon, 05 Jul 2010) $
+/*
+ * Copyright (c) 2010 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
-// Dojo loader support
-if (typeof dojo !== 'undefined')
-{
-    dojo.provide('org.cometd');
-}
-else
-{
-    // Namespaces for the cometd implementation
-    this.org = this.org || {};
-    org.cometd = {};
-}
+// Namespaces for the cometd implementation
+this.org = this.org || {};
+org.cometd = {};
 
-// Abstract APIs
 org.cometd.JSON = {};
 org.cometd.JSON.toJSON = org.cometd.JSON.fromJSON = function(object)
 {
     throw 'Abstract';
 };
 
+org.cometd.Utils = {};
+
+org.cometd.Utils.isString = function(value)
+{
+    if (value === undefined || value === null)
+    {
+        return false;
+    }
+    return typeof value === 'string' ||  value instanceof String;
+};
+
+org.cometd.Utils.isArray = function(value)
+{
+    if (value === undefined || value === null)
+    {
+        return false;
+    }
+    return value instanceof Array;
+};
+
+/**
+ * Returns whether the given element is contained into the given array.
+ * @param element the element to check presence for
+ * @param array the array to check for the element presence
+ * @return the index of the element, if present, or a negative index if the element is not present
+ */
+org.cometd.Utils.inArray = function(element, array)
+{
+    for (var i = 0; i < array.length; ++i)
+    {
+        if (element === array[i])
+        {
+            return i;
+        }
+    }
+    return -1;
+};
+
+org.cometd.Utils.setTimeout = function(cometd, funktion, delay)
+{
+    return window.setTimeout(function()
+    {
+        try
+        {
+            funktion();
+        }
+        catch (x)
+        {
+            cometd._debug('Exception invoking timed function', funktion, x);
+        }
+    }, delay);
+};
+
+org.cometd.Utils.clearTimeout = function(timeoutHandle)
+{
+    window.clearTimeout(timeoutHandle);
+};
 
 /**
  * A registry for transports used by the Cometd object.
@@ -36,13 +95,13 @@ org.cometd.TransportRegistry = function()
         return _types.slice(0);
     };
 
-    this.findTransportTypes = function(version, crossDomain)
+    this.findTransportTypes = function(version, crossDomain, url)
     {
         var result = [];
         for (var i = 0; i < _types.length; ++i)
         {
             var type = _types[i];
-            if (_transports[type].accept(version, crossDomain))
+            if (_transports[type].accept(version, crossDomain, url) === true)
             {
                 result.push(type);
             }
@@ -50,17 +109,17 @@ org.cometd.TransportRegistry = function()
         return result;
     };
 
-    this.negotiateTransport = function(types, version, crossDomain)
+    this.negotiateTransport = function(types, version, crossDomain, url)
     {
         for (var i = 0; i < _types.length; ++i)
         {
             var type = _types[i];
             for (var j = 0; j < types.length; ++j)
             {
-                if (type == types[j])
+                if (type === types[j])
                 {
                     var transport = _transports[type];
-                    if (transport.accept(version, crossDomain) === true)
+                    if (transport.accept(version, crossDomain, url) === true)
                     {
                         return transport;
                     }
@@ -75,7 +134,7 @@ org.cometd.TransportRegistry = function()
         var existing = false;
         for (var i = 0; i < _types.length; ++i)
         {
-            if (_types[i] == type)
+            if (_types[i] === type)
             {
                 existing = true;
                 break;
@@ -98,11 +157,23 @@ org.cometd.TransportRegistry = function()
         return !existing;
     };
 
+    this.find = function(type)
+    {
+        for (var i = 0; i < _types.length; ++i)
+        {
+            if (_types[i] === type)
+            {
+                return _transports[type];
+            }
+        }
+        return null;
+    };
+
     this.remove = function(type)
     {
         for (var i = 0; i < _types.length; ++i)
         {
-            if (_types[i] == type)
+            if (_types[i] === type)
             {
                 _types.splice(i, 1);
                 var transport = _transports[type];
@@ -111,6 +182,12 @@ org.cometd.TransportRegistry = function()
             }
         }
         return null;
+    };
+
+    this.clear = function()
+    {
+        _types = [];
+        _transports = {};
     };
 
     this.reset = function()
@@ -122,6 +199,1074 @@ org.cometd.TransportRegistry = function()
     };
 };
 
+/**
+ * Base object with the common functionality for transports.
+ */
+org.cometd.Transport = function()
+{
+    var _type;
+    var _cometd;
+
+    /**
+     * Function invoked just after a transport has been successfully registered.
+     * @param type the type of transport (for example 'long-polling')
+     * @param cometd the cometd object this transport has been registered to
+     * @see #unregistered()
+     */
+    this.registered = function(type, cometd)
+    {
+        _type = type;
+        _cometd = cometd;
+    };
+
+    /**
+     * Function invoked just after a transport has been successfully unregistered.
+     * @see #registered(type, cometd)
+     */
+    this.unregistered = function()
+    {
+        _type = null;
+        _cometd = null;
+    };
+
+    this._debug = function()
+    {
+        _cometd._debug.apply(_cometd, arguments);
+    };
+
+    this._mixin = function()
+    {
+        return _cometd._mixin.apply(_cometd, arguments);
+    };
+
+    this.getConfiguration = function()
+    {
+        return _cometd.getConfiguration();
+    };
+
+    this.getAdvice = function()
+    {
+        return _cometd.getAdvice();
+    };
+
+    this.setTimeout = function(funktion, delay)
+    {
+        return org.cometd.Utils.setTimeout(_cometd, funktion, delay);
+    };
+
+    this.clearTimeout = function(handle)
+    {
+        org.cometd.Utils.clearTimeout(handle);
+    };
+
+    /**
+     * Converts the given response into an array of bayeux messages
+     * @param response the response to convert
+     * @return an array of bayeux messages obtained by converting the response
+     */
+    this.convertToMessages = function (response)
+    {
+        if (org.cometd.Utils.isString(response))
+        {
+            try
+            {
+                return org.cometd.JSON.fromJSON(response);
+            }
+            catch(x)
+            {
+                this._debug('Could not convert to JSON the following string', '"' + response + '"');
+                throw x;
+            }
+        }
+        if (org.cometd.Utils.isArray(response))
+        {
+            return response;
+        }
+        if (response === undefined || response === null)
+        {
+            return [];
+        }
+        if (response instanceof Object)
+        {
+            return [response];
+        }
+        throw 'Conversion Error ' + response + ', typeof ' + (typeof response);
+    };
+
+    /**
+     * Returns whether this transport can work for the given version and cross domain communication case.
+     * @param version a string indicating the transport version
+     * @param crossDomain a boolean indicating whether the communication is cross domain
+     * @return true if this transport can work for the given version and cross domain communication case,
+     * false otherwise
+     */
+    this.accept = function(version, crossDomain, url)
+    {
+        throw 'Abstract';
+    };
+
+    /**
+     * Returns the type of this transport.
+     * @see #registered(type, cometd)
+     */
+    this.getType = function()
+    {
+        return _type;
+    };
+
+    this.send = function(envelope, metaConnect)
+    {
+        throw 'Abstract';
+    };
+
+    this.reset = function()
+    {
+        this._debug('Transport', _type, 'reset');
+    };
+
+    this.abort = function()
+    {
+        this._debug('Transport', _type, 'aborted');
+    };
+
+    this.toString = function()
+    {
+        return this.getType();
+    };
+};
+
+org.cometd.Transport.derive = function(baseObject)
+{
+    function F() {}
+    F.prototype = baseObject;
+    return new F();
+};
+
+/**
+ * Base object with the common functionality for transports based on requests.
+ * The key responsibility is to allow at most 2 outstanding requests to the server,
+ * to avoid that requests are sent behind a long poll.
+ * To achieve this, we have one reserved request for the long poll, and all other
+ * requests are serialized one after the other.
+ */
+org.cometd.RequestTransport = function()
+{
+    var _super = new org.cometd.Transport();
+    var _self = org.cometd.Transport.derive(_super);
+    var _requestIds = 0;
+    var _metaConnectRequest = null;
+    var _requests = [];
+    var _envelopes = [];
+
+    function _coalesceEnvelopes(envelope)
+    {
+        while (_envelopes.length > 0)
+        {
+            var envelopeAndRequest = _envelopes[0];
+            var newEnvelope = envelopeAndRequest[0];
+            var newRequest = envelopeAndRequest[1];
+            if (newEnvelope.url === envelope.url &&
+                    newEnvelope.sync === envelope.sync)
+            {
+                _envelopes.shift();
+                envelope.messages = envelope.messages.concat(newEnvelope.messages);
+                this._debug('Coalesced', newEnvelope.messages.length, 'messages from request', newRequest.id);
+                continue;
+            }
+            break;
+        }
+    }
+
+    function _transportSend(envelope, request)
+    {
+        this.transportSend(envelope, request);
+        request.expired = false;
+
+        if (!envelope.sync)
+        {
+            var maxDelay = this.getConfiguration().maxNetworkDelay;
+            var delay = maxDelay;
+            if (request.metaConnect === true)
+            {
+                delay += this.getAdvice().timeout;
+            }
+
+            this._debug('Transport', this.getType(), 'waiting at most', delay, 'ms for the response, maxNetworkDelay', maxDelay);
+
+            var self = this;
+            request.timeout = this.setTimeout(function()
+            {
+                request.expired = true;
+                var errorMessage = 'Request ' + request.id + ' of transport ' + self.getType() + ' exceeded ' + delay + ' ms max network delay';
+                var failure = {
+                    reason: errorMessage
+                };
+                var xhr = request.xhr;
+                failure.httpCode = self.xhrStatus(xhr);
+                self.abortXHR(xhr);
+                self._debug(errorMessage);
+                self.complete(request, false, request.metaConnect);
+                envelope.onFailure(xhr, envelope.messages, failure);
+            }, delay);
+        }
+    }
+
+    function _queueSend(envelope)
+    {
+        var requestId = ++_requestIds;
+        var request = {
+            id: requestId,
+            metaConnect: false
+        };
+
+        // Consider the metaConnect requests which should always be present
+        if (_requests.length < this.getConfiguration().maxConnections - 1)
+        {
+            _requests.push(request);
+            _transportSend.call(this, envelope, request);
+        }
+        else
+        {
+            this._debug('Transport', this.getType(), 'queueing request', requestId, 'envelope', envelope);
+            _envelopes.push([envelope, request]);
+        }
+    }
+
+    function _metaConnectComplete(request)
+    {
+        var requestId = request.id;
+        this._debug('Transport', this.getType(), 'metaConnect complete, request', requestId);
+        if (_metaConnectRequest !== null && _metaConnectRequest.id !== requestId)
+        {
+            throw 'Longpoll request mismatch, completing request ' + requestId;
+        }
+
+        // Reset metaConnect request
+        _metaConnectRequest = null;
+    }
+
+    function _complete(request, success)
+    {
+        var index = org.cometd.Utils.inArray(request, _requests);
+        // The index can be negative if the request has been aborted
+        if (index >= 0)
+        {
+            _requests.splice(index, 1);
+        }
+
+        if (_envelopes.length > 0)
+        {
+            var envelopeAndRequest = _envelopes.shift();
+            var nextEnvelope = envelopeAndRequest[0];
+            var nextRequest = envelopeAndRequest[1];
+            this._debug('Transport dequeued request', nextRequest.id);
+            if (success)
+            {
+                if (this.getConfiguration().autoBatch)
+                {
+                    _coalesceEnvelopes.call(this, nextEnvelope);
+                }
+                _queueSend.call(this, nextEnvelope);
+                this._debug('Transport completed request', request.id, nextEnvelope);
+            }
+            else
+            {
+                // Keep the semantic of calling response callbacks asynchronously after the request
+                var self = this;
+                this.setTimeout(function()
+                {
+                    self.complete(nextRequest, false, nextRequest.metaConnect);
+                    var failure = {
+                        reason: 'Previous request failed'
+                    };
+                    var xhr = nextRequest.xhr;
+                    failure.httpCode = self.xhrStatus(xhr);
+                    nextEnvelope.onFailure(xhr, nextEnvelope.messages, failure);
+                }, 0);
+            }
+        }
+    }
+
+    _self.complete = function(request, success, metaConnect)
+    {
+        if (metaConnect)
+        {
+            _metaConnectComplete.call(this, request);
+        }
+        else
+        {
+            _complete.call(this, request, success);
+        }
+    };
+
+    /**
+     * Performs the actual send depending on the transport type details.
+     * @param envelope the envelope to send
+     * @param request the request information
+     */
+    _self.transportSend = function(envelope, request)
+    {
+        throw 'Abstract';
+    };
+
+    _self.transportSuccess = function(envelope, request, responses)
+    {
+        if (!request.expired)
+        {
+            this.clearTimeout(request.timeout);
+            this.complete(request, true, request.metaConnect);
+            if (responses && responses.length > 0)
+            {
+                envelope.onSuccess(responses);
+            }
+            else
+            {
+                envelope.onFailure(request.xhr, envelope.messages, {
+                    httpCode: 204
+                });
+            }
+        }
+    };
+
+    _self.transportFailure = function(envelope, request, failure)
+    {
+        if (!request.expired)
+        {
+            this.clearTimeout(request.timeout);
+            this.complete(request, false, request.metaConnect);
+            envelope.onFailure(request.xhr, envelope.messages, failure);
+        }
+    };
+
+    function _metaConnectSend(envelope)
+    {
+        if (_metaConnectRequest !== null)
+        {
+            throw 'Concurrent metaConnect requests not allowed, request id=' + _metaConnectRequest.id + ' not yet completed';
+        }
+
+        var requestId = ++_requestIds;
+        this._debug('Transport', this.getType(), 'metaConnect send, request', requestId, 'envelope', envelope);
+        var request = {
+            id: requestId,
+            metaConnect: true
+        };
+        _transportSend.call(this, envelope, request);
+        _metaConnectRequest = request;
+    }
+
+    _self.send = function(envelope, metaConnect)
+    {
+        if (metaConnect)
+        {
+            _metaConnectSend.call(this, envelope);
+        }
+        else
+        {
+            _queueSend.call(this, envelope);
+        }
+    };
+
+    _self.abort = function()
+    {
+        _super.abort();
+        for (var i = 0; i < _requests.length; ++i)
+        {
+            var request = _requests[i];
+            this._debug('Aborting request', request);
+            this.abortXHR(request.xhr);
+        }
+        if (_metaConnectRequest)
+        {
+            this._debug('Aborting metaConnect request', _metaConnectRequest);
+            this.abortXHR(_metaConnectRequest.xhr);
+        }
+        this.reset();
+    };
+
+    _self.reset = function()
+    {
+        _super.reset();
+        _metaConnectRequest = null;
+        _requests = [];
+        _envelopes = [];
+    };
+
+    _self.abortXHR = function(xhr)
+    {
+        if (xhr)
+        {
+            try
+            {
+                xhr.abort();
+            }
+            catch (x)
+            {
+                this._debug(x);
+            }
+        }
+    };
+
+    _self.xhrStatus = function(xhr)
+    {
+        if (xhr)
+        {
+            try
+            {
+                return xhr.status;
+            }
+            catch (x)
+            {
+                this._debug(x);
+            }
+        }
+        return -1;
+    };
+
+    return _self;
+};
+
+org.cometd.LongPollingTransport = function()
+{
+    var _super = new org.cometd.RequestTransport();
+    var _self = org.cometd.Transport.derive(_super);
+    // By default, support cross domain
+    var _supportsCrossDomain = true;
+
+    _self.accept = function(version, crossDomain, url)
+    {
+        return _supportsCrossDomain || !crossDomain;
+    };
+
+    _self.xhrSend = function(packet)
+    {
+        throw 'Abstract';
+    };
+
+    _self.transportSend = function(envelope, request)
+    {
+        this._debug('Transport', this.getType(), 'sending request', request.id, 'envelope', envelope);
+
+        var self = this;
+        try
+        {
+            var sameStack = true;
+            request.xhr = this.xhrSend({
+                transport: this,
+                url: envelope.url,
+                sync: envelope.sync,
+                headers: this.getConfiguration().requestHeaders,
+                body: org.cometd.JSON.toJSON(envelope.messages),
+                onSuccess: function(response)
+                {
+                    self._debug('Transport', self.getType(), 'received response', response);
+                    var success = false;
+                    try
+                    {
+                        var received = self.convertToMessages(response);
+                        if (received.length === 0)
+                        {
+                            _supportsCrossDomain = false;
+                            self.transportFailure(envelope, request, {
+                                httpCode: 204
+                            });
+                        }
+                        else
+                        {
+                            success = true;
+                            self.transportSuccess(envelope, request, received);
+                        }
+                    }
+                    catch(x)
+                    {
+                        self._debug(x);
+                        if (!success)
+                        {
+                            _supportsCrossDomain = false;
+                            var failure = {
+                                exception: x
+                            };
+                            failure.httpCode = self.xhrStatus(request.xhr);
+                            self.transportFailure(envelope, request, failure);
+                        }
+                    }
+                },
+                onError: function(reason, exception)
+                {
+                    _supportsCrossDomain = false;
+                    var failure = {
+                        reason: reason,
+                        exception: exception
+                    };
+                    failure.httpCode = self.xhrStatus(request.xhr);
+                    if (sameStack)
+                    {
+                        // Keep the semantic of calling response callbacks asynchronously after the request
+                        self.setTimeout(function()
+                        {
+                            self.transportFailure(envelope, request, failure);
+                        }, 0);
+                    }
+                    else
+                    {
+                        self.transportFailure(envelope, request, failure);
+                    }
+                }
+            });
+            sameStack = false;
+        }
+        catch (x)
+        {
+            _supportsCrossDomain = false;
+            // Keep the semantic of calling response callbacks asynchronously after the request
+            this.setTimeout(function()
+            {
+                self.transportFailure(envelope, request, {
+                    exception: x
+                });
+            }, 0);
+        }
+    };
+
+    _self.reset = function()
+    {
+        _super.reset();
+        _supportsCrossDomain = true;
+    };
+
+    return _self;
+};
+
+org.cometd.CallbackPollingTransport = function()
+{
+    var _super = new org.cometd.RequestTransport();
+    var _self = org.cometd.Transport.derive(_super);
+    var _maxLength = 2000;
+
+    _self.accept = function(version, crossDomain, url)
+    {
+        return true;
+    };
+
+    _self.jsonpSend = function(packet)
+    {
+        throw 'Abstract';
+    };
+
+    _self.transportSend = function(envelope, request)
+    {
+        var self = this;
+
+        // Microsoft Internet Explorer has a 2083 URL max length
+        // We must ensure that we stay within that length
+        var start = 0;
+        var length = envelope.messages.length;
+        var lengths = [];
+        while (length > 0)
+        {
+            // Encode the messages because all brackets, quotes, commas, colons, etc
+            // present in the JSON will be URL encoded, taking many more characters
+            var json = org.cometd.JSON.toJSON(envelope.messages.slice(start, start + length));
+            var urlLength = envelope.url.length + encodeURI(json).length;
+
+            // Let's stay on the safe side and use 2000 instead of 2083
+            // also because we did not count few characters among which
+            // the parameter name 'message' and the parameter 'jsonp',
+            // which sum up to about 50 chars
+            if (urlLength > _maxLength)
+            {
+                if (length === 1)
+                {
+                    // Keep the semantic of calling response callbacks asynchronously after the request
+                    this.setTimeout(function()
+                    {
+                        self.transportFailure(envelope, request, {
+                            reason: 'Bayeux message too big, max is ' + _maxLength
+                        });
+                    }, 0);
+                    return;
+                }
+
+                --length;
+                continue;
+            }
+
+            lengths.push(length);
+            start += length;
+            length = envelope.messages.length - start;
+        }
+
+        // Here we are sure that the messages can be sent within the URL limit
+
+        var envelopeToSend = envelope;
+        if (lengths.length > 1)
+        {
+            var begin = 0;
+            var end = lengths[0];
+            this._debug('Transport', this.getType(), 'split', envelope.messages.length, 'messages into', lengths.join(' + '));
+            envelopeToSend = this._mixin(false, {}, envelope);
+            envelopeToSend.messages = envelope.messages.slice(begin, end);
+            envelopeToSend.onSuccess = envelope.onSuccess;
+            envelopeToSend.onFailure = envelope.onFailure;
+
+            for (var i = 1; i < lengths.length; ++i)
+            {
+                var nextEnvelope = this._mixin(false, {}, envelope);
+                begin = end;
+                end += lengths[i];
+                nextEnvelope.messages = envelope.messages.slice(begin, end);
+                nextEnvelope.onSuccess = envelope.onSuccess;
+                nextEnvelope.onFailure = envelope.onFailure;
+                this.send(nextEnvelope, request.metaConnect);
+            }
+        }
+
+        this._debug('Transport', this.getType(), 'sending request', request.id, 'envelope', envelopeToSend);
+
+        try
+        {
+            var sameStack = true;
+            this.jsonpSend({
+                transport: this,
+                url: envelopeToSend.url,
+                sync: envelopeToSend.sync,
+                headers: this.getConfiguration().requestHeaders,
+                body: org.cometd.JSON.toJSON(envelopeToSend.messages),
+                onSuccess: function(responses)
+                {
+                    var success = false;
+                    try
+                    {
+                        var received = self.convertToMessages(responses);
+                        if (received.length === 0)
+                        {
+                            self.transportFailure(envelopeToSend, request, {
+                                httpCode: 204
+                            });
+                        }
+                        else
+                        {
+                            success = true;
+                            self.transportSuccess(envelopeToSend, request, received);
+                        }
+                    }
+                    catch (x)
+                    {
+                        self._debug(x);
+                        if (!success)
+                        {
+                            self.transportFailure(envelopeToSend, request, {
+                                exception: x
+                            });
+                        }
+                    }
+                },
+                onError: function(reason, exception)
+                {
+                    var failure = {
+                        reason: reason,
+                        exception: exception
+                    };
+                    if (sameStack)
+                    {
+                        // Keep the semantic of calling response callbacks asynchronously after the request
+                        self.setTimeout(function()
+                        {
+                            self.transportFailure(envelopeToSend, request, failure);
+                        }, 0);
+                    }
+                    else
+                    {
+                        self.transportFailure(envelopeToSend, request, failure);
+                    }
+                }
+            });
+            sameStack = false;
+        }
+        catch (xx)
+        {
+            // Keep the semantic of calling response callbacks asynchronously after the request
+            this.setTimeout(function()
+            {
+                self.transportFailure(envelopeToSend, request, {
+                    exception: xx
+                });
+            }, 0);
+        }
+    };
+
+    return _self;
+};
+
+org.cometd.WebSocketTransport = function()
+{
+    var _super = new org.cometd.Transport();
+    var _self = org.cometd.Transport.derive(_super);
+    var _cometd;
+    // By default, support WebSocket
+    var _supportsWebSocket = true;
+    // Whether we were able to establish a WebSocket connection
+    var _webSocketSupported = false;
+    // Envelopes that have been sent
+    var _envelopes = {};
+    // Timeouts for messages that have been sent
+    var _timeouts = {};
+    var _webSocket = null;
+    var _opened = false;
+    var _connected = false;
+    var _successCallback;
+
+    function _websocketConnect()
+    {
+        // Mangle the URL, changing the scheme from 'http' to 'ws'
+        var url = _cometd.getURL().replace(/^http/, 'ws');
+        this._debug('Transport', this.getType(), 'connecting to URL', url);
+
+        var self = this;
+        var connectTimer = null;
+
+        var connectTimeout = _cometd.getConfiguration().connectTimeout;
+        if (connectTimeout > 0)
+        {
+            connectTimer = this.setTimeout(function()
+            {
+                connectTimer = null;
+                if (!_opened)
+                {
+                    self._debug('Transport', self.getType(), 'timed out while connecting to URL', url, ':', connectTimeout, 'ms');
+                    self.onClose(1002, 'Connect Timeout');
+                }
+            }, connectTimeout);
+        }
+
+        var webSocket = new org.cometd.WebSocket(url);
+        var onopen = function()
+        {
+            self._debug('WebSocket opened', webSocket);
+            if (connectTimer)
+            {
+                self.clearTimeout(connectTimer);
+                connectTimer = null;
+            }
+            if (webSocket !== _webSocket)
+            {
+                // It's possible that the onopen callback is invoked
+                // with a delay so that we have already reconnected
+                self._debug('Ignoring open event, WebSocket', _webSocket);
+                return;
+            }
+            self.onOpen();
+        };
+        var onclose = function(event)
+        {
+            var code = event ? event.code : 1000;
+            var reason = event ? event.reason : undefined;
+            self._debug('WebSocket closed', code, '/', reason, webSocket);
+            if (connectTimer)
+            {
+                self.clearTimeout(connectTimer);
+                connectTimer = null;
+            }
+            if (webSocket !== _webSocket)
+            {
+                // The onclose callback may be invoked when the server sends
+                // the close message reply, but after we have already reconnected
+                self._debug('Ignoring close event, WebSocket', _webSocket);
+                return;
+            }
+            self.onClose(code, reason);
+        };
+        var onmessage = function(message)
+        {
+            self._debug('WebSocket message', message, webSocket);
+            if (webSocket !== _webSocket)
+            {
+                self._debug('Ignoring message event, WebSocket', _webSocket);
+                return;
+            }
+            self.onMessage(message);
+        };
+
+        webSocket.onopen = onopen;
+        webSocket.onclose = onclose;
+        webSocket.onerror = function()
+        {
+            onclose({ code: 1002, reason: 'Error' });
+        };
+        webSocket.onmessage = onmessage;
+
+        _webSocket = webSocket;
+        this._debug('Transport', this.getType(), 'configured callbacks on', webSocket);
+    }
+
+    function _webSocketSend(envelope, metaConnect)
+    {
+        var json = org.cometd.JSON.toJSON(envelope.messages);
+
+        _webSocket.send(json);
+        this._debug('Transport', this.getType(), 'sent', envelope, 'metaConnect =', metaConnect);
+
+        // Manage the timeout waiting for the response
+        var maxDelay = this.getConfiguration().maxNetworkDelay;
+        var delay = maxDelay;
+        if (metaConnect)
+        {
+            delay += this.getAdvice().timeout;
+            _connected = true;
+        }
+
+        var self = this;
+        var webSocket = _webSocket;
+        var messageIds = [];
+        for (var i = 0; i < envelope.messages.length; ++i)
+        {
+            var message = envelope.messages[i];
+            if (message.id)
+            {
+                messageIds.push(message.id);
+                _timeouts[message.id] = this.setTimeout(function()
+                {
+                    self.webSocketClose(webSocket, 1000, 'Timeout');
+                }, delay);
+            }
+        }
+
+        this._debug('Transport', this.getType(), 'waiting at most', delay, 'ms for messages', messageIds, 'maxNetworkDelay', maxDelay, ', timeouts:', _timeouts);
+    }
+
+    function _send(envelope, metaConnect)
+    {
+        try
+        {
+            if (_webSocket === null)
+            {
+                _websocketConnect.call(this);
+            }
+            // We may have a non-null _webSocket, but not be open yet so
+            // to avoid out of order deliveries, we check if we are open
+            else if (_opened)
+            {
+                _webSocketSend.call(this, envelope, metaConnect);
+            }
+        }
+        catch (x)
+        {
+            // Keep the semantic of calling response callbacks asynchronously after the request
+            var webSocket = _webSocket;
+            this.setTimeout(function()
+            {
+                envelope.onFailure(webSocket, envelope.messages, {
+                    exception: x
+                });
+            }, 0);
+        }
+    }
+
+    _self.onOpen = function()
+    {
+        this._debug('Transport', this.getType(), 'opened', _webSocket);
+        _opened = true;
+        _webSocketSupported = true;
+
+        this._debug('Sending pending messages', _envelopes);
+        for (var key in _envelopes)
+        {
+            var element = _envelopes[key];
+            var envelope = element[0];
+            var metaConnect = element[1];
+            // Store the success callback, which is independent from the envelope,
+            // so that it can be used to notify arrival of messages.
+            _successCallback = envelope.onSuccess;
+            _webSocketSend.call(this, envelope, metaConnect);
+        }
+    };
+
+    _self.onMessage = function(wsMessage)
+    {
+        this._debug('Transport', this.getType(), 'received websocket message', wsMessage, _webSocket);
+
+        var close = false;
+        var messages = this.convertToMessages(wsMessage.data);
+        var messageIds = [];
+        for (var i = 0; i < messages.length; ++i)
+        {
+            var message = messages[i];
+
+            // Detect if the message is a response to a request we made.
+            // If it's a meta message, for sure it's a response;
+            // otherwise it's a publish message and publish responses lack the data field
+            if (/^\/meta\//.test(message.channel) || message.data === undefined)
+            {
+                if (message.id)
+                {
+                    messageIds.push(message.id);
+
+                    var timeout = _timeouts[message.id];
+                    if (timeout)
+                    {
+                        this.clearTimeout(timeout);
+                        delete _timeouts[message.id];
+                        this._debug('Transport', this.getType(), 'removed timeout for message', message.id, ', timeouts', _timeouts);
+                    }
+                }
+            }
+
+            if ('/meta/connect' === message.channel)
+            {
+                _connected = false;
+            }
+            if ('/meta/disconnect' === message.channel && !_connected)
+            {
+                close = true;
+            }
+        }
+
+        // Remove the envelope corresponding to the messages
+        var removed = false;
+        for (var j = 0; j < messageIds.length; ++j)
+        {
+            var id = messageIds[j];
+            for (var key in _envelopes)
+            {
+                var ids = key.split(',');
+                var index = org.cometd.Utils.inArray(id, ids);
+                if (index >= 0)
+                {
+                    removed = true;
+                    ids.splice(index, 1);
+                    var envelope = _envelopes[key][0];
+                    var metaConnect = _envelopes[key][1];
+                    delete _envelopes[key];
+                    if (ids.length > 0)
+                    {
+                        _envelopes[ids.join(',')] = [envelope, metaConnect];
+                    }
+                    break;
+                }
+            }
+        }
+        if (removed)
+        {
+            this._debug('Transport', this.getType(), 'removed envelope, envelopes', _envelopes);
+        }
+
+        _successCallback.call(this, messages);
+
+        if (close)
+        {
+            this.webSocketClose(_webSocket, 1000, 'Disconnect');
+        }
+    };
+
+    _self.onClose = function(code, reason)
+    {
+        this._debug('Transport', this.getType(), 'closed', code, reason, _webSocket);
+
+        // Remember if we were able to connect
+        // This close event could be due to server shutdown, and if it restarts we want to try websocket again
+        _supportsWebSocket = _webSocketSupported;
+
+        for (var id in _timeouts)
+        {
+            this.clearTimeout(_timeouts[id]);
+        }
+        _timeouts = {};
+
+        for (var key in _envelopes)
+        {
+            var envelope = _envelopes[key][0];
+            var metaConnect = _envelopes[key][1];
+            if (metaConnect)
+            {
+                _connected = false;
+            }
+            envelope.onFailure(_webSocket, envelope.messages, {
+                websocketCode: code,
+                reason: reason
+            });
+        }
+        _envelopes = {};
+
+        if (_opened)
+        {
+            this.webSocketClose(_webSocket, 1000, 'Close');
+        }
+        _opened = false;
+        _webSocket = null;
+    };
+
+    _self.registered = function(type, cometd)
+    {
+        _super.registered(type, cometd);
+        _cometd = cometd;
+    };
+
+    _self.accept = function(version, crossDomain, url)
+    {
+        // Using !! to return a boolean (and not the WebSocket object)
+        return _supportsWebSocket && !!org.cometd.WebSocket && _cometd.websocketEnabled !== false;
+    };
+
+    _self.send = function(envelope, metaConnect)
+    {
+        this._debug('Transport', this.getType(), 'sending', envelope, 'metaConnect =', metaConnect);
+
+        // Store the envelope in any case; if the websocket cannot be opened, we fail it in close()
+        var messageIds = [];
+        for (var i = 0; i < envelope.messages.length; ++i)
+        {
+            var message = envelope.messages[i];
+            if (message.id)
+            {
+                messageIds.push(message.id);
+            }
+        }
+        _envelopes[messageIds.join(',')] = [envelope, metaConnect];
+        this._debug('Transport', this.getType(), 'stored envelope, envelopes', _envelopes);
+
+        _send.call(this, envelope, metaConnect);
+    };
+
+    _self.webSocketClose = function(webSocket, code, reason)
+    {
+        if (webSocket)
+        {
+            try
+            {
+                webSocket.close(code, reason);
+            }
+            catch (x)
+            {
+                this._debug(x);
+            }
+        }
+    };
+
+    _self.abort = function()
+    {
+        _super.abort();
+        this.webSocketClose(_webSocket, 1001, 'Abort');
+        this.reset();
+    };
+
+    _self.reset = function()
+    {
+        _super.reset();
+        if (_opened)
+        {
+            this.webSocketClose(_webSocket, 1000, 'Reset');
+        }
+        _supportsWebSocket = true;
+        _webSocketSupported = false;
+        _timeouts = {};
+        _envelopes = {};
+        _webSocket = null;
+        _opened = false;
+        _successCallback = null;
+    };
+
+    return _self;
+};
 
 /**
  * The constructor for a Cometd object, identified by an optional name.
@@ -130,7 +1275,13 @@ org.cometd.TransportRegistry = function()
  * a new instance can be created via:
  * <pre>
  * var bayeuxUrl2 = ...;
- * var cometd2 = new $.Cometd();
+ *
+ * // Dojo style
+ * var cometd2 = new dojox.Cometd('another_optional_name');
+ *
+ * // jQuery style
+ * var cometd2 = new $.Cometd('another_optional_name');
+ *
  * cometd2.init({url: bayeuxUrl2});
  * </pre>
  * @param name the optional name of this cometd object
@@ -143,16 +1294,6 @@ org.cometd.Cometd = function(name)
 {
     var _cometd = this;
     var _name = name || 'default';
-    var _logLevel; // 'warn','info','debug'
-    var _url;
-    var _maxConnections;
-    var _backoffIncrement;
-    var _maxBackoff;
-    var _reverseIncomingExtensions;
-    var _maxNetworkDelay;
-    var _requestHeaders;
-    var _appendMessageTypeToURL;
-    var _autoBatch;
     var _crossDomain = false;
     var _transports = new org.cometd.TransportRegistry();
     var _transport;
@@ -166,11 +1307,40 @@ org.cometd.Cometd = function(name)
     var _backoff = 0;
     var _scheduledSend = null;
     var _extensions = [];
-    var _defaultAdvice = {};
     var _advice = {};
     var _handshakeProps;
+    var _publishCallbacks = {};
     var _reestablish = false;
     var _connected = false;
+    var _config = {
+        connectTimeout: 0,
+        maxConnections: 2,
+        backoffIncrement: 1000,
+        maxBackoff: 60000,
+        logLevel: 'info',
+        reverseIncomingExtensions: true,
+        maxNetworkDelay: 10000,
+        requestHeaders: {},
+        appendMessageTypeToURL: true,
+        autoBatch: false,
+        advice: {
+            timeout: 60000,
+            interval: 0,
+            reconnect: 'retry'
+        }
+    };
+
+    function _fieldValue(object, name)
+    {
+        try
+        {
+            return object[name];
+        }
+        catch (x)
+        {
+            return undefined;
+        }
+    }
 
     /**
      * Mixes in the given objects into the target object by copying the properties.
@@ -178,7 +1348,7 @@ org.cometd.Cometd = function(name)
      * @param target the target object
      * @param objects the objects whose properties are copied into the target
      */
-    function _mixin(deep, target, objects)
+    this._mixin = function(deep, target, objects)
     {
         var result = target || {};
 
@@ -194,7 +1364,8 @@ org.cometd.Cometd = function(name)
 
             for (var propName in object)
             {
-                var prop = object[propName];
+                var prop = _fieldValue(object, propName);
+                var targ = _fieldValue(result, propName);
 
                 // Avoid infinite loops
                 if (prop === target)
@@ -211,11 +1382,12 @@ org.cometd.Cometd = function(name)
                 {
                     if (prop instanceof Array)
                     {
-                        result[propName] = _mixin(deep, [], prop);
+                        result[propName] = this._mixin(deep, targ instanceof Array ? targ : [], prop);
                     }
                     else
                     {
-                        result[propName] = _mixin(deep, {}, prop);
+                        var source = typeof targ === 'object' && !(targ instanceof Array) ? targ : {};
+                        result[propName] = this._mixin(deep, source, prop);
                     }
                 }
                 else
@@ -226,47 +1398,11 @@ org.cometd.Cometd = function(name)
         }
 
         return result;
-    }
-
-    /**
-     * This method is exposed as facility for extensions that may need to clone messages.
-     */
-    this._mixin = _mixin;
-
-    /**
-     * Returns whether the given element is contained into the given array.
-     * @param element the element to check presence for
-     * @param array the array to check for the element presence
-     * @return the index of the element, if present, or a negative index if the element is not present
-     */
-    function _inArray(element, array)
-    {
-        for (var i = 0; i < array.length; ++i)
-        {
-            if (element == array[i])
-            {
-                return i;
-            }
-        }
-        return -1;
-    }
+    };
 
     function _isString(value)
     {
-        if (value === undefined || value === null)
-        {
-            return false;
-        }
-        return typeof value === 'string' ||  value instanceof String;
-    }
-
-    function _isArray(value)
-    {
-        if (value === undefined || value === null)
-        {
-            return false;
-        }
-        return value instanceof Array;
+        return org.cometd.Utils.isString(value);
     }
 
     function _isFunction(value)
@@ -290,33 +1426,44 @@ org.cometd.Cometd = function(name)
         }
     }
 
-    function _warn()
+    this._warn = function()
     {
         _log('warn', arguments);
-    }
-    this._warn = _warn;
+    };
 
-    function _info()
+    this._info = function()
     {
-        if (_logLevel != 'warn')
+        if (_config.logLevel !== 'warn')
         {
             _log('info', arguments);
         }
-    }
-    this._info = _info;
+    };
 
-    function _debug()
+    this._debug = function()
     {
-        if (_logLevel == 'debug')
+        if (_config.logLevel === 'debug')
         {
             _log('debug', arguments);
         }
-    }
-    this._debug = _debug;
+    };
+
+    /**
+     * Returns whether the given hostAndPort is cross domain.
+     * The default implementation checks against window.location.host
+     * but this function can be overridden to make it work in non-browser
+     * environments.
+     *
+     * @param hostAndPort the host and port in format host:port
+     * @return whether the given hostAndPort is cross domain
+     */
+    this._isCrossDomain = function(hostAndPort)
+    {
+        return hostAndPort && hostAndPort !== window.location.host;
+    };
 
     function _configure(configuration)
     {
-        _debug('Configuring cometd object with', configuration);
+        _cometd._debug('Configuring cometd object with', configuration);
         // Support old style param, where only the Bayeux server URL was passed
         if (_isString(configuration))
         {
@@ -327,42 +1474,34 @@ org.cometd.Cometd = function(name)
             configuration = {};
         }
 
-        _url = configuration.url;
-        if (!_url)
+        _config = _cometd._mixin(false, _config, configuration);
+
+        if (!_config.url)
         {
             throw 'Missing required configuration parameter \'url\' specifying the Bayeux server URL';
         }
-        _maxConnections = configuration.maxConnections || 2;
-        _backoffIncrement = configuration.backoffIncrement || 1000;
-        _maxBackoff = configuration.maxBackoff || 60000;
-        _logLevel = configuration.logLevel || 'info';
-        _reverseIncomingExtensions = configuration.reverseIncomingExtensions !== false;
-        _maxNetworkDelay = configuration.maxNetworkDelay || 10000;
-        _requestHeaders = configuration.requestHeaders || {};
-        _appendMessageTypeToURL = configuration.appendMessageTypeToURL !== false;
-        _autoBatch = configuration.autoBatch === true;
-        _defaultAdvice.timeout = configuration.timeout || 60000;
-        _defaultAdvice.interval = configuration.interval || 0;
-        _defaultAdvice.reconnect = configuration.reconnect || 'retry';
 
         // Check if we're cross domain
-        // [1] = protocol:, [2] = //host:port, [3] = host:port, [4] = host, [5] = :port, [6] = port, [7] = uri, [8] = rest
-        var urlParts = /(^https?:)?(\/\/(([^:\/\?#]+)(:(\d+))?))?([^\?#]*)(.*)?/.exec(_url);
-        _crossDomain = urlParts[3] && urlParts[3] != window.location.host;
+        // [1] = protocol://, [2] = host:port, [3] = host, [4] = IPv6_host, [5] = IPv4_host, [6] = :port, [7] = port, [8] = uri, [9] = rest
+        var urlParts = /(^https?:\/\/)?(((\[[^\]]+\])|([^:\/\?#]+))(:(\d+))?)?([^\?#]*)(.*)?/.exec(_config.url);
+        var hostAndPort = urlParts[2];
+        var uri = urlParts[8];
+        var afterURI = urlParts[9];
+        _crossDomain = _cometd._isCrossDomain(hostAndPort);
 
         // Check if appending extra path is supported
-        if (_appendMessageTypeToURL)
+        if (_config.appendMessageTypeToURL)
         {
-            if (urlParts[8] !== undefined)
+            if (afterURI !== undefined && afterURI.length > 0)
             {
-                _info('Appending message type to URI ' + urlParts[7] + urlParts[8] + ' is not supported, disabling \'appendMessageTypeToURL\' configuration');
-                _appendMessageTypeToURL = false;
+                _cometd._info('Appending message type to URI ' + uri + afterURI + ' is not supported, disabling \'appendMessageTypeToURL\' configuration');
+                _config.appendMessageTypeToURL = false;
             }
             else
             {
-                var uriSegments = urlParts[7].split('/');
+                var uriSegments = uri.split('/');
                 var lastSegmentIndex = uriSegments.length - 1;
-                if (urlParts[7].match(/\/$/))
+                if (uri.match(/\/$/))
                 {
                     lastSegmentIndex -= 1;
                 }
@@ -370,8 +1509,8 @@ org.cometd.Cometd = function(name)
                 {
                     // Very likely the CometD servlet's URL pattern is mapped to an extension, such as *.cometd
                     // It will be difficult to add the extra path in this case
-                    _info('Appending message type to URI ' + urlParts[7] + ' is not supported, disabling \'appendMessageTypeToURL\' configuration');
-                    _appendMessageTypeToURL = false;
+                    _cometd._info('Appending message type to URI ' + uri + ' is not supported, disabling \'appendMessageTypeToURL\' configuration');
+                    _config.appendMessageTypeToURL = false;
                 }
             }
         }
@@ -388,7 +1527,7 @@ org.cometd.Cometd = function(name)
                 if (subscription && !subscription.listener)
                 {
                     delete subscriptions[i];
-                    _debug('Removed subscription', subscription, 'for channel', channel);
+                    _cometd._debug('Removed subscription', subscription, 'for channel', channel);
                 }
             }
         }
@@ -396,16 +1535,16 @@ org.cometd.Cometd = function(name)
 
     function _setStatus(newStatus)
     {
-        if (_status != newStatus)
+        if (_status !== newStatus)
         {
-            _debug('Status', _status, '->', newStatus);
+            _cometd._debug('Status', _status, '->', newStatus);
             _status = newStatus;
         }
     }
 
     function _isDisconnected()
     {
-        return _status == 'disconnecting' || _status == 'disconnected';
+        return _status === 'disconnecting' || _status === 'disconnected';
     }
 
     function _nextMessageId()
@@ -421,18 +1560,18 @@ org.cometd.Cometd = function(name)
         }
         catch (x)
         {
-            _debug('Exception during execution of extension', name, x);
+            _cometd._debug('Exception during execution of extension', name, x);
             var exceptionCallback = _cometd.onExtensionException;
             if (_isFunction(exceptionCallback))
             {
-                _debug('Invoking extension exception callback', name, x);
+                _cometd._debug('Invoking extension exception callback', name, x);
                 try
                 {
                     exceptionCallback.call(_cometd, x, name, outgoing, message);
                 }
                 catch(xx)
                 {
-                    _info('Exception during execution of exception callback in extension', name, xx);
+                    _cometd._info('Exception during execution of exception callback in extension', name, xx);
                 }
             }
             return message;
@@ -448,7 +1587,7 @@ org.cometd.Cometd = function(name)
                 break;
             }
 
-            var index = _reverseIncomingExtensions ? _extensions.length - 1 - i : i;
+            var index = _config.reverseIncomingExtensions ? _extensions.length - 1 - i : i;
             var extension = _extensions[index];
             var callback = extension.extension.incoming;
             if (_isFunction(callback))
@@ -497,18 +1636,18 @@ org.cometd.Cometd = function(name)
                     }
                     catch (x)
                     {
-                        _debug('Exception during notification', subscription, message, x);
+                        _cometd._debug('Exception during notification', subscription, message, x);
                         var listenerCallback = _cometd.onListenerException;
                         if (_isFunction(listenerCallback))
                         {
-                            _debug('Invoking listener exception callback', subscription, x);
+                            _cometd._debug('Invoking listener exception callback', subscription, x);
                             try
                             {
                                 listenerCallback.call(_cometd, x, subscription.handle, subscription.listener, message);
                             }
                             catch (xx)
                             {
-                                _info('Exception during execution of listener callback', subscription, xx);
+                                _cometd._info('Exception during execution of listener callback', subscription, xx);
                             }
                         }
                     }
@@ -530,7 +1669,7 @@ org.cometd.Cometd = function(name)
             var channelPart = channelParts.slice(0, i).join('/') + '/*';
             // We don't want to notify /foo/* if the channel is /foo/bar/baz,
             // so we stop at the first non recursive globbing
-            if (i == last)
+            if (i === last)
             {
                 _notify(channelPart, message);
             }
@@ -540,26 +1679,11 @@ org.cometd.Cometd = function(name)
         }
     }
 
-    function _setTimeout(funktion, delay)
-    {
-        return setTimeout(function()
-        {
-            try
-            {
-                funktion();
-            }
-            catch (x)
-            {
-                _debug('Exception invoking timed function', funktion, x);
-            }
-        }, delay);
-    }
-
     function _cancelDelayedSend()
     {
         if (_scheduledSend !== null)
         {
-            clearTimeout(_scheduledSend);
+            org.cometd.Utils.clearTimeout(_scheduledSend);
         }
         _scheduledSend = null;
     }
@@ -568,8 +1692,8 @@ org.cometd.Cometd = function(name)
     {
         _cancelDelayedSend();
         var delay = _advice.interval + _backoff;
-        _debug('Function scheduled in', delay, 'ms, interval =', _advice.interval, 'backoff =', _backoff, operation);
-        _scheduledSend = _setTimeout(operation, delay);
+        _cometd._debug('Function scheduled in', delay, 'ms, interval =', _advice.interval, 'backoff =', _backoff, operation);
+        _scheduledSend = org.cometd.Utils.setTimeout(_cometd, operation, delay);
     }
 
     // Needed to break cyclic dependencies between function definitions
@@ -591,27 +1715,40 @@ org.cometd.Cometd = function(name)
         {
             var message = messages[i];
             message.id = '' + _nextMessageId();
+
             if (_clientId)
             {
                 message.clientId = _clientId;
             }
+
+            var callback = undefined;
+            if (_isFunction(message._callback))
+            {
+                callback = message._callback;
+                // Remove the publish callback before calling the extensions
+                delete message._callback;
+            }
+
             message = _applyOutgoingExtensions(message);
             if (message !== undefined && message !== null)
             {
                 messages[i] = message;
+                if (callback)
+                    _publishCallbacks[message.id] = callback;
             }
             else
             {
                 messages.splice(i--, 1);
             }
         }
+
         if (messages.length === 0)
         {
             return;
         }
 
-        var url = _url;
-        if (_appendMessageTypeToURL)
+        var url = _config.url;
+        if (_config.appendMessageTypeToURL)
         {
             // If url does not end with '/', then append it
             if (!url.match(/\/$/))
@@ -636,22 +1773,23 @@ org.cometd.Cometd = function(name)
                 }
                 catch (x)
                 {
-                    _debug('Exception during handling of messages', x);
+                    _cometd._debug('Exception during handling of messages', x);
                 }
             },
-            onFailure: function(conduit, reason, exception)
+            onFailure: function(conduit, messages, failure)
             {
                 try
                 {
-                    _handleFailure.call(_cometd, conduit, messages, reason, exception);
+                    failure.connectionType = _cometd.getTransport().getType();
+                    _handleFailure.call(_cometd, conduit, messages, failure);
                 }
                 catch (x)
                 {
-                    _debug('Exception during handling of failure', x);
+                    _cometd._debug('Exception during handling of failure', x);
                 }
             }
         };
-        _debug('Send, sync =', sync, envelope);
+        _cometd._debug('Send', envelope);
         _transport.send(envelope, longpoll);
     }
 
@@ -683,9 +1821,9 @@ org.cometd.Cometd = function(name)
 
     function _increaseBackoff()
     {
-        if (_backoff < _maxBackoff)
+        if (_backoff < _config.maxBackoff)
         {
-            _backoff += _backoffIncrement;
+            _backoff += _config.backoffIncrement;
         }
     }
 
@@ -750,7 +1888,7 @@ org.cometd.Cometd = function(name)
             }
 
             _setStatus('connecting');
-            _debug('Connect sent', message);
+            _cometd._debug('Connect sent', message);
             _send(false, [message], true, 'connect');
             _setStatus('connected');
         }
@@ -769,8 +1907,30 @@ org.cometd.Cometd = function(name)
     {
         if (newAdvice)
         {
-            _advice = _mixin(false, {}, _defaultAdvice, newAdvice);
-            _debug('New advice', _advice, org.cometd.JSON.toJSON(_advice));
+            _advice = _cometd._mixin(false, {}, _config.advice, newAdvice);
+            _cometd._debug('New advice', _advice);
+        }
+    }
+
+    function _disconnect(abort)
+    {
+        _cancelDelayedSend();
+        if (abort)
+        {
+            _transport.abort();
+        }
+        _clientId = null;
+        _setStatus('disconnected');
+        _batch = 0;
+        _resetBackoff();
+
+        // Fail any existing queued message
+        if (_messageQueue.length > 0)
+        {
+            _handleFailure.call(_cometd, undefined, _messageQueue, {
+                reason: 'Disconnected'
+            });
+            _messageQueue = [];
         }
     }
 
@@ -787,11 +1947,7 @@ org.cometd.Cometd = function(name)
         if (_isDisconnected())
         {
             _transports.reset();
-        }
-
-        if (_isDisconnected())
-        {
-            _updateAdvice(_defaultAdvice);
+            _updateAdvice(_config.advice);
         }
         else
         {
@@ -799,7 +1955,7 @@ org.cometd.Cometd = function(name)
             // and we're backing off, or because the server timed us out and asks us to
             // re-handshake: in both cases, make sure that if the handshake succeeds
             // the next action is a connect.
-            _updateAdvice(_mixin(false, _advice, {reconnect: 'retry'}));
+            _updateAdvice(_cometd._mixin(false, _advice, {reconnect: 'retry'}));
         }
 
         _batch = 0;
@@ -820,7 +1976,7 @@ org.cometd.Cometd = function(name)
         var version = '1.0';
 
         // Figure out the transports to send to the server
-        var transportTypes = _transports.findTransportTypes(version, _crossDomain);
+        var transportTypes = _transports.findTransportTypes(version, _crossDomain, _config.url);
 
         var bayeuxMessage = {
             version: version,
@@ -834,17 +1990,17 @@ org.cometd.Cometd = function(name)
         };
         // Do not allow the user to mess with the required properties,
         // so merge first the user properties and *then* the bayeux message
-        var message = _mixin(false, {}, _handshakeProps, bayeuxMessage);
+        var message = _cometd._mixin(false, {}, _handshakeProps, bayeuxMessage);
 
         // Pick up the first available transport as initial transport
         // since we don't know if the server supports it
-        _transport = _transports.negotiateTransport(transportTypes, version, _crossDomain);
-        _debug('Initial transport is', _transport);
+        _transport = _transports.negotiateTransport(transportTypes, version, _crossDomain, _config.url);
+        _cometd._debug('Initial transport is', _transport.getType());
 
         // We started a batch to hold the application messages,
         // so here we must bypass it and send immediately.
         _setStatus('handshaking');
-        _debug('Handshake sent', message);
+        _cometd._debug('Handshake sent', message);
         _send(false, [message], false, 'handshake');
     }
 
@@ -863,6 +2019,25 @@ org.cometd.Cometd = function(name)
         });
     }
 
+    function _failHandshake(message)
+    {
+        _notifyListeners('/meta/handshake', message);
+        _notifyListeners('/meta/unsuccessful', message);
+
+        // Only try again if we haven't been disconnected and
+        // the advice permits us to retry the handshake
+        var retry = !_isDisconnected() && _advice.reconnect !== 'none';
+        if (retry)
+        {
+            _increaseBackoff();
+            _delayedHandshake();
+        }
+        else
+        {
+            _disconnect(false);
+        }
+    }
+
     function _handshakeResponse(message)
     {
         if (message.successful)
@@ -870,16 +2045,16 @@ org.cometd.Cometd = function(name)
             // Save clientId, figure out transport, then follow the advice to connect
             _clientId = message.clientId;
 
-            var newTransport = _transports.negotiateTransport(message.supportedConnectionTypes, message.version, _crossDomain);
+            var newTransport = _transports.negotiateTransport(message.supportedConnectionTypes, message.version, _crossDomain, _config.url);
             if (newTransport === null)
             {
                 throw 'Could not negotiate transport with server; client ' +
-                      _transports.findTransportTypes(message.version, _crossDomain) +
+                      _transports.findTransportTypes(message.version, _crossDomain, _config.url) +
                       ', server ' + message.supportedConnectionTypes;
             }
-            else if (_transport != newTransport)
+            else if (_transport !== newTransport)
             {
-                _debug('Transport', _transport, '->', newTransport);
+                _cometd._debug('Transport', _transport, '->', newTransport);
                 _transport = newTransport;
             }
 
@@ -903,8 +2078,7 @@ org.cometd.Cometd = function(name)
                     _delayedConnect();
                     break;
                 case 'none':
-                    _resetBackoff();
-                    _setStatus('disconnected');
+                    _disconnect(false);
                     break;
                 default:
                     throw 'Unrecognized advice action ' + action;
@@ -912,55 +2086,51 @@ org.cometd.Cometd = function(name)
         }
         else
         {
-            _notifyListeners('/meta/handshake', message);
-            _notifyListeners('/meta/unsuccessful', message);
-
-            // Only try again if we haven't been disconnected and
-            // the advice permits us to retry the handshake
-            var retry = !_isDisconnected() && _advice.reconnect != 'none';
-            if (retry)
-            {
-                _increaseBackoff();
-                _delayedHandshake();
-            }
-            else
-            {
-                _resetBackoff();
-                _setStatus('disconnected');
-            }
+            _failHandshake(message);
         }
     }
 
-    function _handshakeFailure(xhr, message)
+    function _handshakeFailure(failure)
     {
-        // Notify listeners
-        var failureMessage = {
+        _failHandshake({
             successful: false,
-            failure: true,
+            failure: failure,
             channel: '/meta/handshake',
-            request: message,
-            xhr: xhr,
             advice: {
                 reconnect: 'retry',
                 interval: _backoff
             }
-        };
+        });
+    }
 
-        _notifyListeners('/meta/handshake', failureMessage);
-        _notifyListeners('/meta/unsuccessful', failureMessage);
+    function _failConnect(message)
+    {
+        // Notify the listeners after the status change but before the next action
+        _notifyListeners('/meta/connect', message);
+        _notifyListeners('/meta/unsuccessful', message);
 
-        // Only try again if we haven't been disconnected and
-        // the advice permits us to retry the handshake
-        var retry = !_isDisconnected() && _advice.reconnect != 'none';
-        if (retry)
+        // This may happen when the server crashed, the current clientId
+        // will be invalid, and the server will ask to handshake again
+        // Listeners can call disconnect(), so check the state after they run
+        var action = _isDisconnected() ? 'none' : _advice.reconnect;
+        switch (action)
         {
-            _increaseBackoff();
-            _delayedHandshake();
-        }
-        else
-        {
-            _resetBackoff();
-            _setStatus('disconnected');
+            case 'retry':
+                _delayedConnect();
+                _increaseBackoff();
+                break;
+            case 'handshake':
+                // The current transport may be failed (e.g. network disconnection)
+                // Reset the transports so the new handshake picks up the right one
+                _transports.reset();
+                _resetBackoff();
+                _delayedHandshake();
+                break;
+            case 'none':
+                _disconnect(false);
+                break;
+            default:
+                throw 'Unrecognized advice action' + action;
         }
     }
 
@@ -976,103 +2146,45 @@ org.cometd.Cometd = function(name)
             // and the server will hold the request, so when a response returns
             // we immediately call the server again (long polling)
             // Listeners can call disconnect(), so check the state after they run
-            var action1 = _isDisconnected() ? 'none' : _advice.reconnect;
-            switch (action1)
+            var action = _isDisconnected() ? 'none' : _advice.reconnect;
+            switch (action)
             {
                 case 'retry':
                     _resetBackoff();
                     _delayedConnect();
                     break;
                 case 'none':
-                    _resetBackoff();
-                    _setStatus('disconnected');
+                    _disconnect(false);
                     break;
                 default:
-                    throw 'Unrecognized advice action ' + action1;
+                    throw 'Unrecognized advice action ' + action;
             }
         }
         else
         {
-            // Notify the listeners after the status change but before the next action
-            _info('Connect failed:', message.error);
-            _notifyListeners('/meta/connect', message);
-            _notifyListeners('/meta/unsuccessful', message);
-
-            // This may happen when the server crashed, the current clientId
-            // will be invalid, and the server will ask to handshake again
-            // Listeners can call disconnect(), so check the state after they run
-            var action2 = _isDisconnected() ? 'none' : _advice.reconnect;
-            switch (action2)
-            {
-                case 'retry':
-                    _increaseBackoff();
-                    _delayedConnect();
-                    break;
-                case 'handshake':
-                    _resetBackoff();
-                    _delayedHandshake();
-                    break;
-                case 'none':
-                    _resetBackoff();
-                    _setStatus('disconnected');
-                    break;
-                default:
-                    throw 'Unrecognized advice action' + action2;
-            }
+            _failConnect(message);
         }
     }
 
-    function _connectFailure(xhr, message)
+    function _connectFailure(failure)
     {
         _connected = false;
-
-        // Notify listeners
-        var failureMessage = {
+        _failConnect({
             successful: false,
-            failure: true,
+            failure: failure,
             channel: '/meta/connect',
-            request: message,
-            xhr: xhr,
             advice: {
                 reconnect: 'retry',
                 interval: _backoff
             }
-        };
-        _notifyListeners('/meta/connect', failureMessage);
-        _notifyListeners('/meta/unsuccessful', failureMessage);
-
-        var action = _isDisconnected() ? 'none' : _advice.reconnect;
-        switch (action)
-        {
-            case 'retry':
-                _increaseBackoff();
-                _delayedConnect();
-                break;
-            case 'handshake':
-                _resetBackoff();
-                _delayedHandshake();
-                break;
-            case 'none':
-                _resetBackoff();
-                _setStatus('disconnected');
-                break;
-            default:
-                throw 'Unrecognized advice action' + action;
-        }
+        });
     }
 
-    function _disconnect(abort)
+    function _failDisconnect(message)
     {
-        _cancelDelayedSend();
-        if (abort)
-        {
-            _transport.abort();
-        }
-        _clientId = null;
-        _setStatus('disconnected');
-        _batch = 0;
-        _messageQueue = [];
-        _resetBackoff();
+        _disconnect(true);
+        _notifyListeners('/meta/disconnect', message);
+        _notifyListeners('/meta/unsuccessful', message);
     }
 
     function _disconnectResponse(message)
@@ -1084,29 +2196,27 @@ org.cometd.Cometd = function(name)
         }
         else
         {
-            _disconnect(true);
-            _notifyListeners('/meta/disconnect', message);
-            _notifyListeners('/meta/unsuccessful', message);
+            _failDisconnect(message);
         }
     }
 
-    function _disconnectFailure(xhr, message)
+    function _disconnectFailure(failure)
     {
-        _disconnect(true);
-
-        var failureMessage = {
+        _failDisconnect({
             successful: false,
-            failure: true,
+            failure: failure,
             channel: '/meta/disconnect',
-            request: message,
-            xhr: xhr,
             advice: {
                 reconnect: 'none',
                 interval: 0
             }
-        };
-        _notifyListeners('/meta/disconnect', failureMessage);
-        _notifyListeners('/meta/unsuccessful', failureMessage);
+        });
+    }
+
+    function _failSubscribe(message)
+    {
+        _notifyListeners('/meta/subscribe', message);
+        _notifyListeners('/meta/unsuccessful', message);
     }
 
     function _subscribeResponse(message)
@@ -1117,27 +2227,27 @@ org.cometd.Cometd = function(name)
         }
         else
         {
-            _info('Subscription to', message.subscription, 'failed:', message.error);
-            _notifyListeners('/meta/subscribe', message);
-            _notifyListeners('/meta/unsuccessful', message);
+            _failSubscribe(message);
         }
     }
 
-    function _subscribeFailure(xhr, message)
+    function _subscribeFailure(failure)
     {
-        var failureMessage = {
+        _failSubscribe({
             successful: false,
-            failure: true,
+            failure: failure,
             channel: '/meta/subscribe',
-            request: message,
-            xhr: xhr,
             advice: {
                 reconnect: 'none',
                 interval: 0
             }
-        };
-        _notifyListeners('/meta/subscribe', failureMessage);
-        _notifyListeners('/meta/unsuccessful', failureMessage);
+        });
+    }
+
+    function _failUnsubscribe(message)
+    {
+        _notifyListeners('/meta/unsubscribe', message);
+        _notifyListeners('/meta/unsuccessful', message);
     }
 
     function _unsubscribeResponse(message)
@@ -1148,27 +2258,38 @@ org.cometd.Cometd = function(name)
         }
         else
         {
-            _info('Unsubscription to', message.subscription, 'failed:', message.error);
-            _notifyListeners('/meta/unsubscribe', message);
-            _notifyListeners('/meta/unsuccessful', message);
+            _failUnsubscribe(message);
         }
     }
 
-    function _unsubscribeFailure(xhr, message)
+    function _unsubscribeFailure(failure)
     {
-        var failureMessage = {
+        _failUnsubscribe({
             successful: false,
-            failure: true,
+            failure: failure,
             channel: '/meta/unsubscribe',
-            request: message,
-            xhr: xhr,
             advice: {
                 reconnect: 'none',
                 interval: 0
             }
-        };
-        _notifyListeners('/meta/unsubscribe', failureMessage);
-        _notifyListeners('/meta/unsuccessful', failureMessage);
+        });
+    }
+
+    function _handlePublishCallback(message)
+    {
+        var callback = _publishCallbacks[message.id];
+        if (_isFunction(callback))
+        {
+            delete _publishCallbacks[message.id];
+            callback.call(_cometd, message);
+        }
+    }
+
+    function _failMessage(message)
+    {
+        _handlePublishCallback(message);
+        _notifyListeners('/meta/publish', message);
+        _notifyListeners('/meta/unsuccessful', message);
     }
 
     function _messageResponse(message)
@@ -1182,39 +2303,34 @@ org.cometd.Cometd = function(name)
             }
             else
             {
-                _debug('Unknown message', message);
+                _cometd._debug('Unknown message', message);
             }
         }
         else
         {
             if (message.successful)
             {
+                _handlePublishCallback(message);
                 _notifyListeners('/meta/publish', message);
             }
             else
             {
-                _info('Publish failed:', message.error);
-                _notifyListeners('/meta/publish', message);
-                _notifyListeners('/meta/unsuccessful', message);
+                _failMessage(message);
             }
         }
     }
 
-    function _messageFailure(xhr, message)
+    function _messageFailure(message, failure)
     {
-        var failureMessage = {
+        _failMessage({
             successful: false,
-            failure: true,
+            failure: failure,
             channel: message.channel,
-            request: message,
-            xhr: xhr,
             advice: {
                 reconnect: 'none',
                 interval: 0
             }
-        };
-        _notifyListeners('/meta/publish', failureMessage);
-        _notifyListeners('/meta/unsuccessful', failureMessage);
+        });
     }
 
     function _receive(message)
@@ -1258,9 +2374,9 @@ org.cometd.Cometd = function(name)
      */
     this.receive = _receive;
 
-    _handleMessages = function _handleMessages(rcvdMessages)
+    _handleMessages = function(rcvdMessages)
     {
-        _debug('Received', rcvdMessages, org.cometd.JSON.toJSON(rcvdMessages));
+        _cometd._debug('Received', rcvdMessages);
 
         for (var i = 0; i < rcvdMessages.length; ++i)
         {
@@ -1269,33 +2385,34 @@ org.cometd.Cometd = function(name)
         }
     };
 
-    _handleFailure = function _handleFailure(conduit, messages, reason, exception)
+    _handleFailure = function(conduit, messages, failure)
     {
-        _debug('handleFailure', conduit, messages, reason, exception);
+        _cometd._debug('handleFailure', conduit, messages, failure);
 
         for (var i = 0; i < messages.length; ++i)
         {
             var message = messages[i];
+            var messageFailure = _cometd._mixin(false, { message: message, transport: conduit }, failure);
             var channel = message.channel;
             switch (channel)
             {
                 case '/meta/handshake':
-                    _handshakeFailure(conduit, message);
+                    _handshakeFailure(messageFailure);
                     break;
                 case '/meta/connect':
-                    _connectFailure(conduit, message);
+                    _connectFailure(messageFailure);
                     break;
                 case '/meta/disconnect':
-                    _disconnectFailure(conduit, message);
+                    _disconnectFailure(messageFailure);
                     break;
                 case '/meta/subscribe':
-                    _subscribeFailure(conduit, message);
+                    _subscribeFailure(messageFailure);
                     break;
                 case '/meta/unsubscribe':
-                    _unsubscribeFailure(conduit, message);
+                    _unsubscribeFailure(messageFailure);
                     break;
                 default:
-                    _messageFailure(conduit, message);
+                    _messageFailure(message, messageFailure);
                     break;
             }
         }
@@ -1356,7 +2473,7 @@ org.cometd.Cometd = function(name)
         // holds the callback to be called and its scope.
 
         var delegate = _resolveScopedCallback(scope, callback);
-        _debug('Adding listener on', channel, 'with scope', delegate.scope, 'and callback', delegate.method);
+        _cometd._debug('Adding listener on', channel, 'with scope', delegate.scope, 'and callback', delegate.method);
 
         var subscription = {
             channel: channel,
@@ -1381,7 +2498,7 @@ org.cometd.Cometd = function(name)
         subscription.id = subscriptionID;
         subscription.handle = [channel, subscriptionID];
 
-        _debug('Added listener', subscription, 'for channel', channel, 'having id =', subscriptionID);
+        _cometd._debug('Added listener', subscription, 'for channel', channel, 'having id =', subscriptionID);
 
         // The subscription to allow removal of the listener is made of the channel and the index
         return subscription.handle;
@@ -1393,7 +2510,7 @@ org.cometd.Cometd = function(name)
         if (subscriptions)
         {
             delete subscriptions[subscription[1]];
-            _debug('Removed listener', subscription);
+            _cometd._debug('Removed listener', subscription);
         }
     }
 
@@ -1418,7 +2535,7 @@ org.cometd.Cometd = function(name)
         var result = _transports.add(type, transport, index);
         if (result)
         {
-            _debug('Registered transport', type);
+            this._debug('Registered transport', type);
 
             if (_isFunction(transport.registered))
             {
@@ -1447,7 +2564,7 @@ org.cometd.Cometd = function(name)
         var transport = _transports.remove(type);
         if (transport !== null)
         {
-            _debug('Unregistered transport', type);
+            this._debug('Unregistered transport', type);
 
             if (_isFunction(transport.unregistered))
             {
@@ -1455,6 +2572,16 @@ org.cometd.Cometd = function(name)
             }
         }
         return transport;
+    };
+
+    this.unregisterTransports = function()
+    {
+        _transports.clear();
+    };
+
+    this.findTransport = function(name)
+    {
+        return _transports.find(name);
     };
 
     /**
@@ -1521,7 +2648,7 @@ org.cometd.Cometd = function(name)
         var bayeuxMessage = {
             channel: '/meta/disconnect'
         };
-        var message = _mixin(false, {}, disconnectProps, bayeuxMessage);
+        var message = this._mixin(false, {}, disconnectProps, bayeuxMessage);
         _setStatus('disconnecting');
         _send(sync === true, [message], false, 'disconnect');
     };
@@ -1567,7 +2694,7 @@ org.cometd.Cometd = function(name)
         }
         catch (x)
         {
-            _debug('Exception during execution of batch', x);
+            this._debug('Exception during execution of batch', x);
             this.endBatch();
             throw x;
         }
@@ -1603,7 +2730,7 @@ org.cometd.Cometd = function(name)
      */
     this.removeListener = function(subscription)
     {
-        if (!_isArray(subscription))
+        if (!org.cometd.Utils.isArray(subscription))
         {
             throw 'Invalid argument: expected subscription, not ' + subscription;
         }
@@ -1652,7 +2779,7 @@ org.cometd.Cometd = function(name)
             scope = undefined;
         }
 
-        // Only send the message to the server if this clientId has not yet subscribed to the channel
+        // Only send the message to the server if this client has not yet subscribed to the channel
         var send = !_hasSubscriptions(channel);
 
         var subscription = _addListener(channel, scope, callback, false);
@@ -1666,7 +2793,7 @@ org.cometd.Cometd = function(name)
                 channel: '/meta/subscribe',
                 subscription: channel
             };
-            var message = _mixin(false, {}, subscribeProps, bayeuxMessage);
+            var message = this._mixin(false, {}, subscribeProps, bayeuxMessage);
             _queueSend(message);
         }
 
@@ -1693,14 +2820,14 @@ org.cometd.Cometd = function(name)
         this.removeListener(subscription);
 
         var channel = subscription[0];
-        // Only send the message to the server if this clientId unsubscribes the last subscription
+        // Only send the message to the server if this client unsubscribes the last subscription
         if (!_hasSubscriptions(channel))
         {
             var bayeuxMessage = {
                 channel: '/meta/unsubscribe',
                 subscription: channel
             };
-            var message = _mixin(false, {}, unsubscribeProps, bayeuxMessage);
+            var message = this._mixin(false, {}, unsubscribeProps, bayeuxMessage);
             _queueSend(message);
         }
     };
@@ -1720,7 +2847,7 @@ org.cometd.Cometd = function(name)
      * @param content the content of the message
      * @param publishProps an object to be merged with the publish message
      */
-    this.publish = function(channel, content, publishProps)
+    this.publish = function(channel, content, publishProps, publishCallback)
     {
         if (arguments.length < 1)
         {
@@ -1735,11 +2862,23 @@ org.cometd.Cometd = function(name)
             throw 'Illegal state: already disconnected';
         }
 
+        if (_isFunction(content))
+        {
+            publishCallback = content;
+            content = publishProps = {};
+        }
+        else if (_isFunction(publishProps))
+        {
+            publishCallback = publishProps;
+            publishProps = {};
+        }
+
         var bayeuxMessage = {
             channel: channel,
-            data: content
+            data: content,
+            _callback: publishCallback
         };
-        var message = _mixin(false, {}, publishProps, bayeuxMessage);
+        var message = this._mixin(false, {}, publishProps, bayeuxMessage);
         _queueSend(message);
     };
 
@@ -1766,7 +2905,7 @@ org.cometd.Cometd = function(name)
      */
     this.setBackoffIncrement = function(period)
     {
-        _backoffIncrement = period;
+        _config.backoffIncrement = period;
     };
 
     /**
@@ -1775,7 +2914,7 @@ org.cometd.Cometd = function(name)
      */
     this.getBackoffIncrement = function()
     {
-        return _backoffIncrement;
+        return _config.backoffIncrement;
     };
 
     /**
@@ -1794,7 +2933,7 @@ org.cometd.Cometd = function(name)
      */
     this.setLogLevel = function(level)
     {
-        _logLevel = level;
+        _config.logLevel = level;
     };
 
     /**
@@ -1831,7 +2970,7 @@ org.cometd.Cometd = function(name)
         for (var i = 0; i < _extensions.length; ++i)
         {
             var existingExtension = _extensions[i];
-            if (existingExtension.name == name)
+            if (existingExtension.name === name)
             {
                 existing = true;
                 break;
@@ -1843,7 +2982,7 @@ org.cometd.Cometd = function(name)
                 name: name,
                 extension: extension
             });
-            _debug('Registered extension', name);
+            this._debug('Registered extension', name);
 
             // Callback for extensions
             if (_isFunction(extension.registered))
@@ -1855,7 +2994,7 @@ org.cometd.Cometd = function(name)
         }
         else
         {
-            _info('Could not register extension with name', name, 'since another extension with the same name already exists');
+            this._info('Could not register extension with name', name, 'since another extension with the same name already exists');
             return false;
         }
     };
@@ -1877,11 +3016,11 @@ org.cometd.Cometd = function(name)
         for (var i = 0; i < _extensions.length; ++i)
         {
             var extension = _extensions[i];
-            if (extension.name == name)
+            if (extension.name === name)
             {
                 _extensions.splice(i, 1);
                 unregistered = true;
-                _debug('Unregistered extension', name);
+                this._debug('Unregistered extension', name);
 
                 // Callback for extensions
                 var ext = extension.extension;
@@ -1906,7 +3045,7 @@ org.cometd.Cometd = function(name)
         for (var i = 0; i < _extensions.length; ++i)
         {
             var extension = _extensions[i];
-            if (extension.name == name)
+            if (extension.name === name)
             {
                 return extension.extension;
             }
@@ -1936,7 +3075,7 @@ org.cometd.Cometd = function(name)
      */
     this.getURL = function()
     {
-        return _url;
+        return _config.url;
     };
 
     this.getTransport = function()
@@ -1944,757 +3083,30 @@ org.cometd.Cometd = function(name)
         return _transport;
     };
 
-    /**
-     * Base object with the common functionality for transports.
-     */
-    org.cometd.Transport = function()
+    this.getConfiguration = function()
     {
-        var _type;
-
-        /**
-         * Function invoked just after a transport has been successfully registered.
-         * @param type the type of transport (for example 'long-polling')
-         * @param cometd the cometd object this transport has been registered to
-         * @see #unregistered()
-         */
-        this.registered = function(type, cometd)
-        {
-            _type = type;
-        };
-
-        /**
-         * Function invoked just after a transport has been successfully unregistered.
-         * @see #registered(type, cometd)
-         */
-        this.unregistered = function()
-        {
-            _type = null;
-        };
-
-
-        /**
-         * Converts the given response into an array of bayeux messages
-         * @param response the response to convert
-         * @return an array of bayeux messages obtained by converting the response
-         */
-        this.convertToMessages = function (response)
-        {
-            if (_isString(response))
-            {
-                try
-                {
-                    return org.cometd.JSON.fromJSON(response);
-                }
-                catch(x)
-                {
-                    _debug('Could not convert to JSON the following string', '"' + response + '"');
-                    throw x;
-                }
-            }
-            if (_isArray(response))
-            {
-                return response;
-            }
-            if (response === undefined || response === null)
-            {
-                return [];
-            }
-            if (response instanceof Object)
-            {
-                return [response];
-            }
-            throw 'Conversion Error ' + response + ', typeof ' + (typeof response);
-        };
-
-        /**
-         * Returns whether this transport can work for the given version and cross domain communication case.
-         * @param version a string indicating the transport version
-         * @param crossDomain a boolean indicating whether the communication is cross domain
-         * @return true if this transport can work for the given version and cross domain communication case,
-         * false otherwise
-         */
-        this.accept = function(version, crossDomain)
-        {
-            throw 'Abstract';
-        };
-
-        /**
-         * Returns the type of this transport.
-         * @see #registered(type, cometd)
-         */
-        this.getType = function()
-        {
-            return _type;
-        };
-
-        this.send = function(envelope, metaConnect)
-        {
-            throw 'Abstract';
-        };
-
-        this.reset = function()
-        {
-        };
+        return this._mixin(true, {}, _config);
     };
 
-    org.cometd.Transport.derive = function(baseObject)
+    this.getAdvice = function()
     {
-        function F() {}
-        F.prototype = baseObject;
-        return new F();
+        return this._mixin(true, {}, _advice);
     };
 
-    /**
-     * Base object with the common functionality for transports based on requests.
-     * The key responsibility is to allow at most 2 outstanding requests to the server,
-     * to avoid that requests are sent behind a long poll.
-     * To achieve this, we have one reserved request for the long poll, and all other
-     * requests are serialized one after the other.
-     */
-    org.cometd.RequestTransport = function()
+    // WebSocket handling for Firefox, which deploys WebSocket
+    // under the name of MozWebSocket in Firefox 6, 7, 8 and 9
+    org.cometd.WebSocket = window.WebSocket;
+    if (!org.cometd.WebSocket)
     {
-        var _super = new org.cometd.Transport();
-        var that = org.cometd.Transport.derive(_super);
-        var _requestIds = 0;
-        var _metaConnectRequest = null;
-        var _requests = [];
-        var _envelopes = [];
-
-        function _metaConnectComplete(request)
-        {
-            var requestId = request.id;
-            _debug('metaConnect complete', this.getType(), requestId);
-            if (_metaConnectRequest !== null && _metaConnectRequest.id !== requestId)
-            {
-                throw 'Longpoll request mismatch, completing request ' + requestId;
-            }
-
-            // Reset metaConnect request
-            _metaConnectRequest = null;
-        }
-
-        function _coalesceEnvelopes(envelope)
-        {
-            while (_envelopes.length > 0)
-            {
-                var envelopeAndRequest = _envelopes[0];
-                var newEnvelope = envelopeAndRequest[0];
-                var newRequest = envelopeAndRequest[1];
-                if (newEnvelope.url === envelope.url &&
-                        newEnvelope.sync === envelope.sync)
-                {
-                    _envelopes.shift();
-                    envelope.messages = envelope.messages.concat(newEnvelope.messages);
-                    _debug('Coalesced', newEnvelope.messages.length, 'messages from request', newRequest.id);
-                    continue;
-                }
-                break;
-            }
-        }
-
-        function _complete(request, success)
-        {
-            var self = this;
-
-            var index = _inArray(request, _requests);
-            // The index can be negative the request has been aborted
-            if (index >= 0)
-            {
-                _requests.splice(index, 1);
-            }
-
-            if (_envelopes.length > 0)
-            {
-                var envelopeAndRequest = _envelopes.shift();
-                var nextEnvelope = envelopeAndRequest[0];
-                var nextRequest = envelopeAndRequest[1];
-                _debug('Transport dequeued request', nextRequest.id);
-                if (success)
-                {
-                    if (_autoBatch)
-                    {
-                        _coalesceEnvelopes(nextEnvelope);
-                    }
-                    _queueSend.call(this, nextEnvelope);
-                    _debug('Transport completed request', request.id, nextEnvelope);
-                }
-                else
-                {
-                    // Keep the semantic of calling response callbacks asynchronously after the request
-                    setTimeout(function()
-                    {
-                        self.complete(nextRequest, false, nextRequest.metaConnect);
-                        nextEnvelope.onFailure(nextRequest.xhr, 'error', 'Previous request failed');
-                    }, 0);
-                }
-            }
-        }
-
-        that.complete = function(request, success, metaConnect)
-        {
-            if (metaConnect)
-            {
-                _metaConnectComplete.call(this, request);
-            }
-            else
-            {
-                _complete.call(this, request, success);
-            }
-        };
-
-        /**
-         * Performs the actual send depending on the transport type details.
-         * @param envelope the envelope to send
-         * @param request the request information
-         */
-        that.transportSend = function(envelope, request)
-        {
-            throw 'Abstract';
-        };
-
-        that.transportSuccess = function(envelope, request, responses)
-        {
-            if (!request.expired)
-            {
-                clearTimeout(request.timeout);
-                this.complete(request, true, request.metaConnect);
-                if (responses && responses.length > 0)
-                {
-                    envelope.onSuccess(responses);
-                }
-                else
-                {
-                    envelope.onFailure(request, 'Empty HTTP response');
-                }
-            }
-        };
-
-        that.transportFailure = function(envelope, request, reason, exception)
-        {
-            if (!request.expired)
-            {
-                clearTimeout(request.timeout);
-                this.complete(request, false, request.metaConnect);
-                envelope.onFailure(request.xhr, reason, exception);
-            }
-        };
-
-        function _transportSend(envelope, request)
-        {
-            var self = this;
-
-            this.transportSend(envelope, request);
-            request.expired = false;
-
-            if (!envelope.sync)
-            {
-                var delay = _maxNetworkDelay;
-                if (request.metaConnect === true)
-                {
-                    delay += _advice.timeout;
-                }
-
-                _debug('Will wait at most', delay, 'ms for the response, maxNetworkDelay =', _maxNetworkDelay);
-
-                request.timeout = _setTimeout(function()
-                {
-                    request.expired = true;
-                    if (request.xhr)
-                    {
-                        request.xhr.abort();
-                    }
-                    var errorMessage = 'Request ' + request.id + ' of transport ' + self.getType() + ' exceeded ' + delay + ' ms max network delay';
-                    _debug(errorMessage);
-                    self.complete(request, false, request.metaConnect);
-                    envelope.onFailure(request.xhr, 'timeout', errorMessage);
-                }, delay);
-            }
-        }
-
-        function _metaConnectSend(envelope)
-        {
-            if (_metaConnectRequest !== null)
-            {
-                throw 'Concurrent metaConnect requests not allowed, request id=' + _metaConnectRequest.id + ' not yet completed';
-            }
-
-            var requestId = ++_requestIds;
-            _debug('metaConnect send ', this.getType() , requestId, envelope);
-            var request = {
-                id: requestId,
-                metaConnect: true
-            };
-            _transportSend.call(this, envelope, request);
-            _metaConnectRequest = request;
-        }
-
-        function _queueSend(envelope)
-        {
-            var requestId = ++_requestIds;
-            var request = {
-                id: requestId,
-                metaConnect: false
-            };
-
-            // Consider the metaConnect requests which should always be present
-            if (_requests.length < _maxConnections - 1)
-            {
-                _debug('Transport sending request', requestId, envelope);
-                _transportSend.call(this, envelope, request);
-                _requests.push(request);
-            }
-            else
-            {
-                _debug('Transport queueing request', requestId, envelope);
-                _envelopes.push([envelope, request]);
-            }
-        }
-
-        that.send = function(envelope, metaConnect)
-        {
-            if (metaConnect)
-            {
-                _metaConnectSend.call(this, envelope);
-            }
-            else
-            {
-                _queueSend.call(this, envelope);
-            }
-        };
-
-        that.abort = function()
-        {
-            for (var i = 0; i < _requests.length; ++i)
-            {
-                var request = _requests[i];
-                _debug('Aborting request', request);
-                if (request.xhr)
-                {
-                    request.xhr.abort();
-                }
-            }
-            if (_metaConnectRequest)
-            {
-                _debug('Aborting metaConnect request', _metaConnectRequest);
-                if (_metaConnectRequest.xhr)
-                {
-                    _metaConnectRequest.xhr.abort();
-                }
-            }
-            this.reset();
-        };
-
-        that.reset = function()
-        {
-            _metaConnectRequest = null;
-            _requests = [];
-            _envelopes = [];
-        };
-
-        that.toString = function()
-        {
-            return this.getType();
-        };
-
-        return that;
-    };
-
-
-    org.cometd.LongPollingTransport = function()
-    {
-        var _super = new org.cometd.RequestTransport();
-        var that = org.cometd.Transport.derive(_super);
-        // By default, support cross domain
-        var _supportsCrossDomain = true;
-
-        that.accept = function(version, crossDomain)
-        {
-            return _supportsCrossDomain || !crossDomain;
-        };
-
-        that.xhrSend = function(packet)
-        {
-            throw 'Abstract';
-        };
-
-        that.transportSend = function(envelope, request)
-        {
-            var self = this;
-
-            try
-            {
-                var sameStack = true;
-                request.xhr = this.xhrSend({
-                    transport: this,
-                    url: envelope.url,
-                    sync: envelope.sync,
-                    headers: _requestHeaders,
-                    body: org.cometd.JSON.toJSON(envelope.messages),
-                    onSuccess: function(response)
-                    {
-                        _debug('Transport', self, 'received response', response);
-                        var success = false;
-                        try
-                        {
-                            var received = self.convertToMessages(response);
-                            if (received.length === 0)
-                            {
-                                _supportsCrossDomain = false;
-                                self.transportFailure(envelope, request, 'no response', null);
-                            }
-                            else
-                            {
-                                success = true;
-                                self.transportSuccess(envelope, request, received);
-                            }
-                        }
-                        catch(x)
-                        {
-                            _debug(x);
-                            if (!success)
-                            {
-                                _supportsCrossDomain = false;
-                                self.transportFailure(envelope, request, 'bad response', x);
-                            }
-                        }
-                    },
-                    onError: function(reason, exception)
-                    {
-                        _supportsCrossDomain = false;
-                        if (sameStack)
-                        {
-                            // Keep the semantic of calling response callbacks asynchronously after the request
-                            _setTimeout(function()
-                            {
-                                self.transportFailure(envelope, request, reason, exception);
-                            }, 0);
-                        }
-                        else
-                        {
-                            self.transportFailure(envelope, request, reason, exception);
-                        }
-                    }
-                });
-                sameStack = false;
-            }
-            catch (x)
-            {
-                _supportsCrossDomain = false;
-                // Keep the semantic of calling response callbacks asynchronously after the request
-                _setTimeout(function()
-                {
-                    self.transportFailure(envelope, request, 'error', x);
-                }, 0);
-            }
-        };
-
-        that.reset = function()
-        {
-            _super.reset();
-            _supportsCrossDomain = true;
-        };
-
-        return that;
-    };
-
-    org.cometd.CallbackPollingTransport = function()
-    {
-        var _super = new org.cometd.RequestTransport();
-        var that = org.cometd.Transport.derive(_super);
-        var _maxLength = 2000;
-
-        that.accept = function(version, crossDomain)
-        {
-            return true;
-        };
-
-        that.jsonpSend = function(packet)
-        {
-            throw 'Abstract';
-        };
-
-        that.transportSend = function(envelope, request)
-        {
-            var self = this;
-
-            // Microsoft Internet Explorer has a 2083 URL max length
-            // We must ensure that we stay within that length
-            var messages = org.cometd.JSON.toJSON(envelope.messages);
-            // Encode the messages because all brackets, quotes, commas, colons, etc
-            // present in the JSON will be URL encoded, taking many more characters
-            var urlLength = envelope.url.length + encodeURI(messages).length;
-
-            // Let's stay on the safe side and use 2000 instead of 2083
-            // also because we did not count few characters among which
-            // the parameter name 'message' and the parameter 'jsonp',
-            // which sum up to about 50 chars
-            if (urlLength > _maxLength)
-            {
-                var x = envelope.messages.length > 1 ?
-                        'Too many bayeux messages in the same batch resulting in message too big ' +
-                        '(' + urlLength + ' bytes, max is ' + _maxLength + ') for transport ' + this.getType() :
-                        'Bayeux message too big (' + urlLength + ' bytes, max is ' + _maxLength + ') ' +
-                        'for transport ' + this.getType();
-                // Keep the semantic of calling response callbacks asynchronously after the request
-                _setTimeout(function()
-                {
-                    self.transportFailure(envelope, request, 'error', x);
-                }, 0);
-            }
-            else
-            {
-                try
-                {
-                    var sameStack = true;
-                    this.jsonpSend({
-                        transport: this,
-                        url: envelope.url,
-                        sync: envelope.sync,
-                        headers: _requestHeaders,
-                        body: messages,
-                        onSuccess: function(responses)
-                        {
-                            var success = false;
-                            try
-                            {
-                                var received = self.convertToMessages(responses);
-                                if (received.length === 0)
-                                {
-                                    self.transportFailure(envelope, request, 'no response', null);
-                                }
-                                else
-                                {
-                                    success=true;
-                                    self.transportSuccess(envelope, request, received);
-                                }
-                            }
-                            catch (x)
-                            {
-                                _debug(x);
-                                if (!success)
-                                {
-                                    self.transportFailure(envelope, request, 'bad response', x);
-                                }
-                            }
-                        },
-                        onError: function(reason, exception)
-                        {
-                            if (sameStack)
-                            {
-                                // Keep the semantic of calling response callbacks asynchronously after the request
-                                _setTimeout(function()
-                                {
-                                    self.transportFailure(envelope, request, reason, exception);
-                                }, 0);
-                            }
-                            else
-                            {
-                                self.transportFailure(envelope, request, reason, exception);
-                            }
-                        }
-                    });
-                    sameStack = false;
-                }
-                catch (xx)
-                {
-                    // Keep the semantic of calling response callbacks asynchronously after the request
-                    _setTimeout(function()
-                    {
-                        self.transportFailure(envelope, request, 'error', xx);
-                    }, 0);
-                }
-            }
-        };
-
-        return that;
-    };
-
-    org.cometd.WebSocketTransport = function()
-    {
-        var _super = new org.cometd.Transport();
-        var that = org.cometd.Transport.derive(_super);
-        var _webSocket;
-        // By default, support WebSocket
-        var _supportsWebSocket = true;
-        var _envelope;
-        var _state;
-        var _metaConnectEnvelope;
-        var _timeouts = {};
-        var _WebSocket;
-
-        if (window.WebSocket)
-        {
-            _WebSocket=window.WebSocket;
-            _state = _WebSocket.CLOSED;
-        }
-
-        function _doSend(envelope,metaConnect)
-        {
-            if (_webSocket.send(org.cometd.JSON.toJSON(envelope.messages)))
-            {
-                var delay = _maxNetworkDelay;
-                if (metaConnect)
-                {
-                    delay += _advice.timeout;
-                }
-
-                for (var i = 0; i < envelope.messages.length; ++i)
-                {
-                    var message=envelope.messages[i];
-                    if (message.id)
-                    {
-                        _timeouts[message.id] = _setTimeout(function()
-                        {
-                            delete _timeouts[message.id];
-                            var errorMessage = 'TIMEOUT message '+message.id +' exceeded '+ delay+ 'ms';
-                            _debug(errorMessage);
-                            envelope.onFailure(_webSocket, 'timeout', errorMessage);
-                        }, delay);
-                        _debug('waiting',delay,' for  ',message.id, org.cometd.JSON.toJSON(_timeouts));
-                    }
-                }
-            }
-            else
-            {
-                // Keep the semantic of calling response callbacks asynchronously after the request
-                _setTimeout(function()
-                {
-                    envelope.onFailure(_webSocket, 'failed', null);
-                },0);
-            }
-        }
-
-        that.accept = function(version, crossDomain)
-        {
-            return _supportsWebSocket && _WebSocket!==null && typeof _WebSocket === 'function';
-        };
-
-        that.send = function(envelope, metaConnect)
-        {
-            _debug('Transport', this, 'sending', envelope, 'metaConnect', metaConnect);
-
-            // Remember the envelope
-            if (metaConnect)
-            {
-                _metaConnectEnvelope = envelope;
-            }
-            else
-            {
-                _envelope = envelope;
-            }
-
-            // Do we have an open websocket?
-            if (_state === _WebSocket.OPEN)
-            {
-                _doSend(envelope, metaConnect);
-            }
-            else
-            {
-                // No, so create new websocket
-
-                // Mangle the URL, changing the scheme from 'http' to 'ws'
-                var url = envelope.url.replace(/^http/, 'ws');
-                _debug('Transport', this, 'URL', url);
-
-                var self = this;
-                var webSocket = new _WebSocket(url);
-
-                webSocket.onopen = function()
-                {
-                    _debug('Opened', webSocket);
-                    // once the websocket is open, send the envelope.
-                    _state = _WebSocket.OPEN;
-                    _webSocket = webSocket;
-                    _doSend(envelope,metaConnect);
-                };
-
-                webSocket.onclose = function()
-                {
-                    _debug('Closed', webSocket);
-                    if (_state !== _WebSocket.OPEN)
-                    {
-                        _supportsWebSocket = false;
-                        envelope.onFailure(webSocket, 'cannot open', null);
-                    }
-                    else
-                    {
-                        _state = _WebSocket.CLOSED;
-                        // clear all timeouts
-                        for (var i in _timeouts)
-                        {
-                            clearTimeout(_timeouts[i]);
-                            delete _timeouts[i];
-                        }
-                    }
-                };
-
-                webSocket.onmessage = function(message)
-                {
-                    _debug('Message', message);
-                    if (_state === _WebSocket.OPEN)
-                    {
-                        var rcvdMessages = self.convertToMessages(message.data);
-                        var mc = false;
-
-                        // scan messages
-                        for (var i = 0; i < rcvdMessages.length; ++i)
-                        {
-                            var msg = rcvdMessages[i];
-
-                            // is this coming with a meta connect response?
-                            if ('/meta/connect' == msg.channelId) // TODO: msg.channel ?
-                            {
-                                mc = true;
-                            }
-
-                            // cancel and delete any pending timeouts for meta messages and publish responses
-                            _debug('timeouts', _timeouts, org.cometd.JSON.toJSON(_timeouts));
-
-                            if (!msg.data && msg.id && _timeouts[msg.id])
-                            {
-                                _debug('timeout', _timeouts[msg.id]);
-                                clearTimeout(_timeouts[msg.id]);
-                                delete _timeouts[msg.id];
-                            }
-
-                            // check for disconnect
-                            if ('/meta/disconnect' == msg.channel && msg.successful)
-                            {
-                                webSocket.close();
-                            }
-                        }
-
-                        if (mc)
-                        {
-                            _metaConnectEnvelope.onSuccess(rcvdMessages);
-                        }
-                        else
-                        {
-                            _envelope.onSuccess(rcvdMessages);
-                        }
-                    }
-                    else
-                    {
-                        envelope.onFailure(webSocket, 'closed', null);
-                    }
-                };
-            }
-        };
-
-        that.reset = function()
-        {
-            _debug('reset', _webSocket);
-            _super.reset();
-            if (_webSocket)
-            {
-                _webSocket.close();
-            }
-            _supportsWebSocket = true;
-            _state = _WebSocket.CLOSED;
-            _envelope=null;
-            _metaConnectEnvelope=null;
-        };
-
-        return that;
-    };
+        org.cometd.WebSocket = window.MozWebSocket;
+    }
 };
+
+if (typeof define === 'function' && define.amd)
+{
+    define(function()
+    {
+        return org.cometd;
+    });
+}
+
