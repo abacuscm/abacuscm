@@ -1,4 +1,4 @@
-/*  Copyright (C) 2010-2011  Bruce Merry and Carl Hultquist
+/*  Copyright (C) 2010-2011, 2013  Bruce Merry and Carl Hultquist
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,13 +46,15 @@ import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpServletRequest;
 
-import org.eclipse.jetty.util.log.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AbacusService extends AbstractService {
 	/**
 	 * String used to store attributes in the shared HttpSession.
 	 */
 	private static final String HTTP_SESSION_ATTRIBUTE = "abacuscm";
+	private static final Logger logger = LoggerFactory.getLogger(AbacusService.class);
 
 	private static class SessionData {
 		public AbacusServerConnection myConn;
@@ -222,12 +224,12 @@ public class AbacusService extends AbstractService {
 
 	static void logInfo(ServerSession client, String message) {
 		String id = (client == null) ? "<null>" : client.getId();
-		Log.info(id + ": " + message);
+		logger.info("{}: {}", id, message);
 	}
 
 	static void logWarn(ServerSession client, String message, Throwable e) {
 		String id = (client == null) ? "<null>" : client.getId();
-		Log.warn(id + ": " + message, e);
+		logger.warn(id + ": " + message, e);
 	}
 
 	public Object service(ServerSession client, Map<String, Object> data) throws IOException {
