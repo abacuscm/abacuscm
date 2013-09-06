@@ -235,14 +235,9 @@
 			case 'updateclarificationrequests':
 				// A new clarification request
 				updateClarificationRequests(msg);
-
-				// Contestant clarification requests are always generated
-				// by themselves (general clarifications will come in on
-				// the "updateclarifications" message). As such, this message
-				// will never contain "new" information for the contestant,
-				// and so we do not highlight the "Clarification requests"
-				// tab. We will need to revisit this when extending the web
-				// interface to allow for judging.
+				// Contestants will be alerted to their own clarification requests, but
+				// in general this will be the active tab anyway so this has no effect.
+				highlightTab('clarification-requests');
 				break;
 
 			case 'updateclarifications':
@@ -343,7 +338,7 @@
 	 */
 	this.highlightTab = function(name) {
 		var tab = $('#' + name + '-tab-label');
-		if (!tab.parent().parent().hasClass('ui-tabs-selected')) {
+		if (!tab.parent().parent().hasClass('ui-tabs-active')) {
 			tab.addClass('tab-highlight');
 		}
 	}
@@ -429,13 +424,6 @@
 		$('#logout').hide();
 		$('#status-connected').hide();
 
-		// Whenever we switch tabs, remove any highlight that the new selected
-		// tab may have had.
-		$('#tabs').bind('tabsselect', function(event, ui) {
-			$(ui.tab.children[0]).removeClass('tab-highlight');
-			return true;
-		});
-
 		// Initially, the user should not be logged in and so we show the
 		// login dialog.
 		showLoginDialog();
@@ -445,7 +433,14 @@
 			cometd.disconnect(true);
 		});
 
-		$('#tabs').tabs();
+		$('#tabs').tabs({
+			// Whenever we switch tabs, remove any highlight that the new selected
+			// tab may have had.
+			activate: function(event, ui) {
+				$(ui.newTab).find('.tab-highlight').removeClass('tab-highlight');
+				return true;
+			}
+		});
 
 		// Disable the WebSocket transport, which is experimental and possibly
 		// buggy.
