@@ -187,6 +187,7 @@
 		$('#submissions-tbody').html(html);
 
 		$('.submission-request-clarification').click(function(event) {
+			event.stopPropagation(); // prevents submission details from coming up
 			var row = $(this).parent().parent();
 			var submissionId = $(row.children()[0]).text();
 			var problemId = getProblemForCode($(row.children()[3]).text()).id;
@@ -213,15 +214,7 @@
 		$('tr.submission-row-clickable').click(
 			function() {
 				var submissionId = $($(this).children()[0]).text();
-				// We have a minor UI foible whereby clicking on the
-				// "request clarification" button triggers both the
-				// clarification request and the this code. Since the
-				// clarification request should take preference, do a quick
-				// check here to see if we have kicked off the
-				// clarification request process -- if so, then we do not
-				// show anything else.
-				if (!isRequestingClarification())
-					showSubmission(getSubmissionById(submissionId));
+				showSubmission(getSubmissionById(submissionId));
 			}
 		);
 
