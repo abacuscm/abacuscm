@@ -232,7 +232,8 @@ public class AbacusService extends AbstractService {
 
 	public Object service(ServerSession client, Map<String, Object> data) throws IOException {
 		String name = (String) data.get("name");
-		Map<String, String> headers = (Map<String, String>) data.get("headers");
+		@SuppressWarnings("unchecked")
+			Map<String, String> headers = (Map<String, String>) data.get("headers");
 		String content = (String) data.get("content");
 		logInfo(client, "Received command: " + name + ((content != null) ? " with content" : ""));
 
