@@ -1,4 +1,4 @@
-/*  Copyright (C) 2010-2011  Bruce Merry and Carl Hultquist
+/*  Copyright (C) 2010-2011, 2013  Bruce Merry and Carl Hultquist
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -166,7 +166,17 @@ public abstract class AbacusServerConnection {
 
 			if (contentLength > 0) {
 				byte[] content = new byte[contentLength];
-				myInput.read(content);
+				/* BufferedReader rather unhelpfully checks whether more reads would block,
+				 * and if so returns rather than continuing.
+				 */
+				int done = 0;
+				while (done < contentLength)
+				{
+					int next = myInput.read(content, done, contentLength - done);
+					if (next <= 0)
+						throw new IOException("Unexpected end of stream while reading content");
+					done += next;
+				}
 				mb.setContent(content);
 			}
 
