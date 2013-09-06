@@ -39,6 +39,15 @@
 		$('.qq-upload-button').hide();
 	}
 
+	var parseResult = function(result) {
+		if (result == 'PENDING') {
+			return RunResult.PENDING;
+		}
+		else {
+			return parseInt(result);
+		}
+	}
+
 	this.getSubmissions = function() {
 		sendMessageBlock({
 				name: 'getsubmissions',
@@ -73,11 +82,7 @@
 			submission.prob_id = msg.data.headers['prob_id' + i];
 			submission.problem = msg.data.headers['problem' + i];
 			submission.comment = msg.data.headers['comment' + i];
-			submission.result = msg.data.headers['result' + i];
-			if (submission.result == 'PENDING')
-				submission.result = RunStatus.PENDING;
-			else
-				submission.result = parseInt(submission.result);
+			submission.result = parseResult(msg.data.headers['result' + i]);
 
 			items.push(submission);
 
@@ -109,6 +114,7 @@
 		submission.prob_id = msg.data.headers.prob_id;
 		submission.problem = msg.data.headers.problem;
 		submission.comment = msg.data.headers.comment;
+		submission.result = parseResult(msg.data.headers.result);
 
 		if (updating)
 			submissions[index] = submission;
