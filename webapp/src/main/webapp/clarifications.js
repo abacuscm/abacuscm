@@ -1,4 +1,4 @@
-/*  Copyright (C) 2010-2011  Bruce Merry and Carl Hultquist
+/*  Copyright (C) 2010-2011, 2013  Bruce Merry and Carl Hultquist
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@
 (function($) {
 	var clarificationRequests = new Array();
 	var clarifications = new Array();
-	var preparingForClarificationRequest = false;
 
 	/**
 	 * Encodes a clarification request string for transmission to Abacus,
@@ -409,7 +408,6 @@
 		// problems for which we may request clarification may change (and
 		// the server does not send us updates of the set in the current
 		// protocol).
-		preparingForClarificationRequest = true;
 		getProblems();
 		queueHandler({problemId: problemId, question: question},
 					 showClarificationRequestDialog);
@@ -422,19 +420,8 @@
 
 		$('#clarification-request-dialog-question').val(msg.data.data.question);
 		$('#clarification-request-dialog').dialog('open');
-		preparingForClarificationRequest = false;
 	}
 
-	/**
-	 * Returns true if we are currently in the process of requesting a
-	 * clarification, and false otherwise. This is useful for the submission
-	 * UI -- see the $('tr.submission-row-clickable').click() definition in
-	 * updateSubmissionsTable().
-	 */
-	this.isRequestingClarification = function() {
-		return preparingForClarificationRequest || $('#clarification-request-dialog').dialog('isOpen');
-	}
-	
 	function clarificationRequestReplyHandler(msg) {
 		if (msg.data.name == 'ok')
 			$('#clarification-request-dialog').dialog('close');
