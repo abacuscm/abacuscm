@@ -62,6 +62,7 @@
 				permissions[permission] = true;
 				i++;
 			} while (true);
+			$('#submissions-make-submission').toggle(hasPermission('submit'));
 		}
 		else
 			defaultReplyHandler(msg);
