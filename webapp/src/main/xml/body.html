@@ -67,8 +67,8 @@
                 <td>Question:</td>
                 <td><textarea rows="6" cols="50" id="clarification-request-details-dialog-question" readonly="readonly"></textarea></td>
             </tr>
-            <tr>
-                <td><div id="clarification-request-details-dialog-answer-label">Answer:</div></td>
+            <tr id="clarification-request-details-dialog-answer-row">
+                <td>Answer:</td>
                 <td><textarea rows="6" cols="50" id="clarification-request-details-dialog-answer" readonly="readonly"></textarea></td>
             </tr>
         </table>
@@ -77,12 +77,35 @@
             <tbody>
                 <tr>
                     <td><button id="clarification-request-details-dialog-previous" class="abacus-button ui-state-default">Previous answer</button></td>
-                    <td><button id="clarification-request-details-dialog-ok"       class="abacus-button ui-state-default">OK</button></td>
+                    <td>
+                        <button id="clarification-request-details-dialog-ok"       class="abacus-button ui-state-default">OK</button>
+                        <button id="clarification-request-details-dialog-reply"    class="abacus-button ui-state-default">Reply</button>
+                    </td>
                     <td><button id="clarification-request-details-dialog-next"     class="abacus-button ui-state-default">Next answer</button></td>
                 </tr>
             </tbody>
         </table>
-        <div id="clarification-request-details-dialog-cur-reply"></div>
+    </div>
+    <div id="clarification-reply-dialog">
+        <table>
+            <tr>
+                <td>Question:</td>
+                <td><textarea rows="6" cols="50" id="clarification-reply-dialog-question" readonly="readonly"></textarea></td>
+            </tr>
+            <tr>
+                <td>Reply:</td>
+                <td><textarea rows="6" cols="50" id="clarification-reply-dialog-reply"></textarea></td>
+            </tr>
+            <tr>
+                <td>Visibility</td>
+                <td>
+                    <select id="clarification-reply-dialog-visibility">
+                        <option value="0" selected="select">Requesting team only</option>
+                        <option value="1">All teams</option>
+                    </select>
+                </td>
+            </tr>
+        </table>
     </div>
     <div id="submission-dialog">
         <table>
@@ -221,7 +244,7 @@
                         <th>Request ID</th>
                         <th>Time</th>
                         <th>Problem</th>
-                        <th>Queston</th>
+                        <th>Question</th>
                         <th>Answer</th>
                     </tr>
                 </thead>
