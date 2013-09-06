@@ -22,7 +22,7 @@
 	var submissionFiles = new Array();
 
 	this.showSubmission = function (submission) {
-		submissionId = submission.submission_id;
+		var submissionId = submission.submission_id;
 		sendMessageBlock({
 				name: 'fetchfile',
 				headers: {
@@ -68,7 +68,7 @@
 						function (msg) { getFileHandler(msg, 'Contestant source'); }
 					);
 					// Once all the files have been retrieved, show the submission dialog
-					queueHandler(submissionId, showSubmissionHandler);
+					queueHandler(submission, showSubmissionHandler);
 				}
 				else
 					defaultReplyHandler(msg);
@@ -78,7 +78,7 @@
 
 	var getFileHandler = function (msg, name) {
 		if (msg.data.name == 'ok') {
-			content = parseUtf8(msg.data.content);
+			var content = parseUtf8(msg.data.content);
 			if (typeof name === 'undefined') {
 				name = msg.data.headers.name;
 			}
@@ -89,6 +89,12 @@
 	}
 
 	var showSubmissionHandler = function (msg) {
+		var submission = msg.data.data;
+		var submissionId = submission.submission_id;
+		var mayJudge =
+			(hasPermission('judge') && submission.result == RunResult.JUDGE)
+			|| hasPermission('judge_override');
+
 		html = ''
 		for (var i = 0; i < submissionFiles.length; i++) {
 			var name = submissionFiles[i].name;
@@ -99,7 +105,7 @@
 			.val(0)
 			.on('change keypress keyup', selectFileHandler)
 			.change();
-		if (hasPermission('judge')) {
+		if (mayJudge) {
 			$('#submission-result-dialog').dialog({
 					buttons: [
 						{
