@@ -23,57 +23,70 @@
 
 	this.showSubmission = function (submission) {
 		var submissionId = submission.submission_id;
-		sendMessageBlock({
-				name: 'fetchfile',
-				headers: {
-					request: 'count',
-					submission_id: submissionId,
-				}
-			},
-			function (msg) {
-				if (msg.data.name == 'ok')
-				{
-					submissionFiles = new Array();
-					var count = msg.data.headers.count;
-					for (var i = 0; i < count; i++)
-					{
-						sendMessageBlock({
-								name: 'fetchfile',
-								headers: {
-									request: 'data',
-									submission_id: submissionId,
-									index: '' + i
-								}
-							},
-							getFileHandler
-						);
-					}
-					if (hasPermission('see_problem_details')) {
-						sendMessageBlock({
-								name: 'getprobfile',
-								headers: {
-									prob_id: submission.prob_id,
-									file: 'testcase.output'
-								}
-							},
-							function (msg) { getFileHandler(msg, 'Expected output'); }
-						);
-					}
-					sendMessageBlock({
-							name: 'getsubmissionsource',
-							headers: {
-								submission_id: submissionId
-							}
-						},
-						function (msg) { getFileHandler(msg, 'Contestant source'); }
-					);
-					// Once all the files have been retrieved, show the submission dialog
-					queueHandler(submission, showSubmissionHandler);
-				}
-				else
-					defaultReplyHandler(msg);
+
+		// Run either after fetching the mark-related files (if permissable),
+		// otherwise immediately. This is done like this so that these files
+		// also come after the mark-related files.
+		finishFetch = function() {
+			if (hasPermission('see_problem_details')) {
+				sendMessageBlock({
+						name: 'getprobfile',
+						headers: {
+							prob_id: submission.prob_id,
+							file: 'testcase.output'
+						}
+					},
+					function (msg) { getFileHandler(msg, 'Expected output'); }
+				);
 			}
-		);
+			sendMessageBlock({
+					name: 'getsubmissionsource',
+					headers: {
+						submission_id: submissionId
+					}
+				},
+				function (msg) { getFileHandler(msg, 'Contestant source'); }
+			);
+			// Once all the files have been retrieved, show the submission dialog
+			queueHandler(submission, showSubmissionHandler);
+		}
+
+		if (hasPermission('see_submission_details')
+			|| submission.result == RunResult.COMPILE_FAILED) {
+			sendMessageBlock({
+					name: 'fetchfile',
+					headers: {
+						request: 'count',
+						submission_id: submissionId,
+					}
+				},
+				function (msg) {
+					if (msg.data.name == 'ok')
+					{
+						submissionFiles = new Array();
+						var count = msg.data.headers.count;
+						for (var i = 0; i < count; i++)
+						{
+							sendMessageBlock({
+									name: 'fetchfile',
+									headers: {
+										request: 'data',
+										submission_id: submissionId,
+										index: '' + i
+									}
+								},
+								getFileHandler
+							);
+						}
+						finishFetch();
+					}
+					else
+						defaultReplyHandler(msg);
+				}
+			);
+		}
+		else
+			finishFetch();
 	}
 
 	var getFileHandler = function (msg, name) {

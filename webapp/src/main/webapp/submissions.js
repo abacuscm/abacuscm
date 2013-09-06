@@ -194,24 +194,14 @@
 			requestClarificationDialog(problemId, '[Submission ' + submissionId + '] ');
 		});
 
-		$('tr.submission-row-clickable').hover(
-			function() {
-				$(this).addClass('pointer-hover');
-			},
-			function() {
-				$(this).removeClass('pointer-hover');
-			}
-		);
-
 		$('tr.submission-row').hover(
 			function() {
-				$(this).addClass('row-hover');
+				$(this).addClass('pointer-hover row-hover');
 			},
 			function() {
-				$(this).removeClass('row-hover');
+				$(this).removeClass('pointer-hover row-hover');
 			}
-		);
-		$('tr.submission-row-clickable').click(
+		).click(
 			function() {
 				var submissionId = $($(this).children()[0]).text();
 				showSubmission(getSubmissionById(submissionId));
