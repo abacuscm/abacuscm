@@ -248,8 +248,8 @@
 
 			case 'updatesubmissions':
 				// A new or updated submission
-				updateSubmissions(msg);
-				highlightTab('submissions');
+				if (updateSubmissions(msg))
+					highlightTab('submissions');
 				break;
 
 			case 'updatestandings':

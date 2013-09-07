@@ -48,6 +48,10 @@
 		);
 	}
 
+	this.getCachedProblems = function() {
+		return problems;
+	}
+
 	var getProblemsReplyHandler = function(msg) {
 		if (msg.data.name != 'ok') {
 			// Ick. What do we do here? For now, spam a popup and return.
@@ -90,6 +94,7 @@
 
 		$('#clarification-request-dialog-problems').html(headerHtml + '<option value="0">General</option>' + html);
 		$('#submission-dialog-problems').html(headerHtml + html);
+		updateSubmissionsFilter();
 	}
 
 	this.getLanguages = function() {

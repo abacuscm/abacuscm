@@ -68,6 +68,11 @@ div#body { padding: 5pt 5pt; }
 
 /* Submissions */
 
+#submissions-filter-accordion { margin-bottom: 1em; }
+#submissions-filter-table { width: 100%; }
+#submissions-filter-table th { text-align: left; }
+#submissions-filter-table tr { text-align: left; }
+
 .submission-correct { color: green; }
 .submission-wrong   { color: red; }
 .submission-compilation-failed { color: orange; }

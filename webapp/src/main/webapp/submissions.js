@@ -22,6 +22,10 @@
 	var submissions = new Array();
 	var submissionUploader;
 
+	var problemFilter = {}; // Maps problem IDs to true or false
+	var resultFilter = {};  // Maps RunResult enums to true or false
+	var filterActive = false; // Overrides problemFilter and resultFilter
+
 	function newUploader() {
 		submissionUploader = new qq.FileUploader({
 			element: document.getElementById('submission-dialog-file-selector'),
@@ -46,6 +50,57 @@
 		else {
 			return parseInt(result);
 		}
+	}
+
+	var filterMatches = function(submission) {
+		if (!filterActive)
+			return true;
+		// If a new problem has turned up but is not in the filter,
+		// assume it should be shown
+		return (!(submission.prob_id in problemFilter)
+				|| problemFilter[submission.prob_id])
+			&& resultFilter[submission.result];
+	}
+
+	this.updateSubmissionsFilter = function() {
+		var problems = getCachedProblems();
+		var rows = Math.max(problems.length, RunResult.OTHER - RunResult.PENDING + 1);
+		var html = '';
+		for (var i = 0; i < rows; i++) {
+			html += '<tr><td>';
+			if (i < problems.length) {
+				var problem = problems[i];
+				if (!(problem.id in problemFilter)) {
+					problemFilter[problem.id] = true;
+				}
+				var id = "filter-problem-" + problem.id;
+				html += '<input type="checkbox" id="' + id + '"';
+				if (problemFilter[problem.id])
+					html += ' checked="checked"';
+				if (!filterActive)
+					html += ' disabled="disabled"';
+				html += '><label for="' + id + '">'
+					+ escapeHTML(problems[i].code) + ' &mdash; '
+					+ escapeHTML(problems[i].name) + '</label>';
+			}
+			else
+				html += '&nbsp;';
+			html += '</td><td>';
+			var result = i + RunResult.PENDING;
+			if (result <= RunResult.OTHER) {
+				var id = "filter-result-" + result;
+				html += '<input type="checkbox" id="' + id + '"';
+				if (resultFilter[result])
+					html += ' checked="checked"';
+				if (!filterActive)
+					html += ' disabled="disabled"';
+				html += '><label for="' + id + '">' + escapeHTML(runResultString(result)) + '</label>';
+			}
+			else
+				html += '&nbsp;';
+			html += '</td></tr>';
+		}
+		$('#submissions-filter-table-body').html(html);
 	}
 
 	this.getSubmissions = function() {
@@ -93,6 +148,9 @@
 		updateSubmissionsTable();
 	}
 
+	/* Receives an updatesubmissions message, and returns true if the
+	 * submission passed the filter and hence should be displayed.
+	 */
 	this.updateSubmissions = function(msg) {
 		// First check if this is a submission that we already know about.
 		var id = msg.data.headers.submission_id;
@@ -122,6 +180,7 @@
 			submissions.push(submission);
 
 		updateSubmissionsTable();
+		return filterMatches(submission);
 	}
 
 	/**
@@ -149,6 +208,8 @@
 		var html = '';
 		for (var i = 0; i < submissions.length; i++) {
 			var submission = submissions[i];
+			if (!filterMatches(submission))
+				continue;
 			var commentClass = '';
 			var rowClass = 'submission-row';
 			var allowClick = hasPermission('judge');
@@ -227,6 +288,20 @@
 					$(this).removeClass('ui-state-active');
 				}
 			);
+	}
+
+	function refilterSubmissions(event, ui) {
+		var problems = getCachedProblems();
+		for (var i = 0; i < problems.length; i++) {
+			var problem = problems[i];
+			var id = '#filter-problem-' + problem.id;
+			problemFilter[problem.id] = $(id).prop('checked');
+		}
+		for (var i = RunResult.PENDING; i <= RunResult.OTHER; i++) {
+			var id = '#filter-result-' + i;
+			resultFilter[i] = $(id).prop('checked');
+		}
+		updateSubmissionsTable();
 	}
 
 	function makeSubmissionHandler(msg) {
@@ -308,6 +383,23 @@
 
 	$(document).ready(function() {
 		newUploader();
+
+		$('#submissions-filter-accordion').accordion({
+			collapsible: true,
+			active: false,
+			heightStyle: 'content',
+			header: 'h3'
+		});
+		$('#submissions-filter-table').on('change', 'input', null, refilterSubmissions);
+		for (var i = RunResult.PENDING; i <= RunResult.OTHER; i++) {
+			resultFilter[i] = true;
+		}
+		$('#submissions-filter-enable').change(function (event, ui) {
+			filterActive = $(this).prop('checked');
+			$('#submissions-filter-table :input').prop('disabled', !filterActive);
+			updateSubmissionsFilter();
+			refilterSubmissions();
+		}).change();
 
 		$('#submissions-make-submission').click(function(event) {
 			// In order to display the submission dialog, we need to query for

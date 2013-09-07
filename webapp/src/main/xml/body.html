@@ -262,6 +262,25 @@
         </div>
         <div id="tab-submissions" class="ui-tabs-hide">
             <p><button id="submissions-make-submission" class="abacus-button ui-state-default">Make submission</button></p>
+            <div id="submissions-filter-accordion">
+                <h3>Filter</h3>
+                <div>
+                    <p><input type="checkbox" id="submissions-filter-enable"/><label for="submissions-filter-enable">Filter submissions</label></p>
+                    <table id="submissions-filter-table">
+                        <col class="problem"/>
+                        <col class="result"/>
+                        <thead>
+                            <tr>
+                                <th>Problem</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="submissions-filter-table-body">
+                            <tr><td></td><td></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             <table class="data-table">
                 <col class="id"/>
                 <col class="time"/>
