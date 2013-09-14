@@ -347,7 +347,6 @@
 
 		$('#clarifications-tbody').html(html);
 		$('tr.clarification-row').click(function() {
-
 			var replyId = $($(this).children()[0]).text();
 			showClarificationRequestDetails(-1, replyId, 0);
 		});
@@ -511,6 +510,11 @@
 			}
 
 			var question = $('#clarification-request-dialog-question').val();
+			var badRe = /^(?:\[Submission \d+\])?\s*$/;
+			if (badRe.test(question)) {
+				window.jAlert('Please write a question!');
+				return;
+			}
 
 			sendMessageBlock({
 					name: 'clarificationrequest',
