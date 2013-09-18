@@ -186,6 +186,18 @@
 	$(document).ready(function() {
 		// Hack to work around https://bugzilla.mozilla.org/show_bug.cgi?id=82711 on Firefox
 		$('#submission-result-dialog-contents')[0].wrap = 'off';
+
+		$('#submission-result-dialog-wrap').change(function (event, ui) {
+			var content = $('#submission-result-dialog-contents');
+			if ($(this).prop('checked')) {
+				content.removeClass('nowrap');
+				content[0].wrap = 'on';
+			}
+			else {
+				content.addClass('nowrap');
+				content[0].wrap = 'off';
+			}
+		});
 	});
 
 })(jQuery);
