@@ -2,6 +2,7 @@
 import sys
 import os
 import subprocess
+import argparse
 import re
 import time
 
@@ -22,14 +23,16 @@ def get_admin_password(server_config):
     print >>sys.stderr, 'Admin password not found in', server_config
     sys.exit(1)
 
-if len(sys.argv) != 2:
-    usage()
+parser = argparse.ArgumentParser()
+parser.add_argument('--group', '-g', metavar = 'GROUP')
+parser.add_argument('userfile')
+args = parser.parse_args()
 
 config = "abacus.conf"
 server_config = "conf/server.conf"
 password = get_admin_password(server_config)
 username = "admin"
-userfile = sys.argv[1]
+userfile = args.userfile
 if not os.path.isfile(config):
     usage('%s is not a file' % config)
 if not os.path.isfile(userfile):
@@ -50,6 +53,8 @@ for line in f:
         new_realname = matches.group(4)
 
         argv = [cmd, config, username, password, new_username, new_realname, new_password, new_type]
+        if args.group:
+            argv.append(args.group)
         print 'Adding %s => %s identified by %s as type %s' % (new_username, new_realname, new_password, new_type)
         ret = subprocess.call(argv)
         if ret != 0:
