@@ -39,7 +39,7 @@
 
 using namespace std;
 
-enum problem_attribute_type {
+enum ProblemAttributeType {
 	ATTR_INT,
 	ATTR_STRING,
 	ATTR_FILE,
@@ -47,25 +47,25 @@ enum problem_attribute_type {
 	ATTR_LIST
 };
 
-struct problem_attribute {
+struct ProblemAttribute {
 	string name;
-	problem_attribute_type type;
+	ProblemAttributeType type;
 	vector<string> values;    // enums and lists
 
 	bool found;
 	string value;
 
-	problem_attribute() {}
-	problem_attribute(const string &name, problem_attribute_type type, const vector<string> &values) :
+	ProblemAttribute() {}
+	ProblemAttribute(const string &name, ProblemAttributeType type, const vector<string> &values) :
 		name(name), type(type), values(values), found(false) {}
 };
 
-class problem_bad_format : public runtime_error {
+class ProblemBadFormat : public runtime_error {
 public:
-	problem_bad_format(const string &msg) : runtime_error(msg) {}
+	ProblemBadFormat(const string &msg) : runtime_error(msg) {}
 };
 
-struct balloon_event
+struct BalloonEvent
 {
 	time_t time;
 	string contestant;
@@ -390,14 +390,14 @@ static vector<string> problem_parse_list(const vector<string> &toks, int &ofs) {
 		return ans;
 	while (true) {
 		if (ofs == sz || is_problem_special(toks[ofs]) || toks[ofs].empty())
-			throw problem_bad_format("Bad formatting in list");
+			throw ProblemBadFormat("Bad formatting in list");
 
 		ans.push_back(toks[ofs]);
 		ofs++;
 		if (toks[ofs] == target)
 			return ans;
 		else if (toks[ofs] != ",")
-			throw problem_bad_format("Bad formatting in list");
+			throw ProblemBadFormat("Bad formatting in list");
 		ofs++;
 	}
 }
@@ -405,28 +405,28 @@ static vector<string> problem_parse_list(const vector<string> &toks, int &ofs) {
 /* Takes a flat string describing the options that must be set and
  * turns it into a useful data structure.
  */
-static map<string, problem_attribute> problem_parse_desc(const string &desc) {
+static map<string, ProblemAttribute> problem_parse_desc(const string &desc) {
 	vector<string> toks = problem_tokenize(desc);
 	int sz = toks.size();
 	vector<string> name_stack;
-	map<string, problem_attribute> ans;
+	map<string, ProblemAttribute> ans;
 
 	int ofs = 0;
 	if (ofs == sz) return ans;
 	while (true) {
 		string name, stype;
-		problem_attribute_type type;
+		ProblemAttributeType type;
 		vector<string> values;
 
 		if (ofs == sz || is_problem_special(toks[ofs]) || toks[ofs].empty())
-			throw problem_bad_format("Missing name");
+			throw ProblemBadFormat("Missing name");
 		name = toks[ofs++];
 
 		if (ofs == sz)
-			throw problem_bad_format("Missing type");
+			throw ProblemBadFormat("Missing type");
 		stype = toks[ofs];
 		if (stype.size() != 1)
-			throw problem_bad_format("Bad type " + stype);
+			throw ProblemBadFormat("Bad type " + stype);
 
 		switch (stype[0]) {
 		case 'I':
@@ -451,28 +451,28 @@ static map<string, problem_attribute> problem_parse_desc(const string &desc) {
 			ofs++;
 			continue;
 		default:
-			throw problem_bad_format("Bad type " + stype);
+			throw ProblemBadFormat("Bad type " + stype);
 		}
 
 		ostringstream prefix;
 		copy(name_stack.begin(), name_stack.end(), ostream_iterator<string>(prefix, "."));
 		name = prefix.str() + name;
-		ans[name] = problem_attribute(name, type, values);
+		ans[name] = ProblemAttribute(name, type, values);
 
 		ofs++;
 		while (ofs < sz && toks[ofs] == ")") {
 			if (name_stack.empty())
-				throw problem_bad_format("Mismatched )");
+				throw ProblemBadFormat("Mismatched )");
 			name_stack.pop_back();
 			ofs++;
 		}
 		if (ofs == sz) {
 			if (!name_stack.empty())
-				throw problem_bad_format("Mismatched (");
+				throw ProblemBadFormat("Mismatched (");
 			return ans;
 		}
 		if (toks[ofs] != ",")
-			throw problem_bad_format("Expecting ,");
+			throw ProblemBadFormat("Expecting ,");
 		ofs++;
 	}
 }
@@ -494,14 +494,14 @@ static int do_addproblem(ServerConnection &con, int argc, char * const *argv) {
 
 	string desc = con.getProblemDescription(prob_type);
 	vector<ProblemInfo> probs = con.getProblems();
-	map<string, problem_attribute> attribs;
+	map<string, ProblemAttribute> attribs;
 	AttributeMap files, normal;
 	ProblemList dependencies;
 
 	try {
 		attribs = problem_parse_desc(desc);
 	}
-	catch (problem_bad_format &e) {
+	catch (ProblemBadFormat &e) {
 		cerr << "Failed to parse problem format: " << e.what() << "\n";
 		return 1;
 	}
@@ -523,10 +523,10 @@ static int do_addproblem(ServerConnection &con, int argc, char * const *argv) {
 				int ofs = 0;
 				names = problem_parse_list(toks, ofs);
 				if (ofs != (int) toks.size() - 1) {
-					throw problem_bad_format("Trailing garbage after dependency list");
+					throw ProblemBadFormat("Trailing garbage after dependency list");
 				}
 			}
-			catch (problem_bad_format &e) {
+			catch (ProblemBadFormat &e) {
 				cerr << "Failed to parse dependency list: " << e.what() << "\n";
 				return 1;
 			}
@@ -553,12 +553,12 @@ static int do_addproblem(ServerConnection &con, int argc, char * const *argv) {
 		}
 		else if (!attribs.count(argv[i])) {
 			cerr << "Invalid attribute `" << argv[i] << "'. Valid attributes are:\n";
-			for (map<string, problem_attribute>::const_iterator j = attribs.begin(); j != attribs.end(); j++)
+			for (map<string, ProblemAttribute>::const_iterator j = attribs.begin(); j != attribs.end(); j++)
 				cerr << "    " << j->first << "\n";
 			return 1;
 		}
 		else {
-			problem_attribute &a = attribs[argv[i]];
+			ProblemAttribute &a = attribs[argv[i]];
 			if (a.found) {
 				cerr << "Attribute `" << argv[i] << "' specified twice\n";
 				return 1;
@@ -747,7 +747,7 @@ static int do_submit(ServerConnection &con, int argc, char * const *argv) {
 static bool closed = false;             // set to true when a server disconnect is detected
 static pthread_mutex_t runlock;         // held by main thread except when waiting for something
 static pthread_cond_t runcond;          // signalled by worker thread to indicate new data
-static queue<balloon_event> notify;     // queue of unprinted balloon notifications
+static queue<BalloonEvent> notify;     // queue of unprinted balloon notifications
 
 // Callback used to indicate that the server disconnected
 static void server_close(const MessageBlock*, void*) {
@@ -762,7 +762,7 @@ static void balloon_notification(const MessageBlock* mb, void* data) {
 	const char *group = (const char *) data;
 
 	if (group == NULL || (*mb)["group"] == string(group)) {
-		balloon_event event;
+		BalloonEvent event;
 		event.time = time(NULL);
 		event.contestant = (*mb)["contestant"];
 		event.group = (*mb)["group"];
@@ -791,7 +791,7 @@ static int do_balloon(ServerConnection &con, int argc, char * const *argv) {
 
 	while (!closed || !notify.empty()) {
 		if (!notify.empty()) {
-			balloon_event event = notify.front();
+			BalloonEvent event = notify.front();
 			notify.pop();
 
 			// A message we're actually interested in
