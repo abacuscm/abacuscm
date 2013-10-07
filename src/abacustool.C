@@ -15,6 +15,7 @@
 
 #include <vector>
 #include <map>
+#include <queue>
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
@@ -64,6 +65,14 @@ public:
 	problem_bad_format(const string &msg) : runtime_error(msg) {}
 };
 
+struct balloon_event
+{
+	time_t time;
+	string contestant;
+	string group;
+	string problem;
+};
+
 static void usage() {
 	cerr << 
 		"Usage: abacustool [options] command arguments...\n"
@@ -76,7 +85,7 @@ static void usage() {
 	"  -s server.conf    Server config (to get password)\n"
 		"Exactly one of -p, -P and -s must be specified.\n"
 		"\n"
-		"Commands:\n"
+		"One-off commands:\n"
 		"   adduser <username> <name> <password> <type> [<group>]\n"
 		"   addgroup <group>\n"
 		"   addproblem <type> <attrib1> <value1> <attrib2> <value2>...\n"
@@ -85,8 +94,10 @@ static void usage() {
 		"   getsource <submission_id>\n"
 		"   getlatestsource <user> <problem>\n"
 		"   submit <problem> <language> <filename>\n"
+		"Times for start/stop are passed to date(1) for interpretation.\n"
 		"\n"
-		"Times for start/stop are passed to date(1) for interpretation.\n";
+		"Commands that run forever:\n"
+		"   balloon [<group>]\n";
 }
 
 /* Converts a string to a uint32_t. On success, returns true. On failure,
@@ -139,9 +150,10 @@ static string read_config_password(const char *filename) {
 	return section["admin_password"];
 }
 
-static void connect(int argc, char * const *argv, ServerConnection &con) {
-	string user = "admin";
-	string password;
+static void process_options(int argc, char * const *argv, string &user, string &password)
+{
+	user = "admin";
+	password = "";
 	string client_config = DEFAULT_CLIENT_CONFIG;
 	bool have_password = false;
 	int opt;
@@ -190,14 +202,22 @@ static void connect(int argc, char * const *argv, ServerConnection &con) {
 
 	Config &conf = Config::getConfig();
 	conf.load(client_config);
+}
+
+static bool connect(ServerConnection &con, const string &user, const string &password) {
+	Config &conf = Config::getConfig();
 
 	log(LOG_DEBUG, "Connecting ...\n");
 	if (!con.connect(conf["server"]["address"], conf["server"]["service"]))
-		exit(1);
+		return false;
 
 	log(LOG_DEBUG, "Authenticating ...\n");
 	if (!con.auth(user, password))
-		exit(1);
+	{
+		con.disconnect();
+		return false;
+	}
+	return true;
 }
 
 // Retrieves a user ID from a user name, returns 0 if not found
@@ -724,6 +744,80 @@ static int do_submit(ServerConnection &con, int argc, char * const *argv) {
 	return success ? 0 : 1;
 }
 
+static bool closed = false;             // set to true when a server disconnect is detected
+static pthread_mutex_t runlock;         // held by main thread except when waiting for something
+static pthread_cond_t runcond;          // signalled by worker thread to indicate new data
+static queue<balloon_event> notify;     // queue of unprinted balloon notifications
+
+// Callback used to indicate that the server disconnected
+static void server_close(const MessageBlock*, void*) {
+	pthread_mutex_lock(&runlock);
+	closed = true;
+	cout << "Server has disconnected\n" << flush;
+	pthread_cond_signal(&runcond);
+	pthread_mutex_unlock(&runlock);
+}
+
+static void balloon_notification(const MessageBlock* mb, void* data) {
+	const char *group = (const char *) data;
+
+	if (group == NULL || (*mb)["group"] == string(group)) {
+		balloon_event event;
+		event.time = time(NULL);
+		event.contestant = (*mb)["contestant"];
+		event.group = (*mb)["group"];
+		event.problem = (*mb)["problem"];
+
+		pthread_mutex_lock(&runlock);
+		notify.push(event);
+		pthread_cond_signal(&runcond);
+		pthread_mutex_unlock(&runlock);
+	}
+}
+
+static int do_balloon(ServerConnection &con, int argc, char * const *argv) {
+	if (argc < 1 || argc > 2) {
+		cerr << "Usage: balloon [group]\n";
+		return 2;
+	}
+
+	con.registerEventCallback("close", server_close, NULL);
+	con.registerEventCallback("balloon", balloon_notification, argc >= 2 ? argv[1] : NULL);
+
+	if(!con.watchBalloons(true)) {
+		cout << "Error subscribing to the balloon notifications!\n";
+		return 1;
+	}
+
+	while (!closed || !notify.empty()) {
+		if (!notify.empty()) {
+			balloon_event event = notify.front();
+			notify.pop();
+
+			// A message we're actually interested in
+			pthread_mutex_unlock(&runlock);
+
+			string dummy;
+			struct tm time_tm;
+			char time_buffer[64];
+
+			localtime_r(&event.time, &time_tm);
+			strftime(time_buffer, sizeof(time_buffer), "%X", &time_tm);
+			cout
+				<< time_buffer << " " << event.contestant << " solved " << event.problem
+				<< " - press enter to acknowledge ..." << flush;
+			getline(cin, dummy);  // read any old string
+
+			pthread_mutex_lock(&runlock);
+		}
+		else {
+			cout << "\nWaiting for balloon events ...\n\n" << flush;
+			pthread_cond_wait(&runcond, &runlock);
+		}
+	}
+	return 0;
+}
+
 // Returns an exit status
 static int process(ServerConnection &con, int argc, char * const *argv) {
 	if (argv[0] == string("adduser"))
@@ -742,6 +836,8 @@ static int process(ServerConnection &con, int argc, char * const *argv) {
 		return do_getlatestsource(con, argc, argv);
 	else if (argv[0] == string("submit"))
 		return do_submit(con, argc, argv);
+	else if (argv[0] == string("balloon"))
+		return do_balloon(con, argc, argv);
 	else {
 		cerr << "Unknown command `" << argv[0] << "'\n";
 		return 2;
@@ -766,10 +862,42 @@ int main(int argc, char * const *argv) {
 	register_log_listener(log_listener);
 
 	ServerConnection::init();
-	ServerConnection con;
 
-	connect(argc, argv, con);
-	status = process(con, argc - optind, argv + optind);
-	con.disconnect();
-	return status;
+	string login_user, login_pass;
+	process_options(argc, argv, login_user, login_pass);
+
+	if (argv[optind] == string("balloon"))
+	{
+		int status = 0;
+		pthread_mutex_init(&runlock, NULL);
+		pthread_cond_init(&runcond, NULL);
+		while (status != 2) // indicates usage error, should exit
+		{
+			pthread_mutex_lock(&runlock);
+			ServerConnection con;
+			closed = false;
+			bool connected = false;
+			if (connect(con, login_user, login_pass)) {
+				status = process(con, argc - optind, argv + optind);
+				connected = true;
+			}
+			pthread_mutex_unlock(&runlock);
+			if (connected)
+				con.disconnect();
+			cerr << "Sleeping for 10 seconds\n";
+			sleep(10);
+		}
+		pthread_mutex_destroy(&runlock);
+		pthread_cond_destroy(&runcond);
+		return status;
+	}
+	else
+	{
+		ServerConnection con;
+		if (!connect(con, login_user, login_pass))
+			return 1;
+		status = process(con, argc - optind, argv + optind);
+		con.disconnect();
+		return status;
+	}
 }

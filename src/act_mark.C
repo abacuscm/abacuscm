@@ -131,6 +131,7 @@ bool MarkMessage::int_process() const {
 	submission->submissionToMB(db, s, mb, "");
 
 	uint32_t user_id = db->submission2user_id(_submission_id);
+	uint32_t group_id = usm->user_group(user_id);
 	ClientEventRegistry::getInstance().broadcastEvent(
 		user_id, PERMISSION_SEE_ALL_SUBMISSIONS, &mb);
 
@@ -143,6 +144,7 @@ bool MarkMessage::int_process() const {
 		bl["server"] = Server::servername(db->submission2server_id(_submission_id));
 		bl["contestant"] = usm->username(user_id);
 		bl["problem"] = mb["problem"];
+		bl["group"] = usm->groupname(group_id);
 
 		ClientEventRegistry::getInstance().triggerEvent("balloon", &bl);
 	}
