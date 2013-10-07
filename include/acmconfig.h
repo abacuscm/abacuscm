@@ -38,9 +38,10 @@ private:
 
 	ConfigMap _sections;
 
+public:
 	Config();
 	~Config();
-public:
+
 	bool load(const std::string& fname);
 	void dumpConfig(std::ostream& os) const;
 

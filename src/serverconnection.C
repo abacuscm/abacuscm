@@ -683,6 +683,13 @@ bool ServerConnection::getSubmissionSource(uint32_t submission_id, char **buffer
 	if (!ret)
 		return false;
 
+	bool response = ret->action() == "ok";
+	if (!response) {
+		log(LOG_ERR, "%s", (*ret)["msg"].c_str());
+		delete ret;
+		return false;
+	}
+
 	*bufferlen = ret->content_size();
 	*bufferptr = new char[(*bufferlen)];
 	memcpy(*bufferptr, ret->content(), *bufferlen);

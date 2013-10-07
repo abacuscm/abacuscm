@@ -1114,11 +1114,13 @@ action:start|stop</synopsis>
                 <synopsis>balloon
 server:<replaceable>server name</replaceable>
 contestant:<replaceable>username</replaceable>
+group:<replaceable>groupname</replaceable>
 problem:<replaceable>short name</replaceable></synopsis>
                 <para>
                     This message is sent when a problem is correctly solved.
-                    It is used by the standalone <command>balloon</command>
-                    client to display a message for each problem solved.
+                    It is used by the standalone <command>balloon</command> mode
+                    of <command>abacustool</command> to display a message for
+                    each problem solved.
                 </para>
             </section>
             <section id="developer-core.csprotocol.notifications.updatesubmissions">
