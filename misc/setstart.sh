@@ -4,11 +4,17 @@ set -e
 function usage()
 {
     cat 1>&2 <<EOF
-Usage: setstart.sh|setstop.sh <time>
+Usage: setstart.sh|setstop.sh [-g group_id] <time>
 
 The time can be any time format understood by date.
 EOF
 }
+
+group=all
+if [ "$#" -ge 2 -a "$1" == "-g" ]; then
+    group="$2"
+    shift 2
+fi
 
 if [ "$#" -ne 1 ]; then
     usage
@@ -36,6 +42,6 @@ pass:$admin_password
 startstop
 action:$action
 time:$stime
-group:all
+group_id:$group
 ?ok
 EOF
