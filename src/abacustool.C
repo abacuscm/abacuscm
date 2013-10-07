@@ -12,6 +12,7 @@
 #include "acmconfig.h"
 #include "serverconnection.h"
 #include "messageblock.h"
+#include "score.h"
 
 #include <vector>
 #include <map>
@@ -73,6 +74,43 @@ struct BalloonEvent
 	string problem;
 };
 
+class Standing : public Score {
+private:
+	vector<string> _raw;
+
+public:
+	const vector<string> &getRaw() const { return _raw; }
+
+	Standing() {}
+	Standing(const list<string> &row);
+};
+
+Standing::Standing(const list<string> &row) : _raw(row.begin(), row.end()) {
+	setId(strtoul(_raw[STANDING_RAW_ID].c_str(), NULL, 10));
+	setUsername(_raw[STANDING_RAW_USERNAME]);
+	setFriendlyname(_raw[STANDING_RAW_FRIENDLYNAME]);
+	setContestant(strtoul(_raw[STANDING_RAW_CONTESTANT].c_str(), NULL, 10) != 0);
+	setTotalTime(strtoull(_raw[STANDING_RAW_TOTAL_TIME].c_str(), NULL, 10));
+	for (size_t i = STANDING_RAW_SOLVED; i < _raw.size(); i++)
+		setSolved(i - STANDING_RAW_SOLVED, strtol(_raw[i].c_str(), NULL, 10));
+}
+
+typedef map<uint32_t, Standing> StandingMap;
+
+struct Standings
+{
+	vector<string> header;
+	vector<StandingMap::const_iterator> ordered;
+	StandingMap scores;
+};
+
+struct CompareStanding {
+	bool operator()(StandingMap::const_iterator a, StandingMap::const_iterator b) const {
+		return Score::CompareRankingStable()(a->second, b->second);
+	}
+};
+
+
 static void usage() {
 	cerr << 
 		"Usage: abacustool [options] command arguments...\n"
@@ -97,7 +135,8 @@ static void usage() {
 		"Times for start/stop are passed to date(1) for interpretation.\n"
 		"\n"
 		"Commands that run forever:\n"
-		"   balloon [<group>]\n";
+		"   balloon [<group>]\n"
+		"   standings [<filename>]\n";
 }
 
 /* Converts a string to a uint32_t. On success, returns true. On failure,
@@ -818,6 +857,118 @@ static int do_balloon(ServerConnection &con, int argc, char * const *argv) {
 	return 0;
 }
 
+/* Updates the standings map and the ordered view of it in place, working from
+ * an incremental standings update.
+ */
+static void grid_to_standings(const Grid &grid, Standings &standings) {
+	if (grid.empty())
+		return;
+
+	Grid::const_iterator row = grid.begin();
+	standings.header = vector<string>(row->begin(), row->end());
+
+	for (++row; row != grid.end(); ++row) {
+		Standing s(*row);
+		if (!s.isContestant())
+			continue;
+
+		StandingMap::iterator pos = standings.scores.lower_bound(s.getId());
+		if (pos == standings.scores.end() || pos->first != s.getId()) {
+			pos = standings.scores.insert(pos, make_pair(s.getId(), s));
+			standings.ordered.push_back(pos);
+		}
+		else {
+			pos->second = s;
+		}
+	}
+	sort(standings.ordered.begin(), standings.ordered.end(), CompareStanding());
+}
+
+static void standings_update(const MessageBlock *mb, void *data) {
+	pthread_mutex_lock(&runlock);
+	if (mb) {
+		Grid grid = ServerConnection::gridFromMB(*mb);
+		grid_to_standings(grid, *static_cast<Standings *>(data));
+		pthread_cond_signal(&runcond);
+	}
+	pthread_mutex_unlock(&runlock);
+}
+
+static string safe_string(string s) {
+	// There shouldn't be any newlines or tabs, but turn them into
+	// spaces just to be safe.
+	replace(s.begin(), s.end(), '\t', ' ');
+	replace(s.begin(), s.end(), '\n', ' ');
+	return s;
+}
+
+static void update_standings(const string &fname, Standings &standings) {
+	string tmpname = fname + ".tmp";
+
+	ofstream out(tmpname.c_str());
+	if (!out)
+	{
+		cerr << "Warning: failed to open " << tmpname << "!\n";
+		return;
+	}
+	for (vector<string>::const_iterator i = standings.header.begin(); i != standings.header.end(); ++i) {
+		if (i != standings.header.begin())
+			out << "\t";
+		out << safe_string(*i);
+	}
+	out << "\n";
+	vector<StandingMap::const_iterator>::const_iterator i;
+	for (i = standings.ordered.begin(); i != standings.ordered.end(); ++i)
+	{
+		const vector<string> &raw = (*i)->second.getRaw();
+		for (vector<string>::const_iterator c = raw.begin(); c != raw.end(); c++)
+		{
+			if (c != raw.begin()) out << "\t";
+			out << safe_string(*c);
+		}
+		out << "\n";
+	}
+	if (!out)
+	{
+		cerr << "Warning: error writing " << tmpname << "!\n";
+		out.close();
+		unlink(tmpname.c_str());
+	}
+	else
+	{
+		out.close();
+		if (rename(tmpname.c_str(), fname.c_str()) != 0)
+		{
+			cerr << "Error: could not rename " << tmpname << " to " << fname << "!\n";
+			unlink(tmpname.c_str());
+		}
+		else
+			cout << "Successfully wrote standings to " << fname << "\n";
+	}
+}
+
+static int do_standings(ServerConnection &con, int argc, char * const *argv) {
+	if (argc != 2) {
+		cerr << "Usage: standings <filename>\n";
+		return 2;
+	}
+	string fname = argv[1];
+
+	Standings standings;
+	con.registerEventCallback("close", server_close, NULL);
+	con.registerEventCallback("updatestandings", standings_update, &standings);
+
+	grid_to_standings(con.getStandings(), standings);
+	update_standings(fname, standings);
+	while (true) {
+		pthread_cond_wait(&runcond, &runlock);
+		if (closed)
+			break;
+		update_standings(fname, standings);
+	}
+	return 0;
+}
+
 // Returns an exit status
 static int process(ServerConnection &con, int argc, char * const *argv) {
 	if (argv[0] == string("adduser"))
@@ -838,6 +989,8 @@ static int process(ServerConnection &con, int argc, char * const *argv) {
 		return do_submit(con, argc, argv);
 	else if (argv[0] == string("balloon"))
 		return do_balloon(con, argc, argv);
+	else if (argv[0] == string("standings"))
+		return do_standings(con, argc, argv);
 	else {
 		cerr << "Unknown command `" << argv[0] << "'\n";
 		return 2;
@@ -866,12 +1019,12 @@ int main(int argc, char * const *argv) {
 	string login_user, login_pass;
 	process_options(argc, argv, login_user, login_pass);
 
-	if (argv[optind] == string("balloon"))
+	if (argv[optind] == string("balloon") || argv[optind] == string("standings"))
 	{
 		int status = 0;
 		pthread_mutex_init(&runlock, NULL);
 		pthread_cond_init(&runcond, NULL);
-		while (status != 2) // indicates usage error, should exit
+		while (true) // indicates usage error, should exit
 		{
 			pthread_mutex_lock(&runlock);
 			ServerConnection con;
@@ -884,6 +1037,8 @@ int main(int argc, char * const *argv) {
 			pthread_mutex_unlock(&runlock);
 			if (connected)
 				con.disconnect();
+			if (status == 2)
+				break;
 			cerr << "Sleeping for 10 seconds\n";
 			sleep(10);
 		}

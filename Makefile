@@ -127,16 +127,13 @@ LIBS_markerd = ssl crypto pthread rt
 endif
 
 ifneq ($(filter admintools,$(mods)),)
-TARGET_BINS += abacustool standings batch make_submission
+TARGET_BINS += abacustool batch make_submission
 
 MODS_abacustool = abacustool $(CLIENT_MODS)
 LIBS_abacustool = ssl crypto pthread rt
 
 MODS_batch = batch $(CLIENT_MODS)
 LIBS_batch = ssl crypto pthread rt
-
-MODS_standings = standings $(CLIENT_MODS)
-LIBS_standings = ssl crypto pthread rt
 
 MODS_make_submission = make_submission $(CLIENT_MODS)
 LIBS_make_submission = ssl crypto pthread rt
