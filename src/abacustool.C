@@ -778,9 +778,15 @@ static int do_submit(ServerConnection &con, int argc, char * const *argv) {
 		return 1;
 	}
 
-	bool success = con.submit(problem_id, fd, language);
+	uint32_t submission_id = con.submit(problem_id, fd, language);
 	close(fd);
-	return success ? 0 : 1;
+	if (submission_id != 0) {
+		// success
+		cout << "Submission id is " << submission_id << '\n';
+		return 0;
+	}
+	else
+		return 1;
 }
 
 static bool closed = false;             // set to true when a server disconnect is detected

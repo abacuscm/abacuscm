@@ -40,7 +40,15 @@ private:
 	static std::map<std::string, Info> _actionmap;
 
 protected:
-	std::auto_ptr<MessageBlock> triggerMessage(ClientConnection *cc, Message*);
+	/* Enqueues a server message, waits for it to be processed and then returns
+	 * a reply to send to the client - either the given reply on success or an
+	 * error message on failure.
+	 */
+	std::auto_ptr<MessageBlock> triggerMessage(ClientConnection *cc, Message*msg, std::auto_ptr<MessageBlock> reply);
+	/* As above, but on success sends an empty "ok" message
+	 */
+	std::auto_ptr<MessageBlock> triggerMessage(ClientConnection *cc, Message*msg);
+
 	virtual std::auto_ptr<MessageBlock> int_process(ClientConnection *cc, const MessageBlock *mb) = 0;
 public:
 	ClientAction();

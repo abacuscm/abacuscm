@@ -37,7 +37,7 @@ bool ClientAction::registerAction(const string &action, const PermissionTest &pt
 	return true;
 }
 
-auto_ptr<MessageBlock> ClientAction::triggerMessage(ClientConnection *, Message *mb) {
+auto_ptr<MessageBlock> ClientAction::triggerMessage(ClientConnection *, Message *mb, auto_ptr<MessageBlock> reply) {
 	if(mb->makeMessage()) {
 		sem_t sem;
 		if (0 != sem_init(&sem, 0, 0)) {
@@ -49,11 +49,15 @@ auto_ptr<MessageBlock> ClientAction::triggerMessage(ClientConnection *, Message 
 			sem_wait(&sem);
 			sem_destroy(&sem);
 		}
-		return MessageBlock::ok();
+		return reply;
 	} else {
 		delete mb;
 		return MessageBlock::error("Internal error creating message.  This is indicative of a bug.");
 	}
+}
+
+auto_ptr<MessageBlock> ClientAction::triggerMessage(ClientConnection *cc, Message *mb) {
+	return triggerMessage(cc, mb, MessageBlock::ok());
 }
 
 void ClientAction::process(ClientConnection *cc, const MessageBlock *mb) {

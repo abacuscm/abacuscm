@@ -321,6 +321,16 @@ bool ServerConnection::simpleAction(MessageBlock &mb) {
 	return response;
 }
 
+uint32_t ServerConnection::scalarAction(MessageBlock &mb, string fieldname) {
+	string value = stringAction(mb, fieldname);
+	uint32_t resp = 0;
+	if (value != "") {
+		resp = strtoul(value.c_str(), NULL, 10);
+	}
+
+	return resp;
+}
+
 vector<string> ServerConnection::vectorAction(MessageBlock &mb, string prefix) {
 	MessageBlock *ret = sendMB(&mb);
 	if(!ret)
@@ -809,7 +819,7 @@ vector<GroupInfo> ServerConnection::getGroups() {
 	return response;
 }
 
-bool ServerConnection::submit(uint32_t prob_id, int fd, const string& lang) {
+uint32_t ServerConnection::submit(uint32_t prob_id, int fd, const string& lang) {
 	ostringstream str_prob_id;
 	str_prob_id << prob_id;
 
@@ -820,7 +830,7 @@ bool ServerConnection::submit(uint32_t prob_id, int fd, const string& lang) {
 	struct stat statbuf;
 	if(fstat(fd, &statbuf) < 0) {
 		lerror("fstat");
-		return false;
+		return 0;
 	}
 
 	/* This is just to avoid sending a huge amount of data to the server, only
@@ -828,18 +838,18 @@ bool ServerConnection::submit(uint32_t prob_id, int fd, const string& lang) {
 	 */
 	if (statbuf.st_size > MAX_SUBMISSION_SIZE) {
 		log(LOG_ERR, "Your submission is too large (max %d bytes)", MAX_SUBMISSION_SIZE);
-		return false;
+		return 0;
 	}
 
 	void *ptr = mmap(NULL, statbuf.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
 	if(!ptr) {
 		lerror("mmap");
-		return false;
+		return 0;
 	}
 	mb.setContent((char*)ptr, statbuf.st_size);
 	munmap(ptr, statbuf.st_size);
 
-	return simpleAction(mb);
+	return scalarAction(mb, "submission_id");
 }
 
 bool ServerConnection::clarificationRequest(uint32_t prob_id, const string& question) {

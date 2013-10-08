@@ -98,6 +98,7 @@ private:
 	void *keepalive_thread();
 
 	bool simpleAction(MessageBlock &mb);
+	uint32_t scalarAction(MessageBlock &mb, std::string fieldname);
 	std::vector<std::string> vectorAction(MessageBlock &mb, std::string prefix);
 	MultiValuedList multiVectorAction(MessageBlock &mb, std::list<std::string> attrs);
 	std::vector<uint32_t> uintVectorAction(MessageBlock &mb, std::string prefix);
@@ -154,7 +155,7 @@ public:
 	bool getProblemAttributes(uint32_t prob_id, AttributeMap& attrs);
 	bool getProblemFile(uint32_t prob_id, std::string attrib, char **bufferptr, uint32_t *bufferlen);
 	bool getSubmissionSource(uint32_t submission_id, char **bufferptr, uint32_t *bufferlen);
-	bool submit(uint32_t prob_id, int fd, const std::string& language);
+	uint32_t submit(uint32_t prob_id, int fd, const std::string& language);
 	bool clarificationRequest(uint32_t prob_id, const std::string& question);
 	bool clarificationReply(uint32_t clarification_req_id, bool pub, const std::string& answer);
 	SubmissionList getSubmissions();

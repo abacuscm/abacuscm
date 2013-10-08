@@ -163,7 +163,11 @@ auto_ptr<MessageBlock> ActSubmit::int_process(ClientConnection *cc, const Messag
 
 	log(LOG_INFO, "User %u submitted solution for problem %u", user_id, prob_id);
 
-	return triggerMessage(cc, msg);
+	auto_ptr<MessageBlock> reply = MessageBlock::ok();
+	ostringstream tmp;
+	tmp << sub_id;
+	(*reply)["submission_id"] = tmp.str();
+	return triggerMessage(cc, msg, reply);
 }
 
 auto_ptr<MessageBlock> ActGetProblems::int_process(ClientConnection *cc, const MessageBlock *) {
