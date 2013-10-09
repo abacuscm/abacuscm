@@ -18,8 +18,8 @@ c=/usr/bin/gcc
 c++=/usr/bin/g++
 
 [java]
-compiler=/opt/blackdown-jdk-1.4.2.02/bin/javac
-runtime=/opt/blackdown-jdk-1.4.2.02/bin/java
+compiler=/usr/bin/javac
+runtime=/usr/bin/java
 policy=conf/java.policy
 
 [python]
