@@ -1,4 +1,4 @@
-/*  Copyright (C) 2010-2011  Bruce Merry and Carl Hultquist
+/*  Copyright (C) 2010-2011, 2013  Bruce Merry and Carl Hultquist
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,7 +42,8 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.IOUtils;
 
-import org.eclipse.jetty.util.log.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Handles file uploads from the web interface, and provides a mechanism for
@@ -55,6 +56,7 @@ import org.eclipse.jetty.util.log.Log;
 public class AbacusUploader extends HttpServlet {
 
 	private static final long serialVersionUID = 6748857432950840322L;
+	private static final Logger logger = LoggerFactory.getLogger(AbacusUploader.class);
 
 	/**
 	 * The factory that we use for creating FileItem instances from multipart
@@ -133,7 +135,7 @@ public class AbacusUploader extends HttpServlet {
 						if (expiryMs > entry.getValue().timeMs) {
 							// This one is old enough to be removed.
 							String key = entry.getKey();
-							Log.info("[AbacusUploader] Automatically removing file data for key " + key + " which is too old");
+							logger.info("Automatically removing file data for key {} which is too old", key);
 							ourUploadedFiles.remove(key);
 						}
 				}
@@ -173,7 +175,7 @@ public class AbacusUploader extends HttpServlet {
 		try {
 			writer = response.getWriter();
 		} catch (IOException ex) {
-			Log.info("[AbacusUploader] Unexpected exception: " + ex.getMessage());
+			logger.info("Unexpected exception: {}", ex.getMessage());
 		}
 
 		String filename = request.getHeader("X-File-Name");
@@ -183,7 +185,7 @@ public class AbacusUploader extends HttpServlet {
 				// Insist on the user id being present in the request.
 				response.setStatus(response.SC_BAD_REQUEST);
 				writer.print("{success: false}");
-				Log.info("[AbacusUploader] no user id in request");
+				logger.info("no user id in request");
 				return;
 			}
 
@@ -196,7 +198,7 @@ public class AbacusUploader extends HttpServlet {
 					parts = new ServletFileUpload(ourFileItemFactory).parseRequest(request);
 				}
 				catch (FileUploadException e) {
-					Log.info("[AbacusUploader] Failed to parse multipart request", e);
+					logger.info("Failed to parse multipart request", e);
 				}
 
 				// XXX which part should we get the data from? Need to check
@@ -205,7 +207,7 @@ public class AbacusUploader extends HttpServlet {
 				// just log information about all the parts seen.
 				if (parts != null) {
 					for (FileItem part : parts) {
-						Log.info("[AbacusUploader] Multipart content, type '" +
+						logger.info("Multipart content, type '" +
 								 part.getContentType() + "', name '" +
 								 part.getFieldName() + "', filename '" +
 								 part.getName() + ", size " + part.getSize());
@@ -213,7 +215,7 @@ public class AbacusUploader extends HttpServlet {
 						// We expect the content to have the name "qqfile".
 						if (part.getFieldName().equals("qqfile")) {
 							if (is != null) {
-								Log.info("[AbacusUploader] Multiple matching " +
+								logger.info("Multiple matching " +
 										 "parts found in multipart content; " +
 										 "only considering the first one found");
 							}
@@ -231,7 +233,7 @@ public class AbacusUploader extends HttpServlet {
 			// to read our file data from.
 			if (is == null) {
 				is = request.getInputStream();
-				Log.info("[AbacusUploader] Using default input stream");
+				logger.info("Using default input stream");
 			}
 
 			os = new ByteArrayOutputStream();
@@ -243,11 +245,11 @@ public class AbacusUploader extends HttpServlet {
 			} while (ourUploadedFiles.putIfAbsent(key, data) != null);
 			response.setStatus(response.SC_OK);
 			writer.print("{success: true, key: '" + key + "'}");
-			Log.info("[AbacusUploader] Accepted file data of length " + data.fileData.length + " bytes with key " + key + " for user " + user);
+			logger.info("Accepted file data of length {} bytes with key {} for user {}", data.fileData.length, key, user);
 		} catch (IOException ex) {
 			response.setStatus(response.SC_INTERNAL_SERVER_ERROR);
 			writer.print("{success: false}");
-			Log.info("[AbacusUploader] Unexpected exception: " + ex.getMessage());
+			logger.info("Unexpected exception: {}", ex.getMessage());
 		} finally {
 			try {
 				os.close();
@@ -270,29 +272,29 @@ public class AbacusUploader extends HttpServlet {
 		if (key == null) {
 			// Insist on the key being present in the request.
 			response.setStatus(response.SC_BAD_REQUEST);
-			Log.info("[AbacusUploader] no key in request");
+			logger.info("no key in request");
 			return;
 		}
 
 		if (user == null) {
 			// Insist on the user id being present in the request.
 			response.setStatus(response.SC_BAD_REQUEST);
-			Log.info("[AbacusUploader] no user id in request");
+			logger.info("no user id in request");
 			return;
 		}
 
 		UploadData data = ourUploadedFiles.get(key);
 		if (data != null) {
 			if (data.userId.equals(user)) {
-				Log.info("[AbacusUploader] Removing file data for key " + key + " at request of user");
+				logger.info("Removing file data for key {} at request of user", key);
 				ourUploadedFiles.remove(key);
 			}
 			else {
-				Log.info("[AbacusUploader] Ignoring request to remove file data for key " + key + " from user " + user + ", as the file is owned by " + data.userId);
+				logger.info("Ignoring request to remove file data for key {} from user {}, as the file is owned by {}", key, user, data.userId);
 			}
 		}
 		else {
-			Log.info("[AbacusUploader] Ignoring request to remove file data for key " + key + " from user " + user + " which is not in our cache");
+			logger.info("Ignoring request to remove file data for key " + key + " from user " + user + " which is not in our cache");
 		}
 	}
 
@@ -305,11 +307,11 @@ public class AbacusUploader extends HttpServlet {
 		UploadData data = ourUploadedFiles.get(key);
 		if (data != null) {
 			if (data.userId.equals(user)) {
-				Log.info("[AbacusUploader] Returning file data for key " + key + " of " + data.fileData.length + " bytes");
+				logger.info("Returning file data for key {} of {} bytes", key, data.fileData.length);
 				return data.fileData;
 			}
 			else {
-				Log.info("[AbacusUploader] Not returning file data for key " + key + ", which is for user " + data.userId + " and not user " + user);
+				logger.info("Not returning file data for key {}, which is for user {} and not user {}", key, data.userId, user);
 				return null;
 			}
 		}

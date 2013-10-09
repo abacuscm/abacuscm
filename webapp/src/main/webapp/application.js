@@ -1,4 +1,4 @@
-/*  Copyright (C) 2010-2011  Bruce Merry and Carl Hultquist
+/*  Copyright (C) 2010-2011, 2013  Bruce Merry and Carl Hultquist
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,6 +15,49 @@
  */
 
 (function($) {
+	window.jAlert = function(msg, title, callback) {
+		if (title == null)
+			title = "Alert";
+		if (callback == null)
+			callback = function (result) { return false; };
+
+		$("#alert-dialog-text").text(msg);
+		$("#alert-dialog").dialog({
+				title: title,
+				buttons: {
+					"Ok": function (result) { $(this).dialog('close'); callback(result); }
+				}
+			}
+		).dialog('open');
+	}
+
+	this.RunResult = {
+		PENDING: -1,
+		CORRECT: 0,
+		WRONG: 1,
+		TIME_EXCEEDED: 2,
+		ABNORMAL: 3,
+		COMPILE_FAILED: 4,
+		JUDGE: 5,
+		FORMAT_ERROR: 6,
+		OTHER: 7
+	};
+
+	var runMessages = [
+		'Pending',
+		'Correct answer',
+		'Wrong answer',
+		'Time limit exceeded',
+		'Abnormal termination of program',
+		'Compilation failed',
+		'Deferred to judge',
+		'Format error',
+		'Other - contact a judge'
+	];
+	this.runResultString = function (runResult) {
+		return runMessages[runResult + 1];
+	}
+
 	var hmsToString = function(hours, minutes, seconds) {
 		return padNumber(hours) + ':' + padNumber(minutes) + ':' + padNumber(seconds);
 	}
@@ -39,7 +82,10 @@
 		return padNumber(hours) + ':' + padNumber(minutes) + ':' + padNumber(seconds);
 	}
 
-	this.parseUtf8 = function(byteArray){
+	this.parseUtf8 = function(byteArray) {
+		if (typeof byteArray === 'undefined') {
+			return '';
+		}
 		var result = new Array;
 		for(var a, b, i = -1, l = byteArray.length, o = String.fromCharCode; ++i < l;) {
 			var k = byteArray[i];
@@ -189,14 +235,9 @@
 			case 'updateclarificationrequests':
 				// A new clarification request
 				updateClarificationRequests(msg);
-
-				// Contestant clarification requests are always generated
-				// by themselves (general clarifications will come in on
-				// the "updateclarifications" message). As such, this message
-				// will never contain "new" information for the contestant,
-				// and so we do not highlight the "Clarification requests"
-				// tab. We will need to revisit this when extending the web
-				// interface to allow for judging.
+				// Contestants will be alerted to their own clarification requests, but
+				// in general this will be the active tab anyway so this has no effect.
+				highlightTab('clarification-requests');
 				break;
 
 			case 'updateclarifications':
@@ -207,8 +248,8 @@
 
 			case 'updatesubmissions':
 				// A new or updated submission
-				updateSubmissions(msg);
-				highlightTab('submissions');
+				if (updateSubmissions(msg))
+					highlightTab('submissions');
 				break;
 
 			case 'updatestandings':
@@ -297,7 +338,7 @@
 	 */
 	this.highlightTab = function(name) {
 		var tab = $('#' + name + '-tab-label');
-		if (!tab.parent().parent().hasClass('ui-tabs-selected')) {
+		if (!tab.parent().parent().hasClass('ui-tabs-active')) {
 			tab.addClass('tab-highlight');
 		}
 	}
@@ -305,6 +346,19 @@
 	$(document).ready(function() {
 		// Initialisation -- we need to set up the properties of some
 		// reusable dialogs, and initially hide some things.
+
+		// General alert dialog
+		$('#alert-dialog').dialog({
+			disabled: false,
+			autoOpen: false,
+			closeOnEscape: true,
+			draggable: true,
+			modal: true,
+			position: 'center',
+			title: 'Alert',
+			width: 'auto',
+			height: 'auto'
+		});
 
 		// Login dialog
 		$('#login-dialog').dialog({
@@ -330,10 +384,10 @@
 			draggable: true,
 			modal: true,
 			position: 'center',
-			resizable: 'true',
+			resizable: false,
 			title: 'Request clarification',
 			width: 'auto',
-			height: 'auto',
+			height: 'auto'
 		});
 
 		// Submission dialog
@@ -344,11 +398,11 @@
 			draggable: true,
 			modal: true,
 			position: 'center',
-			resizable: 'true',
+			resizable: false,
 			close: submissionDialogClose,
 			title: 'Make submission',
 			width: 'auto',
-			height: 'auto',
+			height: 'auto'
 		});
 
 		// Submission result dialog
@@ -359,23 +413,16 @@
 			draggable: true,
 			modal: true,
 			position: 'center',
-			resizable: 'true',
-			title: 'Compilation failure', // FIXME: make this more generic when extending the web interface to support judging
+			resizable: false,
+			title: 'Submission result',
 			width: 'auto',
-			height: 'auto',
+			height: 'auto'
 		});
 
 		$('#waiting').hide();
 		$('#tabs').hide();
 		$('#logout').hide();
 		$('#status-connected').hide();
-
-		// Whenever we switch tabs, remove any highlight that the new selected
-		// tab may have had.
-		$('#tabs').bind('tabsselect', function(event, ui) {
-			$(ui.tab.children[0]).removeClass('tab-highlight');
-			return true;
-		});
 
 		// Initially, the user should not be logged in and so we show the
 		// login dialog.
@@ -386,7 +433,14 @@
 			cometd.disconnect(true);
 		});
 
-		$('#tabs').tabs();
+		$('#tabs').tabs({
+			// Whenever we switch tabs, remove any highlight that the new selected
+			// tab may have had.
+			activate: function(event, ui) {
+				$(ui.newTab).find('.tab-highlight').removeClass('tab-highlight');
+				return true;
+			}
+		});
 
 		// Disable the WebSocket transport, which is experimental and possibly
 		// buggy.

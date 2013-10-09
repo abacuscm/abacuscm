@@ -1,4 +1,4 @@
-/*  Copyright (C) 2010-2011  Bruce Merry and Carl Hultquist
+/*  Copyright (C) 2010-2011, 2013  Bruce Merry and Carl Hultquist
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,9 +20,14 @@
 
 (function($) {
 	var username = '';
+	var permissions = {}; // a set of permissions, stored as properties with value true
 
 	this.getUsername = function() {
 		return username;
+	}
+
+	this.hasPermission = function (permission) {
+		return permission in permissions;
 	}
 
 	this.showLoginDialog = function() {
@@ -34,6 +39,33 @@
 
 	this.isLoginCloseAllowed = function() {
 		return username != '';
+	}
+
+	this.getPermissions = function() {
+		sendMessageBlock({
+				name: 'whatami',
+				headers: {}
+			},
+			getPermissionsHandler
+		);
+	}
+
+	var getPermissionsHandler = function (msg) {
+		if (msg.data.name == 'ok') {
+			var i = 0;
+			permissions = {};
+			do {
+				var permission = msg.data.headers['permission' + i];
+				if (typeof permission === 'undefined') {
+					break;
+				}
+				permissions[permission] = true;
+				i++;
+			} while (true);
+			$('#submissions-make-submission').toggle(hasPermission('submit'));
+		}
+		else
+			defaultReplyHandler(msg);
 	}
 
 	var loginReplyHandler = function (msg) {
@@ -50,6 +82,7 @@
 
 			// Now that we have logged in, we need to update all our state.
 			registerStartStop();
+			getPermissions();
 			getProblems();
 			getLanguages();
 			getContestStatus();

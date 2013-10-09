@@ -52,7 +52,7 @@
 	// Logs an abacus message. Here, message is just the payload containing
 	// the abacus protocol, not any of the cometd wrapping.
 	var logMessage = function(caption, message) {
-		lines = new Array();
+		var lines = new Array();
 		lines.push(caption);
 		lines.push(message.name);
 		for (var key in message.headers) {

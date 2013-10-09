@@ -1,4 +1,4 @@
-/*  Copyright (C) 2010-2011  Bruce Merry and Carl Hultquist
+/*  Copyright (C) 2010-2011, 2013  Bruce Merry and Carl Hultquist
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,7 +21,8 @@
 (function($) {
 	var clarificationRequests = new Array();
 	var clarifications = new Array();
-	var preparingForClarificationRequest = false;
+	var currentReplyId = -1;
+	var currentRequestId = -1;
 
 	/**
 	 * Encodes a clarification request string for transmission to Abacus,
@@ -221,22 +222,19 @@
 		// on and we need to determine the request associated with that reply.
 		if (requestId < 0)
 			requestId = getClarificationById(replyId).req_id;
+		currentRequestId = requestId;
 
 		// Determine if the request has been replied to, and if so how many
 		// replies it has. If more than one, we show the first reply (or the
 		// specified reply if one was passed to this function).
 		var hasReply = false;
-		var multipleReplies = false;
 		var replies = new Array();
 		var pos = 0;
 
 		for (var j = 0; j < clarifications.length; j++) {
 			var clarification = clarifications[j];
 			if (clarification.req_id == requestId) {
-				if (hasReply)
-					multipleReplies = true;
-				else
-					hasReply = true;
+				hasReply = true;
 
 				if (replyId == clarification.id)
 					pos = replies.length;
@@ -250,8 +248,7 @@
 		// If there are no replies, then hide the answer area and previous/next
 		// buttons in the dialog.
 		if (!hasReply) {
-			$('#clarification-request-details-dialog-answer').hide();
-			$('#clarification-request-details-dialog-answer-label').hide();
+			$('#clarification-request-details-dialog-answer-row').hide();
 			$('#clarification-request-details-dialog-previous').hide();
 			$('#clarification-request-details-dialog-next').hide();
 
@@ -262,41 +259,40 @@
 			$('#clarification-request-details-dialog-question').val(decodeNewlines(request.question, true));
 		}
 		else {
-			$('#clarification-request-details-dialog-answer').show();
-			$('#clarification-request-details-dialog-answer-label').show();
-			
-			if (multipleReplies) {
-				// Disable either the next or previous buttons according to
-				// whichever reply we are currently showing. Note that the
-				// clarifications are listed in decreasing order of their
-				// generation time, i.e. replies[0] is the most recent reply.
-				// As such, if we are viewing reply X where X > 0, then reply
-				// X-1 would be the _next_ reply chronologically. Similarly,
-				// reply X+1 is the previous reply chronologically.
-				if (pos > 0)
-					$('#clarification-request-details-dialog-next').show();
-				else
-					$('#clarification-request-details-dialog-next').hide();
-				if (pos < replies.length - 1)
-					$('#clarification-request-details-dialog-previous').show();
-				else
-					$('#clarification-request-details-dialog-previous').hide();
-			} else {
-				// No other replies, so hide both the previous and next buttons.
-				$('#clarification-request-details-dialog-previous').hide();
-				$('#clarification-request-details-dialog-next').hide();
-			}
+			$('#clarification-request-details-dialog-answer-row').show();
+
+			// Disable either the next or previous buttons according to
+			// whichever reply we are currently showing. Note that the
+			// clarifications are listed in decreasing order of their
+			// generation time, i.e. replies[0] is the most recent reply.
+			// As such, if we are viewing reply X where X > 0, then reply
+			// X-1 would be the _next_ reply chronologically. Similarly,
+			// reply X+1 is the previous reply chronologically.
+			$('#clarification-request-details-dialog-next').toggle(pos > 0);
+			$('#clarification-request-details-dialog-previous').toggle(pos < replies.length - 1);
 
 			// Note that we obtain the question from the clarification reply, to
 			// cater for general replies for which the user will not have the
 			// associated clarification request in their data.
 			$('#clarification-request-details-dialog-question').val(decodeNewlines(replies[pos].question, true));
 			$('#clarification-request-details-dialog-answer').val(decodeNewlines(replies[pos].answer, true));
-			$('#clarification-request-details-dialog-cur-reply').val(replies[pos].id);
+			currentReplyId = replies[pos].id;
 		}
-		
+
+		var canReply = hasPermission('clarification_reply');
+		$('#clarification-request-details-dialog-reply').toggle(canReply);
+
 		// Show the dialog
 		$('#clarification-request-details-dialog').dialog('open');
+	}
+
+	var showClarificationReplyDialog = function(requestId) {
+		var request = getClarificationRequestById(requestId);
+		$('#clarification-reply-dialog-question').val(
+			decodeNewlines(request.question, true));
+		$('#clarification-reply-dialog-reply').val('');
+		$('#clarification-reply-dialog-visibility').val(0);
+		$('#clarification-reply-dialog').dialog('open');
 	}
 	
 	this.updateClarifications = function(msg) {
@@ -351,7 +347,6 @@
 
 		$('#clarifications-tbody').html(html);
 		$('tr.clarification-row').click(function() {
-
 			var replyId = $($(this).children()[0]).text();
 			showClarificationRequestDetails(-1, replyId, 0);
 		});
@@ -409,7 +404,6 @@
 		// problems for which we may request clarification may change (and
 		// the server does not send us updates of the set in the current
 		// protocol).
-		preparingForClarificationRequest = true;
 		getProblems();
 		queueHandler({problemId: problemId, question: question},
 					 showClarificationRequestDialog);
@@ -422,19 +416,8 @@
 
 		$('#clarification-request-dialog-question').val(msg.data.data.question);
 		$('#clarification-request-dialog').dialog('open');
-		preparingForClarificationRequest = false;
 	}
 
-	/**
-	 * Returns true if we are currently in the process of requesting a
-	 * clarification, and false otherwise. This is useful for the submission
-	 * UI -- see the $('tr.submission-row-clickable').click() definition in
-	 * updateSubmissionsTable().
-	 */
-	this.isRequestingClarification = function() {
-		return preparingForClarificationRequest || $('#clarification-request-dialog').dialog('isOpen');
-	}
-	
 	function clarificationRequestReplyHandler(msg) {
 		if (msg.data.name == 'ok')
 			$('#clarification-request-dialog').dialog('close');
@@ -442,8 +425,49 @@
 			window.jAlert('Failed to send clarification request. Error was: ' + msg.data.headers.msg);
 	}
 
+	var sendClarification = function (event, ui) {
+		var answer = $('#clarification-reply-dialog-reply').val();
+		var isPublic = $('#clarification-reply-dialog-visibility').val();
+		sendMessageBlock({
+				name: 'clarification',
+				headers: {
+					clarification_request_id: currentRequestId,
+					answer: encodeNewlines(answer),
+					'public': isPublic
+				}
+			},
+			clarificationReplyHandler
+		);
+	}
+
+	var clarificationReplyHandler = function(msg) {
+		if (msg.data.name == 'ok') {
+			$('#clarification-reply-dialog').dialog('close');
+		}
+		else {
+			defaultReplyHandler(msg);
+		}
+	}
+
 	$(document).ready(function() {
-		// Clarification reuest details dialog
+		$('#clarification-reply-dialog').dialog({
+			disabled: false,
+			autoOpen: false,
+			closeOnEscape: true,
+			draggable: true,
+			modal: true,
+			position: 'center',
+			resizable: false,
+			title: 'Make clarification',
+			width: 'auto',
+			height: 'auto',
+			buttons: {
+				'Ok': sendClarification,
+				'Cancel': function(event) { $(this).dialog('close'); }
+			}
+		});
+
+		// Clarification request details dialog
 		$('#clarification-request-details-dialog').dialog({
 			disabled: false,
 			autoOpen: false,
@@ -451,26 +475,27 @@
 			draggable: true,
 			modal: true,
 			position: 'center',
-			resizable: 'true',
+			resizable: false,
 			title: 'Details of clarification request',
 			width: 'auto',
-			height: 'auto',
+			height: 'auto'
 		});
-
-		$('#clarification-request-details-dialog-cur-reply').hide();
 
 		$('#clarification-request-details-dialog-ok').click(function(event) {
 			$('#clarification-request-details-dialog').dialog('close');
 		});
 		
 		$('#clarification-request-details-dialog-previous').click(function(event) {
-			var replyId = $('#clarification-request-details-dialog-cur-reply').val();
-			showClarificationRequestDetails(-1, replyId, 1);
+			showClarificationRequestDetails(-1, currentReplyId, 1);
 		});
 		
 		$('#clarification-request-details-dialog-next').click(function(event) {
-			var replyId = $('#clarification-request-details-dialog-cur-reply').val();
-			showClarificationRequestDetails(-1, replyId, -1);
+			showClarificationRequestDetails(-1, currentReplyId, -1);
+		});
+
+		$('#clarification-request-details-dialog-reply').click(function(event) {
+			$('#clarification-request-details-dialog').dialog('close');
+			showClarificationReplyDialog(currentRequestId);
 		});
 		
 		$('#clarification-requests-request').click(function(event) {
@@ -485,6 +510,11 @@
 			}
 
 			var question = $('#clarification-request-dialog-question').val();
+			var badRe = /^(?:\[Submission \d+\])?\s*$/;
+			if (badRe.test(question)) {
+				window.jAlert('Please write a question!');
+				return;
+			}
 
 			sendMessageBlock({
 					name: 'clarificationrequest',

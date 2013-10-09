@@ -27,18 +27,9 @@
                 </para>
             </listitem>
             <listitem>
-                <para><application>Maven 2</application>, which is the build
-                    system for the web application.
+                <para><application>Maven 3</application>, which is the build
+                    system for the web application (Maven 2 might still work).
                 </para>
-            </listitem>
-            <listitem>
-                <para><application>GNU Make</application></para>
-            </listitem>
-            <listitem>
-                <para>xsltproc</para>
-            </listitem>
-            <listitem>
-                <para>xmllint</para>
             </listitem>
             <listitem>
                 <para>It is highly recommended that the HTML DTDs are installed
@@ -46,6 +37,17 @@
                     <systemitem>w3c-dtd-html</systemitem> package). Otherwise,
                     these will be fetched from the internet on each build,
                     which can be very slow.
+                </para>
+                <para>The Ubuntu installation of the DTD also has some flaws that
+                    prevent them from working properly (see <ulink
+                        url="https://bugs.launchpad.net/ubuntu/+source/w3c-dtd-xhtml/+bug/400259">this
+                        bug</ulink>). In short, you need to look for
+                    <filename>catalog.xml</filename> files in <filename
+                        class="directory">/usr/share/xml/xhtml</filename> and
+                    <filename
+                        class="directory">/usr/share/xml/entities/xhtml</filename>
+                    and replace <literal>http://globaltranscorp.org/oasis/catalog/xml/tr9401.dtd</literal>
+                    in the header with <literal>file:////usr/share/xml/schema/xml-core/tr9401.dtd</literal>.
                 </para>
             </listitem>
         </itemizedlist>
@@ -59,22 +61,15 @@
     <section id="administrator-webapp.build">
         <title>Building</title>
         <para>All building is done from the <filename
-                class="directory">webapp</filename> directory. First run
-        </para>
-        <screen><prompt>$ </prompt><userinput>make -C src/main/xml</userinput></screen>
-        <para>
-            to build the HTML files. If this takes a long time, double-check
-            that you have HTML DTDs installed locally.
-        </para>
-        <para>
-            Next, build the web application by running
+                class="directory">webapp</filename> directory. Build the web
+            application by running
         </para>
         <screen><prompt>$ </prompt><userinput>mvn</userinput></screen>
         <para>
             This will produce
             <filename>target/abacuscm-1.0-SNAPSHOT.war</filename>, and will
             also place a copy in <filename
-                class="directory">$<envar>HOME</envar>/.m2//repository/abacuscm/abacuscm/1.0-SNAPSHOT/</filename>.
+                class="directory">$<envar>HOME</envar>/.m2/repository/abacuscm/abacuscm/1.0-SNAPSHOT/</filename>.
         </para>
     </section>
     <section id="administrator-webapp.configuration">
@@ -91,6 +86,12 @@
             Note that getting Jetty to run on a standard HTTP port (80) is
             non-trivial; it is probably best to get all the setup done before
             trying to switch it over to a standard port.
+        </para>
+        <para>
+            I have also found that sometimes Jetty will only listen on IPv6. I
+            have worked around this by adding
+            <userinput>JAVA_OPTIONS="-Djava.net.preferIPv4Stack=true"</userinput>
+            to <filename>/etc/default/jetty</filename>.
         </para>
         <para>
             You should also ensure that Jetty is set up for hot deployment from

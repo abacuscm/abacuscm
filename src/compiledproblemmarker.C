@@ -55,7 +55,14 @@ void CompiledProblemMarker::mark() {
 	if(fname == "") {
 		string compiler_log_filename = wdir + "/compiler_log";
 		ofstream compiler_log(compiler_log_filename.c_str());
-		compiler_log << "Unable to automatically determine class name. Make sure that your main class is the first class in the source file, and that you have declared it as 'public class MyClass {'. Pay attention to case and whitespace; in particular there should be only whitespace between the name of your class and the opening {, and the keywords 'public' and 'class' should all be in lowercase. The class name must also be a valid Java identifier and contain only ASCII characters A-Z, a-z, 0-9, _." << endl;
+		compiler_log <<
+			"Unable to automatically determine class name.\n"
+			"Make sure that your main class is the first class in the source file,\n"
+			"and that you have declared it as 'public class MyClass {'. Pay attention\n"
+			"to case and whitespace; in particular there should be only whitespace\n"
+			"between the name of your class and the opening {, and the keywords 'public'\n"
+			"and 'class' should all be in lowercase. The class name must also be a valid\n"
+			"Java identifier and contain only ASCII characters A-Z, a-z, 0-9, _.\n";
 		compiler_log.close();
 		addResultFile("Compilation log", compiler_log_filename, 16384);
 		log(LOG_ERR, "Failed to determine class name for user program.");

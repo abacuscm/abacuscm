@@ -30,8 +30,8 @@
             </para>
             <itemizedlist>
                 <listitem>
-                    <para><command>g++</command> (3.3, 3.4 and 4.4 have all worked at various
-                        times).</para>
+                    <para><command>g++</command> (versions from 3.4 to 4.7 have
+                        all worked at various times).</para>
                 </listitem>
                 <listitem>
                     <para>
@@ -349,12 +349,30 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
         <title>Multi-server contests</title>
         <para>TODO</para>
     </section>
+    <section id="administrator-core.abacustool">
+        <title>Command-line management</title>
+        <para>
+            Previous versions of abacus featured a number of separate
+            command-line tools, but they have now been amalgamated into a
+            single binary, <command>abacustool</command>. Run it with no
+            command-line options to get a list of sub-commands it supports
+            (several of them are also documented in the following sections).
+        </para>
+        <para>
+            Common options set the username and password to use when
+            connecting to the server, and the client configuration file that
+            describes how to connect. The password can be provided on the
+            command-line (a security risk, as other uses can use
+            <command>ps</command> to see it), in a file, or extracted from the
+            <parameter>admin_password</parameter> parameter in the server
+            configuration file.
+        </para>
+    </section>
     <section id="administrator-core.adduser">
         <title>Adding users</title>
         <para>
-            There are two ways to add users: a command-line tool (convenient for
-            scripting the addition of multiple users) and the GUI. The
-            command-line tool is called <command>adduser</command>. Users have a username
+            Users are added with <command>adduser</command> subcommand of
+            <command>abacustool</command>. Users have a username
             (used to log in), a <quote>friendly</quote> name (shown in
             standings, and which can use Unicode characters), a password, a
             type and a group. Groups are described further in <xref
@@ -447,18 +465,19 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
     <section id="administrator-core.addgroup">
         <title>Groups</title>
         <para>
-            Abacus allows users to be arranged into groups. At present the only
-            reason to do this is that the contest can be started and stopped
-            at different times for different groups. One use case is a
-            multi-site contest, where delays at one site require the contest
-            to be started later.
+            Abacus allows users to be arranged into groups. The contest can be
+            started and stopped at different times for different groups. One
+            use case is a multi-site contest, where delays at one site require
+            the contest to be started later. The <command>balloon</command>
+            subcommand of <command>abacustool</command> can also limit its
+            output to a single group.
         </para>
         <para>
             When the server is started for the first time, it creates a group
             called <systemitem class="groupname">default</systemitem>.
-            Additional groups can be added with either the
-            <command>addgroup</command> command-line tool or through the GUI.
-            Once a group has been created, users can be added to it.
+            Additional groups can be added with the
+            <command>addgroup</command> subcommand of <command>abacustool</command>.
+            Once a group has been created, users can be created within it.
         </para>
     </section>
     <section id="administrator-core.addproblem">
@@ -531,13 +550,11 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
             this group.
         </para>
         <para>
-            The marker will need an Abacus account. You can create one though
-            the GUI (using the <systemitem class="username">admin</systemitem>
-            account, or you can use the command-line
-            <command>adduser</command> tool:
+            The marker will need an Abacus account. You can create one using
+            the <command>adduser</command> subcommand:
         </para>
-        <screen><userinput>bin/adduser <replaceable>abacus.conf</replaceable> admin <replaceable>adminpass</replaceable> \
-    <replaceable>marker1</replaceable> "<replaceable>Marker A</replaceable>" <replaceable>markpass</replaceable> marker</userinput></screen>
+        <screen><userinput>bin/abacustool -s <replaceable>server.conf</replaceable> \
+    <replaceable>marker1</replaceable> "<replaceable>Marker 1</replaceable>" <replaceable>password</replaceable> marker</userinput></screen>
         <para>
             There are several configuration file options you will need to
             change:
@@ -611,16 +628,14 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
     <section id="administrator-core.startstop">
         <title>Starting and stopping the contest</title>
         <para>
-            At present, the contest can only be started or stopped through the
-            GUI, although the <link
-                linkend="administrator-core.cmdline.batch">batch tool</link>
-            could be adapted to the purpose as well.
+            The contest start and stop times are configured using the
+            <command>addtime</command> subcommand of
+            <command>abacustool</command>.
         </para>
         <para>
             The start/stop mechanism is powerful but somewhat confusing, as the
             contest can be run in multiple discontiguous pieces, and these
-            pieces can be per-group or global. It is possible to specify only
-            a start time or only a stop time in the dialog. Each start or stop
+            pieces can be per-group or global. Each start or stop
             time is recorded in the database, and never deleted. When determining
             the remaining time in the contest, all relevant start
             or stop times are considered, and the contest is considered to
@@ -640,6 +655,12 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
             <emphasis>vital</emphasis> to restart the server so that its
             internal cache of the start/stop times is updated.
         </para>
+        <para>
+            Note that it is not normally necessary to configure a stop time at
+            all: as long as the <parameter>duration</parameter> field of the
+            server configuration is set correctly, the contest will
+            automatically stop after this much time as elapsed.
+        </para>
     </section>
     <section id="administrator-core.judging">
         <title>Judging</title>
@@ -648,7 +669,8 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
     <section id="administrator-core.online-standings">
         <title>Online standings</title>
         <para>
-            The <command>standings</command> is used to generate standings that
+            The <command>standings</command> subcommand of
+            <command>abacustool</command> is used to generate standings that
             can be viewed from a web browser, with automatic updates. To set
             this up, follow these steps:
         </para>
@@ -685,20 +707,16 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
                 <para>
                     Run
                 </para>
-                <screen><command>bin/standings <replaceable>client.conf</replaceable> <replaceable>/www-data</replaceable>/standings.txt</command></screen>
+                <screen><command>bin/abacustool -u <replaceable>user</replaceable> -p <replaceable>password</replaceable> standings <replaceable>/www-data</replaceable>/standings.txt</command></screen>
                 <para>
                     where <replaceable>/www-data</replaceable> is the
                     directory where the files were placed in <xref
-                        linkend="administrator-core.online-standings.non-cgi"/>. If
-                    the filename is omitted, it will write to
-                    <filename>standings.txt</filename> in the current
-                    directory.
+                        linkend="administrator-core.online-standings.non-cgi"/>.
                 </para>
                 <para>
-                    This will prompt you for a username and passwork to
-                    connect to the server. You can use any account, but the
+                    You can use any account, but the
                     standings display will be whatever that account is
-                    authorised. Thus, if you want the online standings to
+                    authorised to see. Thus, if you want the online standings to
                     reflect the contestants' view, use a dummy contestant
                     account.
                 </para>
@@ -718,7 +736,7 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
             <para>
                 The files in <filename
                     class="directory">misc/standings/js</filename> are
-                third-party and contains their own licenses.
+                third-party and contain their own licenses.
             </para>
         </note>
     </section>

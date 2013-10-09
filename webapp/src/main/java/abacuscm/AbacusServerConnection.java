@@ -140,6 +140,8 @@ public abstract class AbacusServerConnection {
 			int contentLength = 0;
 			while (!keyValue.isEmpty()) {
 				int index = keyValue.indexOf(':');
+				if (index == -1)
+					throw new IOException("Malformed header line (no colon)");
 				String key = keyValue.substring(0, index);
 				String value = keyValue.substring(index + 1);
 

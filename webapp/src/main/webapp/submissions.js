@@ -1,4 +1,4 @@
-/*  Copyright (C) 2010-2011  Bruce Merry and Carl Hultquist
+/*  Copyright (C) 2010-2011, 2013  Bruce Merry and Carl Hultquist
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,6 +22,10 @@
 	var submissions = new Array();
 	var submissionUploader;
 
+	var problemFilter = {}; // Maps problem IDs to true or false
+	var resultFilter = {};  // Maps RunResult enums to true or false
+	var filterActive = false; // Overrides problemFilter and resultFilter
+
 	function newUploader() {
 		submissionUploader = new qq.FileUploader({
 			element: document.getElementById('submission-dialog-file-selector'),
@@ -39,6 +43,66 @@
 		$('.qq-upload-button').hide();
 	}
 
+	var parseResult = function(result) {
+		if (result == 'PENDING') {
+			return RunResult.PENDING;
+		}
+		else {
+			return parseInt(result);
+		}
+	}
+
+	var filterMatches = function(submission) {
+		if (!filterActive)
+			return true;
+		// If a new problem has turned up but is not in the filter,
+		// assume it should be shown
+		return (!(submission.prob_id in problemFilter)
+				|| problemFilter[submission.prob_id])
+			&& resultFilter[submission.result];
+	}
+
+	this.updateSubmissionsFilter = function() {
+		var problems = getCachedProblems();
+		var rows = Math.max(problems.length, RunResult.OTHER - RunResult.PENDING + 1);
+		var html = '';
+		for (var i = 0; i < rows; i++) {
+			html += '<tr><td>';
+			if (i < problems.length) {
+				var problem = problems[i];
+				if (!(problem.id in problemFilter)) {
+					problemFilter[problem.id] = true;
+				}
+				var id = "filter-problem-" + problem.id;
+				html += '<input type="checkbox" id="' + id + '"';
+				if (problemFilter[problem.id])
+					html += ' checked="checked"';
+				if (!filterActive)
+					html += ' disabled="disabled"';
+				html += '><label for="' + id + '">'
+					+ escapeHTML(problems[i].code) + ' &mdash; '
+					+ escapeHTML(problems[i].name) + '</label>';
+			}
+			else
+				html += '&nbsp;';
+			html += '</td><td>';
+			var result = i + RunResult.PENDING;
+			if (result <= RunResult.OTHER) {
+				var id = "filter-result-" + result;
+				html += '<input type="checkbox" id="' + id + '"';
+				if (resultFilter[result])
+					html += ' checked="checked"';
+				if (!filterActive)
+					html += ' disabled="disabled"';
+				html += '><label for="' + id + '">' + escapeHTML(runResultString(result)) + '</label>';
+			}
+			else
+				html += '&nbsp;';
+			html += '</td></tr>';
+		}
+		$('#submissions-filter-table-body').html(html);
+	}
+
 	this.getSubmissions = function() {
 		sendMessageBlock({
 				name: 'getsubmissions',
@@ -48,7 +112,7 @@
 		);
 	}
 
-	getSubmissionsReplyHandler = function(msg) {
+	var getSubmissionsReplyHandler = function(msg) {
 		if (msg.data.name != 'ok') {
 			// Ick. What do we do here? For now, spam a popup and return.
 			window.jAlert('Error updating submissions: ' + msg.data.headers.msg);
@@ -73,6 +137,7 @@
 			submission.prob_id = msg.data.headers['prob_id' + i];
 			submission.problem = msg.data.headers['problem' + i];
 			submission.comment = msg.data.headers['comment' + i];
+			submission.result = parseResult(msg.data.headers['result' + i]);
 
 			items.push(submission);
 
@@ -83,8 +148,11 @@
 		updateSubmissionsTable();
 	}
 
+	/* Receives an updatesubmissions message, and returns true if the
+	 * submission passed the filter and hence should be displayed.
+	 */
 	this.updateSubmissions = function(msg) {
-		// First check if this is submission that we already know about.
+		// First check if this is a submission that we already know about.
 		var id = msg.data.headers.submission_id;
 		var index;
 		var updating = false;
@@ -104,6 +172,7 @@
 		submission.prob_id = msg.data.headers.prob_id;
 		submission.problem = msg.data.headers.problem;
 		submission.comment = msg.data.headers.comment;
+		submission.result = parseResult(msg.data.headers.result);
 
 		if (updating)
 			submissions[index] = submission;
@@ -111,6 +180,7 @@
 			submissions.push(submission);
 
 		updateSubmissionsTable();
+		return filterMatches(submission);
 	}
 
 	/**
@@ -138,34 +208,32 @@
 		var html = '';
 		for (var i = 0; i < submissions.length; i++) {
 			var submission = submissions[i];
+			if (!filterMatches(submission))
+				continue;
 			var commentClass = '';
-			var rowClass = '';
-			
-			// FIXME: this switch statement is ugly, and we should really
-			// base it on result enums instead of strings. However, the
-			// QT client code does string comparisons so I'm following
-			// suit for the moment.
-			switch (submission.comment) {
-			case 'Compilation failed':
+			var rowClass = 'submission-row';
+			var allowClick = hasPermission('judge');
+
+			switch (submission.result) {
+			case RunResult.COMPILE_FAILED:
 				commentClass = 'submission-compilation-failed';
-				rowClass = 'submission-row-clickable submission-row';
+				allowClick = true;
 				break;
-			case 'Abnormal termination of program':
-			case 'Wrong answer':
-			case 'Time limit exceeded':
-			case 'Format error':
+			case RunResult.ABNORMAL:
+			case RunResult.WRONG:
+			case RunResult.TIME_EXCEEDED:
+			case RunResult.FORMAT_ERROR:
 				commentClass = 'submission-wrong';
-				rowClass = 'submission-row';
 				break;
-			case 'Correct answer':
+			case RunResult.CORRECT:
 				commentClass = 'submission-correct';
-				rowClass = 'submission-row';
 				break;
 			default:
 				commentClass = '';
-				rowClass = 'submission-row';
 				break;
 			}
+			if (allowClick)
+				rowClass = 'submission-row-clickable ' + rowClass;
 
 			html += '<tr class="' + rowClass + '">' +
 				'<td>' + escapeHTML(submission.submission_id) + '</td>' +
@@ -180,46 +248,24 @@
 		$('#submissions-tbody').html(html);
 
 		$('.submission-request-clarification').click(function(event) {
+			event.stopPropagation(); // prevents submission details from coming up
 			var row = $(this).parent().parent();
 			var submissionId = $(row.children()[0]).text();
 			var problemId = getProblemForCode($(row.children()[3]).text()).id;
 			requestClarificationDialog(problemId, '[Submission ' + submissionId + '] ');
 		});
 
-		$('tr.submission-row-clickable').hover(
-			function() {
-				$(this).addClass('pointer-hover');
-			},
-			function() {
-				$(this).removeClass('pointer-hover');
-			}
-		);
-
 		$('tr.submission-row').hover(
 			function() {
-				$(this).addClass('row-hover');
+				$(this).addClass('pointer-hover row-hover');
 			},
 			function() {
-				$(this).removeClass('row-hover');
+				$(this).removeClass('pointer-hover row-hover');
 			}
-		);
-		$('tr.submission-row-clickable').click(
+		).click(
 			function() {
-				// This should only ever be called for compilation failures.
-				// Do an extra check just to be sure...
 				var submissionId = $($(this).children()[0]).text();
-				var submission = getSubmissionById(submissionId);
-				if (submission.comment == "Compilation failed") {
-					// We have a minor UI foible whereby clicking on the
-					// "request clarification" button for a compilation failure
-					// triggers both the clarification request and the failure
-					// display code. Since the clarification request should take
-					// preference, do a quick check here to see if we have
-					// kicked off the clarification request process -- if so,
-					// then we do not show the compilation failure.
-					if (!isRequestingClarification())
-						showCompilationFailure(submissionId);
-				}
+				showSubmission(getSubmissionById(submissionId));
 			}
 		);
 
@@ -244,23 +290,18 @@
 			);
 	}
 
-	function showCompilationFailure(submissionId) {
-		sendMessageBlock({
-				name: 'fetchfile',
-				headers: {
-					request: 'data',
-					submission_id: submissionId,
-					index: '0'
-				}
-			},
-			showCompilationFailureHandler
-		);
-
-	}
-
-	function showCompilationFailureHandler(msg) {
-		$('#submission-result-dialog-contents').html(escapeHTML(parseUtf8(msg.data.content)));
-		$('#submission-result-dialog').dialog('open');
+	function refilterSubmissions(event, ui) {
+		var problems = getCachedProblems();
+		for (var i = 0; i < problems.length; i++) {
+			var problem = problems[i];
+			var id = '#filter-problem-' + problem.id;
+			problemFilter[problem.id] = $(id).prop('checked');
+		}
+		for (var i = RunResult.PENDING; i <= RunResult.OTHER; i++) {
+			var id = '#filter-result-' + i;
+			resultFilter[i] = $(id).prop('checked');
+		}
+		updateSubmissionsTable();
 	}
 
 	function makeSubmissionHandler(msg) {
@@ -343,9 +384,22 @@
 	$(document).ready(function() {
 		newUploader();
 
-		$('#submission-result-dialog-ok').click(function(event) {
-			$('#submission-result-dialog').dialog('close');
+		$('#submissions-filter-accordion').accordion({
+			collapsible: true,
+			active: false,
+			heightStyle: 'content',
+			header: 'h3'
 		});
+		$('#submissions-filter-table').on('change', 'input', null, refilterSubmissions);
+		for (var i = RunResult.PENDING; i <= RunResult.OTHER; i++) {
+			resultFilter[i] = true;
+		}
+		$('#submissions-filter-enable').change(function (event, ui) {
+			filterActive = $(this).prop('checked');
+			$('#submissions-filter-table :input').prop('disabled', !filterActive);
+			updateSubmissionsFilter();
+			refilterSubmissions();
+		}).change();
 
 		$('#submissions-make-submission').click(function(event) {
 			// In order to display the submission dialog, we need to query for
