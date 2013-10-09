@@ -30,7 +30,7 @@ MODS_abacus = abacus $(CLIENT_MODS) \
 	ui_clarificationreply moc_ui_clarificationreply \
 	ui_viewclarificationreply moc_ui_viewclarificationreply
 
-LIBS_abacus = ssl crypto pthread rt
+LIBS_abacus = ssl crypto pthread rt dl
 NEED_QT3=1
 bin/abacus : LDFLAGS += $(QT_LDFLAGS)
 bin/abacus : CFLAGS += $(QT_CFLAGS)
@@ -40,7 +40,7 @@ ifneq ($(filter server,$(mods)),)
 TARGET_BINS += abacusd
 TARGET_LIBS += abacus
 MODS_abacusd = abacusd
-LIBS_abacusd = ssl crypto pthread abacus
+LIBS_abacusd = ssl crypto pthread abacus dl
 
 LIBMODS_abacus = waitable socket \
 	clientlistener \
@@ -123,17 +123,17 @@ MODS_markerd += userprog \
 	testcaseproblemmarker \
 	interactiveproblemmarker \
 	sigsegv
-LIBS_markerd = ssl crypto pthread rt
+LIBS_markerd = ssl crypto pthread rt dl
 endif
 
 ifneq ($(filter admintools,$(mods)),)
 TARGET_BINS += abacustool batch
 
 MODS_abacustool = abacustool $(CLIENT_MODS)
-LIBS_abacustool = ssl crypto pthread rt
+LIBS_abacustool = ssl crypto pthread rt dl
 
 MODS_batch = batch $(CLIENT_MODS)
-LIBS_batch = ssl crypto pthread rt
+LIBS_batch = ssl crypto pthread rt dl
 endif
 
 ifeq ($(builddocs),yes)
