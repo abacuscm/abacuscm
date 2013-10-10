@@ -56,4 +56,5 @@ marker = yes
 
 [contest]
 duration = 18000
+blinds = 3600
 languages = C,C++,Python,Java
