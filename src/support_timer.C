@@ -38,6 +38,22 @@ TimerSupportModule::~TimerSupportModule()
 	pthread_mutex_destroy(&_group_state_lock);
 }
 
+uint32_t TimerSupportModule::contestBlindsDuration()
+{
+	static bool warned = false;
+
+	Config &conf = Config::getConfig();
+	uint32_t blinds = strtoul(conf["contest"]["blinds"].c_str(), NULL, 0);
+	if (blinds == 0) {
+		if (!warned) {
+			log(LOG_WARNING, "Blinds duration is NOT set explicitly, defaulting to 1 hour for backwards compatibility.");
+			warned = true;
+		}
+		blinds = 3600;
+	}
+	return blinds;
+}
+
 uint32_t TimerSupportModule::contestDuration()
 {
 	static bool warned = false;
@@ -181,6 +197,10 @@ bool TimerSupportModule::scheduleStartStop(uint32_t group_id, time_t time, int a
 out:
 	pthread_mutex_unlock(&_writelock);
 	return res;
+}
+
+bool TimerSupportModule::isBlinded(uint32_t contest_time) {
+	return contest_time > contestDuration() - contestBlindsDuration();
 }
 
 void TimerSupportModule::updateGroupState(uint32_t group_id, time_t time, int &old_state, int &new_state) {

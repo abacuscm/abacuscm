@@ -20,6 +20,7 @@
 #include "standingssupportmodule.h"
 #include "usersupportmodule.h"
 #include "submissionsupportmodule.h"
+#include "timersupportmodule.h"
 #include "permissionmap.h"
 
 #include <string>
@@ -139,7 +140,9 @@ bool MarkMessage::int_process() const {
 	if(standings && _result != JUDGE)
 		standings->updateStandings(user_id, 0);
 
-	if(_result == CORRECT) {
+	TimerSupportModule *timer = getTimerSupportModule();
+
+	if (_result == CORRECT && !timer->isBlinded(timer->contestTime(group_id, strtoul(s["time"].c_str(), NULL, 0)))) {
 		MessageBlock bl("balloon");
 		bl["server"] = Server::servername(db->submission2server_id(_submission_id));
 		bl["contestant"] = usm->username(user_id);
@@ -367,6 +370,6 @@ extern "C" void abacuscm_mod_init() {
 		PERMISSION_MARK || PERMISSION_JUDGE, &_act_place_mark);
 	Message::registerMessageFunctor(TYPE_ID_SUBMISSION_MARK, create_mark_message);
 	ClientEventRegistry::getInstance().registerEvent(
-		"balloon", 
+		"balloon",
 		PERMISSION_SEE_FINAL_STANDINGS && PERMISSION_SEE_ALL_STANDINGS);
 }

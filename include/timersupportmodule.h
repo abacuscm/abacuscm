@@ -52,6 +52,7 @@ public:
 	virtual void init();
 
 	uint32_t contestDuration();
+	uint32_t contestBlindsDuration();
 	uint32_t contestTime(uint32_t group_id, time_t real_time = 0);
 	uint32_t contestRemaining(uint32_t group_id, time_t real_time = 0) { return contestDuration() - contestTime(group_id, real_time); }
 	int contestStatus(uint32_t group_id, time_t real_time = 0);
@@ -67,6 +68,8 @@ public:
 	std::vector<time_t> allStartStopTimes();
 
 	bool scheduleStartStop(uint32_t group_id, time_t time, int action);
+
+	bool isBlinded(uint32_t contest_time);
 
 	// Call this when the start/stop state for a group may be out-of-date.
 	// This must be called at server startup (for all groups), after
