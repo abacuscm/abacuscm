@@ -142,7 +142,7 @@ bool MarkMessage::int_process() const {
 
 	TimerSupportModule *timer = getTimerSupportModule();
 
-	if (_result == CORRECT && !timer->isBlinded(timer->contestTime(group_id, strtoul(s["time"].c_str(), NULL, 0)))) {
+	if (_result == CORRECT && timer && !timer->isBlinded(timer->contestTime(group_id, strtoul(s["time"].c_str(), NULL, 0)))) {
 		MessageBlock bl("balloon");
 		bl["server"] = Server::servername(db->submission2server_id(_submission_id));
 		bl["contestant"] = usm->username(user_id);
