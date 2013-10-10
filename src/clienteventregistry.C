@@ -108,8 +108,10 @@ void ClientEventRegistry::registerEvent(const string &eventname, const Permissio
 	Event* ev = _eventmap[eventname];
 	if(ev)
 		log(LOG_NOTICE, "Attempt to re-register event '%s'", eventname.c_str());
-	else
+	else {
+		log(LOG_INFO, "Registered event '%s'", eventname.c_str());
 		_eventmap[eventname] = new Event(pt);
+	}
 	pthread_mutex_unlock(&_lock);
 }
 
