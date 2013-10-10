@@ -371,5 +371,5 @@ extern "C" void abacuscm_mod_init() {
 	Message::registerMessageFunctor(TYPE_ID_SUBMISSION_MARK, create_mark_message);
 	ClientEventRegistry::getInstance().registerEvent(
 		"balloon",
-		PERMISSION_AUTH);
+		PERMISSION_SEE_STANDINGS);
 }
