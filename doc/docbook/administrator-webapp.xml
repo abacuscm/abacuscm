@@ -203,8 +203,7 @@ Certificate was added to keystore</computeroutput></screen>
             &lt;param-value&gt;<replaceable>password</replaceable>&lt;/param-value&gt;
         &lt;/init-param&gt;
     &lt;/servlet&gt;
-&lt;/web-app&gt;
-            </programlisting>
+&lt;/web-app&gt;</programlisting>
             <para>
                 The <varname>abacusHost</varname> and
                 <varname>abacusPort</varname> parameters are optional, and
@@ -233,19 +232,20 @@ Certificate was added to keystore</computeroutput></screen>
         </section>
         <section id="administrator-webapp.configuration.ports">
             <title>Running Jetty on standard ports</title>
-			<para>
-				Without running jetty as root, seriously not recommended, it's
-				(to the best of the this Author's knowledge) not possible to
-				run jetty or even Tomcat on standard ports.</para>
-			<para>As a workaround we recommend using iptables (<ulink
-					url="http://www.netfilter.org/">netfilter</ulink>) to redirect
-				the standard ports to the jetty ports.  Assuming you don't have
-				any nat rules already set up, but do have iptables installed,
-				this can be achieved with the following commands:</para>
-			<programlisting language="">
+            <para>
+                Without running jetty as root, seriously not recommended, it's
+                (to the best of the this Author's knowledge) not possible to
+                run jetty or even Tomcat on standard ports.
+            </para>
+            <para>As a workaround we recommend using iptables (<ulink
+                    url="http://www.netfilter.org/">netfilter</ulink>) to redirect
+                the standard ports to the jetty ports.  Assuming you don't have
+                any NAT rules already set up, but do have iptables installed,
+                this can be achieved with the following commands:
+            </para>
+            <programlisting language="">
 iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports <replaceable>8443</replaceable>
-iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports <replaceable>8080</replaceable>
-			</programlisting>
+iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports <replaceable>8080</replaceable></programlisting>
         </section>
     </section>
 </chapter>
