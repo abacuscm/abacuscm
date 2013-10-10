@@ -47,5 +47,5 @@ auto_ptr<MessageBlock> ActStandings::int_process(ClientConnection *cc, const Mes
 static ActStandings _act_standings;
 
 extern "C" void abacuscm_mod_init() {
-	ClientAction::registerAction("standings", PermissionTest::ANY, &_act_standings);
+	ClientAction::registerAction("standings", PERMISSION_SEE_STANDINGS, &_act_standings);
 }
