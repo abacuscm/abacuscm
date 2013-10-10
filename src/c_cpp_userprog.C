@@ -61,7 +61,8 @@ bool C_CPP_UserProg::compile(string infile, string compiler_log, string outdir) 
 	argv.push_back("-static");
 	// argv.push_back("-s"); http://www.mail-archive.com/bug-binutils@gnu.org/msg07558.html
 	argv.push_back("-O2");
-	argv.push_back("-std=gnu++0x");
+	if (_language == "c++")
+		argv.push_back("-std=gnu++0x");
 	argv.push_back("-o");
 	argv.push_back(outdir + "/" + _progname);
 	argv.push_back(infile);
