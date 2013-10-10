@@ -392,8 +392,10 @@
 		});
 		$('#submissions-filter-table').on('change', 'input', null, refilterSubmissions);
 		for (var i = RunResult.PENDING; i <= RunResult.OTHER; i++) {
-			resultFilter[i] = true;
+			resultFilter[i] = false;
 		}
+		resultFilter[RunResult.JUDGE] = true;
+		resultFilter[RunResult.OTHER] = true;
 		$('#submissions-filter-enable').change(function (event, ui) {
 			filterActive = $(this).prop('checked');
 			$('#submissions-filter-table :input').prop('disabled', !filterActive);
