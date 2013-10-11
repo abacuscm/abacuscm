@@ -16,6 +16,7 @@
 
 #include <vector>
 #include <map>
+#include <set>
 #include <queue>
 #include <algorithm>
 #include <cstdlib>
@@ -102,6 +103,10 @@ struct Standings
 	vector<string> header;
 	vector<StandingMap::const_iterator> ordered;
 	StandingMap scores;
+
+	Standings &operator=(const Standings &standings);
+	Standings(const Standings &standings);
+	Standings() {}
 };
 
 struct CompareStanding {
@@ -109,6 +114,21 @@ struct CompareStanding {
 		return Score::CompareRankingStable()(a->second, b->second);
 	}
 };
+
+Standings &Standings::operator=(const Standings &standings) {
+	header = standings.header;
+	scores = standings.scores;
+	ordered.clear();
+	ordered.reserve(scores.size());
+	for (StandingMap::const_iterator i = scores.begin(); i != scores.end(); ++i)
+		ordered.push_back(i);
+	sort(ordered.begin(), ordered.end(), CompareStanding());
+	return *this;
+}
+
+Standings::Standings(const Standings &standings) {
+	*this = standings;
+}
 
 
 static void usage() {
@@ -792,7 +812,8 @@ static int do_submit(ServerConnection &con, int argc, char * const *argv) {
 static bool closed = false;             // set to true when a server disconnect is detected
 static pthread_mutex_t runlock;         // held by main thread except when waiting for something
 static pthread_cond_t runcond;          // signalled by worker thread to indicate new data
-static queue<BalloonEvent> notify;     // queue of unprinted balloon notifications
+static Standings balloonBaseline;       // old standings - only used by callback after init
+static queue<BalloonEvent> balloonQueue;// queue of unprinted balloon notifications
 
 // Callback used to indicate that the server disconnected
 static void server_close(const MessageBlock*, void*) {
@@ -801,66 +822,6 @@ static void server_close(const MessageBlock*, void*) {
 	cout << "Server has disconnected\n" << flush;
 	pthread_cond_signal(&runcond);
 	pthread_mutex_unlock(&runlock);
-}
-
-static void balloon_notification(const MessageBlock* mb, void* data) {
-	const char *group = (const char *) data;
-
-	if (group == NULL || (*mb)["group"] == string(group)) {
-		BalloonEvent event;
-		event.time = time(NULL);
-		event.contestant = (*mb)["contestant"];
-		event.group = (*mb)["group"];
-		event.problem = (*mb)["problem"];
-
-		pthread_mutex_lock(&runlock);
-		notify.push(event);
-		pthread_cond_signal(&runcond);
-		pthread_mutex_unlock(&runlock);
-	}
-}
-
-static int do_balloon(ServerConnection &con, int argc, char * const *argv) {
-	if (argc < 1 || argc > 2) {
-		cerr << "Usage: balloon [group]\n";
-		return 2;
-	}
-
-	con.registerEventCallback("close", server_close, NULL);
-	con.registerEventCallback("balloon", balloon_notification, argc >= 2 ? argv[1] : NULL);
-
-	if(!con.watchBalloons(true)) {
-		cout << "Error subscribing to the balloon notifications!\n";
-		return 1;
-	}
-
-	while (!closed || !notify.empty()) {
-		if (!notify.empty()) {
-			BalloonEvent event = notify.front();
-			notify.pop();
-
-			// A message we're actually interested in
-			pthread_mutex_unlock(&runlock);
-
-			string dummy;
-			struct tm time_tm;
-			char time_buffer[64];
-
-			localtime_r(&event.time, &time_tm);
-			strftime(time_buffer, sizeof(time_buffer), "%X", &time_tm);
-			cout
-				<< time_buffer << " " << event.contestant << " solved " << event.problem
-				<< " - press enter to acknowledge ..." << flush;
-			getline(cin, dummy);  // read any old string
-
-			pthread_mutex_lock(&runlock);
-		}
-		else {
-			cout << "\nWaiting for balloon events ...\n\n" << flush;
-			pthread_cond_wait(&runcond, &runlock);
-		}
-	}
-	return 0;
 }
 
 /* Updates the standings map and the ordered view of it in place, working from
@@ -888,6 +849,102 @@ static void grid_to_standings(const Grid &grid, Standings &standings) {
 		}
 	}
 	sort(standings.ordered.begin(), standings.ordered.end(), CompareStanding());
+}
+
+// Returns number of new balloons. Does not lock anything
+static int queue_balloons(const Standings &old, const Standings &cur, const char *group) {
+	// We take advantage of the fact that the map is ordered by user ID
+	StandingMap::const_iterator j = old.scores.begin();
+	int ans = 0;
+	time_t time = ::time(NULL);
+	for (StandingMap::const_iterator i = cur.scores.begin(); i != cur.scores.end(); ++i) {
+		// TODO: use group to filter out contestants we don't care about
+		(void) group;
+
+		while (j != old.scores.end() && j->first < i->first)
+			++j;
+		set<string> solved; // Names of solved problems
+		for (size_t k = 0; k < i->second.getSolved().size(); k++)
+			if (i->second.getSolved(k) > 0)
+				solved.insert(cur.header[STANDING_RAW_SOLVED + k]);
+		if (j != old.scores.end() && i->first == j->first) {
+			// found a match record in old, cancel out anything already seen
+			for (size_t k = 0; k < j->second.getSolved().size(); k++)
+				if (j->second.getSolved(k) > 0)
+					solved.erase(old.header[STANDING_RAW_SOLVED + k]);
+		}
+		for (set<string>::const_iterator k = solved.begin(); k != solved.end(); ++k) {
+			BalloonEvent event;
+			event.time = time;
+			event.contestant = i->second.getUsername();
+			event.group = "unknown"; // TODO: add to protocol
+			event.problem = *k;
+			balloonQueue.push(event);
+			ans++;
+		}
+	}
+	return ans;
+}
+
+static void balloon_update(const MessageBlock *mb, void *data) {
+	if (mb) {
+		Grid grid = ServerConnection::gridFromMB(*mb);
+		Standings old = balloonBaseline;
+		grid_to_standings(grid, balloonBaseline);
+
+		pthread_mutex_lock(&runlock);
+		if (queue_balloons(old, balloonBaseline, (const char *) data) > 0)
+			pthread_cond_signal(&runcond);
+		pthread_mutex_unlock(&runlock);
+	}
+}
+
+static int do_balloon(ServerConnection &con, int argc, char * const *argv) {
+	static bool first = true;
+
+	if (argc < 1 || argc > 2) {
+		cerr << "Usage: balloon [group]\n";
+		return 2;
+	}
+	char *group = argc >= 2 ? argv[1] : NULL;
+
+	con.registerEventCallback("close", server_close, NULL);
+	con.registerEventCallback("updatestandings", balloon_update, group);
+
+	Standings old = balloonBaseline;
+	grid_to_standings(con.getStandings(), balloonBaseline);
+	if (first)
+		first = false;
+	else
+		queue_balloons(old, balloonBaseline, group);
+
+	while (!closed || !balloonQueue.empty()) {
+		if (!balloonQueue.empty()) {
+			BalloonEvent event = balloonQueue.front();
+			balloonQueue.pop();
+
+			// A message we're actually interested in
+			pthread_mutex_unlock(&runlock);
+
+			string dummy;
+			struct tm time_tm;
+			char time_buffer[64];
+
+			localtime_r(&event.time, &time_tm);
+			strftime(time_buffer, sizeof(time_buffer), "%X", &time_tm);
+			cout
+				<< time_buffer << " " << event.contestant << " solved " << event.problem
+				<< " - press enter to acknowledge ..." << flush;
+			getline(cin, dummy);  // read any old string
+
+			pthread_mutex_lock(&runlock);
+		}
+		else {
+			cout << "\nWaiting for balloon events ...\n\n" << flush;
+			pthread_cond_wait(&runcond, &runlock);
+		}
+	}
+	return 0;
 }
 
 static void standings_update(const MessageBlock *mb, void *data) {

@@ -902,7 +902,6 @@ event:<replaceable>event</replaceable></synopsis>
                     The currently defined events are
                 </para>
                 <itemizedlist>
-                    <listitem><para><type>balloon</type></para></listitem>
                     <listitem><para><type>startstop</type></para></listitem>
                     <listitem><para><type>updateclarifications</type></para></listitem>
                     <listitem><para><type>updateclarificationrequests</type></para></listitem>
@@ -1107,20 +1106,6 @@ action:start|stop</synopsis>
                     decrementing the remaining time while the contest is
                     running and not decrementing it while the contest is
                     stopped.
-                </para>
-            </section>
-            <section id="developer-core.csprotocol.notifications.balloon">
-                <title>Balloon notifications</title>
-                <synopsis>balloon
-server:<replaceable>server name</replaceable>
-contestant:<replaceable>username</replaceable>
-group:<replaceable>groupname</replaceable>
-problem:<replaceable>short name</replaceable></synopsis>
-                <para>
-                    This message is sent when a problem is correctly solved.
-                    It is used by the standalone <command>balloon</command> mode
-                    of <command>abacustool</command> to display a message for
-                    each problem solved.
                 </para>
             </section>
             <section id="developer-core.csprotocol.notifications.updatesubmissions">

@@ -18,9 +18,7 @@
 #include "dbcon.h"
 #include "clienteventregistry.h"
 #include "standingssupportmodule.h"
-#include "usersupportmodule.h"
 #include "submissionsupportmodule.h"
-#include "timersupportmodule.h"
 #include "permissionmap.h"
 
 #include <string>
@@ -104,9 +102,6 @@ void MarkMessage::addFile(string name, uint32_t len, const void *data) {
 }
 
 bool MarkMessage::int_process() const {
-	UserSupportModule* usm = getUserSupportModule();
-	if (!usm)
-		return false;
 	SubmissionSupportModule *submission = getSubmissionSupportModule();
 	if (!submission)
 		return false;
@@ -132,25 +127,12 @@ bool MarkMessage::int_process() const {
 	submission->submissionToMB(db, s, mb, "");
 
 	uint32_t user_id = db->submission2user_id(_submission_id);
-	uint32_t group_id = usm->user_group(user_id);
 	ClientEventRegistry::getInstance().broadcastEvent(
 		user_id, PERMISSION_SEE_ALL_SUBMISSIONS, &mb);
 
 	StandingsSupportModule *standings = getStandingsSupportModule();
 	if(standings && _result != JUDGE)
 		standings->updateStandings(user_id, 0);
-
-	TimerSupportModule *timer = getTimerSupportModule();
-
-	if (_result == CORRECT && timer && !timer->isBlinded(timer->contestTime(group_id, strtoul(s["time"].c_str(), NULL, 0)))) {
-		MessageBlock bl("balloon");
-		bl["server"] = Server::servername(db->submission2server_id(_submission_id));
-		bl["contestant"] = usm->username(user_id);
-		bl["problem"] = mb["problem"];
-		bl["group"] = usm->groupname(group_id);
-
-		ClientEventRegistry::getInstance().triggerEvent("balloon", &bl);
-	}
 
 	db->release();db=NULL;
 
@@ -369,7 +351,4 @@ extern "C" void abacuscm_mod_init() {
 	ClientAction::registerAction("mark",
 		PERMISSION_MARK || PERMISSION_JUDGE, &_act_place_mark);
 	Message::registerMessageFunctor(TYPE_ID_SUBMISSION_MARK, create_mark_message);
-	ClientEventRegistry::getInstance().registerEvent(
-		"balloon",
-		PERMISSION_SEE_STANDINGS);
 }
