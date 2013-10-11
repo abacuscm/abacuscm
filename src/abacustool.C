@@ -164,13 +164,13 @@ static string read_password(const char *filename) {
 	string password;
 	ifstream in(filename);
 	if (!in) {
-		cerr << "Could not open " << filename;
+		cerr << "Could not open " << filename << ": ";
 		perror("");
 		exit(1);
 	}
 	getline(in, password);
 	if (!in) {
-		cerr << "Error reading " << filename;
+		cerr << "Error reading " << filename << ": ";
 		perror("");
 		exit(1);
 	}
