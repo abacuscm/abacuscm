@@ -42,6 +42,9 @@ private:
 	struct startstop_event *_evlist;
 	pthread_mutex_t _writelock;
 
+	time_t duration; // full contest duration, seconds
+	time_t blinds;   // time in which standings are hidden, seconds
+
 	// Maps group to the current contest state for that group. If the group is
 	// missing, the contest is assumed to be stopped. This is not internally
 	// populated at startup. Instead, act_startstop iterates over groups to

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ * Copyright (c) 2005 - 2006, 2013 Kroon Infomation Systems,
  *  with contributions from various authors.
  *
  * This file is distributed under GPLv2, please see
@@ -25,6 +25,8 @@ TimerSupportModule::TimerSupportModule()
 	_evlist = NULL;
 	pthread_mutex_init(&_writelock, NULL);
 	pthread_mutex_init(&_group_state_lock, NULL);
+	blinds = 0;
+	duration = 0;
 }
 
 TimerSupportModule::~TimerSupportModule()
@@ -40,36 +42,11 @@ TimerSupportModule::~TimerSupportModule()
 
 uint32_t TimerSupportModule::contestBlindsDuration()
 {
-	static bool warned = false;
-
-	Config &conf = Config::getConfig();
-	uint32_t blinds = strtoul(conf["contest"]["blinds"].c_str(), NULL, 0);
-	if (blinds == 0) {
-		if (!warned) {
-			log(LOG_WARNING, "Blinds duration is NOT set explicitly, defaulting to 1 hour for backwards compatibility.");
-			warned = true;
-		}
-		blinds = 3600;
-	}
 	return blinds;
 }
 
 uint32_t TimerSupportModule::contestDuration()
 {
-	static bool warned = false;
-
-	Config &conf = Config::getConfig();
-	uint32_t duration = strtoul(conf["contest"]["duration"].c_str(), NULL, 0);
-	if (duration == 0) {
-		if (!warned) {
-			log(LOG_WARNING, "Duration is NOT set explicitly, defaulting to 5 hours for backwards compatibility.");
-			warned = true;
-		}
-		duration = 5 * 3600;
-	} else if (duration < 1800 && !warned) {
-		log(LOG_WARNING, "Duration is less than half an hour.  This is probably wrong.");
-		warned = true;
-	}
 	return duration;
 }
 
@@ -217,6 +194,29 @@ void TimerSupportModule::updateGroupState(uint32_t group_id, time_t time, int &o
 
 void TimerSupportModule::init()
 {
+	Config &conf = Config::getConfig();
+
+	duration = strtoul(conf["contest"]["duration"].c_str(), NULL, 0);
+	if (duration == 0) {
+		log(LOG_WARNING, "Duration is NOT set explicitly, defaulting to 5 hours for backwards compatibility.");
+		duration = 5 * 3600;
+	}
+	else if (duration < 1800) {
+		log(LOG_WARNING, "Duration is less than half an hour.  This is probably wrong.");
+	}
+
+	blinds = strtoul(conf["contest"]["blinds"].c_str(), NULL, 0);
+	if (blinds == 0) {
+		log(LOG_WARNING, "blinds is NOT set explicitly, defaulting to 1 hour for backwards compatibility.");
+		blinds = 3600;
+	}
+	if (blinds > duration / 2)
+		log(LOG_WARNING, "Blinds is longer than half the contest - this is most likely wrong.");
+	if (blinds > duration) {
+		log(LOG_WARNING, "Blinds is longer than the contest. Clamping to the contest length.");
+		blinds = duration;
+	}
+
 	DbCon *db = DbCon::getInstance();
 	if(!db) {
 		log(LOG_ERR, "Unable to load initial contest start/stop times from database.");

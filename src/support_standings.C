@@ -49,7 +49,6 @@ void TimedStandingsUpdater::perform() {
 
 StandingsSupportModule::StandingsSupportModule()
 {
-	blinds = 0;
 	pthread_rwlock_init(&_lock, NULL);
 }
 
@@ -137,9 +136,8 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 				} else
 #endif
 				{
-					uint32_t tRemain = duration - tmp.time;
 					uint32_t prob_id = strtoll((*s)["prob_id"].c_str(), NULL, 0);
-					tmp.final_only = tRemain < blinds;
+					tmp.final_only = timer->isBlinded(tmp.time);
 					problemdata[user_id][prob_id].push_back(tmp);
 				}
 			}
@@ -360,25 +358,6 @@ void StandingsSupportModule::timedUpdate(time_t time, uint32_t uid, uint32_t sub
 }
 
 void StandingsSupportModule::init() {
-	Config &conf = Config::getConfig();
-
-	TimerSupportModule *timer = getTimerSupportModule();
-
-	time_t duration;
-	if(!timer) {
-		log(LOG_CRIT, "Error obtaining TimerSupportModule.");
-		duration = 5 * 60 * 60;
-	}
-
-	duration = timer->contestDuration();
-	blinds = strtoul(conf["contest"]["blinds"].c_str(), NULL, 0);
-	if (blinds == 0) {
-		log(LOG_WARNING, "blinds is NOT set explicitly, defaulting to 1 hour for backwards compatibility.");
-		blinds = 3600;
-	}
-	if (blinds > duration / 2)
-		log(LOG_WARNING, "Blinds is longer than half the contest - this is most likely wrong.");
-
 	ClientEventRegistry::getInstance().registerEvent("updatestandings", PERMISSION_SEE_STANDINGS);
 	updateStandings(0, 0);
 }
