@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010 Kroon Infomation Systems,
+ * Copyright (c) 2010, 2013 Kroon Infomation Systems,
  *  with contributions from various authors.
  *
  * This file is distributed under GPLv2, please see
@@ -26,7 +26,7 @@ private:
 	std::string _friendlyname;
 	bool _contestant; /* Whether this is an official contestant */
 	int _total_solved;
-	uint32_t _total_time;
+	time_t _total_time;
 
 	/* Absolute value of each element is number of attempts. Positive indicates
 	 * a successful attempt.
@@ -73,7 +73,7 @@ public:
 	const std::string &getFriendlyname() const { return _friendlyname; }
 	bool isContestant() const { return _contestant; }
 	int getTotalSolved() const { return _total_solved; }
-	uint32_t getTotalTime() const { return _total_time; }
+	time_t getTotalTime() const { return _total_time; }
 	const std::vector<int> getSolved() const { return _solved; }
 	int getSolved(unsigned int problem) const {
 		return problem < _solved.size() ? _solved[problem] : 0;
@@ -84,7 +84,7 @@ public:
 	virtual void setUsername(const std::string &username);
 	virtual void setFriendlyname(const std::string &friendlyname);
 	virtual void setContestant(bool contestant);
-	virtual void setTotalTime(uint32_t total_time);
+	virtual void setTotalTime(time_t total_time);
 	virtual void setSolved(const std::vector<int> &solved);
 	virtual void setSolved(unsigned int problem, int attempts);
 };

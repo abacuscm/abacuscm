@@ -26,8 +26,8 @@ protected:
 
 auto_ptr<MessageBlock> ActContesttime::int_process(ClientConnection*cc, const MessageBlock*) {
 	TimerSupportModule *timer = getTimerSupportModule();
-	uint32_t contesttime = timer->contestTime(cc->getGroupId());
-	uint32_t contestremain = timer->contestDuration() - contesttime;
+	time_t contesttime = timer->contestTime(cc->getGroupId());
+	time_t contestremain = timer->contestDuration() - contesttime;
 	bool running = timer->contestStatus(cc->getGroupId()) == TIMER_STATUS_STARTED;
 
 	ostringstream os;

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2005 - 2006, 2010 Kroon Infomation Systems,
+ * Copyright (c) 2005 - 2006, 2010, 2013 Kroon Infomation Systems,
  *  with contributions from various authors.
  *
  * This file is distributed under GPLv2, please see
@@ -100,7 +100,7 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 
 	SubmissionList submissions = db->getSubmissions(uid);
 
-	uint32_t duration = timer->contestDuration();
+	time_t duration = timer->contestDuration();
 	if(!duration) {
 		db->release();
 		pthread_rwlock_unlock(&_lock);
@@ -162,7 +162,7 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 		for(p = t->second.begin(); p != t->second.end(); ++p) {
 			int tries = 0;
 			bool correct = false;
-			uint32_t correct_time = 0;
+			time_t correct_time = 0;
 
 			vector<SubData> &subs = p->second;
 			stable_sort(subs.begin(), subs.end(), SubDataLessThan);

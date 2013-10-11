@@ -204,7 +204,7 @@ protected:
 	void setValue(int col, const string &s);
 	void setValue(int col, uint32_t value);
 	void setValueTime(int col, time_t time);
-	void setValueDuration(int col, uint32_t duration);
+	void setValueDuration(int col, time_t duration);
 
 public:
 	explicit SmartListViewItem(QListView *parent);
@@ -255,9 +255,12 @@ void SmartListViewItem::setValueTime(int col, time_t time) {
 	setValue(col, string(time_buffer));
 }
 
-void SmartListViewItem::setValueDuration(int col, uint32_t duration) {
+void SmartListViewItem::setValueDuration(int col, time_t duration) {
 	char buffer[64];
-	sprintf(buffer, "%02d:%02d:%02d", duration / 3600, duration / 60 % 60, duration % 60);
+	sprintf(buffer, "%02ld:%02d:%02d",
+			(long) (duration / 3600),
+			(int) (duration / 60 % 60),
+			(int) (duration % 60));
 	setValue(col, string(buffer));
 }
 
@@ -436,7 +439,7 @@ private:
 	uint32_t _id;
 	uint32_t _problem_id;
 	int _result;
-	uint32_t _contest_time;
+	time_t _contest_time;
 	time_t _time;
 	string _problem;
 	string _status;
@@ -454,7 +457,7 @@ public:
 	void setId(uint32_t id);
 	void setProblemId(uint32_t problem_id);
 	void setResult(int result);
-	void setContestTime(uint32_t contest_time);
+	void setContestTime(time_t contest_time);
 	void setTime(time_t time);
 	void setProblem(const string &problem);
 	void setStatus(const string &status);
@@ -489,7 +492,7 @@ void SubmissionItem::setResult(int result) {
 	_result = result;
 }
 
-void SubmissionItem::setContestTime(uint32_t contest_time) {
+void SubmissionItem::setContestTime(time_t contest_time) {
 	_contest_time = contest_time;
 	setValueDuration(COLUMN_CONTEST_TIME, contest_time);
 }

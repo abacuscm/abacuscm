@@ -702,7 +702,7 @@ static int do_getlatestsource(ServerConnection &con, int argc, char * const *arg
 	}
 
 	uint32_t submission_id = 0;
-	uint32_t time = 0;
+	time_t time = 0;
 	SubmissionList submissions = con.getSubmissionsForUser(user_id);
 	for (SubmissionList::iterator it = submissions.begin();
 		 it != submissions.end();
@@ -710,10 +710,10 @@ static int do_getlatestsource(ServerConnection &con, int argc, char * const *arg
 	{
 		uint32_t s_problem_id = strtoul((*it)["prob_id"].c_str(), NULL, 10);
 		uint32_t s_submission_id = strtoul((*it)["submission_id"].c_str(), NULL, 10);
-		uint32_t s_time = strtoul((*it)["time"].c_str(), NULL, 10);
+		time_t s_time = strtoul((*it)["time"].c_str(), NULL, 10);
 		int result = atoi((*it)["result"].c_str());
 
-		log(LOG_DEBUG, "Submission %u was for problem %i at time %u with comment %s and result %d", s_submission_id, s_problem_id, s_time, (*it)["comment"].c_str(), atoi((*it)["result"].c_str()));
+		log(LOG_DEBUG, "Submission %u was for problem %i at time %lu with comment %s and result %d", s_submission_id, s_problem_id, (unsigned long) s_time, (*it)["comment"].c_str(), atoi((*it)["result"].c_str()));
 
 		// Check that the submission is for the right problem
 		if (s_problem_id != problem_id)

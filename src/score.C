@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010 Kroon Infomation Systems,
+ * Copyright (c) 2010, 2013 Kroon Infomation Systems,
  *  with contributions from various authors.
  *
  * This file is distributed under GPLv2, please see
@@ -34,7 +34,7 @@ void Score::setContestant(bool contestant) {
 	_contestant = contestant;
 }
 
-void Score::setTotalTime(uint32_t total_time) {
+void Score::setTotalTime(time_t total_time) {
 	_total_time = total_time;
 }
 

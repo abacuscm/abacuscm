@@ -74,7 +74,7 @@ bool SubmissionSupportModule::submissionToMB(DbCon *db, AttributeList &s, Messag
 }
 
 bool SubmissionSupportModule::putSubmission(uint32_t sub_id, uint32_t user_id, uint32_t prob_id,
-			uint32_t time, uint32_t server_id, char* content,
+			time_t time, uint32_t server_id, char* content,
 			uint32_t content_size, std::string language)
 {
 	DbCon *db = DbCon::getInstance();

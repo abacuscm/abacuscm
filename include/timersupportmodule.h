@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ * Copyright (c) 2005 - 2006, 2013 Kroon Infomation Systems,
  *  with contributions from various authors.
  *
  * This file is distributed under GPLv2, please see
@@ -54,10 +54,10 @@ private:
 public:
 	virtual void init();
 
-	uint32_t contestDuration();
-	uint32_t contestBlindsDuration();
-	uint32_t contestTime(uint32_t group_id, time_t real_time = 0);
-	uint32_t contestRemaining(uint32_t group_id, time_t real_time = 0) { return contestDuration() - contestTime(group_id, real_time); }
+	time_t contestDuration();
+	time_t contestBlindsDuration();
+	time_t contestTime(uint32_t group_id, time_t real_time = 0);
+	time_t contestRemaining(uint32_t group_id, time_t real_time = 0) { return contestDuration() - contestTime(group_id, real_time); }
 	int contestStatus(uint32_t group_id, time_t real_time = 0);
 	/* Returns the real time at which the contest timer will expire. It will return
 	 * 0 if it will never expire due to an explicit stop. This includes the case
@@ -72,7 +72,7 @@ public:
 
 	bool scheduleStartStop(uint32_t group_id, time_t time, int action);
 
-	bool isBlinded(uint32_t contest_time);
+	bool isBlinded(time_t contest_time);
 
 	// Call this when the start/stop state for a group may be out-of-date.
 	// This must be called at server startup (for all groups), after

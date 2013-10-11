@@ -40,20 +40,20 @@ TimerSupportModule::~TimerSupportModule()
 	pthread_mutex_destroy(&_group_state_lock);
 }
 
-uint32_t TimerSupportModule::contestBlindsDuration()
+time_t TimerSupportModule::contestBlindsDuration()
 {
 	return blinds;
 }
 
-uint32_t TimerSupportModule::contestDuration()
+time_t TimerSupportModule::contestDuration()
 {
 	return duration;
 }
 
-uint32_t TimerSupportModule::contestTime(uint32_t group_id, time_t real_time)
+time_t TimerSupportModule::contestTime(uint32_t group_id, time_t real_time)
 {
-	uint32_t elapsed_time = 0;
-	uint32_t last_start_time = 0;
+	time_t elapsed_time = 0;
+	time_t last_start_time = 0;
 	int status = TIMER_STATUS_STOPPED;
 
 	if(!real_time)
@@ -76,7 +76,7 @@ uint32_t TimerSupportModule::contestTime(uint32_t group_id, time_t real_time)
 	if(status == TIMER_STATUS_STARTED)
 		elapsed_time += real_time - last_start_time;
 
-	uint32_t duration = contestDuration();
+	time_t duration = contestDuration();
 	if(elapsed_time > duration)
 		elapsed_time = duration;
 
@@ -176,7 +176,7 @@ out:
 	return res;
 }
 
-bool TimerSupportModule::isBlinded(uint32_t contest_time) {
+bool TimerSupportModule::isBlinded(time_t contest_time) {
 	return contest_time > contestDuration() - contestBlindsDuration();
 }
 
