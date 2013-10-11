@@ -3,3 +3,5 @@ deps
 lib
 modules
 obj
+doc
+Makefile.conf
