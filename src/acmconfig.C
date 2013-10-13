@@ -33,9 +33,11 @@ Config::~Config() {
 
 }
 
-bool Config::load(const string& fname) {
+bool Config::load(const string& fname, bool ignore_missing) {
 	ifstream conf_in(fname.c_str());
 	if(!conf_in.good()) {
+		if (ignore_missing)
+			return true;
 		cerr << "Failed to open config file " << fname << ": " << strerror(errno) << "\n";
 		return false;
 	}

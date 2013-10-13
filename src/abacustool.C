@@ -136,7 +136,7 @@ static void usage() {
 		"Usage: abacustool [options] command arguments...\n"
 		"\n"
 		"Common options:\n"
-		"  -c client.conf    Client config [" DEFAULT_CLIENT_CONFIG "]\n"
+		"  -c client.conf    Extra client config file\n"
 		"  -u username       User to connect as [admin]\n"
 		"  -p password       Password\n"
 		"  -P passwordfile   File containing just the password\n"
@@ -213,7 +213,7 @@ static void process_options(int argc, char * const *argv, string &user, string &
 {
 	user = "admin";
 	password = "";
-	string client_config = DEFAULT_CLIENT_CONFIG;
+	string client_config = "";
 	bool have_password = false;
 	int opt;
 	while ((opt = getopt(argc, argv, "+c:u:p:P:s:")) != -1) {
@@ -260,7 +260,13 @@ static void process_options(int argc, char * const *argv, string &user, string &
 	}
 
 	Config &conf = Config::getConfig();
-	conf.load(client_config);
+	conf.load(DEFAULT_CLIENT_CONFIG1, true);
+	conf.load(DEFAULT_CLIENT_CONFIG2, true);
+	if (!client_config.empty()) {
+		if (!conf.load(client_config)) {
+			exit(1);
+		}
+	}
 }
 
 static bool connect(ServerConnection &con, const string &user, const string &password) {
