@@ -2,4 +2,7 @@
 # which modules should be built when invoking make.  By default all are built.
 # You can get a complete list by invocing the following command: awk -F'[ ,]'
 # '/^ifneq .*mods/ { print $3}' < Makefile
-#mods=server marker admintools
+#mods=server marker admintools docs
+
+# Sets which languages are described in the contestant manual
+#doc_profile = cxx;java;python

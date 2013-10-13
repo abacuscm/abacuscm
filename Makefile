@@ -1,6 +1,7 @@
 -include Makefile.conf
 
-mods ?= server marker admintools
+mods ?= server marker admintools docs
+docs_profile ?= cxx;java;python
 TOPDIR ?= .
 
 TARGET_BINS:=
@@ -106,6 +107,24 @@ LIBS_abacustool = ssl crypto pthread rt dl
 
 MODS_batch = batch $(CLIENT_MODS)
 LIBS_batch = ssl crypto pthread rt dl
+endif
+
+ifneq ($(filter docs,$(mods)),)
+TARGET_DOCS = abacuscm contestant
+
+PDF_STYLESHEET_abacuscm = fo
+HTML_STYLESHEET_abacuscm = xhtml
+XML_abacuscm = abacuscm \
+	contestant \
+	administrator-core administrator-webapp \
+	developer-core developer-webapp \
+	licensing
+XSLTPROC_ARGS_abacuscm = --stringparam profile.condition "$(docs_profile)"
+
+PDF_STYLESHEET_contestant = fo
+HTML_STYLESHEET_contestant = xhtml
+XML_contestant = contestant
+XSLTPROC_ARGS_contestant = --stringparam profile.condition "$(docs_profile)"
 endif
 
 include $(TOPDIR)/Makefile.inc

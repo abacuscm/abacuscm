@@ -1,3 +1,2 @@
-The documentation is maintained in DocBook. To build it, change directory to
-doc/docbook and run make, then look for the documentation in doc/html. A PDF
-can be built by running `make pdf'.
+The documentation is maintained in DocBook, in doc/docbook. It can be built
+by running 'make docs' (or 'make htmldoc' or 'make pdfdoc' to build a subset).

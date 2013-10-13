@@ -25,6 +25,10 @@ LDFLAGS += -rdynamic -Llib
 
 OPTIM ?= -O2
 
+XSLTPROC ?= xsltproc
+XMLLINT ?= xmllint
+FOP ?= fop
+
 ifneq ($(EXTRA_MODULE_DIRS),)
 CFLAGS += $(foreach D,$(EXTRA_MODULE_DIRS),-I$(D)/include)
 LDFLAGS += $(foreach D,$(EXTRA_MODULE_DIRS),-L$(D)/lib)
@@ -70,12 +74,16 @@ LIB_TARGET_SO := $(foreach L,$(TARGET_LIBS),lib/lib$(L).so)
 LIB_TARGET_A := $(foreach L,$(TARGET_LIBS),lib/lib$(L).a)
 BIN_TARGET := $(foreach B,$(TARGET_BINS),bin/$(B))
 MOD_TARGET := $(foreach M,$(TARGET_MODS),modules/$(M).so)
+PDF_TARGET := $(foreach D,$(TARGET_DOCS),doc/pdf/$(D).pdf)
+HTML_TARGET := $(foreach D,$(TARGET_DOCS),doc/html/$(D).html)
 
 ALL_TARGET :=
 ALL_TARGET += $(LIB_TARGET_SO)
 ALL_TARGET += $(LIB_TARGET_A)
 ALL_TARGET += $(BIN_TARGET)
 ALL_TARGET += $(MOD_TARGET)
+ALL_TARGET += $(PDF_TARGET)
+ALL_TARGET += $(HTML_TARGET)
 
 BINMODS := $(foreach B,$(TARGET_BINS),$(MODS_$(B)))
 LIBMODS := $(foreach L,$(TARGET_LIBS),$(MODS_$(L)))
@@ -87,6 +95,11 @@ $(LIBMODS:%=obj/%.o) $(MODMODS:%=obj/%.o): CFLAGS += -fpic
 .PHONY: all
 all: $(ALL_TARGET)
 	@echo "Everything has been brought up to date"
+
+.PHONY: docs pdfdoc htmldoc
+pdfdoc: $(PDF_TARGET)
+htmldoc: $(HTML_TARGET)
+docs: htmldoc pdfdoc
 
 # Delete targets if/when updating them fails.
 .DELETE_ON_ERROR:
@@ -167,6 +180,25 @@ deps/%.d : src/%.C Makefile | deps/.d
 	$(SHOWCL)$(CC) $(CFLAGS) -o $@ -MG -MM $<
 	$(SHOWCL)sed -e 's,$(notdir $*.o):,$@ obj/$*.o:,' -i $@
 
+doc/pdf/%.pdf: doc/tmp/%.fo | doc/pdf/.d
+	@$(ECHO_E) "\t[PDF] $@"
+	$(SHOWCL)$(FOP) -q -c doc/docbook/fop.xconf -fo $< -pdf $@
+
+doc/tmp/%.fo: doc/tmp/%.xml
+	@$(ECHO_E) "\t[FO] $@"
+	$(SHOWCL)$(XMLLINT) --postvalid --noout $<
+	$(SHOWCL)$(XSLTPROC) --xinclude --path doc/docbook -o $@ doc/docbook/$(PDF_STYLESHEET_$(notdir $(basename $@))).xsl $<
+
+doc/tmp/%.xml: | doc/tmp/.d
+	@$(ECHO_E) "\t[XSLT] $@"
+	$(SHOWCL)$(XMLLINT) --xinclude --postvalid --noout $<
+	$(SHOWCL)$(XSLTPROC) --xinclude --path doc/docbook $(XSLTPROC_ARGS_$(notdir $(basename $@))) -o $@ doc/docbook/profile.xsl $<
+
+doc/html/%.html: doc/tmp/%.xml
+	@$(ECHO_E) "\t[HTML] $@"
+	$(SHOWCL)$(XMLLINT) --postvalid --noout $<
+	$(SHOWCL)$(XSLTPROC) --xinclude --path doc/docbook -o $@ doc/docbook/$(HTML_STYLESHEET_$(notdir $(basename $@))).xsl $<
+
 .PRECIOUS: %/.d
 %/.d :
 	@$(ECHO_E) "\t[DIR] $(dir $@)"
@@ -188,6 +220,8 @@ deps/Makefile : Makefile | deps/.d
 	$(SHOWCL)$(foreach B,$(TARGET_BINS),$(if $(filter $(LIBS_$(B)),$(TARGET_LIBS)),echo "bin/$(B) : $(foreach L,$(filter $(LIBS_$(B)),$(TARGET_LIBS)),lib/lib$(L).so lib/lib$(L).a)" >> $@;,))
 	$(SHOWCL)$(foreach L,$(TARGET_LIBS),$(if $(filter $(LIBS_$(L)),$(TARGET_LIBS)),echo "lib/lib$(L).so : $(foreach L,$(filter $(LIBS_$(L)),$(TARGET_LIBS)),lib/lib$(L).so)" >> $@;,))
 	$(SHOWCL)$(foreach M,$(ALLMODS),echo "obj/$(M).o : | $(dir obj/$(M)).d" >>$@;)
+	$(SHOWCL)$(foreach D,$(TARGET_DOCS),echo "doc/tmp/$(D).fo : $(patsubst %,doc/docbook/%.xsl,$(PDF_STYLESHEET_$(D)))" >> $@;)
+	$(SHOWCL)$(foreach D,$(TARGET_DOCS),echo "doc/tmp/$(D).xml : $(patsubst %,doc/docbook/%.xml,$(XML_$(D))) $(patsubst %,doc/docbook/%.xsl,$(STYLESHEET_$(D)))" >> $@;)
 
 depfiles += $(patsubst %,deps/%.d,$(ALLMODS))
 
@@ -199,6 +233,8 @@ clean :
 	$(SHOWCL)rm -rf deps
 	@$(ECHO_E) "\t[RM] obj/"
 	$(SHOWCL)rm -rf obj
+	@$(ECHO_E) "\t[RM] doc/tmp"
+	$(SHOWCL)rm -rf doc/tmp
 
 .PHONY: distclean
 distclean : clean
@@ -210,6 +246,14 @@ endif
 	$(SHOWCL)rm -rf lib
 	@$(ECHO_E) "\t[RM] modules/"
 	$(SHOWCL)rm -rf modules
+ifneq ($(PDF_TARGET),)
+	@$(ECHO_E) "\t[RM] $(PDF_TARGET)"
+	$(SHOWCL)rm -f $(PDF_TARGET)
+endif
+ifneq ($(HTML_TARGET),)
+	@$(ECHO_E) "\t[RM] $(HTML_TARGET)"
+	$(SHOWCL)rm -f $(HTML_TARGET)
+endif
 
 .PHONY: install
 install : all
