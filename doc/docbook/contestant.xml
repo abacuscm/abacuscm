@@ -33,36 +33,21 @@
     </section>
     <section id="contestant.login">
         <title>Logging into Abacus</title>
-        <para condition="qt">
-            The command to start <application>Abacus</application> will depend on your local
-            installation. In most cases you should just be able to type
-            <userinput>abacus</userinput> in a terminal window.
-        </para>
-        <para condition="qt">
-            After starting <application>Abacus</application>, you should select
-            <menuchoice><guimenu>Abacus</guimenu><guimenuitem>Connect</guimenuitem></menuchoice>.
-            This will open a dialog box. The server and port should have
-            already been set for you. Fill in the username and password that
-            you have been given. If you do this correctly, you should receive
-            the message <computeroutput>You are now connected to the
-                server.</computeroutput>
-        </para>
-        <para condition="web">
+        <para>
             <application>Abacus</application> is accessed through the
             <application>Firefox</application> web browser.
             Depending on your local installation, there may be a direct link
             on the desktop. Other browsers may be available but are not
             supported.
         </para>
-        <para condition="web">
+        <para>
             Once the page has loaded, fill in the username and password that
             you have been given. If you do this correctly, you will be taken
             to the Manual tab.
         </para>
         <para>
             When the contest is running, you will see a clock in the
-            <phrase condition="qt">bottom-right corner</phrase>
-            <phrase condition="web">top-left corner</phrase>
+            top-left corner
             counting down the remaining time.
         </para>
     </section>
@@ -79,8 +64,7 @@
             When a judge responds to your query, the response will
             be available on the
             <guilabel>Clarifications</guilabel> tab (you can
-            <phrase condition="qt">double-click</phrase>
-            <phrase condition="web">click</phrase>
+            click
             on clarification requests and clarifications to see the full
             text).
         </para>
@@ -216,8 +200,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                         C++ in particular, because the marker might not be
                         using the same version of the compiler.</phrase>
                         To assist you, you can
-                        <phrase condition="qt">double-click</phrase>
-                        <phrase condition="web">click</phrase>
+                        click
                         on the submission to get the compiler output.
                         <phrase condition="cxx">In many cases you just need to add a
                             <code language="c++">#include</code> statement.</phrase>
@@ -306,12 +289,8 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
             If you wish to ask a question about a particular submission, you
             should submit a clarification request and mention the
             <guilabel>Submission ID</guilabel> in your request. A quick way to
-            do this is to <phrase condition="qt">use the <guibutton>Request
-                    Clarification</guibutton> button on the
-                <guilabel>Submissions</guilabel> tab &mdash; if you have selected a
-                submission from the list box, then clicking on this button</phrase>
-            <phrase condition="web">click the <guilabel>Request
-                    Clarification</guilabel> button next to the submission. This</phrase>
+            do this is to click the <guilabel>Request Clarification</guilabel>
+            button next to the submission. This
             will open a clarification request window with the correct problem
             selected, and the <guilabel>Submission ID</guilabel> entered in the
             request text. Even if you include a submission ID, you still need to
@@ -332,8 +311,6 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
         <para>
             When a hidden tab has new information (such as a reply to a
             clarification, or the result of a submission),
-            <phrase condition="qt">the flag next to</phrase>
-            <phrase condition="web"></phrase>
             the tab title will light up red.  Click on the tab to see the update.
         </para>
     </section>
