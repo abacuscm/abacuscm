@@ -560,7 +560,10 @@ prob_id:<replaceable>id</replaceable>    <co id="submit.prob_id.co" linkends="su
 lang:<replaceable>language</replaceable> <co id="submit.lang.co" linkends="submit.lang"/>
 content-length:<replaceable>content-length</replaceable>
 
-<replaceable>binary data</replaceable></synopsis>
+<replaceable>binary data</replaceable>
+
+ok
+submission_id:<replaceable>id</replaceable></synopsis>
                 <calloutlist>
                     <callout id="submit.prob_id" arearefs="submit.prob_id.co">
                         <para>
