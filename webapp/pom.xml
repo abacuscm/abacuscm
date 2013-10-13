@@ -133,8 +133,7 @@
                         <validationSet>
                             <dir>src/main/xml</dir>
                             <includes>
-                                <include>index*.html</include>
-                                <include>standings.html</include>
+                                <include>*.html</include>
                             </includes>
                             <publicId>-//W3C//DTD XHTML 1.0 Strict//EN</publicId>
                         </validationSet>
@@ -153,6 +152,9 @@
                                     <value>html</value>
                                 </outputProperty>
                             </outputProperties>
+                            <otherDepends>
+                                <otherDepend>src/main/xml/body.html</otherDepend>
+                            </otherDepends>
                         </transformationSet>
                     </transformationSets>
                     <catalogs>
