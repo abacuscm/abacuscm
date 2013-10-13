@@ -7,11 +7,10 @@
         <para>
             For partially historical reasons, AbacusCM consists of two largely
             independent parts. Firstly, there is a core, which is written in
-            C++ and consists of the server, the marker code, a Qt client, and
-            a selection of command-line tools. Secondly, there is a web
-            application which contestants can use to interface with the
-            server, avoiding the need for the Qt client to be distributed to
-            contestants.
+            C++ and consists of the server, the marker code, and
+            a few command-line client tools. Secondly, there is a web
+            application which contestants and judges use to interface with the
+            server.
         </para>
         <para>
             This chapter discusses only the core part. Administrators wishing
@@ -35,12 +34,6 @@
                 </listitem>
                 <listitem>
                     <para>
-                        <application>Qt</application> 3 (only required for the
-                        GUI client).
-                    </para>
-                </listitem>
-                <listitem>
-                    <para>
                         <application>OpenSSL</application> (any version should
                         work).
                     </para>
@@ -49,7 +42,8 @@
                     <para>
                         <application>MySQL</application> 4.1 or later (only
                         required for the server). In theory any RDB could
-                        work, but currently only MySQL is supported.
+                        be made to work, but currently only MySQL is
+                        supported.
                     </para>
                 </listitem>
                 <listitem>
@@ -120,7 +114,7 @@
         <para>
             To create a key for a server you should use the
             <filename>addserver.sh</filename> script (in <filename
-                class="directory">certs</filename>. This script takes a single
+                class="directory">certs</filename>). This script takes a single
             parameter, the name of the certificate (usually a short name for
             the server) e.g.,
         </para>
@@ -145,19 +139,22 @@
         </para>
     </section>
     <section id="administrator-core.client">
-        <title>Configuring the client</title>
+        <title>Configuring the client tools</title>
         <para>
-            Running the abacuscm client requires three things:
+            A number of administrator actions are performed through a
+            command-line tool, <command>abacustool</command>, rather than the
+            web interface. This makes it easier to script contest setup.
+            Running the client requires three things:
         </para>
         <itemizedlist>
             <listitem>
                 <para>
-                    The binary, compiled to <filename>bin/abacus</filename>.
+                    The binary, compiled to <filename>bin/abacustool</filename>.
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    A certificate used to sign the servers. Contestant
+                    A certificate used to sign the servers. Contest
                     administrators should refer to <xref
                         linkend="administrator-core.certificates"/> for information
                     about generating certificates. Anyone else configuring a
@@ -178,11 +175,11 @@
                         <para><filename>/etc/abacus/client.conf</filename></para>
                     </listitem>
                     <listitem>
-                        <para><filename>~/.abacus</filename></para>
-                    </listitem>
-                    <listitem>
                         <para><filename>abacus.conf</filename> in the current
                             directory</para>
+                    </listitem>
+                    <listitem>
+                        <para>A location specified on the command-line, if any.</para>
                     </listitem>
                 </itemizedlist>
                 <para>
@@ -193,7 +190,7 @@
                     <listitem>
                         <para>
                             Change <parameter>address</parameter> to the
-                            hostname of the default abacuscm server.
+                            hostname of the AbacusCM server.
                         </para>
                     </listitem>
                     <listitem>
@@ -202,8 +199,8 @@
                             to the certificate. Using an absolute path is more
                             robust, as a relative path will be interpreted
                             relative to the working directory from which
-                            <command>abacus</command> was started, rather than
-                            the configuration file.
+                            <command>abacustool</command> was started, rather
+                            than the configuration file.
                         </para>
                     </listitem>
                 </itemizedlist>
@@ -211,7 +208,7 @@
         </itemizedlist>
         <para>
             The script <filename>misc/installclient.sh</filename> will install
-            <filename>bin/abacus</filename> to <filename
+            <filename>bin/abacustool</filename> to <filename
                 class="directory">/usr/local/bin</filename> and the sample
             configuration file to
             <filename>/etc/abacus/client.conf</filename>. You can run this as
@@ -503,8 +500,7 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
             saved, and will be visible in Abacus as such. The evaluator must
             output its judgment to standard output in the form
 
-            <screen><computeroutput>STATUS <replaceable>CORRECT</replaceable> <replaceable>comment or reason</replaceable>
-            </computeroutput></screen>
+            <screen><computeroutput>STATUS <replaceable>CORRECT</replaceable> <replaceable>comment or reason</replaceable></computeroutput></screen>
             </para>
             <para>Instead of <computeroutput>CORRECT</computeroutput>, the
             status can be any of the following:
@@ -522,7 +518,7 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
                 <row><entry>COMPILE_FAILED</entry> <entry>Compilation failed</entry></row>
                 <row><entry>JUDGE</entry> <entry>Deferred to judge</entry></row>
                 <row><entry>FORMAT_ERROR</entry> <entry>Format error</entry></row>
-                <row><entry>OTHER</entry> <entry>Other - contact a judge</entry></row>
+                <row><entry>OTHER</entry> <entry>Other &mdash; contact a judge</entry></row>
                 </tbody>
                 </tgroup>
             </table>
@@ -553,7 +549,7 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
             The marker will need an Abacus account. You can create one using
             the <command>adduser</command> subcommand:
         </para>
-        <screen><userinput>bin/abacustool -s <replaceable>server.conf</replaceable> \
+        <screen><userinput>bin/abacustool -s <replaceable>server.conf</replaceable> adduser \
     <replaceable>marker1</replaceable> "<replaceable>Marker 1</replaceable>" <replaceable>password</replaceable> marker</userinput></screen>
         <para>
             There are several configuration file options you will need to
@@ -707,7 +703,8 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
                 <para>
                     Run
                 </para>
-                <screen><command>bin/abacustool -u <replaceable>user</replaceable> -p <replaceable>password</replaceable> standings <replaceable>/www-data</replaceable>/standings.txt</command></screen>
+                <screen><command>bin/abacustool -u <replaceable>user</replaceable> -p <replaceable>password</replaceable> standings \
+    <replaceable>/www-data</replaceable>/standings.txt</command></screen>
                 <para>
                     where <replaceable>/www-data</replaceable> is the
                     directory where the files were placed in <xref
@@ -727,7 +724,7 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
             <filename>standings.pl</filename> or
             <filename>standings.html</filename>.
             The former requires CGI, but has the advantage that it will work
-            even without Javascript enabled (but will not auto-update or have
+            even without Javascript enabled (but in this case will not auto-update or have
             any nice animations). If you use <filename>standings.pl</filename>,
             then <filename>standings.html</filename> is needed only to
             provide a template.
@@ -758,7 +755,7 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
             </cmdsynopsis>
             <para>
                 The <replaceable>configfile</replaceable> is a client config
-                file, as would be used by the abacus client.
+                file, as would be used by the <command>abacustool</command> client.
                 The <replaceable>batchfile</replaceable> contains messages to
                 send to the server. If omitted, standard input is used
                 instead.
