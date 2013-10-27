@@ -1,7 +1,5 @@
 <?xml version="1.0"?>
 <fop version="1.0">
-    <base>doc/docbook</base>
-
     <source-resolution>72</source-resolution>
     <target-resolution>72</target-resolution>
 
