@@ -90,6 +90,7 @@ Standing::Standing(const list<string> &row) : _raw(row.begin(), row.end()) {
 	setId(strtoul(_raw[STANDING_RAW_ID].c_str(), NULL, 10));
 	setUsername(_raw[STANDING_RAW_USERNAME]);
 	setFriendlyname(_raw[STANDING_RAW_FRIENDLYNAME]);
+	setGroup(_raw[STANDING_RAW_GROUP]);
 	setContestant(strtoul(_raw[STANDING_RAW_CONTESTANT].c_str(), NULL, 10) != 0);
 	setTotalTime(strtoull(_raw[STANDING_RAW_TOTAL_TIME].c_str(), NULL, 10));
 	for (size_t i = STANDING_RAW_SOLVED; i < _raw.size(); i++)
@@ -864,8 +865,8 @@ static int queue_balloons(const Standings &old, const Standings &cur, const char
 	int ans = 0;
 	time_t time = ::time(NULL);
 	for (StandingMap::const_iterator i = cur.scores.begin(); i != cur.scores.end(); ++i) {
-		// TODO: use group to filter out contestants we don't care about
-		(void) group;
+		if (group != NULL && i->second.getGroup() != group)
+			continue; // filtered out
 
 		while (j != old.scores.end() && j->first < i->first)
 			++j;

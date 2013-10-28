@@ -259,6 +259,7 @@ bool StandingsSupportModule::getStandingsInternal(uint32_t uid, bool final, bool
 	mb[cell_name(0, STANDING_RAW_ID)] = "ID";
 	mb[cell_name(0, STANDING_RAW_USERNAME)] = "Team";
 	mb[cell_name(0, STANDING_RAW_FRIENDLYNAME)] = "Name";
+	mb[cell_name(0, STANDING_RAW_GROUP)] = "Group";
 	mb[cell_name(0, STANDING_RAW_CONTESTANT)] = "Contestant";
 	mb[cell_name(0, STANDING_RAW_TOTAL_SOLVED)] = "Solved";
 	mb[cell_name(0, STANDING_RAW_TOTAL_TIME)] = "Time";
@@ -310,6 +311,7 @@ bool StandingsSupportModule::getStandingsInternal(uint32_t uid, bool final, bool
 		mb[cell_name(r, STANDING_RAW_ID)] = val.str();
 		mb[cell_name(r, STANDING_RAW_USERNAME)] = usm->username(i->first);
 		mb[cell_name(r, STANDING_RAW_FRIENDLYNAME)] = usm->friendlyname(i->first);
+		mb[cell_name(r, STANDING_RAW_GROUP)] = usm->groupname(usm->user_group(i->first));
 		mb[cell_name(r, STANDING_RAW_CONTESTANT)] = (i->second.in_standings ? "1" : "0");
 
 		val.str("");

@@ -24,6 +24,7 @@ private:
 	uint32_t _id;
 	std::string _username;
 	std::string _friendlyname;
+	std::string _group;
 	bool _contestant; /* Whether this is an official contestant */
 	int _total_solved;
 	time_t _total_time;
@@ -71,6 +72,7 @@ public:
 	uint32_t getId() const { return _id; }
 	const std::string &getUsername() const { return _username; }
 	const std::string &getFriendlyname() const { return _friendlyname; }
+	const std::string &getGroup() const { return _group; }
 	bool isContestant() const { return _contestant; }
 	int getTotalSolved() const { return _total_solved; }
 	time_t getTotalTime() const { return _total_time; }
@@ -83,6 +85,7 @@ public:
 	virtual void setId(uint32_t id);
 	virtual void setUsername(const std::string &username);
 	virtual void setFriendlyname(const std::string &friendlyname);
+	virtual void setGroup(const std::string &group);
 	virtual void setContestant(bool contestant);
 	virtual void setTotalTime(time_t total_time);
 	virtual void setSolved(const std::vector<int> &solved);

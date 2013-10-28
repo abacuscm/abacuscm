@@ -30,6 +30,10 @@ void Score::setFriendlyname(const string &friendlyname) {
 	_friendlyname = friendlyname;
 }
 
+void Score::setGroup(const string &group) {
+	_group = group;
+}
+
 void Score::setContestant(bool contestant) {
 	_contestant = contestant;
 }
