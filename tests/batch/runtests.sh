@@ -265,16 +265,17 @@ getsubmissions
 
 standings
 ?ok
-?ncols:8
+?ncols:9
 ?nrows:1
 ?row_0_0:ID
 ?row_0_1:Team
 ?row_0_2:Name
-?row_0_3:Contestant
-?row_0_4:Solved
-?row_0_5:Time
-?row_0_6:test
-?row_0_7:test2
+?row_0_3:Group
+?row_0_4:Contestant
+?row_0_5:Solved
+?row_0_6:Time
+?row_0_7:test
+?row_0_8:test2
 
 clarificationrequest
 prob_id:1
@@ -344,11 +345,6 @@ contesttime
 ?time:*
 
 subscribetime
-?ok
-
-eventmap
-event:balloon
-action:subscribe
 ?ok
 
 eventmap
@@ -445,16 +441,17 @@ whatami
 
 standings
 ?ok
-?ncols:8
+?ncols:9
 ?nrows:1
 ?row_0_0:ID
 ?row_0_1:Team
 ?row_0_2:Name
-?row_0_3:Contestant
-?row_0_4:Solved
-?row_0_5:Time
-?row_0_6:test
-?row_0_7:test2
+?row_0_3:Group
+?row_0_4:Contestant
+?row_0_5:Solved
+?row_0_6:Time
+?row_0_7:test
+?row_0_8:test2
 
 # Submit assorted solutions
 # Use gentests.py to regenerate
@@ -463,162 +460,189 @@ prob_id:1
 lang:Java
 <tests/solutions/bad_class.java
 ?ok
+?submission_id:1
 
 submit
 prob_id:1
 lang:Java
 <tests/solutions/bad_class2.java
 ?ok
+?submission_id:17
 
 submit
 prob_id:1
 lang:Java
 <tests/solutions/bad_class3.java
 ?ok
+?submission_id:33
 
 submit
 prob_id:1
 lang:C++
 <tests/solutions/compile_fail.cpp
 ?ok
+?submission_id:49
 
 submit
 prob_id:1
 lang:Java
 <tests/solutions/compile_fail.java
 ?ok
+?submission_id:65
 
 submit
 prob_id:1
 lang:C++
 <tests/solutions/do_nothing.cpp
 ?ok
+?submission_id:81
 
 submit
 prob_id:1
 lang:Python
 <tests/solutions/do_nothing.py
 ?ok
+?submission_id:97
 
 submit
 prob_id:1
 lang:C++
 <tests/solutions/do_nothing_unicode.cpp
 ?ok
+?submission_id:113
 
 submit
 prob_id:1
 lang:C++
 <tests/solutions/empty.cpp
 ?ok
+?submission_id:129
 
 submit
 prob_id:1
 lang:Java
 <tests/solutions/empty.java
 ?ok
+?submission_id:145
 
 submit
 prob_id:1
 lang:Python
 <tests/solutions/empty.py
 ?ok
+?submission_id:161
 
 submit
 prob_id:1
 lang:C++
 <tests/solutions/exception.cpp
 ?ok
+?submission_id:177
 
 submit
 prob_id:1
 lang:Java
 <tests/solutions/exception.java
 ?ok
+?submission_id:193
 
 submit
 prob_id:1
 lang:Python
 <tests/solutions/exception.py
 ?ok
+?submission_id:209
 
 submit
 prob_id:1
 lang:C++
 <tests/solutions/infinite_stream.cpp
 ?ok
+?submission_id:225
 
 submit
 prob_id:1
 lang:Python
 <tests/solutions/infinite_stream.py
 ?ok
+?submission_id:241
 
 submit
 prob_id:1
 lang:Java
 <tests/solutions/package.java
 ?ok
+?submission_id:257
 
 submit
 prob_id:1
 lang:Java
 <tests/solutions/pathclass.java
 ?ok
+?submission_id:273
 
 submit
 prob_id:1
 lang:C++
 <tests/solutions/sleep_forever.cpp
 ?ok
+?submission_id:289
 
 submit
 prob_id:1
 lang:Python
 <tests/solutions/sleep_forever.py
 ?ok
+?submission_id:305
 
 submit
 prob_id:1
 lang:C++
 <tests/solutions/spin_forever.cpp
 ?ok
+?submission_id:321
 
 submit
 prob_id:1
 lang:Java
 <tests/solutions/spin_forever.java
 ?ok
+?submission_id:337
 
 submit
 prob_id:1
 lang:Python
 <tests/solutions/spin_forever.py
 ?ok
+?submission_id:353
 
 submit
 prob_id:1
 lang:C++
 <tests/solutions/wrong_retcode.cpp
 ?ok
+?submission_id:369
 
 submit
 prob_id:1
 lang:Python
 <tests/solutions/wrong_retcode.py
 ?ok
+?submission_id:385
 
 submit
 prob_id:1
 lang:Python
 <tests/solutions/exact.py
 ?ok
+?submission_id:401
 
 submit
 prob_id:1
 lang:Python
 <tests/solutions/whitespace.py
 ?ok
+?submission_id:417
 
 ### END OF GENERATED TESTS
 
@@ -916,24 +940,26 @@ getsubmissions
 # TEST: Time penalties must not apply for failed compilation
 standings
 ?ok
-?ncols:8
+?ncols:9
 ?nrows:2
 ?row_0_0:ID
 ?row_0_1:Team
 ?row_0_2:Name
-?row_0_3:Contestant
-?row_0_4:Solved
-?row_0_5:Time
-?row_0_6:test
-?row_0_7:test2
+?row_0_3:Group
+?row_0_4:Contestant
+?row_0_5:Solved
+?row_0_6:Time
+?row_0_7:test
+?row_0_8:test2
 ?row_1_0:17
 ?row_1_1:test1
 ?row_1_2:<b>Unicode</b>: ēßõ±°½—£
-?row_1_3:1
+?row_1_3:default
 ?row_1_4:1
-?row_1_5:*
-?row_1_6:13
-?row_1_7:0
+?row_1_5:1
+?row_1_6:*
+?row_1_7:13
+?row_1_8:0
 
 # TEST: Judges must be able to mark a solution as wrong
 mark

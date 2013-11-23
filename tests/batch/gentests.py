@@ -57,6 +57,7 @@ files = [
         ('whitespace.py', CORRECT)
         ]
 
+submit_id = 1
 for (filename, state) in files:
     (base, ext) = os.path.splitext(filename)
     print("submit")
@@ -64,7 +65,9 @@ for (filename, state) in files:
     print("lang:" + exts[ext])
     print("<tests/solutions/" + filename)
     print("?ok");
+    print("?submission_id:{}".format(submit_id))
     print("");
+    submit_id += 16
 
 print("getsubmissions")
 print("?ok");
