@@ -260,6 +260,44 @@ getproblems
 ?code1:test2
 ?name1:<b>Unicode</b> £etterß
 
+# TEST: replacing a problem input and output must work
+setprobattrs
+prob_id:17
+prob_type:tcprob
+time_limit:1
+ignore_whitespace:Yes
+shortname:test2
+longname:<b>Unicode</b> £etterß
+multi_submit:No
+testcase.input<tests/batch/data2.in
+testcase.output<tests/batch/data2.out
+prob_dependencies:1
+?ok
+
+getprobattrs
+prob_id:17
+?ok
+?ignore_whitespace:Yes
+?longname:<b>Unicode</b> £etterß
+?multi_submit:No
+?prob_type:tcprob
+?shortname:test2
+?testcase.input:data2.in
+?testcase.output:data2.out
+?time_limit:1
+
+getprobfile
+prob_id:17
+file:testcase.input
+?ok
+?<tests/batch/data2.in
+
+getprobfile
+prob_id:17
+file:testcase.output
+?ok
+?<tests/batch/data2.out
+
 getsubmissions
 ?ok
 
