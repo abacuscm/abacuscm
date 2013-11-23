@@ -148,6 +148,7 @@ static void usage() {
 		"   adduser <username> <name> <password> <type> [<group>]\n"
 		"   addgroup <group>\n"
 		"   addproblem <type> <attrib1> <value1> <attrib2> <value2>...\n"
+		"   replaceproblem <id> <type> <attrib1> <value1>...\n"
 		"   addtime start|stop <time> [<group>]\n"
 		"   setpass <user> <newpassword>\n"
 		"   getsource <submission_id>\n"
@@ -543,13 +544,12 @@ static map<string, ProblemAttribute> problem_parse_desc(const string &desc) {
 	}
 }
 
-static int do_addproblem(ServerConnection &con, int argc, char * const *argv) {
-	if (argc < 4 || argc % 2 != 0) {
-		cerr << "Usage: addproblem <type> <attrib1> <value1> <attrib2> <value2>...\n";
-		return 2;
-	}
-
-	string prob_type = argv[1];
+/* Code shared between addproblem and replaceproblem. The argc and argv start
+ * from the problem type. The problem ID is zero to add a new problem,
+ * otherwise a problem to update.
+ */
+static int do_add_or_replace_problem(ServerConnection &con, int prob_id, int argc, char * const *argv) {
+	string prob_type = argv[0];
 	vector<string> types = con.getProblemTypes();
 	if (find(types.begin(), types.end(), prob_type) == types.end()) {
 		cerr << "Invalid problem type `" << prob_type << "'. Valid types are:\n";
@@ -573,7 +573,7 @@ static int do_addproblem(ServerConnection &con, int argc, char * const *argv) {
 	}
 
 	/* Process the given arguments */
-	for (int i = 2; i + 1 < argc; i += 2) {
+	for (int i = 1; i + 1 < argc; i += 2) {
 		if (string(argv[i]) == "dependencies") {
 			if (!dependencies.empty()) {
 				cerr << "Dependencies listed twice\n";
@@ -646,10 +646,33 @@ static int do_addproblem(ServerConnection &con, int argc, char * const *argv) {
 	}
 
 	// We rely on the server to check that everything required is set
-	if (!con.setProblemAttributes(0, prob_type, normal, files, dependencies))
+	if (!con.setProblemAttributes(prob_id, prob_type, normal, files, dependencies))
 		return 1;
 
 	return 0;
+}
+
+static int do_addproblem(ServerConnection &con, int argc, char * const *argv) {
+	if (argc < 4 || argc % 2 != 0) {
+		cerr << "Usage: addproblem <type> <attrib1> <value1> <attrib2> <value2>...\n";
+		return 2;
+	}
+
+	return do_add_or_replace_problem(con, 0, argc - 1, argv + 1);
+}
+
+static int do_replaceproblem(ServerConnection &con, int argc, char * const *argv) {
+	if (argc < 5 || argc % 2 != 1) {
+		cerr << "Usage: replaceproblem <id> <type> <attrib1> <value1>...\n";
+		return 2;
+	}
+
+	uint32_t prob_id;
+	if (!parse_uint32(argv[1], &prob_id) || prob_id == 0) {
+		cerr << "Invalid problem id: " << argv[1] << '\n';
+		return 2;
+	}
+	return do_add_or_replace_problem(con, prob_id, argc - 2, argv + 2);
 }
 
 static int do_addtime(ServerConnection &con, int argc, char * const *argv) {
@@ -1047,6 +1070,8 @@ static int process(ServerConnection &con, int argc, char * const *argv) {
 		return do_addgroup(con, argc, argv);
 	else if (argv[0] == string("addproblem"))
 		return do_addproblem(con, argc, argv);
+	else if (argv[0] == string("replaceproblem"))
+		return do_replaceproblem(con, argc, argv);
 	else if (argv[0] == string("addtime"))
 		return do_addtime(con, argc, argv);
 	else if (argv[0] == string("setpass"))
