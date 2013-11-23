@@ -148,7 +148,7 @@ static void usage() {
 		"   adduser <username> <name> <password> <type> [<group>]\n"
 		"   addgroup <group>\n"
 		"   addproblem <type> <attrib1> <value1> <attrib2> <value2>...\n"
-		"   replaceproblem <id> <type> <attrib1> <value1>...\n"
+		"   replaceproblem <name> <type> <attrib1> <value1>...\n"
 		"   addtime start|stop <time> [<group>]\n"
 		"   setpass <user> <newpassword>\n"
 		"   getsource <submission_id>\n"
@@ -663,15 +663,23 @@ static int do_addproblem(ServerConnection &con, int argc, char * const *argv) {
 
 static int do_replaceproblem(ServerConnection &con, int argc, char * const *argv) {
 	if (argc < 5 || argc % 2 != 1) {
-		cerr << "Usage: replaceproblem <id> <type> <attrib1> <value1>...\n";
+		cerr << "Usage: replaceproblem <name> <type> <attrib1> <value1>...\n";
 		return 2;
 	}
 
-	uint32_t prob_id;
-	if (!parse_uint32(argv[1], &prob_id) || prob_id == 0) {
-		cerr << "Invalid problem id: " << argv[1] << '\n';
+	vector<ProblemInfo> probs = con.getProblems();
+	uint32_t prob_id = 0;
+	for (std::size_t i = 0; i < probs.size(); i++)
+		if (probs[i].code == argv[1]) {
+			prob_id = probs[i].id;
+			break;
+		}
+
+	if (prob_id == 0) {
+		cerr << "Unknown problem `" << argv[1] << "'\n";
 		return 2;
 	}
+
 	return do_add_or_replace_problem(con, prob_id, argc - 2, argv + 2);
 }
 
