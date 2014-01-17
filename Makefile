@@ -1,40 +1,13 @@
 -include Makefile.conf
 
-mods ?= client server marker admintools
-builddocs ?= no
+mods ?= server marker admintools docs
+docs_profile ?= cxx;java;python
 TOPDIR ?= .
 
 TARGET_BINS:=
 TARGET_LIBS :=
 
 CLIENT_MODS = serverconnection messageblock logger sigsegv acmconfig threadssl misc score permissions
-
-ifneq ($(filter client,$(mods)),)
-TARGET_BINS += abacus
-MODS_abacus = abacus $(CLIENT_MODS) \
-	guievent \
-	ui_mainwindowbase moc_ui_mainwindowbase mainwindow \
-	ui_adduser moc_ui_adduser \
-	ui_addgroup moc_ui_addgroup \
-	ui_compileroutputdialog moc_ui_compileroutputdialog \
-	ui_changepassworddialog moc_ui_changepassworddialog \
-	ui_clarificationrequest moc_ui_clarificationrequest \
-	ui_problemsubscription moc_ui_problemsubscription \
-	ui_startstopdialog moc_ui_startstopdialog \
-	ui_problemconfigbase moc_ui_problemconfigbase problemconfig \
-	ui_aboutdialog moc_ui_aboutdialog \
-	ui_judgedecisiondialogbase moc_ui_judgedecisiondialogbase \
-	ui_submit moc_ui_submit \
-	ui_logindialog moc_ui_logindialog \
-	ui_viewclarificationrequest moc_ui_viewclarificationrequest viewclarificationrequestsub \
-	ui_clarificationreply moc_ui_clarificationreply \
-	ui_viewclarificationreply moc_ui_viewclarificationreply
-
-LIBS_abacus = ssl crypto pthread rt dl
-NEED_QT3=1
-bin/abacus : LDFLAGS += $(QT_LDFLAGS)
-bin/abacus : CFLAGS += $(QT_CFLAGS)
-endif
 
 ifneq ($(filter server,$(mods)),)
 TARGET_BINS += abacusd
@@ -136,7 +109,22 @@ MODS_batch = batch $(CLIENT_MODS)
 LIBS_batch = ssl crypto pthread rt dl
 endif
 
-ifeq ($(builddocs),yes)
-TARGET_DOCS=usermanual
+ifneq ($(filter docs,$(mods)),)
+TARGET_DOCS = abacuscm contestant
+
+PDF_STYLESHEET_abacuscm = fo
+HTML_STYLESHEET_abacuscm = xhtml
+XML_abacuscm = abacuscm \
+	contestant \
+	administrator-core administrator-webapp \
+	developer-core developer-webapp \
+	licensing
+XSLTPROC_ARGS_abacuscm = --stringparam profile.condition "$(docs_profile)"
+
+PDF_STYLESHEET_contestant = fo
+HTML_STYLESHEET_contestant = xhtml
+XML_contestant = contestant
+XSLTPROC_ARGS_contestant = --stringparam profile.condition "$(docs_profile)"
 endif
+
 include $(TOPDIR)/Makefile.inc

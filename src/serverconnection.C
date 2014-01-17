@@ -536,7 +536,7 @@ string ServerConnection::getProblemDescription(string type) {
 
 bool ServerConnection::setProblemAttributes(uint32_t prob_id, std::string type,
                        const AttributeMap& normal, const AttributeMap& file,
-		               ProblemList dependencies) {
+                       ProblemList dependencies) {
 	ostringstream ostrstrm;
 	AttributeMap::const_iterator i;
 	MessageBlock mb("setprobattrs");
@@ -1113,13 +1113,13 @@ bool ServerConnection::getMarkFile(uint32_t submission_id, uint32_t file_index, 
 	return true;
 }
 
-uint32_t ServerConnection::contestTime() {
+time_t ServerConnection::contestTime() {
 	MessageBlock mb("contesttime");
 
 	MessageBlock *res = sendMB(&mb);
 
 	if(res && res->action() == "ok") {
-		uint32_t time = strtoll((*res)["time"].c_str(), NULL, 0);
+		time_t time = strtoll((*res)["time"].c_str(), NULL, 0);
 		delete res;
 		return time;
 	} else {
@@ -1131,13 +1131,13 @@ uint32_t ServerConnection::contestTime() {
 	}
 }
 
-uint32_t ServerConnection::contestRemain() {
+time_t ServerConnection::contestRemain() {
 	MessageBlock mb("contesttime");
 
 	MessageBlock *res = sendMB(&mb);
 
 	if(res && res->action() == "ok") {
-		uint32_t time = strtoll((*res)["remain"].c_str(), NULL, 0);
+		time_t time = strtoll((*res)["remain"].c_str(), NULL, 0);
 		delete res;
 		return time;
 	} else {

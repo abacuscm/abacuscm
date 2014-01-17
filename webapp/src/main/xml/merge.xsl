@@ -41,7 +41,7 @@
     </xsl:template>
 
     <xsl:template match="h:object">
-        <xsl:apply-templates select="document('../../../../doc/html/contestant-web.html')//h:body/*"/>
+        <xsl:apply-templates select="document('../../../../doc/html/contestant.html')//h:body/*"/>
     </xsl:template>
 
     <!-- Fill in standings page -->

@@ -333,14 +333,14 @@ public:
 	 * Add a clarification request to the database
 	 */
 	virtual bool putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t prob_id,
-						 uint32_t time, uint32_t server_id,
+						 time_t time, uint32_t server_id,
 						 const std::string& question) = 0;
 
 	/**
 	 * Add a clarification to the database
 	 */
 	virtual bool putClarification(uint32_t cr_id, uint32_t c_id,
-					  uint32_t user_id, uint32_t time,
+					  uint32_t user_id, time_t time,
 					  uint32_t server_id, uint32_t pub,
 					  const std::string& answer) = 0;
 
@@ -352,7 +352,7 @@ public:
 	virtual IdList getUnmarked(uint32_t server_id = 0) = 0;
 
 	virtual bool putMark(uint32_t submission_id, uint32_t marker_id,
-			uint32_t time, uint32_t result, std::string comment, uint32_t server_id) = 0;
+			time_t time, uint32_t result, std::string comment, uint32_t server_id) = 0;
 
 	virtual bool putMarkFile(uint32_t submission_id, uint32_t marker_id,
 			std::string name, const void* data, uint32_t len) = 0;

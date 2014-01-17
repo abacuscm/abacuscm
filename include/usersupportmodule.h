@@ -50,7 +50,7 @@ public:
 	uint32_t user_id(const std::string& username);
 	uint32_t group_id(const std::string& groupname);
 	std::string username(uint32_t user_id);
-	std::string groupname(uint32_t user_id);
+	std::string groupname(uint32_t group_id);
 	std::string friendlyname(uint32_t user_id);
 	uint32_t usertype(uint32_t user_id);
 	uint32_t user_group(uint32_t user_id);

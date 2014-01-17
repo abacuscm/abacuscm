@@ -69,18 +69,6 @@
             distributed under the MIT license above.
         </para>
     </section>
-    <section id="licensing.jquery-alerts">
-        <title>jQuery Alerts</title>
-        <para>
-            This software contains portions of <ulink
-                url="http://abeautifulsite.net/blog/2008/12/jquery-alert-dialogs/">jQuery
-                Alerts</ulink>, which is distributed under both the <ulink
-                url="http://www.opensource.org/licenses/gpl-3.0.html">GNU
-                General Public License version 3</ulink> and the <ulink
-                url="http://www.opensource.org/licenses/mit-license.php">MIT
-                license</ulink>.
-        </para>
-    </section>
     <section id="licensing.cometd-javascript">
         <title>cometd</title>
         <para>

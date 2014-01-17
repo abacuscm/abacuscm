@@ -1,4 +1,4 @@
-public class spin
+public class spin_forever
 {
 	public static void main(String[] args)
 	{
