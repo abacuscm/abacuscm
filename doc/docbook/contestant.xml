@@ -17,6 +17,7 @@
             <year>2010</year>
             <year>2011</year>
             <year>2012</year>
+            <year>2013</year>
             <holder>Bruce Merry</holder>
             <holder>Jaco Kroon</holder>
             <holder>Carl Hultquist</holder>
@@ -35,7 +36,8 @@
         <title>Logging into Abacus</title>
         <para>
             <application>Abacus</application> is accessed through the
-            <application>Firefox</application> web browser.
+            <emphasis role="strong"><application>Firefox</application> web
+            browser</emphasis>.
             Depending on your local installation, there may be a direct link
             on the desktop. Other browsers may be available but are not
             supported.
@@ -114,21 +116,26 @@
             If you are using Java, you can call your main class whatever you
             like, but it must be the <emphasis>first</emphasis> class in the
             file. You can include support classes after it, but they should
-            not be <symbol>public</symbol>.
+            not be <symbol>public</symbol>. <application>Abacus</application>
+            determines the package and class name from the contents of the file,
+            so you must not use the keywords
+            <code language="java">package</code> or
+            <code language="java">class</code> in comments before the main class
+            declaration.
         </para>
         <para>
             Your solution will read from standard input
             (<phrase condition="cxx"><code language="c">stdin</code>,
                 <code language="c++">cin</code>,
              </phrase><phrase condition="java"><code language="java">System.in</code>,
-             </phrase><phrase condition="python">
+             </phrase><phrase condition="python;python3">
                 <code language="python">sys.stdin</code>,
             </phrase> depending on language)
             and write to standard output
             (<phrase condition="cxx"><code language="c">stdout</code>,
                 <code language="c++">cout</code>,
             </phrase><phrase condition="java"><code language="java">System.out</code>,
-            </phrase><phrase condition="python"><code language="python">sys.stdout</code>
+            </phrase><phrase condition="python;python3"><code language="python">sys.stdout</code>
             </phrase> again depending on language).
             Your solution is tested by an automated marker, so you must be
             careful to input only what is asked for, and output only what is
@@ -148,8 +155,12 @@
                 to be output).
             </para>
             <example id="contestant.solutions.float.python" condition="python">
-                <title>Floating-point output in Python</title>
+                <title>Floating-point output in Python 2.x</title>
                 <programlisting language="python"><![CDATA[print "Case #%d: %.6f" % (caseNum, x)]]></programlisting>
+            </example>
+            <example id="contestant.solutions.float.python3" condition="python3">
+                <title>Floating-point output in Python 3.x</title>
+                <programlisting language="python"><![CDATA[print("Case #{}: {:.6f}".format(caseNum, x))]]></programlisting>
             </example>
             <example id="contestant.solutions.float.java" condition="java">
                 <title>Floating-point output in Java</title>
@@ -206,7 +217,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                             <code language="c++">#include</code> statement.</phrase>
                         There is no time
                         penalty for compilation failures.
-                        <phrase condition="python"> Note that since
+                        <phrase condition="python;python3"> Note that since
                         Python is an interpreted language, there are no
                         compilation errors &mdash; so be particularly careful
                         before submitting, as what would be a compilation error
