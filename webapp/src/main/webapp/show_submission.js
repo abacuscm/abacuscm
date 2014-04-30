@@ -86,7 +86,7 @@
 			);
 		}
 		else {
-			var submissionFiles = new Array();
+			submissionFiles = new Array();
 			finishFetch();
 		}
 	}
