@@ -31,6 +31,7 @@ std::vector<std::string> InteractiveProblemType::getAttributeList() const {
 	std::vector<std::string> result = CompiledProblemType::getAttributeList();
 	result.push_back("evaluator F");
 	result.push_back("time_limit I");
+	result.push_back("memory_limit I");
 	return result;
 }
 

@@ -193,13 +193,14 @@ getprobtypes
 getprobdescript
 type:tcprob
 ?ok
-?descript:shortname S, longname S, multi_submit {No,Yes}, testcase (input F, output F), ignore_whitespace {Yes,No}, time_limit I
+?descript:shortname S, longname S, multi_submit {No,Yes}, testcase (input F, output F), ignore_whitespace {Yes,No}, time_limit I, memory_limit I
 
 # TEST: creating a problem must succeed
 setprobattrs
 prob_id:0
 prob_type:tcprob
 time_limit:1
+memory_limit:64
 ignore_whitespace:Yes
 shortname:test
 longname:Test Problem
@@ -219,12 +220,14 @@ prob_id:1
 ?testcase.input:data.in
 ?testcase.output:data.out
 ?time_limit:1
+?memory_limit:64
 
 # TEST: creating a problem with dependencies must succeed
 setprobattrs
 prob_id:0
 prob_type:tcprob
 time_limit:1
+memory_limit:64
 ignore_whitespace:Yes
 shortname:test2
 longname:<b>Unicode</b> £etterß
@@ -245,6 +248,7 @@ prob_id:17
 ?testcase.input:data.in
 ?testcase.output:data.out
 ?time_limit:1
+?memory_limit:64
 
 getprobfile
 prob_id:1
@@ -266,6 +270,7 @@ setprobattrs
 prob_id:17
 prob_type:tcprob
 time_limit:1
+memory_limit:64
 ignore_whitespace:Yes
 shortname:test2
 longname:<b>Unicode</b> £etterß
@@ -286,6 +291,7 @@ prob_id:17
 ?testcase.input:data2.in
 ?testcase.output:data2.out
 ?time_limit:1
+?memory_limit:64
 
 getprobfile
 prob_id:17
