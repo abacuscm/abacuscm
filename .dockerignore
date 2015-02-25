@@ -1,0 +1,8 @@
+bin
+deps
+lib
+modules
+obj
+doc/pdf
+doc/html/*.html
+doc/tmp
