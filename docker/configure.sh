@@ -20,10 +20,31 @@ if ! [ -d $CERT_DIR ]; then
         -out $TMP_CERT_DIR/server.csr
     openssl x509 -req -days $DAYS -in $TMP_CERT_DIR/server.csr \
         -CA $TMP_CERT_DIR/cacert.crt -CAkey $TMP_CERT_DIR/ca.key \
-        -CAcreateserial -out server.crt
+        -CAcreateserial -out $TMP_CERT_DIR/server.crt
     mv "$TMP_CERT_DIR" "$CERT_DIR"
+fi
+
+# If there is no database, create it
+if ! [ -d /data/mysql ]; then
+    mysql_install_db --user mysql
+    /usr/bin/mysqld_safe &
+    sleep 2
+    (echo \
+        "create database abacus;" \
+        "grant all privileges on abacus.* to abacus@localhost identified by 'abacus';" \
+        "use abacus;"; cat /abacuscm/db/structure.sql) | mysql -u root --batch
+    mysqladmin -u root shutdown
+fi
+
+# If there is no server configuration, create it
+if ! [ -f /conf/server.conf ]; then
+    cp /abacuscm/docker/server.conf /conf/server.conf
 fi
 
 # Build the keystore from the abacus certificate
 keytool -importcert -alias abacuscert -file $CERT_DIR/cacert.crt \
     -keystore /etc/jetty8/abacus_keystore -storepass password -noprompt
+
+# This isn't really used, but it needs to be there at startup
+dd if=/dev/random of=/tmp/rijndael.key bs=1 count=32
+dd if=/dev/random of=/tmp/rijndael.iv bs=1 count=16

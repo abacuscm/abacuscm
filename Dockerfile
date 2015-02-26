@@ -8,7 +8,7 @@ RUN /bin/echo -e "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty ma
 
 RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y install \
     build-essential git-core \
-    g++ oracle-java8-installer oracle-java8-set-default python2 python3 \
+    g++ oracle-java8-installer oracle-java8-set-default python2.7 python3 \
     build-essential libssl-dev libmysqlclient-dev maven \
     xsltproc docbook-xsl docbook-xml w3c-dtd-xhtml fop libxml2-utils \
     openssl mysql-server jetty8 supervisor && \
@@ -61,9 +61,6 @@ RUN for artifact in \
 # Fix https://bugs.launchpad.net/ubuntu/+source/w3c-dtd-xhtml/+bug/400259
 RUN find /usr/share/xml/xhtml /usr/share/xml/entities/xhtml -name catalog.xml -exec sed -i 's!http://globaltranscorp.org/oasis/catalog/xml/tr9401\.dtd!file:////usr/share/xml/schema/xml-core/tr9401.dtd!g' '{}' ';'
 
-# Configure Jetty
-sed -i -e 's/^NO_START=1/NO_START=0/' -e 's!^#JDK_DIRS=.*!JDK_DIRS="/usr/lib/jvm/java-8-oracle"!' /etc/default/jetty8
-
 # Install abacus
 COPY . abacuscm
 RUN cd abacuscm && make && make install
@@ -73,5 +70,9 @@ RUN cp abacuscm/docker/abacuscm.xml /etc/jetty8/contexts/abacuscm.xml && \
     cp abacuscm/docker/supervisord.conf /etc/supervisor/conf.d/abacuscm.conf && \
     cp abacuscm/docker/jetty*.xml /etc/jetty8/
 
+# Make mysql use data from a mount
+RUN sed -i 's!^datadir\s*= /var/lib/mysql!datadir = /data!' /etc/mysql/my.cnf
+
 VOLUME /conf
+VOLUME /data
 EXPOSE 8443
