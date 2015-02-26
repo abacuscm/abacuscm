@@ -8,10 +8,10 @@ RUN /bin/echo -e "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty ma
 
 RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y install \
     build-essential git-core \
-    g++ oracle-java8-installer oracle-java8-set-default python3 \
+    g++ oracle-java8-installer oracle-java8-set-default python2 python3 \
     build-essential libssl-dev libmysqlclient-dev maven \
     xsltproc docbook-xsl docbook-xml w3c-dtd-xhtml fop libxml2-utils \
-    openssl mysql-server jetty8 && \
+    openssl mysql-server jetty8 supervisor && \
     apt-get clean
 
 # Allows mvn to use caching
@@ -69,7 +69,9 @@ COPY . abacuscm
 RUN cd abacuscm && make && make install
 RUN cd abacuscm/webapp && mvn
 RUN cp abacuscm/docker/abacuscm.xml /etc/jetty8/contexts/abacuscm.xml && \
-    cp abacuscm/docker/abacuscm-secret-web.xml /etc/jetty8/abacuscm-secret-web.xml
+    cp abacuscm/docker/abacuscm-secret-web.xml /etc/jetty8/abacuscm-secret-web.xml && \
+    cp abacuscm/docker/supervisord.conf /etc/supervisor/conf.d/abacuscm.conf && \
+    cp abacuscm/docker/jetty*.xml /etc/jetty8/
 
 VOLUME /conf
 EXPOSE 8443
