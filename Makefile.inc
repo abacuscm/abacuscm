@@ -57,10 +57,12 @@ BINDIR ?= $(PREFIX)/bin
 SBINDIR ?= $(PREFIX)/sbin
 LIBDIR ?= $(PREFIX)/lib
 INCDIR ?= $(PREFIX)/include
-MODDIR ?= $(PREFIX)/share/$(PKGNAME)
+MODDIR ?= $(PREFIX)/lib/$(PKGNAME)
 ETCDIR ?= $(PREFIX)/etc
 
 DESTDIR ?= /
+
+DEFS += -DPREFIX=\"$(PREFIX)\" -DSYSCONFDIR=\"$(ETCDIR)\" -DMODDIR=\"$(MODDIR)\"
 
 -include $(TOPDIR)/Makefile.extra
 

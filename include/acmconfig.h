@@ -21,7 +21,7 @@
 #define DEFAULT_CLIENT_CONFIG2		"abacus.conf"
 #define DEFAULT_MARKER_CONFIG		SYSCONFDIR "/abacus/marker.conf"
 #define DEFAULT_UDPRECEIVER_PORT	7368
-#define DEFAULT_MODULE_DIR			SYSLIBDIR  "/abacusd/modules"
+#define DEFAULT_MODULE_DIR			MODDIR
 
 // Keepalive times, in seconds
 #define KEEPALIVE_INTERVAL 120    // Interval at which server sends keepalives
