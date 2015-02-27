@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN" "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<chapter id="docker">
+    <title>Running AbacusCM with Docker</title>
+    <section id="docker.introduction">
+        <title>Introduction</title>
+        <para>
+            <ulink url="https://www.docker.com">Docker</ulink> is a container
+            technology that simplifies deployment of applications with all
+            their dependencies. Abacus contains Docker build instructions,
+            which make it simpler to download or build the image once, and then
+            easily deploy it.
+        </para>
+        <para>
+            Abacus can be used without Docker; see <xref
+                linkend="administrator-core"/> and <xref
+                linkend="administrator-webapp"/> for instructions. The Docker
+            build also does not support multi-server installations. However,
+            it greatly simplifies setting up a server for either development
+            or contest use.
+        </para>
+        <para>
+            Before using Docker to deploy Abacus, it is worth reading the
+            Docker documentation (and interactive tutorial) to understand
+            Docker basics of container management, port mappings, and
+            volumes.
+        </para>
+    </section>
+    <section id="docker.requirements">
+        <title>Requirements</title>
+        <para>
+            There are only two software requirements: a Linux machine and
+            Docker itself! Development uses Docker 1.5, but you might be
+            successful with older versions. For Ubuntu, one can obtain the
+            latest version from <ulink
+                url="https://get.docker.com/ubuntu/"/>.
+        </para>
+        <para>
+            Docker currently plays fast-and-loose with security, and many
+            files end up owned by root or accessed with root permissions. It
+            is recommended not to run AbacusCM through Docker on a server that
+            has any untrusted users. It is also recommended to run the marker
+            and the server on separate machines when in production.
+        </para>
+        <para>
+            The examples below assume that <command>docker</command> commands are
+            run as a user with permission to access to the Docker server. The
+            default Docker installation only allows <systemitem
+                class="username">root</systemitem> to run commands. It is
+            possible to change this, but you must understand the security
+            implications!
+        </para>
+    </section>
+    <section id="docker.building">
+        <title>Building the image</title>
+        <para>
+            This step is not always necessary: the Docker repository already
+            contains an image. However, it is not guaranteed to be up to date
+            with the AbacusCM source.
+        </para>
+        <para>
+            To build the image, change to the root of the AbacusCM repository,
+            and run
+        </para>
+        <screen><userinput>docker build -t bmerry/abacuscm . </userinput></screen>
+        <para>
+            This will download a lot of files, so you should have a cheap, fast
+            internet connection for this step. After the first time, Docker
+            will cache the result for future builds, as long as the
+            corresponding parts of the <filename>Docker</filename> are not
+            touched.
+        </para>
+    </section>
+    <section id="docker.running">
+        <title>Running the image</title>
+        <para>
+            To run a toy server for testing (which will not be configurable or
+            have any persistence), run
+        </para>
+        <screen><userinput>docker run --rm -p 127.0.0.1:80:8080 -p 127.0.0.1:443:8443 bmerry/abacuscm server</userinput></screen>
+        <para>
+            This will start up a webserver on the local host, listening on
+            ports 80 (http) and 443 (https). Browse to
+            <ulink url="https://localhost/abacus"/> and you will be
+            able to log in with username and password <userinput>admin</userinput>.
+        </para>
+        <section id="docker.running.ports">
+            <title>Port configuration</title>
+            <para>
+                The Jetty web server running inside the container listens on
+                ports 8080 and 8443 for http and https respectively. The
+                <command>docker</command> above maps these to ports 80 and 443
+                on the host, bound to the localhost address. To publicly
+                expose the ports to the output world, use
+                <userinput>-p 80:8080 -p 443:8443</userinput>. You can of
+                course change the host ports or disable http entirely. If you
+                have both http and https exposed but are not using port 443
+                for https, then pass
+                <userinput>-e JETTY_SSL_PORT=<replaceable>port</replaceable></userinput>
+                as well. This is necessary to redirect requests to Abacus on
+                the http port to the https port correctly.
+            </para>
+            <para>
+                The Abacus server runs in the container on its default port
+                (7368). One can similarly expose this port to the local
+                machine or to the outside world.
+            </para>
+        </section>
+        <section id="docker.running.data">
+            <title>Configuration and data</title>
+            <para>
+                The command above creates a transient container that will lose
+                all its data when it is stopped. This is obviously not a good
+                idea for a real contest: if the server crashes, the
+                submissions made so far should be preserved. Docker allows
+                host directories to be mounted into the container as
+                <ulink
+                    url="https://docs.docker.com/userguide/dockervolumes/">volumes</ulink>.
+                The Abacus Docker image has two special mount points for
+                volumes: <filename class="directory">/data</filename>,
+                <filename class="directory">/conf</filename> and
+                <filename>/contest</filename>. The first is used to store data
+                generated during execution, namely the MySQL database and
+                various logs. You should mount an initially empty directory
+                here.
+            </para>
+            <para>
+                The second is used for server configuration,
+                particularly certificates and private keys. If one provides an
+                empty directory, self-signed certificates will be generated
+                and saved here, and re-used on subsequent runs. Passing
+                <userinput>-e JETTY_HOSTNAME=<replaceable>hostname</replaceable></userinput>
+                will set the hostname in the certificate presented by the web
+                server (it defaults to <systemitem
+                    class="domainname">localhost</systemitem>).
+            </para>
+            <para>
+                If you want to provide your own certificates and keys for the
+                web server, they need to be provided in PEM format as
+                <filename>jetty.crt</filename> and
+                <filename>jetty.key</filename> as <filename
+                    class="directory">/conf/jetty-certs</filename>.
+                Similarly, one can provide <filename>cacert.crt</filename>,
+                <filename>server.crt</filename> and
+                <filename>server.key</filename> in <filename
+                    class="directory">/conf/abacus-certs</filename>.
+            </para>
+            <para>
+                The last file in <filename class="directory">/conf</filename>
+                is <filename>server.conf</filename>. This is the Abacus server
+                configuration file. If you need customise the file, you can
+                find the original in <filename>docker/server.conf</filename>
+                in the Abacus source repository. Filenames and host/IP
+                settings in this file should generally not be tampered with,
+                but other settings (particularly the admin password,
+                languages, and contest duration) can be safely changed. To
+                use the default file and override only the admin password, one
+                can omit the file and pass
+                <userinput>-e ABACUS_PASSWORD=<replaceable>password</replaceable></userinput>
+                to <command>docker</command> (the file will be created with
+                the password filled in).
+            </para>
+            <warning>
+                <para>
+                    The <filename class="directory">/contest</filename> mount
+                    point is not yet implemented. Per-contest settings
+                    currently need to be made in
+                    <filename>/conf/server.conf</filename>.
+                </para>
+            </warning>
+            <para>
+                Finally, <filename class="directory">/contest</filename>
+                contains settings that are expected to vary per contest.
+                Server settings can be overridden by creating a
+                <filename>server.conf.override</filename> file, in the same
+                format but containing only values to replace.
+            </para>
+        </section>
+    </section>
+</chapter>
