@@ -69,6 +69,7 @@ COPY Makefile Makefile.inc /usr/src/abacuscm/
 COPY src /usr/src/abacuscm/src
 COPY include /usr/src/abacuscm/include
 COPY doc /usr/src/abacuscm/doc
+# chown/chmod are to make runlimit suid root
 RUN cd /usr/src/abacuscm && make && make install
 COPY webapp /usr/src/abacuscm/webapp
 RUN cd /usr/src/abacuscm/webapp && mvn
@@ -86,6 +87,9 @@ RUN rm -rf /var/log/supervisor /var/log/mysql /usr/share/jetty8/logs && \
     ln -s /data/log/supervisor /var/log/supervisor && \
     ln -s /data/log/mysql /var/log/mysql && \
     ln -sf /data/log/jetty8 /usr/share/jetty8/logs
+
+# Create a user for abacus to run as
+RUN adduser --disabled-password --gecos 'abacus user' abacus
 
 VOLUME /conf
 VOLUME /data

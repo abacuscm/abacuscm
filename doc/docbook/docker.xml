@@ -129,7 +129,7 @@
                 particularly certificates and private keys. If one provides an
                 empty directory, self-signed certificates will be generated
                 and saved here, and re-used on subsequent runs. Passing
-                <userinput>-e JETTY_HOSTNAME=<replaceable>hostname</replaceable></userinput>
+                <userinput>-e ABACUS_SERVER=<replaceable>hostname</replaceable></userinput>
                 will set the hostname in the certificate presented by the web
                 server (it defaults to <systemitem
                     class="domainname">localhost</systemitem>).
@@ -156,7 +156,7 @@
                 languages, and contest duration) can be safely changed. To
                 use the default file and override only the admin password, one
                 can omit the file and pass
-                <userinput>-e ABACUS_PASSWORD=<replaceable>password</replaceable></userinput>
+                <userinput>-e ABACUS_ADMIN_PASSWORD=<replaceable>password</replaceable></userinput>
                 to <command>docker</command> (the file will be created with
                 the password filled in).
             </para>

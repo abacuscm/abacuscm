@@ -33,12 +33,12 @@ function make_jetty_certs()
 {
     local TMP_CERT_DIR
     if ! [ -d $JETTY_CERT_DIR ]; then
-        if [ -z "$JETTY_HOSTNAME" ]; then
-            echo "******************************************************" 1>&2
-            echo "No Jetty certificate found and JETTY_HOSTNAME not set." 1>&2
+        if [ -z "$ABACUS_SERVER" ]; then
+            echo "**************************************************************" 1>&2
+            echo "No Jetty certificate found and ABACUS_SERVER not set." 1>&2
             echo "The generated certificate will be for localhost." 1>&2
-            echo "******************************************************" 1>&2
-            JETTY_HOSTNAME=localhost
+            echo "**************************************************************" 1>&2
+            ABACUS_SERVER=localhost
         fi
         TMP_CERT_DIR=/conf/jetty-certs.tmp
         rm -rf "$TMP_CERT_DIR"
@@ -47,7 +47,7 @@ function make_jetty_certs()
         umask 0077
         openssl genrsa -out $TMP_CERT_DIR/jetty.key 4096
         umask "$old_umask"
-        openssl req -new -x509 -key $TMP_CERT_DIR/jetty.key -subj "/CN=$JETTY_HOSTNAME" -out $TMP_CERT_DIR/jetty.crt
+        openssl req -new -x509 -key $TMP_CERT_DIR/jetty.key -subj "/CN=$ABACUS_SERVER" -out $TMP_CERT_DIR/jetty.crt
         mv "$TMP_CERT_DIR" "$JETTY_CERT_DIR"
     fi
 }
@@ -75,8 +75,22 @@ function make_server_conf()
 {
     if ! [ -f /conf/server.conf ]; then
         cp /usr/src/abacuscm/docker/server.conf /conf/server.conf
-        if [ -n "$ABACUS_PASSWORD" ]; then
-            sed -i "s/^admin_password = admin$/admin_password = $ABACUS_PASSWORD/" /conf/server.conf
+        if [ -n "$ABACUS_ADMIN_PASSWORD" ]; then
+            sed -i "s/^admin_password = admin$/admin_password = $ABACUS_ADMIN_PASSWORD/" /conf/server.conf
+        fi
+    fi
+}
+
+function make_marker_conf()
+{
+    if ! [ -f /conf/marker.conf ]; then
+        cp /usr/src/abacuscm/docker/marker.conf /conf/marker.conf
+        if [ -n "$ABACUS_SERVER" ]; then
+            sed -i "s/^address=abacus-server\$/address=$ABACUS_SERVER/" /conf/marker.conf
+        fi
+        # TODO: this will break if the password contains a /
+        if [ -n "$ABACUS_MARKER_PASSWORD" ]; then
+            sed -i "s/^password=marker\$/password=$ABACUS_MARKER_PASSWORD/" /conf/marker.conf
         fi
     fi
 }
@@ -94,10 +108,11 @@ function make_server_crypto()
     # This isn't really used, but it needs to be there at server startup
     dd if=/dev/random of=/tmp/rijndael.key bs=1 count=32
     dd if=/dev/random of=/tmp/rijndael.iv bs=1 count=16
-    # This needs to be readable by nobody, but we don't want the copy
-    # accessible on the host to be readable by nobody.
+    # This needs to be readable by abacus, but we don't want the copy
+    # accessible on the host to be readable by whichever random user
+    # that corresponds to.
     cp $ABACUS_CERT_DIR/server.key /tmp/server.key
-    chown nobody:nogroup /tmp/server.key
+    chown abacus:abacus /tmp/server.key
 }
 
 # JETTY_SSL_PORT sets the externally visible port for Jetty, for http->https redirects
@@ -109,6 +124,12 @@ function adjust_jetty_ssl_port()
     sed -i 's!<Set name="confidentialPort">[0-9]*</Set>!<Set name="confidentialPort">'"$JETTY_SSL_PORT"'</Set>!' /etc/jetty8/jetty.xml
 }
 
+function suid_runlimit()
+{
+    chown abacus:abacus /usr/bin/runlimit
+    chmod 4550 /usr/bin/runlimit
+}
+
 if [ "$#" -eq 0 ]; then
     exec /bin/bash -l
 fi
@@ -116,7 +137,7 @@ fi
 case "$1" in
     server)
         mkdir -p /data/log/supervisor /data/log/mysql /data/log/jetty8 /data/log/abacus
-        chown nobody:nogroup /data/log/abacus
+        chown abacus:abacus /data/log/abacus
         make_abacus_certs
         make_mysql
         make_server_conf
@@ -124,6 +145,18 @@ case "$1" in
         make_server_crypto
         adjust_jetty_ssl_port
         exec supervisord -n -c /etc/supervisor/supervisord.conf
+        ;;
+    marker)
+        if ! [ -d /conf/abacus-certs ]; then
+            echo "No abacus certificates found in /conf/abacus-certs." 1>&2
+            echo "Please transfer them from the server first" 1>&2
+            exit 1
+        fi
+        mkdir -p /data/log/abacus
+        chown abacus:abacus /data/log/abacus
+        make_marker_conf
+        suid_runlimit
+        exec /usr/bin/markerd /conf/marker.conf
         ;;
     *)
         echo "Unrecognised command '$1'. Running a shell"
