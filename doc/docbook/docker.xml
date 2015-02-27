@@ -71,8 +71,8 @@
             touched.
         </para>
     </section>
-    <section id="docker.running">
-        <title>Running the image</title>
+    <section id="docker.server">
+        <title>Running a server</title>
         <para>
             To run a toy server for testing (which will not be configurable or
             have any persistence), run
@@ -84,7 +84,7 @@
             <ulink url="https://localhost/abacus"/> and you will be
             able to log in with username and password <userinput>admin</userinput>.
         </para>
-        <section id="docker.running.ports">
+        <section id="docker.server.ports">
             <title>Port configuration</title>
             <para>
                 The Jetty web server running inside the container listens on
@@ -103,10 +103,11 @@
             <para>
                 The Abacus server runs in the container on its default port
                 (7368). One can similarly expose this port to the local
-                machine or to the outside world.
+                machine or to the outside world, and this will usually be
+                necessary for attaching a marker.
             </para>
         </section>
-        <section id="docker.running.data">
+        <section id="docker.server.data">
             <title>Configuration and data</title>
             <para>
                 The command above creates a transient container that will lose
@@ -116,7 +117,7 @@
                 host directories to be mounted into the container as
                 <ulink
                     url="https://docs.docker.com/userguide/dockervolumes/">volumes</ulink>.
-                The Abacus Docker image has two special mount points for
+                The Abacus Docker image has three special mount points for
                 volumes: <filename class="directory">/data</filename>,
                 <filename class="directory">/conf</filename> and
                 <filename>/contest</filename>. The first is used to store data
@@ -147,33 +148,26 @@
             </para>
             <para>
                 The last file in <filename class="directory">/conf</filename>
-                is <filename>server.conf</filename>. This is the Abacus server
-                configuration file. If you need customise the file, you can
-                find the original in <filename>docker/server.conf</filename>
-                in the Abacus source repository. Filenames and host/IP
-                settings in this file should generally not be tampered with,
-                but other settings (particularly the admin password,
-                languages, and contest duration) can be safely changed. To
-                use the default file and override only the admin password, one
-                can omit the file and pass
+                is <filename>server.conf.override</filename>. This has the
+                same format as the Abacus server configuration file, but
+                overrides any settings not set in
+                <filename>docker/server.conf</filename> in the Abacus source.
+                Generally the only setting you should change is the initial
+                admin password, but that can also be set by passing
                 <userinput>-e ABACUS_ADMIN_PASSWORD=<replaceable>password</replaceable></userinput>
-                to <command>docker</command> (the file will be created with
-                the password filled in).
+                to <command>docker</command>. Note that it only has any
+                effect the first time the server is run; after that it
+                persists in the database.
             </para>
-            <warning>
-                <para>
-                    The <filename class="directory">/contest</filename> mount
-                    point is not yet implemented. Per-contest settings
-                    currently need to be made in
-                    <filename>/conf/server.conf</filename>.
-                </para>
-            </warning>
             <para>
                 Finally, <filename class="directory">/contest</filename>
                 contains settings that are expected to vary per contest.
                 Server settings can be overridden by creating a
-                <filename>server.conf.override</filename> file, in the same
-                format but containing only values to replace.
+                <filename>server.conf.override</filename> file, similarly to
+                <filename>/conf/server.conf.override</filename>. These
+                overrides apply after the server configuration overrides.
+                Typicall the values in the <literal>contest</literal>
+                section would be overridden here.
             </para>
         </section>
     </section>

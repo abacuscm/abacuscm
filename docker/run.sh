@@ -73,26 +73,33 @@ function make_mysql()
 # Also changes password to $ABACUS_PASSWORD if it is set.
 function make_server_conf()
 {
-    if ! [ -f /conf/server.conf ]; then
-        cp /usr/src/abacuscm/docker/server.conf /conf/server.conf
-        if [ -n "$ABACUS_ADMIN_PASSWORD" ]; then
-            sed -i "s/^admin_password = admin$/admin_password = $ABACUS_ADMIN_PASSWORD/" /conf/server.conf
+    local -a args
+    args=(/usr/src/abacuscm/docker/server.conf)
+    for filename in /conf/server.conf.override /contest/server.conf.override; do
+        if [ -f "$filename" ]; then
+            args+=("$filename")
         fi
+    done
+    if [ -n "$ABACUS_ADMIN_PASSWORD" ]; then
+        args+=(-s "initialisation.admin_password=$ABACUS_ADMIN_PASSWORD")
     fi
+    /usr/src/abacuscm/docker/inichange.py "${args[@]}" -o /data/server.conf
 }
 
 function make_marker_conf()
 {
-    if ! [ -f /conf/marker.conf ]; then
-        cp /usr/src/abacuscm/docker/marker.conf /conf/marker.conf
-        if [ -n "$ABACUS_SERVER" ]; then
-            sed -i "s/^address=abacus-server\$/address=$ABACUS_SERVER/" /conf/marker.conf
-        fi
-        # TODO: this will break if the password contains a /
-        if [ -n "$ABACUS_MARKER_PASSWORD" ]; then
-            sed -i "s/^password=marker\$/password=$ABACUS_MARKER_PASSWORD/" /conf/marker.conf
-        fi
+    local -a args
+    args=(/usr/src/abacuscm/docker/marker.conf)
+    if [ -f /conf/marker.conf.override ]; then
+        args+=(/conf/marker.conf.override)
     fi
+    if [ -n "$ABACUS_SERVER" ]; then
+        args+=(-s "server.address=$ABACUS_SERVER")
+    fi
+    if [ -n "$ABACUS_MARKER_PASSWORD" ]; then
+        args+=(-s "server.password=$ABACUS_MARKER_PASSWORD")
+    fi
+    /usr/src/abacuscm/docker/inichange.py "${args[@]}" -o /data/marker.conf
 }
 
 # Build the keystore from the abacus certificate, and generate IVs. This is done
@@ -156,7 +163,7 @@ case "$1" in
         chown abacus:abacus /data/log/abacus
         make_marker_conf
         suid_runlimit
-        exec /usr/bin/markerd /conf/marker.conf
+        exec /usr/bin/markerd /data/marker.conf
         ;;
     *)
         echo "Unrecognised command '$1'. Running a shell"

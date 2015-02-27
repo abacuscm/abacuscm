@@ -93,6 +93,7 @@ RUN adduser --disabled-password --gecos 'abacus user' abacus
 
 VOLUME /conf
 VOLUME /data
+VOLUME /contest
 EXPOSE 8080
 EXPOSE 8443
 EXPOSE 7368
