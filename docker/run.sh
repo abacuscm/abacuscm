@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+JETTY_CERT_DIR=/conf/jetty-certs
 ABACUS_CERT_DIR=/conf/abacus-certs
 DAYS=365    # Certificate validity for new certs
 
@@ -26,6 +27,29 @@ function make_abacus_certs()
             -CAcreateserial -out $TMP_CERT_DIR/server.crt
         chown nobody:nogroup $TMP_CERT_DIR/server.key
         mv "$TMP_CERT_DIR" "$ABACUS_CERT_DIR"
+    fi
+}
+
+function make_jetty_certs()
+{
+    local TMP_CERT_DIR
+    if ! [ -d $JETTY_CERT_DIR ]; then
+        if [ -z "$JETTY_HOSTNAME" ]; then
+            echo "******************************************************" 1>&2
+            echo "No Jetty certificate found and JETTY_HOSTNAME not set." 1>&2
+            echo "The generated certificate will be for localhost." 1>&2
+            echo "******************************************************" 1>&2
+            JETTY_HOSTNAME=localhost
+        fi
+        TMP_CERT_DIR=/conf/jetty-certs.tmp
+        rm -rf "$TMP_CERT_DIR"
+        mkdir "$TMP_CERT_DIR"
+        old_umask=`umask`
+        umask 0077
+        openssl genrsa -out $TMP_CERT_DIR/jetty.key 4096
+        umask "$old_umask"
+        openssl req -new -x509 -key $TMP_CERT_DIR/jetty.key -subj "/CN=$JETTY_HOSTNAME" -out $TMP_CERT_DIR/jetty.crt
+        mv "$TMP_CERT_DIR" "$JETTY_CERT_DIR"
     fi
 }
 
@@ -57,11 +81,16 @@ function make_server_conf()
     fi
 }
 
-# Build the keystore from the abacus certificate, and generate IVs
-function make_abacus_crypto()
+# Build the keystore from the abacus certificate, and generate IVs. This is done
+# every time, because it is not stored persistently.
+function make_server_crypto()
 {
     keytool -importcert -alias abacuscert -file $ABACUS_CERT_DIR/cacert.crt \
         -keystore /etc/jetty8/abacus_keystore -storepass password -noprompt
+    openssl pkcs12 -inkey $JETTY_CERT_DIR/jetty.key -in $JETTY_CERT_DIR/jetty.crt -export -out /tmp/jetty.pkcs12 -passout pass:password
+    rm -f /etc/jetty8/keystore
+    keytool -importkeystore -srckeystore /tmp/jetty.pkcs12 -srcstoretype PKCS12 -destkeystore /etc/jetty8/keystore -srcstorepass password -storepass password
+    sed -i 's/OBF:[a-zA-Z0-9]*/password/g' /etc/jetty8/jetty-ssl.xml
     # This isn't really used, but it needs to be there at server startup
     dd if=/dev/random of=/tmp/rijndael.key bs=1 count=32
     dd if=/dev/random of=/tmp/rijndael.iv bs=1 count=16
@@ -76,7 +105,8 @@ case "$1" in
         make_abacus_certs
         make_mysql
         make_server_conf
-        make_abacus_crypto
+        make_jetty_certs
+        make_server_crypto
         exec supervisord -n -c /etc/supervisor/supervisord.conf
         ;;
     *)
