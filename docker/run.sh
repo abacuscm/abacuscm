@@ -24,8 +24,7 @@ function make_abacus_certs()
             -out $TMP_CERT_DIR/server.csr
         openssl x509 -req -days $DAYS -in $TMP_CERT_DIR/server.csr \
             -CA $TMP_CERT_DIR/cacert.crt -CAkey $TMP_CERT_DIR/ca.key \
-            -CAcreateserial -out $TMP_CERT_DIR/server.crt
-        chown nobody:nogroup $TMP_CERT_DIR/server.key
+            -CAcreateserial -CAserial $TMP_CERT_DIR/ca.srl -out $TMP_CERT_DIR/server.crt
         mv "$TMP_CERT_DIR" "$ABACUS_CERT_DIR"
     fi
 }
@@ -95,6 +94,10 @@ function make_server_crypto()
     # This isn't really used, but it needs to be there at server startup
     dd if=/dev/random of=/tmp/rijndael.key bs=1 count=32
     dd if=/dev/random of=/tmp/rijndael.iv bs=1 count=16
+    # This needs to be readable by nobody, but we don't want the copy
+    # accessible on the host to be readable by nobody.
+    cp $ABACUS_CERT_DIR/server.key /tmp/server.key
+    chown nobody:nogroup /tmp/server.key
 }
 
 # JETTY_SSL_PORT sets the externally visible port for Jetty, for http->https redirects
