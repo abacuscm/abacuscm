@@ -89,6 +89,7 @@ RUN rm -rf /var/log/supervisor /var/log/mysql /usr/share/jetty8/logs && \
 
 VOLUME /conf
 VOLUME /data
+EXPOSE 8080
 EXPOSE 8443
 EXPOSE 7368
 ENTRYPOINT ["/usr/src/abacuscm/docker/run.sh"]
