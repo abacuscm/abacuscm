@@ -60,15 +60,23 @@ RUN for artifact in \
 
 # Fix https://bugs.launchpad.net/ubuntu/+source/w3c-dtd-xhtml/+bug/400259
 RUN find /usr/share/xml/xhtml /usr/share/xml/entities/xhtml -name catalog.xml -exec sed -i 's!http://globaltranscorp.org/oasis/catalog/xml/tr9401\.dtd!file:////usr/share/xml/schema/xml-core/tr9401.dtd!g' '{}' ';'
+# Make Oracle JDK be found
+ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 
-# Install abacus
-COPY . abacuscm
-RUN cd abacuscm && make && make install
-RUN cd abacuscm/webapp && mvn
-RUN cp abacuscm/docker/abacuscm.xml /etc/jetty8/contexts/abacuscm.xml && \
-    cp abacuscm/docker/abacuscm-secret-web.xml /etc/jetty8/abacuscm-secret-web.xml && \
-    cp abacuscm/docker/supervisord.conf /etc/supervisor/conf.d/abacuscm.conf && \
-    cp abacuscm/docker/jetty*.xml /etc/jetty8/
+# Install abacus. Copies are done piecemeal to make the build cache more
+# effective.
+COPY Makefile Makefile.inc /usr/src/abacuscm/
+COPY src /usr/src/abacuscm/src
+COPY include /usr/src/abacuscm/include
+COPY doc /usr/src/abacuscm/doc
+RUN cd /usr/src/abacuscm && make && make install
+COPY webapp /usr/src/abacuscm/webapp
+RUN cd /usr/src/abacuscm/webapp && mvn
+COPY . /usr/src/abacuscm
+RUN cp /usr/src/abacuscm/docker/abacuscm.xml /etc/jetty8/contexts/abacuscm.xml && \
+    cp /usr/src/abacuscm/docker/abacuscm-secret-web.xml /etc/jetty8/abacuscm-secret-web.xml && \
+    cp /usr/src/abacuscm/docker/supervisord.conf /etc/supervisor/conf.d/abacuscm.conf && \
+    cp /usr/src/abacuscm/docker/jetty*.xml /etc/jetty8/
 
 # Make mysql use data from a mount
 RUN sed -i 's!^datadir\s*= /var/lib/mysql!datadir = /data!' /etc/mysql/my.cnf
@@ -76,3 +84,5 @@ RUN sed -i 's!^datadir\s*= /var/lib/mysql!datadir = /data!' /etc/mysql/my.cnf
 VOLUME /conf
 VOLUME /data
 EXPOSE 8443
+EXPOSE 7368
+ENTRYPOINT ["/usr/src/abacuscm/docker/run.sh"]
