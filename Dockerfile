@@ -79,7 +79,13 @@ RUN cp /usr/src/abacuscm/docker/abacuscm.xml /etc/jetty8/contexts/abacuscm.xml &
     cp /usr/src/abacuscm/docker/jetty*.xml /etc/jetty8/
 
 # Make mysql use data from a mount
-RUN sed -i 's!^datadir\s*= /var/lib/mysql!datadir = /data!' /etc/mysql/my.cnf
+RUN sed -i 's!^datadir\s*= /var/lib/mysql!datadir = /data/mysql!' /etc/mysql/my.cnf
+
+# Make logging go onto the mount, so that it is preserved
+RUN rm -rf /var/log/supervisor /var/log/mysql /usr/share/jetty8/logs && \
+    ln -s /data/log/supervisor /var/log/supervisor && \
+    ln -s /data/log/mysql /var/log/mysql && \
+    ln -sf /data/log/jetty8 /usr/share/jetty8/logs
 
 VOLUME /conf
 VOLUME /data

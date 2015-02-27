@@ -58,8 +58,9 @@ function make_mysql()
 {
     # If there is no database, create it
     if ! [ -d /data/mysql ]; then
+        mkdir /data/mysql
         mysql_install_db --user mysql
-        /usr/bin/mysqld_safe &
+        /usr/bin/mysqld_safe --skip-syslog &
         sleep 4
         (echo \
             "create database abacus;" \
@@ -96,12 +97,23 @@ function make_server_crypto()
     dd if=/dev/random of=/tmp/rijndael.iv bs=1 count=16
 }
 
+function redirect_server_logs()
+{
+    mkdir -p /data/log/supervisor
+    rmdir /var/log/supervisor
+    ln -s /data/log/supervisor /var/log/supervisor
+    mkdir -p /data/log/jetty8
+    ln -sf /data/log/jetty8 /usr/share/jetty8/logs
+}
+
 if [ "$#" -eq 0 ]; then
     exec /bin/bash -l
 fi
 
 case "$1" in
     server)
+        mkdir -p /data/log/supervisor /data/log/mysql /data/log/jetty8 /data/log/abacus
+        chown nobody:nogroup /data/log/abacus
         make_abacus_certs
         make_mysql
         make_server_conf
