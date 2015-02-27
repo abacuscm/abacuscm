@@ -97,13 +97,13 @@ function make_server_crypto()
     dd if=/dev/random of=/tmp/rijndael.iv bs=1 count=16
 }
 
-function redirect_server_logs()
+# JETTY_SSL_PORT sets the externally visible port for Jetty, for http->https redirects
+function adjust_jetty_ssl_port()
 {
-    mkdir -p /data/log/supervisor
-    rmdir /var/log/supervisor
-    ln -s /data/log/supervisor /var/log/supervisor
-    mkdir -p /data/log/jetty8
-    ln -sf /data/log/jetty8 /usr/share/jetty8/logs
+    if [ -z "$JETTY_SSL_PORT" ]; then
+        JETTY_SSL_PORT=443
+    fi
+    sed -i 's!<Set name="confidentialPort">[0-9]*</Set>!<Set name="confidentialPort">'"$JETTY_SSL_PORT"'</Set>!' /etc/jetty8/jetty.xml
 }
 
 if [ "$#" -eq 0 ]; then
@@ -119,6 +119,7 @@ case "$1" in
         make_server_conf
         make_jetty_certs
         make_server_crypto
+        adjust_jetty_ssl_port
         exec supervisord -n -c /etc/supervisor/supervisord.conf
         ;;
     *)
