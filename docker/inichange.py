@@ -10,6 +10,20 @@ import configparser
 import argparse
 import sys
 
+def merge(filenames, overrides=[]):
+    cp = configparser.RawConfigParser(
+            delimiters=('=',),
+            comment_prefixes=('#',),
+            default_section=None)
+    cp.optionxform = str
+
+    for filename in filenames:
+        with open(filename, 'r') as f:
+            cp.read_file(f)
+    for (section, name, value) in overrides:
+        cp.read_dict({section: {name: value}})
+    return cp
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('filename', nargs='*')
@@ -17,14 +31,7 @@ def main():
     parser.add_argument('-o', '--output', metavar='FILENAME', help='write to file instead of stdout')
     args = parser.parse_args()
 
-    cp = configparser.RawConfigParser(
-            delimiters=('=',),
-            comment_prefixes=('#',),
-            default_section=None)
-    cp.optionxform = str
-    for filename in args.filename:
-        with open(filename, 'r') as f:
-            cp.read_file(f)
+    overrides = []
     for extra in args.set:
         try:
             key, value = extra.split('=', maxsplit=1)
@@ -32,8 +39,9 @@ def main():
         except ValueError:
             print("Invalid formatting in", extra, file=sys.stderr)
             sys.exit(2)
-        cp.read_dict({section: {name: value}})
+        overrides.append((section, name, value))
 
+    cp = merge(args.filename, overrides)
     if args.output is not None:
         with open(args.output, 'w') as outf:
             cp.write(outf)

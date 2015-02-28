@@ -76,7 +76,6 @@ RUN cd /usr/src/abacuscm/webapp && mvn
 COPY . /usr/src/abacuscm
 RUN cp /usr/src/abacuscm/docker/abacuscm.xml /etc/jetty8/contexts/abacuscm.xml && \
     cp /usr/src/abacuscm/docker/abacuscm-secret-web.xml /etc/jetty8/abacuscm-secret-web.xml && \
-    cp /usr/src/abacuscm/docker/supervisord.conf /etc/supervisor/conf.d/abacuscm.conf && \
     cp /usr/src/abacuscm/docker/jetty*.xml /etc/jetty8/
 
 # Make mysql use data from a mount
@@ -97,4 +96,4 @@ VOLUME /contest
 EXPOSE 8080
 EXPOSE 8443
 EXPOSE 7368
-ENTRYPOINT ["/usr/src/abacuscm/docker/run.sh"]
+ENTRYPOINT ["/usr/src/abacuscm/docker/run.py"]
