@@ -227,7 +227,8 @@ def make_server_crypto(args):
     # This needs to be readable by abacus, but we don't want the copy
     # accessible on the host to be readable by whichever random user
     # that corresponds to.
-    shutil.copyfile(SERVER_KEY, '/etc/abacus/server.key')
+    shutil.copy(SERVER_KEY, '/etc/abacus/server.key')
+    shutil.chown(SERVER_KEY, 'abacus', 'abacus')
 
 def adjust_https_port(args):
     subprocess.check_call([
@@ -241,7 +242,7 @@ def suid_runlimit(args):
     os.chmod('/usr/bin/runlimit', 0o4550)
 
 def install_supervisor_conf(basename, args):
-    shutil.copyfile(os.path.join(SRC_DIR, 'docker', basename),
+    shutil.copy(os.path.join(SRC_DIR, 'docker', basename),
             os.path.join('/etc/supervisor/conf.d', basename))
 
 def exec_supervisor(args):
