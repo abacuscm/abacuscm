@@ -30,9 +30,10 @@ KEYSTORE = os.path.join(JETTY_DIR, 'keystore')
 DEFAULT_DAYS = 365    # Certificate validity for new certs
 
 MYSQL_DIR = os.path.join(DATA_DIR, 'mysql')
-LOG_DIR = os.path.join(DATA_DIR, 'log')
-SERVER_CONF = os.path.join(DATA_DIR, 'server.conf')
-MARKER_CONF = os.path.join(DATA_DIR, 'marker.conf')
+SERVER_CONF = os.path.join(DATA_DIR, 'abacus', 'server.conf')
+MARKER_CONF = os.path.join(DATA_DIR, 'abacus', 'marker.conf')
+SERVER_LOG = os.path.join(DATA_DIR, 'abacus', 'abacusd.log')
+MARKER_LOG = os.path.join(DATA_DIR, 'abacus', 'markerd.log')
 
 
 @contextmanager
@@ -163,9 +164,7 @@ def make_jetty_certs(args):
 
 def make_mysql(args):
     """Initialise mysql db if it does not exist"""
-    if not os.path.isdir(MYSQL_DIR):
-        os.mkdir(MYSQL_DIR, mode=0o700)
-        shutil.chown(MYSQL_DIR, 'mysql', 'mysql')
+    if not os.path.isdir(os.path.join(MYSQL_DIR, 'mysql')):
         subprocess.check_call(['mysql_install_db', '--user', 'mysql'])
         with run_mysql():
             # TODO: maybe use Python MySQL bindings for this?
@@ -181,7 +180,7 @@ def make_mysql(args):
 def make_server_conf(args):
     """Merges override configuration with preconfigured values"""
     filenames = [os.path.join(SRC_DIR, 'docker', 'server.conf')]
-    for path in [CONF_DIR, CONTEST_DIR]:
+    for path in [os.path.join(CONF_DIR, 'abacus'), CONTEST_DIR]:
         filename = os.path.join(path, 'server.conf.override')
         if os.path.isfile(filename):
             filenames.append(filename)
@@ -193,7 +192,7 @@ def make_server_conf(args):
 def make_marker_conf(args):
     """Merges override configuration for a marker with preconfigured values"""
     filenames = [os.path.join(SRC_DIR, 'docker', 'marker.conf')]
-    override_file = os.path.join(CONF_DIR, 'marker.conf.override')
+    override_file = os.path.join(CONF_DIR, 'abacus', 'marker.conf.override')
     overrides = []
     if os.path.isfile(override_file):
         filenames.append(override_file)
@@ -228,7 +227,7 @@ def make_server_crypto(args):
     # accessible on the host to be readable by whichever random user
     # that corresponds to.
     shutil.copy(SERVER_KEY, '/etc/abacus/server.key')
-    shutil.chown(SERVER_KEY, 'abacus', 'abacus')
+    shutil.chown('/etc/abacus/server.key', 'abacus', 'abacus')
 
 def adjust_https_port(args):
     subprocess.check_call([
@@ -245,30 +244,47 @@ def install_supervisor_conf(basename, args):
     shutil.copy(os.path.join(SRC_DIR, 'docker', basename),
             os.path.join('/etc/supervisor/conf.d', basename))
 
+def mkdir_logs(services):
+    for service in ['supervisor', 'mysql', 'jetty8', 'abacus']:
+        mkdir_p(os.path.join(DATA_DIR, service, 'log'))
+
+def fix_permission(path, user, group):
+    if os.path.isdir(path):
+        subprocess.check_call(['/bin/chown', '-R', '{}:{}'.format(user, group), '--', path])
+        subprocess.check_call(['/bin/chmod', '-R', 'go-rwx', '--', path])
+
+def fix_permissions(args):
+    shutil.chown(DATA_DIR, 'root', 'root')
+    os.chmod(DATA_DIR, 0o755)
+    fix_permission(os.path.join(DATA_DIR, 'abacus'), 'abacus', 'abacus')
+    fix_permission(os.path.join(DATA_DIR, 'jetty8'), 'jetty', 'jetty')
+    fix_permission(os.path.join(DATA_DIR, 'supervisor'), 'root', 'root')
+    fix_permission(os.path.join(DATA_DIR, 'mysql'), 'mysql', 'mysql')
+
+    shutil.chown(CONF_DIR, 'root', 'root')
+    os.chmod(CONF_DIR, 0o755)
+    fix_permission(os.path.join(CONF_DIR, 'abacus'), 'abacus', 'abacus')
+
+    shutil.chown(CONTEST_DIR, 'abacus', 'abacus')
+    os.chmod(CONTEST_DIR, 0o700)
+
 def exec_supervisor(args):
     os.execv('/usr/bin/supervisord',
             ['/usr/bin/supervisord', '-n', '-c', '/etc/supervisor/supervisord.conf'])
-
-def fix_permissions():
-    subprocess.check_call([
-        'chmod', '-R', 'go-rwx', CONF_DIR, DATA_DIR, CONTEST_DIR])
 
 def run_shell(args):
     os.execv('/bin/bash', ['/bin/bash'] + args.args)
 
 def run_server(args):
-    for name in ['supervisor', 'mysql', 'jetty8', 'abacus']:
-        mkdir_p(os.path.join(LOG_DIR, name))
-    shutil.chown(os.path.join(LOG_DIR, 'abacus'), 'abacus', 'abacus')
-    shutil.chown(os.path.join(LOG_DIR, 'mysql'), 'mysql', 'mysql')
-    shutil.chown(os.path.join(LOG_DIR, 'jetty8'), 'jetty', 'jetty')
+    mkdir_logs(['supervisor', 'mysql', 'jetty8', 'abacus'])
     make_abacus_certs(args)
+    make_jetty_certs(args)
     make_mysql(args)
     make_server_conf(args)
-    make_jetty_certs(args)
     make_server_crypto(args)
     adjust_https_port(args)
     install_supervisor_conf('server-supervisord.conf', args)
+    fix_permissions(args)
     exec_supervisor(args)
 
 def run_marker(args):
@@ -277,12 +293,11 @@ def run_marker(args):
                 file=sys.stderr)
         sys.exit(1)
 
-    for name in ['supervisor', 'abacus']:
-        mkdir_p(os.path.join(LOG_DIR, name))
-    shutil.chown(os.path.join(LOG_DIR, 'abacus'), 'abacus', 'abacus')
+    mkdir_logs(['supervisor', 'abacus'])
     make_marker_conf(args)
     suid_runlimit(args)
     install_supervisor_conf('marker-supervisord.conf', args)
+    fix_permissions(args)
     exec_supervisor(args)
 
 def main():

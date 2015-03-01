@@ -17,7 +17,8 @@
                 linkend="administrator-webapp"/> for instructions. The Docker
             build also does not support multi-server installations. However,
             it greatly simplifies setting up a server for either development
-            or contest use.
+            or contest use. You should still read these chapters for
+            information not related to installation.
         </para>
         <para>
             Before using Docker to deploy Abacus, it is worth reading the
@@ -29,15 +30,15 @@
     <section id="docker.requirements">
         <title>Requirements</title>
         <para>
-            There are only two software requirements: a Linux machine and
-            Docker itself! Development uses Docker 1.5, but you might be
+            There are only two software requirements: Linux and
+            Docker! Development uses Docker 1.5, but you might be
             successful with older versions. For Ubuntu, one can obtain the
             latest version from <ulink
                 url="https://get.docker.com/ubuntu/"/>.
         </para>
         <para>
-            Docker currently plays fast-and-loose with security, and many
-            files end up owned by root or accessed with root permissions. It
+            Docker currently plays fast-and-loose with security, and many files
+            end up owned by random users or accessed with root permissions. It
             is recommended not to run AbacusCM through Docker on a server that
             has any untrusted users. It is also recommended to run the marker
             and the server on separate machines when in production.
@@ -74,8 +75,8 @@
     <section id="docker.server">
         <title>Running a server</title>
         <para>
-            To run a toy server for testing (which will not be configurable or
-            have any persistence), run
+            To run a toy server for testing (which will not have any
+            configuration or persist data), run
         </para>
         <screen><userinput>docker run --rm -p 127.0.0.1:80:8080 -p 127.0.0.1:443:8443 bmerry/abacuscm server</userinput></screen>
         <para>
@@ -96,9 +97,10 @@
                 course change the host ports or disable http entirely. If you
                 have both http and https exposed but are not using port 443
                 for https, then pass
-                <userinput>-e JETTY_SSL_PORT=<replaceable>port</replaceable></userinput>
-                as well. This is necessary to redirect requests to Abacus on
-                the http port to the https port correctly.
+                <userinput>--https-port <replaceable>port</replaceable></userinput>
+                at the end of the command line. This is necessary to redirect
+                requests to Abacus on the http port to the https port
+                correctly.
             </para>
             <para>
                 The Abacus server runs in the container on its default port
@@ -113,7 +115,7 @@
                 The command above creates a transient container that will lose
                 all its data when it is stopped. This is obviously not a good
                 idea for a real contest: if the server crashes, the
-                submissions made so far should be preserved. Docker allows
+                submissions made so far would be lost. Docker allows
                 host directories to be mounted into the container as
                 <ulink
                     url="https://docs.docker.com/userguide/dockervolumes/">volumes</ulink>.
@@ -130,7 +132,7 @@
                 particularly certificates and private keys. If one provides an
                 empty directory, self-signed certificates will be generated
                 and saved here, and re-used on subsequent runs. Passing
-                <userinput>-e ABACUS_SERVER=<replaceable>hostname</replaceable></userinput>
+                <userinput>--server <replaceable>hostname</replaceable></userinput>
                 will set the hostname in the certificate presented by the web
                 server (it defaults to <systemitem
                     class="domainname">localhost</systemitem>).
@@ -139,36 +141,94 @@
                 If you want to provide your own certificates and keys for the
                 web server, they need to be provided in PEM format as
                 <filename>jetty.crt</filename> and
-                <filename>jetty.key</filename> as <filename
+                <filename>jetty.key</filename> in <filename
                     class="directory">/conf/jetty-certs</filename>.
                 Similarly, one can provide <filename>cacert.crt</filename>,
                 <filename>server.crt</filename> and
                 <filename>server.key</filename> in <filename
-                    class="directory">/conf/abacus-certs</filename>.
+                    class="directory">/conf/abacus-certs</filename> to set
+                the certificates for the Abacus server.
             </para>
             <para>
                 The last file in <filename class="directory">/conf</filename>
-                is <filename>server.conf.override</filename>. This has the
+                is <filename>/conf/abacus/server.conf.override</filename>. This has the
                 same format as the Abacus server configuration file, but
                 overrides any settings not set in
                 <filename>docker/server.conf</filename> in the Abacus source.
                 Generally the only setting you should change is the initial
-                admin password, but that can also be set by passing
-                <userinput>-e ABACUS_ADMIN_PASSWORD=<replaceable>password</replaceable></userinput>
-                to <command>docker</command>. Note that it only has any
-                effect the first time the server is run; after that it
-                persists in the database.
+                admin password. Note that the admin password in the
+                configuration file only has an effect the first time the server
+                is run; after that it persists in the database.
             </para>
             <para>
                 Finally, <filename class="directory">/contest</filename>
                 contains settings that are expected to vary per contest.
                 Server settings can be overridden by creating a
-                <filename>server.conf.override</filename> file, similarly to
-                <filename>/conf/server.conf.override</filename>. These
+                <filename>/conf/abacus/marker.conf.override</filename> file, similarly to
+                <filename>/conf/abacus/server.conf.override</filename>. These
                 overrides apply after the server configuration overrides.
-                Typicall the values in the <literal>contest</literal>
+                Typically the values in the <literal>contest</literal>
                 section would be overridden here.
             </para>
         </section>
+    </section>
+    <section id="docker.marker">
+        <title>Running a marker</title>
+        <para>
+            The process for running a marker are similar to, but slightly
+            simpler than those for a server. A minimal command line is
+        </para>
+        <screen><userinput>docker run --rm -v <replaceable>/host/conf</replaceable>:/conf bmerry/abacuscm marker</userinput></screen>
+        <para>
+            No port forwarding is required, since the marker does not receive
+            connections. One can also mount a <filename
+                class="directory">/data</filename> volume to receive logs, but
+            it should not be shared with any other container. The <filename
+                class="directory">/conf</filename> volume, on the other hand,
+            can be shared with the server.
+        </para>
+        <para>
+            The following files are used from <filename
+                class="directory">/conf</filename>
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term><filename>/conf/abacus/marker.conf.override</filename></term>
+                <listitem>
+                    <para>
+                        Overrides settings in
+                        <filename>docker/marker.conf</filename> in the Abacus
+                        source. Typically this will set the hostname and
+                        credentials for accessing the server.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><filename>/conf/abacus-certs/cacert.crt</filename></term>
+                <listitem>
+                    <para>
+                        Certificate used to validate the connection to the Abacus
+                        server. Note that the server's hostname is not checked.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        <para>
+            For convenience, the hostname for the server can also be setting
+            by passing <option>--server</option> at the end of the command
+            line.
+        </para>
+        <note>
+            <para>
+                The name <systemitem class="domainname">localhost</systemitem>
+                refers to the container, and not the host that it runs on. If
+                the server and marker are on the same machine, one must
+                specify one of the other names or IP addresses for the host
+                that can be resolved by the marker. A way to do this that
+                avoids exposing the server to the world is to use the address
+                associated with the <systemitem>docker0</systemitem> interface,
+                and also bind that address when setting up port forwarding.
+            </para>
+        </note>
     </section>
 </chapter>

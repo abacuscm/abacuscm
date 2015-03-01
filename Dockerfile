@@ -83,9 +83,9 @@ RUN sed -i 's!^datadir\s*= /var/lib/mysql!datadir = /data/mysql!' /etc/mysql/my.
 
 # Make logging go onto the mount, so that it is preserved
 RUN rm -rf /var/log/supervisor /var/log/mysql /usr/share/jetty8/logs && \
-    ln -s /data/log/supervisor /var/log/supervisor && \
-    ln -s /data/log/mysql /var/log/mysql && \
-    ln -sf /data/log/jetty8 /usr/share/jetty8/logs
+    ln -s /data/supervisor/log /var/log/supervisor && \
+    ln -s /data/mysql/log /var/log/mysql && \
+    ln -sf /data/jetty8/log /usr/share/jetty8/logs
 
 # Create a user for abacus to run as
 RUN adduser --disabled-password --gecos 'abacus user' abacus

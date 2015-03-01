@@ -18,6 +18,11 @@
             in this chapter before reading <xref
                 linkend="administrator-webapp"/>.
         </para>
+        <para>
+            The overall setup is quite complex. Many of the steps have been
+            automated in a Docker container, which is described in <xref
+                linkend="docker"/>.
+        </para>
     </section>
     <section id="administrator-core.build">
         <title>Building abacuscm</title>
