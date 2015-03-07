@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
 
 import subprocess
+import signal
 import os
 import os.path
 import time
 import sys
 import argparse
 import shutil
+import string
 import textwrap
 import tempfile
 import inichange
 import warnings
+import functools
+import random
+import pickle
+import dbm.ndbm
 from contextlib import contextmanager
 
 SRC_DIR = '/usr/src/abacuscm'
@@ -34,9 +40,35 @@ SERVER_CONF = os.path.join(DATA_DIR, 'abacus', 'server.conf')
 MARKER_CONF = os.path.join(DATA_DIR, 'abacus', 'marker.conf')
 SERVER_LOG = os.path.join(DATA_DIR, 'abacus', 'abacusd.log')
 MARKER_LOG = os.path.join(DATA_DIR, 'abacus', 'markerd.log')
+ADMIN_CONF = os.path.join(SRC_DIR, 'docker', 'admin.conf')
+STANDINGS_PWFILE = os.path.join(DATA_DIR, 'abacus', 'standings.pw')
 
 WWW_DIR = os.path.join(DATA_DIR, 'www')
 STANDINGS_DIR = os.path.join(WWW_DIR, 'standings')
+
+_cache = None
+_CACHE_FILE = os.path.join(DATA_DIR, 'abacus', 'runcache')
+
+def open_cache():
+    global _cache
+    if _cache is None:
+        _cache = dbm.ndbm.open(_CACHE_FILE, 'c', 0o600)
+
+def run_once(func):
+    """Decorator to ensure `func` is only run once with a particular
+    set of arguments."""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        open_cache()
+        key = pickle.dumps((func.__name__, args, kwargs))
+        if key not in _cache:
+            func(*args, **kwargs)
+            _cache[key] = '1'
+    return wrapper
+
+def abacustool(*args):
+    subprocess.check_call(['/usr/bin/abacustool',
+        '-c', ADMIN_CONF, '-s', SERVER_CONF] + list(args))
 
 @contextmanager
 def umask(mask):
@@ -91,6 +123,12 @@ def create_jks_keystore(cert, key, keystore, password):
         finally:
             os.unlink(pkcs12)
 
+def is_mysql_running():
+    with open('/dev/null', 'w') as devnull:
+        ret = subprocess.call(['/usr/bin/mysqladmin', 'ping'],
+                stdin=devnull, stdout=devnull, stderr=devnull)
+    return ret == 0
+
 @contextmanager
 def run_mysql():
     """Start mysql server and wait for it to be ready; on context
@@ -99,9 +137,7 @@ def run_mysql():
             stdin=subprocess.PIPE, close_fds=True, cwd='/usr')
     running = False
     for i in range(20):
-        with open('/dev/null', 'w') as sink:
-            ret = subprocess.call(['/usr/bin/mysqladmin', 'ping'], stdout=sink, stderr=sink)
-        if ret == 0:
+        if is_mysql_running():
             running = True
             break
         time.sleep(0.5)
@@ -112,6 +148,44 @@ def run_mysql():
     yield
 
     subprocess.check_call(['/usr/bin/mysqladmin', 'shutdown'])
+    proc.wait()
+
+def is_abacusd_running():
+    """Log in as admin to check whether abacusd is running"""
+    proc = subprocess.Popen(['/usr/bin/batch', ADMIN_CONF],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    cp = inichange.merge([SERVER_CONF])
+    commands = textwrap.dedent('''\
+            auth
+            user:admin
+            pass:{password}
+            ?ok
+            ?user:admin
+
+            '''.format(password=cp['initialisation']['admin_password']))
+    (stdout, stderr) = proc.communicate(bytes(commands, 'utf-8'))
+    return proc.returncode == 0
+
+@contextmanager
+def run_abacusd():
+    """Start abacusd and wait for it to be ready; on context exit, shut down
+    the server again."""
+    proc = subprocess.Popen(['sudo', '-u', 'abacus', '--', '/usr/bin/abacusd', SERVER_CONF],
+            stdin=subprocess.PIPE, close_fds=True, cwd='/')
+    # Wait until the socket is open
+    running = False
+    for i in range(10):
+        if is_abacusd_running():
+            running = True
+            break
+        time.sleep(0.5)
+    if not running:
+        proc.terminate()
+        raise RuntimeError('abacusd did not start successfully')
+
+    yield
+
+    proc.send_signal(signal.SIGINT)
     proc.wait()
 
 def exec_sql(commands):
@@ -163,6 +237,17 @@ def make_jetty_certs(args):
             create_key(jetty_key, args)
         create_self_cert('/CN=' + hostname, jetty_key, jetty_cert, args)
         os.rename(tmp_cert_dir, JETTY_CERT_DIR)
+
+def random_password():
+    r = random.SystemRandom()
+    return ''.join([r.choice(string.ascii_letters) for i in range(16)])
+
+def make_password(pwfile):
+    if not os.path.exists(pwfile):
+        r = random.SystemRandom()
+        password = ''.join([r.choice(string.ascii_letters) for i in range(16)])
+        with open(pwfile, 'w', 0o600) as f:
+            f.write(password)
 
 def make_mysql(args):
     """Initialise mysql db if it does not exist"""
@@ -231,6 +316,29 @@ def make_server_crypto(args):
     shutil.copy(SERVER_KEY, '/etc/abacus/server.key')
     shutil.chown('/etc/abacus/server.key', 'abacus', 'abacus')
 
+@run_once
+def add_user(username, name, password, usertype):
+    abacustool('adduser', username, name, password, usertype)
+
+def add_marker_user():
+    # TODO: share this logic with make_marker_conf
+    filenames = [os.path.join(SRC_DIR, 'docker', 'marker.conf')]
+    override_file = os.path.join(CONF_DIR, 'abacus', 'marker.conf.override')
+    overrides = []
+    if os.path.isfile(override_file):
+        filenames.append(override_file)
+    else:
+        warnings.warn('No marker override file found: using default password for marker')
+    cp = inichange.merge(filenames)
+    username = cp['server']['username']
+    password = cp['server']['password']
+    add_user(username, 'Marker bot', password, 'marker')
+
+def add_standings_user():
+    with open(STANDINGS_PWFILE, 'r') as f:
+        password = f.read()
+    add_user('standings', 'Standings bot', password, 'contestant')
+
 def adjust_https_port(args):
     subprocess.check_call([
         'sed', '-i',
@@ -292,9 +400,14 @@ def run_server(args):
     make_mysql(args)
     make_server_conf(args)
     make_server_crypto(args)
+    make_password(STANDINGS_PWFILE)
     adjust_https_port(args)
     install_supervisor_conf('server-supervisord.conf', args)
     fix_permissions(args)
+    with run_mysql():
+        with run_abacusd():
+            add_standings_user()
+            add_marker_user()
     exec_supervisor(args)
 
 def run_marker(args):
