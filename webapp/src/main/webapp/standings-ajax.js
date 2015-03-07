@@ -55,7 +55,7 @@
 	}
 
 	var update = function () {
-		$.get('standings/standings.txt', dataCallback, 'text');
+		$.get('../standings/standings.txt', dataCallback, 'text');
 	}
 
 	$(document).ready(function() {

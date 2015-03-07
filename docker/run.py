@@ -35,6 +35,8 @@ MARKER_CONF = os.path.join(DATA_DIR, 'abacus', 'marker.conf')
 SERVER_LOG = os.path.join(DATA_DIR, 'abacus', 'abacusd.log')
 MARKER_LOG = os.path.join(DATA_DIR, 'abacus', 'markerd.log')
 
+WWW_DIR = os.path.join(DATA_DIR, 'www')
+STANDINGS_DIR = os.path.join(WWW_DIR, 'standings')
 
 @contextmanager
 def umask(mask):
@@ -248,10 +250,14 @@ def mkdir_logs(services):
     for service in ['supervisor', 'mysql', 'jetty8', 'abacus']:
         mkdir_p(os.path.join(DATA_DIR, service, 'log'))
 
-def fix_permission(path, user, group):
+def mkdir_www():
+    mkdir_p(WWW_DIR)
+    mkdir_p(STANDINGS_DIR)
+
+def fix_permission(path, user, group, mode='go-rwx'):
     if os.path.isdir(path):
         subprocess.check_call(['/bin/chown', '-R', '{}:{}'.format(user, group), '--', path])
-        subprocess.check_call(['/bin/chmod', '-R', 'go-rwx', '--', path])
+        subprocess.check_call(['/bin/chmod', '-R', mode, '--', path])
 
 def fix_permissions(args):
     shutil.chown(DATA_DIR, 'root', 'root')
@@ -268,6 +274,9 @@ def fix_permissions(args):
     shutil.chown(CONTEST_DIR, 'abacus', 'abacus')
     os.chmod(CONTEST_DIR, 0o700)
 
+    fix_permission(WWW_DIR, 'jetty', 'jetty', 'a+rX')
+    fix_permission(STANDINGS_DIR, 'abacus', 'abacus', 'a+rX')
+
 def exec_supervisor(args):
     os.execv('/usr/bin/supervisord',
             ['/usr/bin/supervisord', '-n', '-c', '/etc/supervisor/supervisord.conf'])
@@ -277,6 +286,7 @@ def run_shell(args):
 
 def run_server(args):
     mkdir_logs(['supervisor', 'mysql', 'jetty8', 'abacus'])
+    mkdir_www()
     make_abacus_certs(args)
     make_jetty_certs(args)
     make_mysql(args)

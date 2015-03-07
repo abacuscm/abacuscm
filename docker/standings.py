@@ -13,6 +13,7 @@ import pickle
 import dbm.ndbm
 import string
 import configparser
+import os
 import os.path
 import random
 import textwrap
@@ -20,8 +21,9 @@ import inichange
 
 _cache = None
 _cache_file = '/data/abacus/runcache'
-STANDINGS_CONF = '/data/abacus/standings.conf'
-STANDINGS_CONF_SOURCE = '/usr/src/abacuscm/docker/standings.conf'
+STANDINGS_PWFILE = '/data/abacus/standings.pw'
+STANDINGS_CONF = '/usr/src/abacuscm/docker/standings.conf'
+STANDINGS_FILE = '/data/www/standings/standings.txt'
 SERVER_CONF = '/data/abacus/server.conf'
 ADMIN_CONF = '/usr/src/abacuscm/docker/admin.conf'
 
@@ -42,11 +44,11 @@ def run_once(func):
             _cache[key] = '1'
     return wrapper
 
-@run_once
 def abacustool(*args):
     subprocess.check_call(['/usr/bin/abacustool',
         '-c', ADMIN_CONF, '-s', SERVER_CONF] + list(args))
 
+@run_once
 def add_user(username, name, password, usertype):
     abacustool('adduser', username, name, password, usertype)
 
@@ -60,18 +62,26 @@ def get_conf(filename, section, value):
         cp.read_file(f)
     return cp[section][value]
 
-def generate_standings_conf():
-    if not os.path.exists(STANDINGS_CONF):
+def generate_standings_passwd():
+    if not os.path.exists(STANDINGS_PWFILE):
         r = random.SystemRandom()
         password = ''.join([r.choice(string.ascii_letters) for i in range(16)])
-        cp = inichange.merge([STANDINGS_CONF_SOURCE], [('server', 'password', password)])
-        with open(STANDINGS_CONF, 'w', 0o600) as f:
-            cp.write(f)
+        with open(STANDINGS_PWFILE, 'w', 0o600) as f:
+            f.write(password)
+
+def get_standings_passwd():
+    with open(STANDINGS_PWFILE, 'r') as f:
+        return f.read()
+
+def run_standings():
+    os.execv('/usr/bin/abacustool', [
+        '/usr/bin/abacustool', '-c', STANDINGS_CONF, '-P', STANDINGS_PWFILE,
+        '-u', 'standings', 'standings', STANDINGS_FILE])
 
 def main():
-    generate_admin_conf()
-    generate_standings_conf()
-    add_user('standings', 'Standings bot', get_conf(STANDINGS_CONF, 'server', 'password'), 'contestant')
+    generate_standings_passwd()
+    add_user('standings', 'Standings bot', get_standings_passwd(), 'contestant')
+    run_standings()
 
 if __name__ == "__main__":
     main()
