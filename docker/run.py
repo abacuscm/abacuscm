@@ -17,7 +17,7 @@ import functools
 import random
 import pickle
 import dbm.ndbm
-from contextlib import contextmanager
+from contextlib import contextmanager, closing
 
 SRC_DIR = '/usr/src/abacuscm'
 CONF_DIR = '/conf'
@@ -42,28 +42,21 @@ SERVER_LOG = os.path.join(DATA_DIR, 'abacus', 'abacusd.log')
 MARKER_LOG = os.path.join(DATA_DIR, 'abacus', 'markerd.log')
 ADMIN_CONF = os.path.join(SRC_DIR, 'docker', 'admin.conf')
 STANDINGS_PWFILE = os.path.join(DATA_DIR, 'abacus', 'standings.pw')
+STANDINGS_DIR = os.path.join(DATA_DIR, 'standings')
 
-WWW_DIR = os.path.join(DATA_DIR, 'www')
-STANDINGS_DIR = os.path.join(WWW_DIR, 'standings')
-
-_cache = None
 _CACHE_FILE = os.path.join(DATA_DIR, 'abacus', 'runcache')
-
-def open_cache():
-    global _cache
-    if _cache is None:
-        _cache = dbm.ndbm.open(_CACHE_FILE, 'c', 0o600)
 
 def run_once(func):
     """Decorator to ensure `func` is only run once with a particular
     set of arguments."""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        open_cache()
-        key = pickle.dumps((func.__name__, args, kwargs))
-        if key not in _cache:
-            func(*args, **kwargs)
-            _cache[key] = '1'
+        cache = dbm.ndbm.open(_CACHE_FILE, 'c', 0o600)
+        with closing(cache):
+            key = pickle.dumps((func.__name__, args, kwargs))
+            if key not in cache:
+                func(*args, **kwargs)
+                cache[key] = '1'
     return wrapper
 
 def abacustool(*args):
@@ -358,8 +351,7 @@ def mkdir_logs(services):
     for service in ['supervisor', 'mysql', 'jetty8', 'abacus']:
         mkdir_p(os.path.join(DATA_DIR, service, 'log'))
 
-def mkdir_www():
-    mkdir_p(WWW_DIR)
+def mkdir_standings():
     mkdir_p(STANDINGS_DIR)
 
 def fix_permission(path, user, group, mode='go-rwx'):
@@ -382,7 +374,6 @@ def fix_permissions(args):
     shutil.chown(CONTEST_DIR, 'abacus', 'abacus')
     os.chmod(CONTEST_DIR, 0o700)
 
-    fix_permission(WWW_DIR, 'jetty', 'jetty', 'a+rX')
     fix_permission(STANDINGS_DIR, 'abacus', 'abacus', 'a+rX')
 
 def exec_supervisor(args):
@@ -394,7 +385,7 @@ def run_shell(args):
 
 def run_server(args):
     mkdir_logs(['supervisor', 'mysql', 'jetty8', 'abacus'])
-    mkdir_www()
+    mkdir_standings()
     make_abacus_certs(args)
     make_jetty_certs(args)
     make_mysql(args)
