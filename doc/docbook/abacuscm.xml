@@ -28,9 +28,9 @@
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="contestant.xml" xpointer="xpointer(//article/articleinfo/title)"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="contestant.xml" xpointer="xpointer(//article/section)"/>
     </chapter>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="docker.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="administrator-core.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="administrator-webapp.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="docker.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="developer-core.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="developer-webapp.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="licensing.xml"/>

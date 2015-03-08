@@ -116,7 +116,7 @@ PDF_STYLESHEET_abacuscm = fo
 HTML_STYLESHEET_abacuscm = xhtml
 XML_abacuscm = abacuscm \
 	contestant \
-	administrator-core administrator-webapp \
+	docker administrator-core administrator-webapp \
 	developer-core developer-webapp \
 	licensing
 XSLTPROC_ARGS_abacuscm = --stringparam profile.condition "$(docs_profile)"
