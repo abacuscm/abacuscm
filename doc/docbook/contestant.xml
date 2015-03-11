@@ -18,6 +18,7 @@
             <year>2011</year>
             <year>2012</year>
             <year>2013</year>
+            <year>2015</year>
             <holder>Bruce Merry</holder>
             <holder>Jaco Kroon</holder>
             <holder>Carl Hultquist</holder>
@@ -315,6 +316,14 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
             <guilabel>Standings</guilabel> tab), but they will not be updated
             during the last hour of the contest. Only teams that have made at
             least one submission will appear in the standings.
+        </para>
+    </section>
+    <section id="contestant.resources">
+        <title>Resources</title>
+        <para>
+            This tab might or might not be available, depending on how the
+            contest has been configured. If it appears, it will contain
+            material that the contest organisers have made available to you.
         </para>
     </section>
     <section id="contestant.alerts">
