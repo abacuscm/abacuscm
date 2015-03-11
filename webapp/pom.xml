@@ -75,6 +75,7 @@
                                 <jsSourceFile>debug.js</jsSourceFile>
                                 <jsSourceFile>fileuploader.js</jsSourceFile>
                                 <jsSourceFile>login.js</jsSourceFile>
+                                <jsSourceFile>resources.js</jsSourceFile>
                                 <jsSourceFile>problems.js</jsSourceFile>
                                 <jsSourceFile>standings.js</jsSourceFile>
                                 <jsSourceFile>submissions.js</jsSourceFile>
