@@ -18,7 +18,8 @@
 
 .pointer-hover { cursor: pointer; }
 .tab-highlight { color: red; font-weight: bolder; }
-.tab-hidden    { display: none; }
+/* hide disabled tabs */
+.ui-tabs > .ui-tabs-nav > .ui-state-disabled { display: none; }
 
 .jsonly { display: none; }
 .error { color: red; }

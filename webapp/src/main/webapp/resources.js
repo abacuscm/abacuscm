@@ -20,14 +20,17 @@
 
 (function($) {
 	var updateResources = function(force) {
-		ifModified = force ? false : true;
-		$.ajax('../resources/', {dataType: 'html', ifModified: ifModified})
+		$.ajax('../resources/', {dataType: 'html'})
 		.success(function(data, textStatus, jqXHR) {
-			if (data)
+			if (data === undefined && force)
+			{
+				data = jqXHR.responseText;
+			}
+			if (data !== undefined)
 			{
 				var body = $("<div>").append($.parseHTML(data)).find("#body");
 				$('#tab-resources').html(body);
-				$('.tab-resources').removeClass('tab-hidden');
+				showTab('tab-resources');
 			}
 		})
 		.complete(function(data, textStatus, jqXHR) {
