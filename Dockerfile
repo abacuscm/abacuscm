@@ -82,10 +82,10 @@ RUN cp /usr/src/abacuscm/docker/abacuscm.xml /etc/jetty8/contexts/abacuscm.xml &
 RUN sed -i 's!^datadir\s*= /var/lib/mysql!datadir = /data/mysql!' /etc/mysql/my.cnf
 
 # Make logging go onto the mount, so that it is preserved
-RUN rm -rf /var/log/supervisor /var/log/mysql /usr/share/jetty8/logs && \
+RUN rm -rf /var/log/supervisor /var/log/mysql /var/log/jetty8 && \
     ln -s /data/supervisor/log /var/log/supervisor && \
     ln -s /data/mysql/log /var/log/mysql && \
-    ln -sf /data/jetty8/log /usr/share/jetty8/logs && \
+    ln -s /data/jetty8/log /var/log/jetty8 && \
     mv /usr/share/jetty8/webapps/root /www && \
     ln -s /www /usr/share/jetty8/webapps/root && \
     ln -s /data/standings /usr/share/jetty8/webapps/standings
