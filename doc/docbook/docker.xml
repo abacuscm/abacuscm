@@ -204,6 +204,39 @@ languages = <replaceable>C,C++,Python 2.x,Python 3.x,Java</replaceable></screen>
                     <filename>/abacus/standings.html</filename> for
                     publicly-viewable standings.
                 </para>
+                <para>
+                    If you want to provide a resources page inside the Abacus
+                    interface (for example, with API references, or sample
+                    code), create
+                    <filename><replaceable>www-dir</replaceable>/resources/index.html</filename>.
+                    This page must contain a <sgmltag>div</sgmltag> with a <sgmltag
+                        class="attribute">id</sgmltag> of <sgmltag
+                        class="attvalue">body</sgmltag>, which will be embedded
+                    into the Abacus interface. Note that it is a good idea for
+                    links to be configured to open in a new window.
+                </para>
+                <para>
+                    If this page will change frequently (such as to provide
+                    resources only after the start of the contest), you can
+                    override the cache control by creating
+                    <filename><replaceable>www-dir</replaceable>/WEB-INF/web.xml</filename>
+                    with the following content. The resources page is
+                    refreshed every 15 seconds.
+                </para>
+                <screen><![CDATA[<web-app>
+    <servlet>
+        <servlet-name>default</servlet-name>
+        <servlet-class>org.eclipse.jetty.servlet.DefaultServlet</servlet-class>
+        <init-param>
+            <param-name>cacheControl</param-name>
+            <param-value>max-age=0,must-revalidate</param-value>
+        </init-param>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>default</servlet-name>
+        <url-pattern>/</url-pattern>
+    </servlet-mapping>
+</web-app>]]></screen>
             </step>
             <step>
                 <para>
