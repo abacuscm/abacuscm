@@ -182,7 +182,8 @@ getlanguages
 ?ok
 ?language0:C++
 ?language1:Java
-?language2:Python
+?language2:Python 2.x
+?language3:Python 3.x
 
 getprobtypes
 ?ok
@@ -192,13 +193,14 @@ getprobtypes
 getprobdescript
 type:tcprob
 ?ok
-?descript:shortname S, longname S, multi_submit {No,Yes}, testcase (input F, output F), ignore_whitespace {Yes,No}, time_limit I
+?descript:shortname S, longname S, multi_submit {No,Yes}, testcase (input F, output F), ignore_whitespace {Yes,No}, time_limit I, memory_limit I
 
 # TEST: creating a problem must succeed
 setprobattrs
 prob_id:0
 prob_type:tcprob
 time_limit:1
+memory_limit:64
 ignore_whitespace:Yes
 shortname:test
 longname:Test Problem
@@ -218,12 +220,14 @@ prob_id:1
 ?testcase.input:data.in
 ?testcase.output:data.out
 ?time_limit:1
+?memory_limit:64
 
 # TEST: creating a problem with dependencies must succeed
 setprobattrs
 prob_id:0
 prob_type:tcprob
 time_limit:1
+memory_limit:64
 ignore_whitespace:Yes
 shortname:test2
 longname:<b>Unicode</b> £etterß
@@ -244,6 +248,7 @@ prob_id:17
 ?testcase.input:data.in
 ?testcase.output:data.out
 ?time_limit:1
+?memory_limit:64
 
 getprobfile
 prob_id:1
@@ -265,6 +270,7 @@ setprobattrs
 prob_id:17
 prob_type:tcprob
 time_limit:1
+memory_limit:64
 ignore_whitespace:Yes
 shortname:test2
 longname:<b>Unicode</b> £etterß
@@ -285,6 +291,7 @@ prob_id:17
 ?testcase.input:data2.in
 ?testcase.output:data2.out
 ?time_limit:1
+?memory_limit:64
 
 getprobfile
 prob_id:17
@@ -537,7 +544,7 @@ lang:C++
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/do_nothing.py
 ?ok
 ?submission_id:97
@@ -565,7 +572,7 @@ lang:Java
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/empty.py
 ?ok
 ?submission_id:161
@@ -586,7 +593,7 @@ lang:Java
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/exception.py
 ?ok
 ?submission_id:209
@@ -600,7 +607,7 @@ lang:C++
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/infinite_stream.py
 ?ok
 ?submission_id:241
@@ -628,7 +635,7 @@ lang:C++
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/sleep_forever.py
 ?ok
 ?submission_id:305
@@ -649,7 +656,7 @@ lang:Java
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/spin_forever.py
 ?ok
 ?submission_id:353
@@ -663,21 +670,21 @@ lang:C++
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/wrong_retcode.py
 ?ok
 ?submission_id:385
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/exact.py
 ?ok
 ?submission_id:401
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/whitespace.py
 ?ok
 ?submission_id:417

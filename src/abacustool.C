@@ -713,13 +713,20 @@ static int do_addtime(ServerConnection &con, int argc, char * const *argv) {
 static int getsource_helper(ServerConnection &con, uint32_t submission_id) {
 	uint32_t sourceLength;
 	char *source;
+    uint32_t languageLength;
+    char *language;
 	log(LOG_DEBUG, "Retrieving source for submission %u", submission_id);
-	if (!con.getSubmissionSource(submission_id, &source, &sourceLength))
+	if (!con.getSubmissionSource(submission_id, &source, &sourceLength, &language, &languageLength))
 		return 1;
 	else {
+		string lang(language, languageLength);
+        delete[] language;
+        cerr << "LANGUAGE: " << lang << endl;
+
 		string src(source, sourceLength);
 		delete[] source;
 		cout << src;
+
 		return 0;
 	}
 }

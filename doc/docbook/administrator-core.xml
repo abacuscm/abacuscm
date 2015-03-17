@@ -573,7 +573,8 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
             <step>
                 <para>
                     In the <literal>[compilers]</literal>,
-                    <literal>[java]</literal> and <literal>[python]</literal>
+                    <literal>[java]</literal>, <literal>[python]</literal>
+                    and <literal>[python3]</literal>
                     sections, configure the paths to the compilers and
                     interpreters. The <literal>[java]</literal>
                     <parameter>policy</parameter> must point at the policy

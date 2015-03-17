@@ -85,8 +85,10 @@
 				}
 			);
 		}
-		else
+		else {
+			submissionFiles = new Array();
 			finishFetch();
+		}
 	}
 
 	var getFileHandler = function (msg, name) {
