@@ -144,6 +144,14 @@
             <computeroutput>The answer is:</computeroutput> unless you are
             asked to.
         </para>
+        <warning>
+            <para>
+                Your program will generally be judged against secret input,
+                which will be different from the sample input shown in the
+                problem statement. Your solution must be able to handle all
+                valid inputs.
+            </para>
+        </warning>
         <section id="contestant.solutions.float">
             <title>Floating-point output</title>
             <para>
@@ -177,6 +185,16 @@
                 <programlisting language="c++"><![CDATA[cout.precision(6);
 cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
             </example>
+        </section>
+        <section id="contestant.solutions.resources">
+            <title>Resource limits</title>
+            <para>
+                When your solution is judged, it will be subject to resource
+                limits, particularly time and memory. Time limits should be
+                stated in the problem text. The total memory for your program
+                is limited to 256 MiB, unless otherwise stated in the problem
+                text.
+            </para>
         </section>
     </section>
     <section id="contestant.submitting">

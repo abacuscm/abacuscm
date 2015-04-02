@@ -103,7 +103,8 @@ void CompiledProblemMarker::mark() {
 		log(LOG_INFO, "Attribute memory limit = %u", (unsigned)memorylimit);
 
 		if(!memorylimit) {
-			memorylimit = 64;
+			// If you change this, remember to update the contestant manual.
+			memorylimit = 256;
 			log(LOG_WARNING, "memorylimit==0 is invalid, defaulting to %u MB.", (unsigned)memorylimit);
 		}
 
