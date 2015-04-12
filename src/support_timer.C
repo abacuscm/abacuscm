@@ -206,10 +206,6 @@ void TimerSupportModule::init()
 	}
 
 	blinds = strtoul(conf["contest"]["blinds"].c_str(), NULL, 0);
-	if (blinds == 0) {
-		log(LOG_WARNING, "blinds is NOT set explicitly, defaulting to 1 hour for backwards compatibility.");
-		blinds = 3600;
-	}
 	if (blinds > duration / 2)
 		log(LOG_WARNING, "Blinds is longer than half the contest - this is most likely wrong.");
 	if (blinds > duration) {

@@ -28,6 +28,7 @@ auto_ptr<MessageBlock> ActContesttime::int_process(ClientConnection*cc, const Me
 	TimerSupportModule *timer = getTimerSupportModule();
 	time_t contesttime = timer->contestTime(cc->getGroupId());
 	time_t contestremain = timer->contestDuration() - contesttime;
+	time_t contestblinds = timer->contestBlindsDuration();
 	bool running = timer->contestStatus(cc->getGroupId()) == TIMER_STATUS_STARTED;
 
 	ostringstream os;
@@ -41,6 +42,10 @@ auto_ptr<MessageBlock> ActContesttime::int_process(ClientConnection*cc, const Me
 	os.str("");
 	os << contestremain;
 	(*res)["remain"] = os.str();
+
+	os.str("");
+	os << contestblinds;
+	(*res)["blinds"] = os.str();
 
 	return res;
 }

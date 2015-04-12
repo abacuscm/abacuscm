@@ -20,6 +20,8 @@
 
 (function($) {
 	var projectedStop;
+	var blinds;
+	var lastRemain; // remain header from last contesttime query
 
 	/**
 	 * Register ourselves for start/stop notifications.
@@ -45,11 +47,13 @@
 	function contestStatusHandler(msg) {
 		if (msg.data.name != 'ok') {
 			// Ick. What do we do here? For now, spam a popup and return.
-			window.jAlert('Error updating submissions: ' + msg.data.headers.msg);
+			window.jAlert('Error updating status: ' + msg.data.headers.msg);
 			return;
 		}
 
 		var status;
+		lastRemain = parseInt(msg.data.headers.remain, 10);
+		blinds = parseInt(msg.data.headers.blinds, 10);
 		if (msg.data.headers.running == 'yes') {
 			var nowMs = new Date().getTime();
 
@@ -61,8 +65,7 @@
 			logLine('Lag from server is currently ' + lagMs + 'ms');
 
 			var now = Math.floor(nowMs / 1000);
-			var remain = msg.data.headers.remain;
-			projectedStop = now + parseInt(remain, 10);
+			projectedStop = now + lastRemain;
 		} else {
 			projectedStop = 0;
 		}
@@ -72,34 +75,38 @@
 
 	this.startStop = function(msg) {
 		if (msg.data.headers.action == 'start') {
-			// Fire off a request for the latest contest status, so that we get
-			// the time remaining.
-			getContestStatus();
-
 			window.jAlert('The contest has been started');
 		} else {
 			// The contest has stopped, so clear our projected stop time.
 			projectedStop = 0;
-
 			window.jAlert('The contest has been stopped');
 		}
 
-		// Update our status now for good measure (although I don't think we
-		// really need to, as this should happen automagically in both of the
-		// above code paths).
+		// Do a synchronous display update, to immediate change the status
+		// display when stopped
 		updateStatus();
+		// Make sure we have a correct understanding of time remaining
+		getContestStatus();
 	}
 
 	function updateStatus() {
 		var status;
+		var remain;
 		if (projectedStop == 0) {
 			status = 'Contest stopped';
+			remain = lastRemain;
 		} else {
 			var now = Math.floor(new Date().getTime() / 1000);
-			var remain = projectedStop - now;
+			remain = projectedStop - now;
+			if (remain < 0)
+				remain = 0;
 			status = 'Contest running: ' + timeToString(remain) + ' remaining';
 			setTimeout(updateStatus, 1000);
 		}
+		if (hasPermission('see_final_standings') || remain >= blinds)
+			$('#standings-frozen').removeClass('frozen');
+		else
+			$('#standings-frozen').addClass('frozen');
 
 		$('#contest-status').html(status);
 	}

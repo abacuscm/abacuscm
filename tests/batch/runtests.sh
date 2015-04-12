@@ -388,6 +388,7 @@ contesttime
 ?running:yes
 ?remain:*
 ?time:*
+?blinds:*
 
 subscribetime
 ?ok
