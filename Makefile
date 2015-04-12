@@ -1,7 +1,7 @@
 -include Makefile.conf
 
 mods ?= server marker admintools docs
-docs_profile ?= cxx;java;python
+docs_profile ?= cxx;java;python;python3
 TOPDIR ?= .
 
 TARGET_BINS:=
