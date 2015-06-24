@@ -1,18 +1,17 @@
-FROM ubuntu:14.04
+FROM ubuntu@6be21d1e5d1e
 MAINTAINER Bruce Merry <bmerry@gmail.com>
 
-# Add PPA for Oracle Java installer
-RUN /bin/echo -e "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main\ndeb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" > /etc/apt/sources.list.d/webupd8team-java.list && \
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886 && \
-    echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
-
 RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y install \
-    build-essential git-core \
-    g++ oracle-java8-installer oracle-java8-set-default python2.7 python3 \
+    build-essential git-core sudo \
+    g++ openjdk-8-jdk python2.7 python3 \
+    gcc-doc libstdc++-4.9-doc openjdk-8-doc python-doc python3-doc \
+    cppreference-doc-en-html stl-manual \
     build-essential libssl-dev libmysqlclient-dev maven \
     xsltproc docbook-xsl docbook-xml w3c-dtd-xhtml fop libxml2-utils \
     openssl mysql-server jetty8 supervisor && \
     apt-get clean
+
+ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 
 # Allows mvn to use caching
 COPY docker/settings.xml /root/.m2/settings.xml
@@ -60,8 +59,6 @@ RUN for artifact in \
 
 # Fix https://bugs.launchpad.net/ubuntu/+source/w3c-dtd-xhtml/+bug/400259
 RUN find /usr/share/xml/xhtml /usr/share/xml/entities/xhtml -name catalog.xml -exec sed -i 's!http://globaltranscorp.org/oasis/catalog/xml/tr9401\.dtd!file:////usr/share/xml/schema/xml-core/tr9401.dtd!g' '{}' ';'
-# Make Oracle JDK be found
-ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 
 # Install abacus. Copies are done piecemeal to make the build cache more
 # effective.
@@ -75,6 +72,7 @@ COPY webapp /usr/src/abacuscm/webapp
 RUN cd /usr/src/abacuscm/webapp && mvn
 COPY . /usr/src/abacuscm
 RUN cp /usr/src/abacuscm/docker/abacuscm.xml /etc/jetty8/contexts/abacuscm.xml && \
+    cp /usr/src/abacuscm/docker/root.xml /etc/jetty8/contexts/root.xml && \
     cp /usr/src/abacuscm/docker/abacuscm-secret-web.xml /etc/jetty8/abacuscm-secret-web.xml && \
     cp /usr/src/abacuscm/docker/jetty*.xml /etc/jetty8/
 
@@ -87,8 +85,22 @@ RUN rm -rf /var/log/supervisor /var/log/mysql /var/log/jetty8 && \
     ln -s /data/mysql/log /var/log/mysql && \
     ln -s /data/jetty8/log /var/log/jetty8 && \
     mv /usr/share/jetty8/webapps/root /www && \
-    ln -s /www /usr/share/jetty8/webapps/root && \
     ln -s /data/standings /usr/share/jetty8/webapps/standings
+
+# Make language documentation available
+RUN DOC_DIR=/usr/share/jetty8/webapps/docs && \
+    mkdir -p $DOC_DIR && \
+    ln -s /usr/share/cppreference/doc/html/ $DOC_DIR/cppreference && \
+    ln -s /usr/share/doc/stl-manual/html/ $DOC_DIR/stl-manual && \
+    ln -s /usr/share/doc/python-doc/html/ $DOC_DIR/python2 && \
+    ln -s /usr/share/doc/python3-doc/html/ $DOC_DIR/python3 && \
+    ln -s /usr/share/doc/openjdk-8-doc/api/ $DOC_DIR/java && \
+    ln -s /usr/share/doc/gcc-4.9-base/libstdc++/ $DOC_DIR/libstdc++ && \
+    mkdir -p $DOC_DIR/gcc && ln -s /usr/share/doc/gcc-doc/*.html $DOC_DIR/gcc && \
+    cp -r /usr/src/abacuscm/docker/doc/* $DOC_DIR/ && \
+    rm /etc/jetty8/contexts/javadoc.xml
+# Patch the webdefault.xml to allow symlinks for the docs
+RUN sed -i '\!<param-name>aliases</param-name>!,+2 s!<param-value>false</param-value>!<param-value>true</param-value>!' /etc/jetty8/webdefault.xml
 
 # Create a user for abacus to run as
 RUN adduser --disabled-password --gecos 'abacus user' abacus
