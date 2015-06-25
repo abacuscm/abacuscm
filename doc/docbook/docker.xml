@@ -289,7 +289,7 @@ languages = <replaceable>C,C++,Python 2.x,Python 3.x,Java</replaceable></screen>
                     Start a marker by running (keeping in mind that each container must have
                     its own data directory):
                 </para>
-                <screen><userinput>docker run -d -v <replaceable>config-dir</replaceable>:/conf -v <replaceable>data-dir</replaceable>:/data bmerry/abacuscm marker --server <replaceable>server-address</replaceable></userinput></screen>
+                <screen><userinput>docker run -d -v <replaceable>config-dir</replaceable>:/conf -v <replaceable>data-dir</replaceable>:/data bmerry/abacuscm marker <optional>--server <replaceable>server-address</replaceable></optional></userinput></screen>
             </step>
             <step>
                 <para>
@@ -324,7 +324,7 @@ languages = <replaceable>C,C++,Python 2.x,Python 3.x,Java</replaceable></screen>
                 local host. However, binding the Abacus server to localhost
                 will prevent the marker from connecting. Instead (or in
                 addition, if one wants to use <command>abacustool</command> on
-                the host, bind it to the address of the
+                the host), bind it to the address of the
                 <systemitem>docker0</systemitem> interface.
             </para>
             <para>
