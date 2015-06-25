@@ -403,7 +403,7 @@ def run_server(args):
 
 def run_marker(args):
     if not os.path.isdir(ABACUS_CERT_DIR):
-        print("No abacus certificates found in {}.".format(ABACUS_CERTS_DIR),
+        print("No abacus certificates found in {}.".format(ABACUS_CERT_DIR),
                 file=sys.stderr)
         sys.exit(1)
 
