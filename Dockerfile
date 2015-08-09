@@ -102,8 +102,10 @@ RUN DOC_DIR=/usr/share/jetty8/webapps/docs && \
 # Patch the webdefault.xml to allow symlinks for the docs
 RUN sed -i '\!<param-name>aliases</param-name>!,+2 s!<param-value>false</param-value>!<param-value>true</param-value>!' /etc/jetty8/webdefault.xml
 
-# Create a user for abacus to run as
-RUN adduser --disabled-password --gecos 'abacus user' abacus
+# Create a user for abacus to run as, and users for an interactive tournament
+RUN adduser --disabled-password --gecos 'abacus user' abacus && \
+    adduser --no-create-home --shell /bin/false --disabled-login --gecos 'tournament user 1' sandbox1 && \
+    adduser --no-create-home --shell /bin/false --disabled-login --gecos 'tournament user 2' sandbox2
 
 VOLUME /conf
 VOLUME /data
