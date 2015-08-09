@@ -1,4 +1,4 @@
-FROM ubuntu@6be21d1e5d1e
+FROM ubuntu:vivid-20150802
 MAINTAINER Bruce Merry <bmerry@gmail.com>
 
 RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y install \
