@@ -244,6 +244,8 @@ CREATE TABLE `User` (
   `password` varchar(32) NOT NULL default '',
   `type` int(11) NOT NULL default '0',
   `group` int(11) NOT NULL default '1',
+  `bonus_points` int(11) NOT NULL default '0',
+  `bonus_seconds` int(11) NOT NULL default '0',
   PRIMARY KEY  (`user_id`),
   UNIQUE KEY `user_id` (`user_id`),
   UNIQUE KEY `username` (`username`),

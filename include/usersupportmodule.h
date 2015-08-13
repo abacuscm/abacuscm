@@ -54,6 +54,7 @@ public:
 	std::string friendlyname(uint32_t user_id);
 	uint32_t usertype(uint32_t user_id);
 	uint32_t user_group(uint32_t user_id);
+	bool user_bonus(uint32_t user_id, int32_t &points, int32_t &seconds);
 	uint32_t nextId(); // next free user ID
 	uint32_t nextGroupId(); // next free group ID
 
