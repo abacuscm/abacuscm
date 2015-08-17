@@ -1037,6 +1037,34 @@ result:0
 comment:Correct answer
 ?ok
 
+# TEST: default bonus must be zero
+getbonus
+user_id:17
+?ok
+?points:0
+?seconds:0
+
+# TEST: Judges must be able to set a bonus
+setbonus
+user_id:17
+points:1
+seconds:123
+?ok
+
+# TEST: Everyone must be able to see bonuses
+getbonus
+user_id:17
+?ok
+?points:1
+?seconds:123
+
+# TEST: negative bonuses must be allowed
+setbonus
+user_id:33
+points:-1
+seconds:-100
+?ok
+
 EOF
 
 echo "****************"
