@@ -310,7 +310,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                 </listitem>
             </varlistentry>
         </variablelist>
-        <para>
+        <para id="contestant.submitting.first-error">
             Judges report the first condition they notice. In particular,
             <computeroutput>Format error</computeroutput> does not indicate
             whether the answers are correct or not, and <computeroutput>Wrong
