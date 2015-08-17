@@ -215,7 +215,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
             track of the submission status. The possible options are:
         </para>
         <variablelist>
-            <varlistentry>
+            <varlistentry id="contestant.submitting.result.pending">
                 <term><computeroutput>Pending</computeroutput></term>
                 <listitem>
                     <para>
@@ -223,7 +223,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                     </para>
                 </listitem>
             </varlistentry>
-            <varlistentry>
+            <varlistentry id="contestant.submitting.result.compile-failed">
                 <term><computeroutput>Compilation failure</computeroutput></term>
                 <listitem>
                     <para>
@@ -247,7 +247,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                     </para>
                 </listitem>
             </varlistentry>
-            <varlistentry>
+            <varlistentry id="contestant.submitting.result.time-exceeded">
                 <term><computeroutput>Time limit exceeded</computeroutput></term>
                 <listitem>
                     <para>
@@ -257,7 +257,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                     </para>
                 </listitem>
             </varlistentry>
-            <varlistentry>
+            <varlistentry id="contestant.submitting.result.abnormal">
                 <term><computeroutput>Abnormal termination</computeroutput></term>
                 <listitem>
                     <para>
@@ -272,7 +272,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                     </para>
                 </listitem>
             </varlistentry>
-            <varlistentry>
+            <varlistentry id="contestant.submitting.result.judge">
                 <term><computeroutput>Deferred to judge</computeroutput></term>
                 <listitem>
                     <para>
@@ -283,7 +283,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                     </para>
                 </listitem>
             </varlistentry>
-            <varlistentry>
+            <varlistentry id="contestant.submitting.result.format-error">
                 <term><computeroutput>Format error</computeroutput></term>
                 <listitem>
                     <para>
@@ -293,7 +293,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                     </para>
                 </listitem>
             </varlistentry>
-            <varlistentry>
+            <varlistentry id="contestant.submitting.result.wrong">
                 <term><computeroutput>Wrong answer</computeroutput></term>
                 <listitem>
                     <para>
@@ -301,7 +301,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                     </para>
                 </listitem>
             </varlistentry>
-            <varlistentry>
+            <varlistentry id="contestant.submitting.result.correct">
                 <term><computeroutput>Correct answer</computeroutput></term>
                 <listitem>
                     <para>
