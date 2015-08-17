@@ -193,7 +193,9 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                 limits, particularly time and memory. Time limits should be
                 stated in the problem text. The total memory for your program
                 is limited to 256 MiB, unless otherwise stated in the problem
-                text.
+                text. If it writes more than 16 MiB of output, it may be killed
+                with result <computeroutput>Abnormal
+                    termination</computeroutput>.
             </para>
         </section>
     </section>
