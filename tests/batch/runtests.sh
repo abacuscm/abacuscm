@@ -731,6 +731,7 @@ getproblems
 getsubmissionsource
 submission_id:1
 ?ok
+?lang:Java
 ?<tests/solutions/bad_class.java
 EOF
 
