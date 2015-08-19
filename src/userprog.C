@@ -25,6 +25,7 @@ map<string, UserProgFunctor> UserProg::_functors
 		__attribute__((init_priority(101)));
 
 UserProg::UserProg() {
+	_work_dir = "/";
 }
 
 UserProg::~UserProg() {
@@ -72,6 +73,10 @@ static string uint2str(unsigned value)
 	ostringstream tmpstrm;
 	tmpstrm << value;
 	return tmpstrm.str();
+}
+
+void UserProg::setWorkDir(string dir) {
+	_work_dir = dir;
 }
 
 void UserProg::setRootDir(string root) {
@@ -130,6 +135,11 @@ string UserProg::sourceFilename(const Buffer&) {
 }
 
 int UserProg::exec(int fd_in, int fd_out, int fd_err, int fd_run, const string &evaluator) {
+	if (chdir(_work_dir.c_str()) < 0) {
+		lerror("chdir");
+		_exit(-1);
+	}
+
 	list<string> prog_argv = getProgramArgv();
 
 	char ** argv = new char*[_runlimit_args.size() + prog_argv.size() + 4];

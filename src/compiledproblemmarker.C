@@ -114,6 +114,7 @@ void CompiledProblemMarker::mark() {
 		log(LOG_INFO, "User program compiled, preparing execution environment.");
 		_uprog->setMemLimit(memorylimit);
 		_uprog->setFileLimit(16 * 1024 * 1024);
+		_uprog->setWorkDir(wdir);
 		_uprog->setRootDir(jaildir);
 		_uprog->setCPUTime(timelimit);
 		_uprog->setRealTime(timelimit * 8);
