@@ -261,7 +261,7 @@ bool StandingsSupportModule::getStandingsInternal(uint32_t uid, bool final, bool
 	mb[cell_name(0, STANDING_RAW_FRIENDLYNAME)] = "Name";
 	mb[cell_name(0, STANDING_RAW_GROUP)] = "Group";
 	mb[cell_name(0, STANDING_RAW_CONTESTANT)] = "Contestant";
-	mb[cell_name(0, STANDING_RAW_TOTAL_SOLVED)] = "Solved";
+	mb[cell_name(0, STANDING_RAW_TOTAL_SOLVED)] = "Points";
 	mb[cell_name(0, STANDING_RAW_TOTAL_TIME)] = "Time";
 
 	ProblemList probs = db->getProblems();

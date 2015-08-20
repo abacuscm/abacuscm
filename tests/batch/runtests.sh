@@ -317,7 +317,7 @@ standings
 ?row_0_2:Name
 ?row_0_3:Group
 ?row_0_4:Contestant
-?row_0_5:Solved
+?row_0_5:Points
 ?row_0_6:Time
 ?row_0_7:test
 ?row_0_8:test2
@@ -494,7 +494,7 @@ standings
 ?row_0_2:Name
 ?row_0_3:Group
 ?row_0_4:Contestant
-?row_0_5:Solved
+?row_0_5:Points
 ?row_0_6:Time
 ?row_0_7:test
 ?row_0_8:test2
@@ -994,7 +994,7 @@ standings
 ?row_0_2:Name
 ?row_0_3:Group
 ?row_0_4:Contestant
-?row_0_5:Solved
+?row_0_5:Points
 ?row_0_6:Time
 ?row_0_7:test
 ?row_0_8:test2

@@ -234,7 +234,7 @@
 			html += '<col />';
 		$('colgroup.problem').html(html);
 
-		html = '<tr><th>Place</th><th>Team</th><th>Name</th><th>Solved</th><th>Time</th>';
+		html = '<tr><th>Place</th><th>Team</th><th>Name</th><th>Points</th><th>Time</th>';
 		for (var i = STANDING_RAW_SOLVED; i < rawHeader.length; i++)
 			html += '<th>' + escapeHTML(rawHeader[i]) + '</th>';
 		html += '</tr>';

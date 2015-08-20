@@ -162,7 +162,7 @@ function data_callback(text, textStatus)
 		html += '<col />';
 	$("colgroup.problem").html(html);
 
-	html = '<tr><th>Place</th><th>Team</th><th>Name</th><th>Solved</th><th>Time</th>';
+	html = '<tr><th>Place</th><th>Team</th><th>Name</th><th>Points</th><th>Time</th>';
 	for (i = STANDING_RAW_SOLVED; i < raw_header.length; i++)
 		html += '<th>' + raw_header[i] + '</th>';
 	html += '</tr>';
