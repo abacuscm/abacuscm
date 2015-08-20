@@ -93,6 +93,7 @@ Standing::Standing(const list<string> &row) : _raw(row.begin(), row.end()) {
 	setGroup(_raw[STANDING_RAW_GROUP]);
 	setContestant(strtoul(_raw[STANDING_RAW_CONTESTANT].c_str(), NULL, 10) != 0);
 	setTotalTime(strtoull(_raw[STANDING_RAW_TOTAL_TIME].c_str(), NULL, 10));
+	setTotalSolved(strtoull(_raw[STANDING_RAW_TOTAL_SOLVED].c_str(), NULL, 10));
 	for (size_t i = STANDING_RAW_SOLVED; i < _raw.size(); i++)
 		setSolved(i - STANDING_RAW_SOLVED, strtol(_raw[i].c_str(), NULL, 10));
 }
@@ -151,6 +152,8 @@ static void usage() {
 		"   replaceproblem <name> <type> <attrib1> <value1>...\n"
 		"   addtime start|stop <time> [<group>]\n"
 		"   setpass <user> <newpassword>\n"
+		"   getbonus <user>\n"
+		"   setbonus <user> <points> <seconds>\n"
 		"   getsource <submission_id>\n"
 		"   getlatestsource <user> <problem>\n"
 		"   submit <problem> <language> <filename>\n"
@@ -164,8 +167,7 @@ static void usage() {
 /* Converts a string to a uint32_t. On success, returns true. On failure,
  * sets *out to 0 and returns false.
  */
-static bool parse_uint32(const char *s, uint32_t *out)
-{
+static bool parse_uint32(const char *s, uint32_t *out) {
 	long long tmp;
 	char *end;
 	errno = 0;
@@ -178,6 +180,24 @@ static bool parse_uint32(const char *s, uint32_t *out)
 	else
 	{
 		*out = (uint32_t) tmp;
+		return true;
+	}
+}
+
+// Same as parse_uint32, but signed
+static bool parse_int32(const char *s, int32_t *out) {
+	long long tmp;
+	char *end;
+	errno = 0;
+	tmp = strtoll(s, &end, 10);
+	if (errno != 0 || tmp < INT32_MIN || tmp > INT32_MAX || end == s || *end != '\0')
+	{
+		*out = 0;
+		return false;
+	}
+	else
+	{
+		*out = (int32_t) tmp;
 		return true;
 	}
 }
@@ -816,6 +836,49 @@ static int do_setpass(ServerConnection &con, int argc, char * const *argv) {
 	return 0;
 }
 
+static int do_getbonus(ServerConnection &con, int argc, char * const *argv) {
+	if (argc != 2) {
+		cerr << "Usage: getbonus <user>\n";
+		return 2;
+	}
+
+	uint32_t user_id = find_user(con, argv[1]);
+	if (user_id == 0) {
+		cerr << "No such user `" << argv[1] << "'\n";
+		return 1;
+	}
+
+	int32_t points, seconds;
+	if (!con.getBonus(user_id, points, seconds))
+		return 1;
+	cout << points << " points, " << seconds << " seconds\n";
+	return 0;
+}
+
+static int do_setbonus(ServerConnection &con, int argc, char *const *argv) {
+	if (argc != 4) {
+		cerr << "Usage: setbonus <user> <points> <seconds>\n";
+		return 2;
+	}
+
+	int32_t points, seconds;
+	if (!parse_int32(argv[2], &points)
+		|| !parse_int32(argv[3], &seconds)) {
+		cerr << "Could not parse values\n";
+		return 2;
+	}
+
+	uint32_t user_id = find_user(con, argv[1]);
+	if (user_id == 0) {
+		cerr << "No such user `" << argv[1] << "'\n";
+		return 1;
+	}
+
+	if (!con.setBonus(user_id, points, seconds))
+		return 1;
+	return 0;
+}
+
 static int do_submit(ServerConnection &con, int argc, char * const *argv) {
 	if (argc != 4) {
 		cerr << "Usage: submit <problem> <language> <filename>\n";
@@ -1091,6 +1154,10 @@ static int process(ServerConnection &con, int argc, char * const *argv) {
 		return do_addtime(con, argc, argv);
 	else if (argv[0] == string("setpass"))
 		return do_setpass(con, argc, argv);
+	else if (argv[0] == string("getbonus"))
+		return do_getbonus(con, argc, argv);
+	else if (argv[0] == string("setbonus"))
+		return do_setbonus(con, argc, argv);
 	else if (argv[0] == string("getsource"))
 		return do_getsource(con, argc, argv);
 	else if (argv[0] == string("getlatestsource"))

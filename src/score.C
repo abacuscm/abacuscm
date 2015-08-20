@@ -42,19 +42,17 @@ void Score::setTotalTime(time_t total_time) {
 	_total_time = total_time;
 }
 
+void Score::setTotalSolved(int solved) {
+	_total_solved = solved;
+}
+
 void Score::setSolved(const vector<int> &solved) {
 	_solved = solved;
-	_total_solved = 0;
-	for (size_t i = 0; i < solved.size(); i++)
-		if (solved[i] > 0)
-			_total_solved++;
 }
 
 void Score::setSolved(unsigned int problem, int attempts) {
 	if (_solved.size() <= problem)
 		_solved.resize(problem + 1);
-	if (_solved[problem] > 0) _total_solved--;
-	if (attempts > 0) _total_solved++;
 	_solved[problem] = attempts;
 }
 

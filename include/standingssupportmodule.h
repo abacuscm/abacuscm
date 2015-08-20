@@ -35,6 +35,7 @@ public:
 	{
 		bool in_standings;                 // user has PERMISSION_IN_STANDINGS
 		time_t time;
+		int points;
 		std::map<uint32_t, int32_t> tries; // sign bit indicates whether correctness has been achieved or not.
 	} StandingsData;
 

@@ -136,6 +136,9 @@ public:
 	bool changePassword(std::string password);
 	bool changePassword(uint32_t id, std::string password);
 
+	bool getBonus(uint32_t user_id, int32_t &points, int32_t &seconds);
+	bool setBonus(uint32_t user_id, int32_t points, int32_t seconds);
+
 	bool startStop(uint32_t group_id, bool start, time_t time);
 
 	std::vector<std::string> getPermissions();

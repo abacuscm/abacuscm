@@ -586,6 +586,7 @@ submission_id:<replaceable>id</replaceable></synopsis>
 submission_id:<replaceable>submission_id</replaceable>
 
 ok
+lang:<replaceable>language</replaceable>
 content-length:<replaceable>content-length</replaceable>
 
 <replaceable>binary data</replaceable></synopsis>

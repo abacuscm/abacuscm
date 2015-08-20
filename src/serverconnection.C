@@ -496,6 +496,42 @@ bool ServerConnection::changePassword(uint32_t id, string password) {
 	return simpleAction(mb);
 }
 
+bool ServerConnection::getBonus(uint32_t user_id, int32_t &points, int32_t &seconds) {
+	MessageBlock mb("getbonus");
+	ostringstream id_str;
+	id_str << user_id;
+	mb["user_id"] = id_str.str();
+
+	MessageBlock *ret = sendMB(&mb);
+	if(!ret)
+		return "";
+
+	bool response = ret->action() == "ok";
+	if(!response)
+		log(LOG_ERR, "%s", (*ret)["msg"].c_str());
+	else {
+		points = strtol((*ret)["points"].c_str(), NULL, 10);
+		seconds = strtol((*ret)["seconds"].c_str(), NULL, 10);
+	}
+
+	delete ret;
+	return response;
+}
+
+bool ServerConnection::setBonus(uint32_t user_id, int32_t points, int32_t seconds) {
+	MessageBlock mb("setbonus");
+	ostringstream id_str, points_str, seconds_str;
+	id_str << user_id;
+	points_str << points;
+	seconds_str << seconds;
+
+	mb["user_id"] = id_str.str();
+	mb["points"] = points_str.str();
+	mb["seconds"] = seconds_str.str();
+
+	return simpleAction(mb);
+}
+
 bool ServerConnection::startStop(uint32_t group_id, bool start, time_t time) {
 	MessageBlock mb("startstop");
 	ostringstream t;

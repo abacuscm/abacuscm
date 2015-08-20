@@ -154,10 +154,13 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 		StandingsData teamdata[2];
 		UserType user_type = static_cast<UserType>(usm->usertype(t->first));
 		const PermissionSet &user_perms = PermissionMap::getInstance()->getPermissions(user_type);
+		int32_t bonus_time;
+		teamdata[0].points = 0;
 		teamdata[0].time = 0;
 		teamdata[0].in_standings = user_perms[PERMISSION_IN_STANDINGS];
-		teamdata[1].time = 0;
-		teamdata[1].in_standings = teamdata[0].in_standings;
+		if (usm->user_bonus(t->first, teamdata[0].points, bonus_time))
+			teamdata[0].time = -bonus_time;
+		teamdata[1] = teamdata[0];
 		map<uint32_t, vector<SubData> >::iterator p;
 		for(p = t->second.begin(); p != t->second.end(); ++p) {
 			int tries = 0;
@@ -181,22 +184,26 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 					if(correct) {
 						teamdata[w].time += (tries - 1) * 20 * 60;
 						teamdata[w].time += correct_time;
+						teamdata[w].points++;
 						teamdata[w].tries[p->first] = tries;
 					} else
 						teamdata[w].tries[p->first] = -tries;
 				}
+			}
+		}
 
-				/* Check if this is news, in order to update */
-				Standings::iterator pos;
-				Standings &standings = w ? _final_standings : _contestant_standings;
-				if (!teamdata[w].tries.empty()) {
-					pos = standings.find(t->first);
-					if (pos == standings.end()
-						|| pos->second.time != teamdata[w].time
-						|| pos->second.tries != teamdata[w].tries) {
-						standings[t->first] = teamdata[w];
-						have_update[w] = true;
-					}
+		/* Check if this is news, in order to update */
+		for (int w = 0; w < 2; w++) {
+			Standings::iterator pos;
+			Standings &standings = w ? _final_standings : _contestant_standings;
+			if (!teamdata[w].tries.empty()) {
+				pos = standings.find(t->first);
+				if (pos == standings.end()
+					|| pos->second.points != teamdata[w].points
+					|| pos->second.time != teamdata[w].time
+					|| pos->second.tries != teamdata[w].tries) {
+					standings[t->first] = teamdata[w];
+					have_update[w] = true;
 				}
 			}
 		}
@@ -261,7 +268,7 @@ bool StandingsSupportModule::getStandingsInternal(uint32_t uid, bool final, bool
 	mb[cell_name(0, STANDING_RAW_FRIENDLYNAME)] = "Name";
 	mb[cell_name(0, STANDING_RAW_GROUP)] = "Group";
 	mb[cell_name(0, STANDING_RAW_CONTESTANT)] = "Contestant";
-	mb[cell_name(0, STANDING_RAW_TOTAL_SOLVED)] = "Solved";
+	mb[cell_name(0, STANDING_RAW_TOTAL_SOLVED)] = "Points";
 	mb[cell_name(0, STANDING_RAW_TOTAL_TIME)] = "Time";
 
 	ProblemList probs = db->getProblems();
@@ -323,19 +330,16 @@ bool StandingsSupportModule::getStandingsInternal(uint32_t uid, bool final, bool
 		for(int col = STANDING_RAW_SOLVED; col < ncols; col++)
 			mb[cell_name(r, col)] = "0";
 
-		int solved = 0;
 		for(pc = i->second.tries.begin(); pc != i->second.tries.end(); ++pc) {
 			int col = prob2col[pc->first];
 
 			val.str("");
 			val << pc->second;
 			mb[cell_name(r, col)] = val.str();
-			if (pc->second > 0)
-				solved++;
 		}
 
 		val.str("");
-		val << solved;
+		val << i->second.points;
 		mb[cell_name(r, STANDING_RAW_TOTAL_SOLVED)] = val.str();
 	}
 

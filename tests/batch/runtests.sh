@@ -317,7 +317,7 @@ standings
 ?row_0_2:Name
 ?row_0_3:Group
 ?row_0_4:Contestant
-?row_0_5:Solved
+?row_0_5:Points
 ?row_0_6:Time
 ?row_0_7:test
 ?row_0_8:test2
@@ -494,7 +494,7 @@ standings
 ?row_0_2:Name
 ?row_0_3:Group
 ?row_0_4:Contestant
-?row_0_5:Solved
+?row_0_5:Points
 ?row_0_6:Time
 ?row_0_7:test
 ?row_0_8:test2
@@ -731,6 +731,7 @@ getproblems
 getsubmissionsource
 submission_id:1
 ?ok
+?lang:Java
 ?<tests/solutions/bad_class.java
 EOF
 
@@ -993,7 +994,7 @@ standings
 ?row_0_2:Name
 ?row_0_3:Group
 ?row_0_4:Contestant
-?row_0_5:Solved
+?row_0_5:Points
 ?row_0_6:Time
 ?row_0_7:test
 ?row_0_8:test2
@@ -1034,6 +1035,34 @@ mark
 submission_id:161
 result:0
 comment:Correct answer
+?ok
+
+# TEST: default bonus must be zero
+getbonus
+user_id:17
+?ok
+?points:0
+?seconds:0
+
+# TEST: Judges must be able to set a bonus
+setbonus
+user_id:17
+points:1
+seconds:123
+?ok
+
+# TEST: Everyone must be able to see bonuses
+getbonus
+user_id:17
+?ok
+?points:1
+?seconds:123
+
+# TEST: negative bonuses must be allowed
+setbonus
+user_id:33
+points:-1
+seconds:-100
 ?ok
 
 EOF

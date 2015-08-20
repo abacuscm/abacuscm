@@ -34,6 +34,7 @@ static const char * const _permission_names[PERMISSION_COUNT] = {
 	"mark",
 	"judge",
 	"judge_override",
+	"set_bonus",
 	"user_admin",
 	"problem_admin",
 	"server_admin",

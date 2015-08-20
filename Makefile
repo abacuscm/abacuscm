@@ -54,6 +54,7 @@ TARGET_MODS += dbmysql \
 	act_adduser \
 	act_addgroup \
 	act_auth \
+	act_bonus \
 	act_clarify \
 	act_contesttime \
 	act_events \

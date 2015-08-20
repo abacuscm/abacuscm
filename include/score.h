@@ -88,6 +88,7 @@ public:
 	virtual void setGroup(const std::string &group);
 	virtual void setContestant(bool contestant);
 	virtual void setTotalTime(time_t total_time);
+	virtual void setTotalSolved(int solved);
 	virtual void setSolved(const std::vector<int> &solved);
 	virtual void setSolved(unsigned int problem, int attempts);
 };
