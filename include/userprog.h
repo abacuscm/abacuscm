@@ -26,6 +26,7 @@ class UserProg {
 private:
 	static std::map<std::string, UserProgFunctor> _functors;
 
+	std::string _work_dir;
 	std::list<std::string> _runlimit_args;
 protected:
 	/**
@@ -63,6 +64,7 @@ public:
 	 */
 	virtual std::string sourceFilename(const Buffer&);
 
+	void setWorkDir(std::string dir); // will chdir here before chroot
 	virtual void setRootDir(std::string root); // will always be the same as outdir.
 	virtual void setMemLimit(unsigned bytes);
 	virtual void setFileLimit(unsigned bytes);

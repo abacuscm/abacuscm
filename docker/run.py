@@ -340,7 +340,7 @@ def adjust_https_port(args):
         os.path.join(JETTY_DIR, 'jetty.xml')])
 
 def suid_runlimit(args):
-    shutil.chown('/usr/bin/runlimit', 'abacus', 'abacus')
+    shutil.chown('/usr/bin/runlimit', 'root', 'abacus')
     os.chmod('/usr/bin/runlimit', 0o4550)
 
 def install_supervisor_conf(basename, args):

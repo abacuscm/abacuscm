@@ -66,7 +66,6 @@ COPY Makefile Makefile.inc /usr/src/abacuscm/
 COPY src /usr/src/abacuscm/src
 COPY include /usr/src/abacuscm/include
 COPY doc /usr/src/abacuscm/doc
-# chown/chmod are to make runlimit suid root
 RUN cd /usr/src/abacuscm && make && make install
 COPY webapp /usr/src/abacuscm/webapp
 RUN cd /usr/src/abacuscm/webapp && mvn

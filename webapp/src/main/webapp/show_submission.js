@@ -36,7 +36,7 @@
 							file: 'testcase.output'
 						}
 					},
-					function (msg) { getFileHandler(msg, 'Expected output'); }
+					function (msg) { getFileHandler(msg, 'Expected output', true); }
 				);
 			}
 			sendMessageBlock({
@@ -91,13 +91,20 @@
 		}
 	}
 
-	var getFileHandler = function (msg, name) {
+	var getFileHandler = function (msg, name, ignore_errors) {
 		if (msg.data.name == 'ok') {
 			var content = parseUtf8(msg.data.content);
 			if (typeof name === 'undefined') {
 				name = msg.data.headers.name;
 			}
 			submissionFiles.push({name: name, content: content});
+		}
+		else if (ignore_errors && msg.data.name == 'err')
+		{
+			// Suppress the error.
+			// TODO: this is a hack to deal with not being able to query the
+			// problem type, and hence not knowing whether certain files can
+			// be safely retrieved.
 		}
 		else
 			defaultReplyHandler(msg);

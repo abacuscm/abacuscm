@@ -41,14 +41,6 @@ protected:
 	int run(const Buffer& in, Buffer& out, Buffer& run);
 
 	/**
-	 * can be used to arbitrarily connect fds as you need.  In an interactive
-	 * problem for example you can run the "official" program using a seperate
-	 * UserProgram instance whilst using this version to execute the actual
-	 * user program.
-	 */
-	int run(int fd_in, int fd_out, int fd_err, int fd_run) __attribute__((noreturn));
-
-	/**
 	 * You need to override this to receive control after the user program has been compiled.
 	 */
 	virtual void mark_compiled() = 0;
