@@ -93,6 +93,7 @@ Standing::Standing(const list<string> &row) : _raw(row.begin(), row.end()) {
 	setGroup(_raw[STANDING_RAW_GROUP]);
 	setContestant(strtoul(_raw[STANDING_RAW_CONTESTANT].c_str(), NULL, 10) != 0);
 	setTotalTime(strtoull(_raw[STANDING_RAW_TOTAL_TIME].c_str(), NULL, 10));
+	setTotalSolved(strtoull(_raw[STANDING_RAW_TOTAL_SOLVED].c_str(), NULL, 10));
 	for (size_t i = STANDING_RAW_SOLVED; i < _raw.size(); i++)
 		setSolved(i - STANDING_RAW_SOLVED, strtol(_raw[i].c_str(), NULL, 10));
 }
@@ -856,7 +857,7 @@ static int do_getbonus(ServerConnection &con, int argc, char * const *argv) {
 
 static int do_setbonus(ServerConnection &con, int argc, char *const *argv) {
 	if (argc != 4) {
-		cerr << "Usage: getbonus <user> <points> <seconds>\n";
+		cerr << "Usage: setbonus <user> <points> <seconds>\n";
 		return 2;
 	}
 
