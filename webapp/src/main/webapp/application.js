@@ -76,6 +76,8 @@
 	}
 
 	this.timeToString = function(time) {
+		if (time < 0)
+			return '-' + timeToString(-time);
 		var seconds = time % 60;
 		var minutes = (time - seconds) / 60 % 60;
 		var hours = (time - 60 * minutes - seconds) / 3600;
