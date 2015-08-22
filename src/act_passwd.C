@@ -86,6 +86,16 @@ auto_ptr<MessageBlock> ActIdPasswd::int_process(ClientConnection *cc, const Mess
 }
 
 auto_ptr<MessageBlock> ActGetUsers::int_process(ClientConnection *, const MessageBlock *) {
+	static const std::string typenames[] =
+	{
+		"none",
+		"admin",
+		"judge",
+		"contestant",
+		"marker",
+		"observer",
+		"proctor"
+	};
 	UserSupportModule *usm = getUserSupportModule();
 	if(!usm)
 		return MessageBlock::error("Misconfigured server, no UserSupportModule!");
@@ -104,6 +114,12 @@ auto_ptr<MessageBlock> ActGetUsers::int_process(ClientConnection *, const Messag
 		tmp.str(""); tmp << s->user_id;
 		(*res)["id" + cntr] = tmp.str();
 		(*res)["username" + cntr] = s->username;
+		(*res)["friendlyname" + cntr] = usm->friendlyname(s->user_id);
+		uint32_t type = usm->usertype(s->user_id);
+		if (type < sizeof(typenames) / sizeof(typenames[0]))
+			(*res)["type" + cntr] = typenames[type];
+		else
+			return MessageBlock::error("Invalid user type");
 	}
 
 	return res;

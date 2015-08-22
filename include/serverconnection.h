@@ -44,6 +44,8 @@ typedef struct {
 typedef struct {
 	uint32_t id;
 	std::string username;
+	std::string friendlyname;
+	std::string type;
 } UserInfo;
 
 typedef struct {

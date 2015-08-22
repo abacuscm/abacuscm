@@ -334,7 +334,9 @@ groupname:<replaceable>name</replaceable></synopsis>
 
 ok
 id0:<replaceable>id</replaceable>
-username0:<replaceable>username</replaceable></synopsis>
+username0:<replaceable>username</replaceable>
+friendlyname0:<replaceable>friendlyname</replaceable>
+type0:<replaceable>typename</replaceable></synopsis>
             </section>
             <section id="developer-core.csprotocol.getgroups">
                 <title>Get list of groups</title>

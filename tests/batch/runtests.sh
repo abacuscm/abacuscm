@@ -164,12 +164,20 @@ getusers
 ?ok
 ?id0:1
 ?username0:admin
+?friendlyname0:Administrator
+?type0:admin
 ?id1:33
 ?username1:judge
+?friendlyname1:HTML: <b>not bold</b>
+?type1:judge
 ?id2:49
 ?username2:marker
+?friendlyname2:Marker
+?type2:marker
 ?id3:17
 ?username3:test1
+?friendlyname3:<b>Unicode</b>: ēßõ±°½—£
+?type3:contestant
 
 # TEST: Changing a password must succeed
 # Later we test logging in with this new password.

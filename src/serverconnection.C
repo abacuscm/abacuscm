@@ -815,6 +815,10 @@ vector<UserInfo> ServerConnection::getUsers() {
 
 		strstrm.str(""); strstrm << "username" << i;
 		tmp.username = (*res)[strstrm.str()];
+		strstrm.str(""); strstrm << "friendlyname" << i;
+		tmp.friendlyname = (*res)[strstrm.str()];
+		strstrm.str(""); strstrm << "type" << i;
+		tmp.type = (*res)[strstrm.str()];
 
 		log(LOG_DEBUG, "Added user '%u' (%s)", (unsigned int) tmp.id, tmp.username.c_str());
 		response.push_back(tmp);
