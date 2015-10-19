@@ -102,17 +102,17 @@ public:
 	virtual ClarificationRequestList getClarificationRequests(uint32_t uid);
 	virtual AttributeList getClarificationRequest(uint32_t req_id);
 	virtual bool putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t prob_id,
-						 uint32_t time, uint32_t server_id,
+						 time_t time, uint32_t server_id,
 						 const std::string& question);
 	virtual bool putClarification(uint32_t cr_id, uint32_t c_id,
-					  uint32_t user_id, uint32_t time,
+					  uint32_t user_id, time_t time,
 					  uint32_t server_id, uint32_t pub,
 					  const std::string& answer);
 	virtual bool retrieveSubmission(uint32_t user_id, uint32_t sub_id, char** buffer, int *length,
 			string& language, uint32_t* prob_id);
 	virtual IdList getUnmarked(uint32_t server_id);
 	virtual bool putMark(uint32_t submission_id, uint32_t marker_id,
-			uint32_t time, uint32_t result, std::string comment, uint32_t server_id);
+			time_t time, uint32_t result, std::string comment, uint32_t server_id);
 	virtual bool putMarkFile(uint32_t submission_id, uint32_t marker_id,
 			std::string name, const void* data, uint32_t len);
 	virtual uint32_t countMarkFiles(uint32_t submission_id);
@@ -1073,7 +1073,7 @@ ClarificationRequestList MySQL::getClarificationRequests(uint32_t uid) {
 }
 
 bool MySQL::putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t prob_id,
-					uint32_t time, uint32_t /* server_id */,
+					time_t time, uint32_t /* server_id */,
 					const std::string& question) {
 	ostringstream query;
 	query << "INSERT INTO ClarificationRequest (clarification_req_id, user_id, problem_id, time, text)";
@@ -1088,7 +1088,7 @@ bool MySQL::putClarificationRequest(uint32_t cr_id, uint32_t user_id, uint32_t p
 }
 
 bool MySQL::putClarification(uint32_t cr_id, uint32_t c_id,
-				 uint32_t user_id, uint32_t time,
+				 uint32_t user_id, time_t time,
 				 uint32_t /* server_id */, uint32_t pub,
 				 const std::string& answer) {
 	ostringstream query;
@@ -1158,7 +1158,7 @@ IdList MySQL::getUnmarked(uint32_t server_id) {
 }
 // SELECT user_id, prob_id, time, (SELECT correct FROM SubmissionMark WHERE Submission.user_id = Submission.user_id AND Submission.prob_id = SubmissionMark.prob_id AND Submission.time = SubmissionMark.time AND server_id = 1) AS mark FROM Submission HAVING IsNull(mark);
 
-bool MySQL::putMark(uint32_t submission_id, uint32_t marker_id, uint32_t time, uint32_t result, std::string comment, uint32_t server_id) {
+bool MySQL::putMark(uint32_t submission_id, uint32_t marker_id, time_t time, uint32_t result, std::string comment, uint32_t server_id) {
 	ostringstream query;
 	query << "INSERT INTO SubmissionMark (submission_id, marker_id, mark_time, result, remark, server_id) VALUES("
 		<< submission_id << ", " << marker_id << ", " << time << ", " << result << ", '" << escape_string(comment) << "', " << server_id << ")";

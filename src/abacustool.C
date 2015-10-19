@@ -16,6 +16,7 @@
 
 #include <vector>
 #include <map>
+#include <set>
 #include <queue>
 #include <algorithm>
 #include <cstdlib>
@@ -89,8 +90,10 @@ Standing::Standing(const list<string> &row) : _raw(row.begin(), row.end()) {
 	setId(strtoul(_raw[STANDING_RAW_ID].c_str(), NULL, 10));
 	setUsername(_raw[STANDING_RAW_USERNAME]);
 	setFriendlyname(_raw[STANDING_RAW_FRIENDLYNAME]);
+	setGroup(_raw[STANDING_RAW_GROUP]);
 	setContestant(strtoul(_raw[STANDING_RAW_CONTESTANT].c_str(), NULL, 10) != 0);
 	setTotalTime(strtoull(_raw[STANDING_RAW_TOTAL_TIME].c_str(), NULL, 10));
+	setTotalSolved(strtoull(_raw[STANDING_RAW_TOTAL_SOLVED].c_str(), NULL, 10));
 	for (size_t i = STANDING_RAW_SOLVED; i < _raw.size(); i++)
 		setSolved(i - STANDING_RAW_SOLVED, strtol(_raw[i].c_str(), NULL, 10));
 }
@@ -102,6 +105,10 @@ struct Standings
 	vector<string> header;
 	vector<StandingMap::const_iterator> ordered;
 	StandingMap scores;
+
+	Standings &operator=(const Standings &standings);
+	Standings(const Standings &standings);
+	Standings() {}
 };
 
 struct CompareStanding {
@@ -110,13 +117,28 @@ struct CompareStanding {
 	}
 };
 
+Standings &Standings::operator=(const Standings &standings) {
+	header = standings.header;
+	scores = standings.scores;
+	ordered.clear();
+	ordered.reserve(scores.size());
+	for (StandingMap::const_iterator i = scores.begin(); i != scores.end(); ++i)
+		ordered.push_back(i);
+	sort(ordered.begin(), ordered.end(), CompareStanding());
+	return *this;
+}
+
+Standings::Standings(const Standings &standings) {
+	*this = standings;
+}
+
 
 static void usage() {
 	cerr << 
 		"Usage: abacustool [options] command arguments...\n"
 		"\n"
 		"Common options:\n"
-		"  -c client.conf    Client config [" DEFAULT_CLIENT_CONFIG "]\n"
+		"  -c client.conf    Extra client config file\n"
 		"  -u username       User to connect as [admin]\n"
 		"  -p password       Password\n"
 		"  -P passwordfile   File containing just the password\n"
@@ -127,8 +149,11 @@ static void usage() {
 		"   adduser <username> <name> <password> <type> [<group>]\n"
 		"   addgroup <group>\n"
 		"   addproblem <type> <attrib1> <value1> <attrib2> <value2>...\n"
+		"   replaceproblem <name> <type> <attrib1> <value1>...\n"
 		"   addtime start|stop <time> [<group>]\n"
 		"   setpass <user> <newpassword>\n"
+		"   getbonus <user>\n"
+		"   setbonus <user> <points> <seconds>\n"
 		"   getsource <submission_id>\n"
 		"   getlatestsource <user> <problem>\n"
 		"   submit <problem> <language> <filename>\n"
@@ -142,8 +167,7 @@ static void usage() {
 /* Converts a string to a uint32_t. On success, returns true. On failure,
  * sets *out to 0 and returns false.
  */
-static bool parse_uint32(const char *s, uint32_t *out)
-{
+static bool parse_uint32(const char *s, uint32_t *out) {
 	long long tmp;
 	char *end;
 	errno = 0;
@@ -160,17 +184,35 @@ static bool parse_uint32(const char *s, uint32_t *out)
 	}
 }
 
+// Same as parse_uint32, but signed
+static bool parse_int32(const char *s, int32_t *out) {
+	long long tmp;
+	char *end;
+	errno = 0;
+	tmp = strtoll(s, &end, 10);
+	if (errno != 0 || tmp < INT32_MIN || tmp > INT32_MAX || end == s || *end != '\0')
+	{
+		*out = 0;
+		return false;
+	}
+	else
+	{
+		*out = (int32_t) tmp;
+		return true;
+	}
+}
+
 static string read_password(const char *filename) {
 	string password;
 	ifstream in(filename);
 	if (!in) {
-		cerr << "Could not open " << filename;
+		cerr << "Could not open " << filename << ": ";
 		perror("");
 		exit(1);
 	}
 	getline(in, password);
 	if (!in) {
-		cerr << "Error reading " << filename;
+		cerr << "Error reading " << filename << ": ";
 		perror("");
 		exit(1);
 	}
@@ -193,7 +235,7 @@ static void process_options(int argc, char * const *argv, string &user, string &
 {
 	user = "admin";
 	password = "";
-	string client_config = DEFAULT_CLIENT_CONFIG;
+	string client_config = "";
 	bool have_password = false;
 	int opt;
 	while ((opt = getopt(argc, argv, "+c:u:p:P:s:")) != -1) {
@@ -240,7 +282,13 @@ static void process_options(int argc, char * const *argv, string &user, string &
 	}
 
 	Config &conf = Config::getConfig();
-	conf.load(client_config);
+	conf.load(DEFAULT_CLIENT_CONFIG1, true);
+	conf.load(DEFAULT_CLIENT_CONFIG2, true);
+	if (!client_config.empty()) {
+		if (!conf.load(client_config)) {
+			exit(1);
+		}
+	}
 }
 
 static bool connect(ServerConnection &con, const string &user, const string &password) {
@@ -516,13 +564,12 @@ static map<string, ProblemAttribute> problem_parse_desc(const string &desc) {
 	}
 }
 
-static int do_addproblem(ServerConnection &con, int argc, char * const *argv) {
-	if (argc < 4 || argc % 2 != 0) {
-		cerr << "Usage: addproblem <type> <attrib1> <value1> <attrib2> <value2>...\n";
-		return 2;
-	}
-
-	string prob_type = argv[1];
+/* Code shared between addproblem and replaceproblem. The argc and argv start
+ * from the problem type. The problem ID is zero to add a new problem,
+ * otherwise a problem to update.
+ */
+static int do_add_or_replace_problem(ServerConnection &con, int prob_id, int argc, char * const *argv) {
+	string prob_type = argv[0];
 	vector<string> types = con.getProblemTypes();
 	if (find(types.begin(), types.end(), prob_type) == types.end()) {
 		cerr << "Invalid problem type `" << prob_type << "'. Valid types are:\n";
@@ -546,7 +593,7 @@ static int do_addproblem(ServerConnection &con, int argc, char * const *argv) {
 	}
 
 	/* Process the given arguments */
-	for (int i = 2; i + 1 < argc; i += 2) {
+	for (int i = 1; i + 1 < argc; i += 2) {
 		if (string(argv[i]) == "dependencies") {
 			if (!dependencies.empty()) {
 				cerr << "Dependencies listed twice\n";
@@ -619,10 +666,41 @@ static int do_addproblem(ServerConnection &con, int argc, char * const *argv) {
 	}
 
 	// We rely on the server to check that everything required is set
-	if (!con.setProblemAttributes(0, prob_type, normal, files, dependencies))
+	if (!con.setProblemAttributes(prob_id, prob_type, normal, files, dependencies))
 		return 1;
 
 	return 0;
+}
+
+static int do_addproblem(ServerConnection &con, int argc, char * const *argv) {
+	if (argc < 4 || argc % 2 != 0) {
+		cerr << "Usage: addproblem <type> <attrib1> <value1> <attrib2> <value2>...\n";
+		return 2;
+	}
+
+	return do_add_or_replace_problem(con, 0, argc - 1, argv + 1);
+}
+
+static int do_replaceproblem(ServerConnection &con, int argc, char * const *argv) {
+	if (argc < 5 || argc % 2 != 1) {
+		cerr << "Usage: replaceproblem <name> <type> <attrib1> <value1>...\n";
+		return 2;
+	}
+
+	vector<ProblemInfo> probs = con.getProblems();
+	uint32_t prob_id = 0;
+	for (std::size_t i = 0; i < probs.size(); i++)
+		if (probs[i].code == argv[1]) {
+			prob_id = probs[i].id;
+			break;
+		}
+
+	if (prob_id == 0) {
+		cerr << "Unknown problem `" << argv[1] << "'\n";
+		return 2;
+	}
+
+	return do_add_or_replace_problem(con, prob_id, argc - 2, argv + 2);
 }
 
 static int do_addtime(ServerConnection &con, int argc, char * const *argv) {
@@ -655,13 +733,20 @@ static int do_addtime(ServerConnection &con, int argc, char * const *argv) {
 static int getsource_helper(ServerConnection &con, uint32_t submission_id) {
 	uint32_t sourceLength;
 	char *source;
+    uint32_t languageLength;
+    char *language;
 	log(LOG_DEBUG, "Retrieving source for submission %u", submission_id);
-	if (!con.getSubmissionSource(submission_id, &source, &sourceLength))
+	if (!con.getSubmissionSource(submission_id, &source, &sourceLength, &language, &languageLength))
 		return 1;
 	else {
+		string lang(language, languageLength);
+        delete[] language;
+        cerr << "LANGUAGE: " << lang << endl;
+
 		string src(source, sourceLength);
 		delete[] source;
 		cout << src;
+
 		return 0;
 	}
 }
@@ -702,7 +787,7 @@ static int do_getlatestsource(ServerConnection &con, int argc, char * const *arg
 	}
 
 	uint32_t submission_id = 0;
-	uint32_t time = 0;
+	time_t time = 0;
 	SubmissionList submissions = con.getSubmissionsForUser(user_id);
 	for (SubmissionList::iterator it = submissions.begin();
 		 it != submissions.end();
@@ -710,10 +795,10 @@ static int do_getlatestsource(ServerConnection &con, int argc, char * const *arg
 	{
 		uint32_t s_problem_id = strtoul((*it)["prob_id"].c_str(), NULL, 10);
 		uint32_t s_submission_id = strtoul((*it)["submission_id"].c_str(), NULL, 10);
-		uint32_t s_time = strtoul((*it)["time"].c_str(), NULL, 10);
+		time_t s_time = strtoul((*it)["time"].c_str(), NULL, 10);
 		int result = atoi((*it)["result"].c_str());
 
-		log(LOG_DEBUG, "Submission %u was for problem %i at time %u with comment %s and result %d", s_submission_id, s_problem_id, s_time, (*it)["comment"].c_str(), atoi((*it)["result"].c_str()));
+		log(LOG_DEBUG, "Submission %u was for problem %i at time %lu with comment %s and result %d", s_submission_id, s_problem_id, (unsigned long) s_time, (*it)["comment"].c_str(), atoi((*it)["result"].c_str()));
 
 		// Check that the submission is for the right problem
 		if (s_problem_id != problem_id)
@@ -747,6 +832,49 @@ static int do_setpass(ServerConnection &con, int argc, char * const *argv) {
 	}
 
 	if (!con.changePassword(user_id, argv[2]))
+		return 1;
+	return 0;
+}
+
+static int do_getbonus(ServerConnection &con, int argc, char * const *argv) {
+	if (argc != 2) {
+		cerr << "Usage: getbonus <user>\n";
+		return 2;
+	}
+
+	uint32_t user_id = find_user(con, argv[1]);
+	if (user_id == 0) {
+		cerr << "No such user `" << argv[1] << "'\n";
+		return 1;
+	}
+
+	int32_t points, seconds;
+	if (!con.getBonus(user_id, points, seconds))
+		return 1;
+	cout << points << " points, " << seconds << " seconds\n";
+	return 0;
+}
+
+static int do_setbonus(ServerConnection &con, int argc, char *const *argv) {
+	if (argc != 4) {
+		cerr << "Usage: setbonus <user> <points> <seconds>\n";
+		return 2;
+	}
+
+	int32_t points, seconds;
+	if (!parse_int32(argv[2], &points)
+		|| !parse_int32(argv[3], &seconds)) {
+		cerr << "Could not parse values\n";
+		return 2;
+	}
+
+	uint32_t user_id = find_user(con, argv[1]);
+	if (user_id == 0) {
+		cerr << "No such user `" << argv[1] << "'\n";
+		return 1;
+	}
+
+	if (!con.setBonus(user_id, points, seconds))
 		return 1;
 	return 0;
 }
@@ -792,7 +920,8 @@ static int do_submit(ServerConnection &con, int argc, char * const *argv) {
 static bool closed = false;             // set to true when a server disconnect is detected
 static pthread_mutex_t runlock;         // held by main thread except when waiting for something
 static pthread_cond_t runcond;          // signalled by worker thread to indicate new data
-static queue<BalloonEvent> notify;     // queue of unprinted balloon notifications
+static Standings balloonBaseline;       // old standings - only used by callback after init
+static queue<BalloonEvent> balloonQueue;// queue of unprinted balloon notifications
 
 // Callback used to indicate that the server disconnected
 static void server_close(const MessageBlock*, void*) {
@@ -801,66 +930,6 @@ static void server_close(const MessageBlock*, void*) {
 	cout << "Server has disconnected\n" << flush;
 	pthread_cond_signal(&runcond);
 	pthread_mutex_unlock(&runlock);
-}
-
-static void balloon_notification(const MessageBlock* mb, void* data) {
-	const char *group = (const char *) data;
-
-	if (group == NULL || (*mb)["group"] == string(group)) {
-		BalloonEvent event;
-		event.time = time(NULL);
-		event.contestant = (*mb)["contestant"];
-		event.group = (*mb)["group"];
-		event.problem = (*mb)["problem"];
-
-		pthread_mutex_lock(&runlock);
-		notify.push(event);
-		pthread_cond_signal(&runcond);
-		pthread_mutex_unlock(&runlock);
-	}
-}
-
-static int do_balloon(ServerConnection &con, int argc, char * const *argv) {
-	if (argc < 1 || argc > 2) {
-		cerr << "Usage: balloon [group]\n";
-		return 2;
-	}
-
-	con.registerEventCallback("close", server_close, NULL);
-	con.registerEventCallback("balloon", balloon_notification, argc >= 2 ? argv[1] : NULL);
-
-	if(!con.watchBalloons(true)) {
-		cout << "Error subscribing to the balloon notifications!\n";
-		return 1;
-	}
-
-	while (!closed || !notify.empty()) {
-		if (!notify.empty()) {
-			BalloonEvent event = notify.front();
-			notify.pop();
-
-			// A message we're actually interested in
-			pthread_mutex_unlock(&runlock);
-
-			string dummy;
-			struct tm time_tm;
-			char time_buffer[64];
-
-			localtime_r(&event.time, &time_tm);
-			strftime(time_buffer, sizeof(time_buffer), "%X", &time_tm);
-			cout
-				<< time_buffer << " " << event.contestant << " solved " << event.problem
-				<< " - press enter to acknowledge ..." << flush;
-			getline(cin, dummy);  // read any old string
-
-			pthread_mutex_lock(&runlock);
-		}
-		else {
-			cout << "\nWaiting for balloon events ...\n\n" << flush;
-			pthread_cond_wait(&runcond, &runlock);
-		}
-	}
-	return 0;
 }
 
 /* Updates the standings map and the ordered view of it in place, working from
@@ -888,6 +957,102 @@ static void grid_to_standings(const Grid &grid, Standings &standings) {
 		}
 	}
 	sort(standings.ordered.begin(), standings.ordered.end(), CompareStanding());
+}
+
+// Returns number of new balloons. Does not lock anything
+static int queue_balloons(const Standings &old, const Standings &cur, const char *group) {
+	// We take advantage of the fact that the map is ordered by user ID
+	StandingMap::const_iterator j = old.scores.begin();
+	int ans = 0;
+	time_t time = ::time(NULL);
+	for (StandingMap::const_iterator i = cur.scores.begin(); i != cur.scores.end(); ++i) {
+		if (group != NULL && i->second.getGroup() != group)
+			continue; // filtered out
+
+		while (j != old.scores.end() && j->first < i->first)
+			++j;
+		set<string> solved; // Names of solved problems
+		for (size_t k = 0; k < i->second.getSolved().size(); k++)
+			if (i->second.getSolved(k) > 0)
+				solved.insert(cur.header[STANDING_RAW_SOLVED + k]);
+		if (j != old.scores.end() && i->first == j->first) {
+			// found a match record in old, cancel out anything already seen
+			for (size_t k = 0; k < j->second.getSolved().size(); k++)
+				if (j->second.getSolved(k) > 0)
+					solved.erase(old.header[STANDING_RAW_SOLVED + k]);
+		}
+		for (set<string>::const_iterator k = solved.begin(); k != solved.end(); ++k) {
+			BalloonEvent event;
+			event.time = time;
+			event.contestant = i->second.getUsername();
+			event.group = "unknown"; // TODO: add to protocol
+			event.problem = *k;
+			balloonQueue.push(event);
+			ans++;
+		}
+	}
+	return ans;
+}
+
+static void balloon_update(const MessageBlock *mb, void *data) {
+	if (mb) {
+		Grid grid = ServerConnection::gridFromMB(*mb);
+		Standings old = balloonBaseline;
+		grid_to_standings(grid, balloonBaseline);
+
+		pthread_mutex_lock(&runlock);
+		if (queue_balloons(old, balloonBaseline, (const char *) data) > 0)
+			pthread_cond_signal(&runcond);
+		pthread_mutex_unlock(&runlock);
+	}
+}
+
+static int do_balloon(ServerConnection &con, int argc, char * const *argv) {
+	static bool first = true;
+
+	if (argc < 1 || argc > 2) {
+		cerr << "Usage: balloon [group]\n";
+		return 2;
+	}
+	char *group = argc >= 2 ? argv[1] : NULL;
+
+	con.registerEventCallback("close", server_close, NULL);
+	con.registerEventCallback("updatestandings", balloon_update, group);
+
+	Standings old = balloonBaseline;
+	grid_to_standings(con.getStandings(), balloonBaseline);
+	if (first)
+		first = false;
+	else
+		queue_balloons(old, balloonBaseline, group);
+
+	while (!closed || !balloonQueue.empty()) {
+		if (!balloonQueue.empty()) {
+			BalloonEvent event = balloonQueue.front();
+			balloonQueue.pop();
+
+			// A message we're actually interested in
+			pthread_mutex_unlock(&runlock);
+
+			string dummy;
+			struct tm time_tm;
+			char time_buffer[64];
+
+			localtime_r(&event.time, &time_tm);
+			strftime(time_buffer, sizeof(time_buffer), "%X", &time_tm);
+			cout
+				<< time_buffer << " " << event.contestant << " solved " << event.problem
+				<< " - press enter to acknowledge ..." << flush;
+			getline(cin, dummy);  // read any old string
+
+			pthread_mutex_lock(&runlock);
+		}
+		else {
+			cout << "\nWaiting for balloon events ...\n\n" << flush;
+			pthread_cond_wait(&runcond, &runlock);
+		}
+	}
+	return 0;
 }
 
 static void standings_update(const MessageBlock *mb, void *data) {
@@ -983,10 +1148,16 @@ static int process(ServerConnection &con, int argc, char * const *argv) {
 		return do_addgroup(con, argc, argv);
 	else if (argv[0] == string("addproblem"))
 		return do_addproblem(con, argc, argv);
+	else if (argv[0] == string("replaceproblem"))
+		return do_replaceproblem(con, argc, argv);
 	else if (argv[0] == string("addtime"))
 		return do_addtime(con, argc, argv);
 	else if (argv[0] == string("setpass"))
 		return do_setpass(con, argc, argv);
+	else if (argv[0] == string("getbonus"))
+		return do_getbonus(con, argc, argv);
+	else if (argv[0] == string("setbonus"))
+		return do_setbonus(con, argc, argv);
 	else if (argv[0] == string("getsource"))
 		return do_getsource(con, argc, argv);
 	else if (argv[0] == string("getlatestsource"))

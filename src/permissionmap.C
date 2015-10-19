@@ -51,6 +51,7 @@ PermissionMap::PermissionMap() {
 	allow(PERMISSION_MARK,                           USER_MASK_MARKER | USER_MASK_ADMIN);
 	allow(PERMISSION_JUDGE,                          USER_MASK_MANAGER);
 	allow(PERMISSION_JUDGE_OVERRIDE,                 USER_MASK_ADMIN);
+	allow(PERMISSION_SET_BONUS,                      USER_MASK_MANAGER);
 	allow(PERMISSION_USER_ADMIN,                     USER_MASK_ADMIN);
 	allow(PERMISSION_SERVER_ADMIN,                   USER_MASK_ADMIN);
 	allow(PERMISSION_PROBLEM_ADMIN,                  USER_MASK_ADMIN);

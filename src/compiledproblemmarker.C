@@ -99,11 +99,22 @@ void CompiledProblemMarker::mark() {
 			log(LOG_WARNING, "timelimit==0 is invalid, defaulting to %us.", (unsigned)timelimit);
 		}
 
+		uint32_t memorylimit = strtoll(attrib("memory_limit").c_str(), NULL, 0);
+		log(LOG_INFO, "Attribute memory limit = %u", (unsigned)memorylimit);
+
+		if(!memorylimit) {
+			// If you change this, remember to update the contestant manual.
+			memorylimit = 256;
+			log(LOG_WARNING, "memorylimit==0 is invalid, defaulting to %u MB.", (unsigned)memorylimit);
+		}
+
 		timelimit *= 1000; // convert to milli-seconds.
+		memorylimit *= 1024 * 1024; // convert to bytes
 
 		log(LOG_INFO, "User program compiled, preparing execution environment.");
-		_uprog->setMemLimit(64 * 1024 * 1024);
+		_uprog->setMemLimit(memorylimit);
 		_uprog->setFileLimit(16 * 1024 * 1024);
+		_uprog->setWorkDir(wdir);
 		_uprog->setRootDir(jaildir);
 		_uprog->setCPUTime(timelimit);
 		_uprog->setRealTime(timelimit * 8);

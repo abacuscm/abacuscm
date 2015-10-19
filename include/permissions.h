@@ -20,8 +20,7 @@ class ClientConnection;
 
 /* Note: if you change this enumeration, be sure to update
  * - permission_names in src/permissions.C
- * - The list of signals in ui/mainwindowbase.ui
- * - The table of signal handlers in src/mainwindow.C
+ * - the list of grants in src/permissionmap.C
  */
 typedef enum {
 	PERMISSION_INVALID = -1,                      // Not a real permission
@@ -44,6 +43,7 @@ typedef enum {
 	PERMISSION_MARK,                              // Assign mark to work assigned for marking
 	PERMISSION_JUDGE,                             // Assign right or wrong when in Deferred to Judge state
 	PERMISSION_JUDGE_OVERRIDE,                    // Allow any mark to be assigned, overriding others
+	PERMISSION_SET_BONUS,                         // Set a time or points bonus for a user
 	PERMISSION_USER_ADMIN,                        // Create or modify users
 	PERMISSION_PROBLEM_ADMIN,                     // Create or modify problems
 	PERMISSION_SERVER_ADMIN,                      // Create or modify slave servers

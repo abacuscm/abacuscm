@@ -164,12 +164,20 @@ getusers
 ?ok
 ?id0:1
 ?username0:admin
+?friendlyname0:Administrator
+?type0:admin
 ?id1:33
 ?username1:judge
+?friendlyname1:HTML: <b>not bold</b>
+?type1:judge
 ?id2:49
 ?username2:marker
+?friendlyname2:Marker
+?type2:marker
 ?id3:17
 ?username3:test1
+?friendlyname3:<b>Unicode</b>: ēßõ±°½—£
+?type3:contestant
 
 # TEST: Changing a password must succeed
 # Later we test logging in with this new password.
@@ -182,7 +190,8 @@ getlanguages
 ?ok
 ?language0:C++
 ?language1:Java
-?language2:Python
+?language2:Python 2.x
+?language3:Python 3.x
 
 getprobtypes
 ?ok
@@ -192,13 +201,14 @@ getprobtypes
 getprobdescript
 type:tcprob
 ?ok
-?descript:shortname S, longname S, multi_submit {No,Yes}, testcase (input F, output F), ignore_whitespace {Yes,No}, time_limit I
+?descript:shortname S, longname S, multi_submit {No,Yes}, testcase (input F, output F), ignore_whitespace {Yes,No}, time_limit I, memory_limit I
 
 # TEST: creating a problem must succeed
 setprobattrs
 prob_id:0
 prob_type:tcprob
 time_limit:1
+memory_limit:64
 ignore_whitespace:Yes
 shortname:test
 longname:Test Problem
@@ -218,12 +228,14 @@ prob_id:1
 ?testcase.input:data.in
 ?testcase.output:data.out
 ?time_limit:1
+?memory_limit:64
 
 # TEST: creating a problem with dependencies must succeed
 setprobattrs
 prob_id:0
 prob_type:tcprob
 time_limit:1
+memory_limit:64
 ignore_whitespace:Yes
 shortname:test2
 longname:<b>Unicode</b> £etterß
@@ -244,6 +256,7 @@ prob_id:17
 ?testcase.input:data.in
 ?testcase.output:data.out
 ?time_limit:1
+?memory_limit:64
 
 getprobfile
 prob_id:1
@@ -260,21 +273,62 @@ getproblems
 ?code1:test2
 ?name1:<b>Unicode</b> £etterß
 
+# TEST: replacing a problem input and output must work
+setprobattrs
+prob_id:17
+prob_type:tcprob
+time_limit:1
+memory_limit:64
+ignore_whitespace:Yes
+shortname:test2
+longname:<b>Unicode</b> £etterß
+multi_submit:No
+testcase.input<tests/batch/data2.in
+testcase.output<tests/batch/data2.out
+prob_dependencies:1
+?ok
+
+getprobattrs
+prob_id:17
+?ok
+?ignore_whitespace:Yes
+?longname:<b>Unicode</b> £etterß
+?multi_submit:No
+?prob_type:tcprob
+?shortname:test2
+?testcase.input:data2.in
+?testcase.output:data2.out
+?time_limit:1
+?memory_limit:64
+
+getprobfile
+prob_id:17
+file:testcase.input
+?ok
+?<tests/batch/data2.in
+
+getprobfile
+prob_id:17
+file:testcase.output
+?ok
+?<tests/batch/data2.out
+
 getsubmissions
 ?ok
 
 standings
 ?ok
-?ncols:8
+?ncols:9
 ?nrows:1
 ?row_0_0:ID
 ?row_0_1:Team
 ?row_0_2:Name
-?row_0_3:Contestant
-?row_0_4:Solved
-?row_0_5:Time
-?row_0_6:test
-?row_0_7:test2
+?row_0_3:Group
+?row_0_4:Contestant
+?row_0_5:Points
+?row_0_6:Time
+?row_0_7:test
+?row_0_8:test2
 
 clarificationrequest
 prob_id:1
@@ -342,13 +396,9 @@ contesttime
 ?running:yes
 ?remain:*
 ?time:*
+?blinds:*
 
 subscribetime
-?ok
-
-eventmap
-event:balloon
-action:subscribe
 ?ok
 
 eventmap
@@ -445,16 +495,17 @@ whatami
 
 standings
 ?ok
-?ncols:8
+?ncols:9
 ?nrows:1
 ?row_0_0:ID
 ?row_0_1:Team
 ?row_0_2:Name
-?row_0_3:Contestant
-?row_0_4:Solved
-?row_0_5:Time
-?row_0_6:test
-?row_0_7:test2
+?row_0_3:Group
+?row_0_4:Contestant
+?row_0_5:Points
+?row_0_6:Time
+?row_0_7:test
+?row_0_8:test2
 
 # Submit assorted solutions
 # Use gentests.py to regenerate
@@ -463,162 +514,189 @@ prob_id:1
 lang:Java
 <tests/solutions/bad_class.java
 ?ok
+?submission_id:1
 
 submit
 prob_id:1
 lang:Java
 <tests/solutions/bad_class2.java
 ?ok
+?submission_id:17
 
 submit
 prob_id:1
 lang:Java
 <tests/solutions/bad_class3.java
 ?ok
+?submission_id:33
 
 submit
 prob_id:1
 lang:C++
 <tests/solutions/compile_fail.cpp
 ?ok
+?submission_id:49
 
 submit
 prob_id:1
 lang:Java
 <tests/solutions/compile_fail.java
 ?ok
+?submission_id:65
 
 submit
 prob_id:1
 lang:C++
 <tests/solutions/do_nothing.cpp
 ?ok
+?submission_id:81
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/do_nothing.py
 ?ok
+?submission_id:97
 
 submit
 prob_id:1
 lang:C++
 <tests/solutions/do_nothing_unicode.cpp
 ?ok
+?submission_id:113
 
 submit
 prob_id:1
 lang:C++
 <tests/solutions/empty.cpp
 ?ok
+?submission_id:129
 
 submit
 prob_id:1
 lang:Java
 <tests/solutions/empty.java
 ?ok
+?submission_id:145
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/empty.py
 ?ok
+?submission_id:161
 
 submit
 prob_id:1
 lang:C++
 <tests/solutions/exception.cpp
 ?ok
+?submission_id:177
 
 submit
 prob_id:1
 lang:Java
 <tests/solutions/exception.java
 ?ok
+?submission_id:193
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/exception.py
 ?ok
+?submission_id:209
 
 submit
 prob_id:1
 lang:C++
 <tests/solutions/infinite_stream.cpp
 ?ok
+?submission_id:225
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/infinite_stream.py
 ?ok
+?submission_id:241
 
 submit
 prob_id:1
 lang:Java
 <tests/solutions/package.java
 ?ok
+?submission_id:257
 
 submit
 prob_id:1
 lang:Java
 <tests/solutions/pathclass.java
 ?ok
+?submission_id:273
 
 submit
 prob_id:1
 lang:C++
 <tests/solutions/sleep_forever.cpp
 ?ok
+?submission_id:289
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/sleep_forever.py
 ?ok
+?submission_id:305
 
 submit
 prob_id:1
 lang:C++
 <tests/solutions/spin_forever.cpp
 ?ok
+?submission_id:321
 
 submit
 prob_id:1
 lang:Java
 <tests/solutions/spin_forever.java
 ?ok
+?submission_id:337
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/spin_forever.py
 ?ok
+?submission_id:353
 
 submit
 prob_id:1
 lang:C++
 <tests/solutions/wrong_retcode.cpp
 ?ok
+?submission_id:369
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/wrong_retcode.py
 ?ok
+?submission_id:385
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/exact.py
 ?ok
+?submission_id:401
 
 submit
 prob_id:1
-lang:Python
+lang:Python 2.x
 <tests/solutions/whitespace.py
 ?ok
+?submission_id:417
 
 ### END OF GENERATED TESTS
 
@@ -661,6 +739,7 @@ getproblems
 getsubmissionsource
 submission_id:1
 ?ok
+?lang:Java
 ?<tests/solutions/bad_class.java
 EOF
 
@@ -916,24 +995,26 @@ getsubmissions
 # TEST: Time penalties must not apply for failed compilation
 standings
 ?ok
-?ncols:8
+?ncols:9
 ?nrows:2
 ?row_0_0:ID
 ?row_0_1:Team
 ?row_0_2:Name
-?row_0_3:Contestant
-?row_0_4:Solved
-?row_0_5:Time
-?row_0_6:test
-?row_0_7:test2
+?row_0_3:Group
+?row_0_4:Contestant
+?row_0_5:Points
+?row_0_6:Time
+?row_0_7:test
+?row_0_8:test2
 ?row_1_0:17
 ?row_1_1:test1
 ?row_1_2:<b>Unicode</b>: ēßõ±°½—£
-?row_1_3:1
+?row_1_3:default
 ?row_1_4:1
-?row_1_5:*
-?row_1_6:13
-?row_1_7:0
+?row_1_5:1
+?row_1_6:*
+?row_1_7:13
+?row_1_8:0
 
 # TEST: Judges must be able to mark a solution as wrong
 mark
@@ -962,6 +1043,34 @@ mark
 submission_id:161
 result:0
 comment:Correct answer
+?ok
+
+# TEST: default bonus must be zero
+getbonus
+user_id:17
+?ok
+?points:0
+?seconds:0
+
+# TEST: Judges must be able to set a bonus
+setbonus
+user_id:17
+points:1
+seconds:123
+?ok
+
+# TEST: Everyone must be able to see bonuses
+getbonus
+user_id:17
+?ok
+?points:1
+?seconds:123
+
+# TEST: negative bonuses must be allowed
+setbonus
+user_id:33
+points:-1
+seconds:-100
 ?ok
 
 EOF

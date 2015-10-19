@@ -26,10 +26,11 @@
 	var STANDING_RAW_ID = 0;
 	var STANDING_RAW_USERNAME = 1;
 	var STANDING_RAW_FRIENDLYNAME = 2;
-	var STANDING_RAW_CONTESTANT = 3;
-	var STANDING_RAW_TOTAL_SOLVED = 4;
-	var STANDING_RAW_TOTAL_TIME = 5;
-	var STANDING_RAW_SOLVED = 6;
+	var STANDING_RAW_GROUP = 3;
+	var STANDING_RAW_CONTESTANT = 4;
+	var STANDING_RAW_TOTAL_SOLVED = 5;
+	var STANDING_RAW_TOTAL_TIME = 6;
+	var STANDING_RAW_SOLVED = 7;
 
 	var COLUMN_PLACE = 0;
 	var COLUMN_USERNAME = 1;
@@ -233,7 +234,7 @@
 			html += '<col />';
 		$('colgroup.problem').html(html);
 
-		html = '<tr><th>Place</th><th>Team</th><th>Name</th><th>Solved</th><th>Time</th>';
+		html = '<tr><th>Place</th><th>Team</th><th>Name</th><th>Points</th><th>Time</th>';
 		for (var i = STANDING_RAW_SOLVED; i < rawHeader.length; i++)
 			html += '<th>' + escapeHTML(rawHeader[i]) + '</th>';
 		html += '</tr>';

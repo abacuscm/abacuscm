@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2005 - 2006, 2010 Kroon Infomation Systems,
+ * Copyright (c) 2005 - 2006, 2010, 2013 Kroon Infomation Systems,
  *  with contributions from various authors.
  *
  * This file is distributed under GPLv2, please see
@@ -49,7 +49,6 @@ void TimedStandingsUpdater::perform() {
 
 StandingsSupportModule::StandingsSupportModule()
 {
-	blinds = 0;
 	pthread_rwlock_init(&_lock, NULL);
 }
 
@@ -101,7 +100,7 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 
 	SubmissionList submissions = db->getSubmissions(uid);
 
-	uint32_t duration = timer->contestDuration();
+	time_t duration = timer->contestDuration();
 	if(!duration) {
 		db->release();
 		pthread_rwlock_unlock(&_lock);
@@ -137,9 +136,8 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 				} else
 #endif
 				{
-					uint32_t tRemain = duration - tmp.time;
 					uint32_t prob_id = strtoll((*s)["prob_id"].c_str(), NULL, 0);
-					tmp.final_only = tRemain < blinds;
+					tmp.final_only = timer->isBlinded(tmp.time);
 					problemdata[user_id][prob_id].push_back(tmp);
 				}
 			}
@@ -156,15 +154,18 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 		StandingsData teamdata[2];
 		UserType user_type = static_cast<UserType>(usm->usertype(t->first));
 		const PermissionSet &user_perms = PermissionMap::getInstance()->getPermissions(user_type);
+		int32_t bonus_time;
+		teamdata[0].points = 0;
 		teamdata[0].time = 0;
 		teamdata[0].in_standings = user_perms[PERMISSION_IN_STANDINGS];
-		teamdata[1].time = 0;
-		teamdata[1].in_standings = teamdata[0].in_standings;
+		if (usm->user_bonus(t->first, teamdata[0].points, bonus_time))
+			teamdata[0].time = -bonus_time;
+		teamdata[1] = teamdata[0];
 		map<uint32_t, vector<SubData> >::iterator p;
 		for(p = t->second.begin(); p != t->second.end(); ++p) {
 			int tries = 0;
 			bool correct = false;
-			uint32_t correct_time = 0;
+			time_t correct_time = 0;
 
 			vector<SubData> &subs = p->second;
 			stable_sort(subs.begin(), subs.end(), SubDataLessThan);
@@ -183,22 +184,26 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 					if(correct) {
 						teamdata[w].time += (tries - 1) * 20 * 60;
 						teamdata[w].time += correct_time;
+						teamdata[w].points++;
 						teamdata[w].tries[p->first] = tries;
 					} else
 						teamdata[w].tries[p->first] = -tries;
 				}
+			}
+		}
 
-				/* Check if this is news, in order to update */
-				Standings::iterator pos;
-				Standings &standings = w ? _final_standings : _contestant_standings;
-				if (!teamdata[w].tries.empty()) {
-					pos = standings.find(t->first);
-					if (pos == standings.end()
-						|| pos->second.time != teamdata[w].time
-						|| pos->second.tries != teamdata[w].tries) {
-						standings[t->first] = teamdata[w];
-						have_update[w] = true;
-					}
+		/* Check if this is news, in order to update */
+		for (int w = 0; w < 2; w++) {
+			Standings::iterator pos;
+			Standings &standings = w ? _final_standings : _contestant_standings;
+			if (!teamdata[w].tries.empty()) {
+				pos = standings.find(t->first);
+				if (pos == standings.end()
+					|| pos->second.points != teamdata[w].points
+					|| pos->second.time != teamdata[w].time
+					|| pos->second.tries != teamdata[w].tries) {
+					standings[t->first] = teamdata[w];
+					have_update[w] = true;
 				}
 			}
 		}
@@ -261,8 +266,9 @@ bool StandingsSupportModule::getStandingsInternal(uint32_t uid, bool final, bool
 	mb[cell_name(0, STANDING_RAW_ID)] = "ID";
 	mb[cell_name(0, STANDING_RAW_USERNAME)] = "Team";
 	mb[cell_name(0, STANDING_RAW_FRIENDLYNAME)] = "Name";
+	mb[cell_name(0, STANDING_RAW_GROUP)] = "Group";
 	mb[cell_name(0, STANDING_RAW_CONTESTANT)] = "Contestant";
-	mb[cell_name(0, STANDING_RAW_TOTAL_SOLVED)] = "Solved";
+	mb[cell_name(0, STANDING_RAW_TOTAL_SOLVED)] = "Points";
 	mb[cell_name(0, STANDING_RAW_TOTAL_TIME)] = "Time";
 
 	ProblemList probs = db->getProblems();
@@ -312,6 +318,7 @@ bool StandingsSupportModule::getStandingsInternal(uint32_t uid, bool final, bool
 		mb[cell_name(r, STANDING_RAW_ID)] = val.str();
 		mb[cell_name(r, STANDING_RAW_USERNAME)] = usm->username(i->first);
 		mb[cell_name(r, STANDING_RAW_FRIENDLYNAME)] = usm->friendlyname(i->first);
+		mb[cell_name(r, STANDING_RAW_GROUP)] = usm->groupname(usm->user_group(i->first));
 		mb[cell_name(r, STANDING_RAW_CONTESTANT)] = (i->second.in_standings ? "1" : "0");
 
 		val.str("");
@@ -323,19 +330,16 @@ bool StandingsSupportModule::getStandingsInternal(uint32_t uid, bool final, bool
 		for(int col = STANDING_RAW_SOLVED; col < ncols; col++)
 			mb[cell_name(r, col)] = "0";
 
-		int solved = 0;
 		for(pc = i->second.tries.begin(); pc != i->second.tries.end(); ++pc) {
 			int col = prob2col[pc->first];
 
 			val.str("");
 			val << pc->second;
 			mb[cell_name(r, col)] = val.str();
-			if (pc->second > 0)
-				solved++;
 		}
 
 		val.str("");
-		val << solved;
+		val << i->second.points;
 		mb[cell_name(r, STANDING_RAW_TOTAL_SOLVED)] = val.str();
 	}
 
@@ -360,25 +364,6 @@ void StandingsSupportModule::timedUpdate(time_t time, uint32_t uid, uint32_t sub
 }
 
 void StandingsSupportModule::init() {
-	Config &conf = Config::getConfig();
-
-	TimerSupportModule *timer = getTimerSupportModule();
-
-	time_t duration;
-	if(!timer) {
-		log(LOG_CRIT, "Error obtaining TimerSupportModule.");
-		duration = 5 * 60 * 60;
-	}
-
-	duration = timer->contestDuration();
-	blinds = strtoul(conf["contest"]["blinds"].c_str(), NULL, 0);
-	if (blinds == 0) {
-		log(LOG_WARNING, "blinds is NOT set explicitly, defaulting to 1 hour for backwards compatibility.");
-		blinds = 3600;
-	}
-	if (blinds > duration / 2)
-		log(LOG_WARNING, "Blinds is longer than half the contest - this is most likely wrong.");
-
 	ClientEventRegistry::getInstance().registerEvent("updatestandings", PERMISSION_SEE_STANDINGS);
 	updateStandings(0, 0);
 }

@@ -496,6 +496,42 @@ bool ServerConnection::changePassword(uint32_t id, string password) {
 	return simpleAction(mb);
 }
 
+bool ServerConnection::getBonus(uint32_t user_id, int32_t &points, int32_t &seconds) {
+	MessageBlock mb("getbonus");
+	ostringstream id_str;
+	id_str << user_id;
+	mb["user_id"] = id_str.str();
+
+	MessageBlock *ret = sendMB(&mb);
+	if(!ret)
+		return "";
+
+	bool response = ret->action() == "ok";
+	if(!response)
+		log(LOG_ERR, "%s", (*ret)["msg"].c_str());
+	else {
+		points = strtol((*ret)["points"].c_str(), NULL, 10);
+		seconds = strtol((*ret)["seconds"].c_str(), NULL, 10);
+	}
+
+	delete ret;
+	return response;
+}
+
+bool ServerConnection::setBonus(uint32_t user_id, int32_t points, int32_t seconds) {
+	MessageBlock mb("setbonus");
+	ostringstream id_str, points_str, seconds_str;
+	id_str << user_id;
+	points_str << points;
+	seconds_str << seconds;
+
+	mb["user_id"] = id_str.str();
+	mb["points"] = points_str.str();
+	mb["seconds"] = seconds_str.str();
+
+	return simpleAction(mb);
+}
+
 bool ServerConnection::startStop(uint32_t group_id, bool start, time_t time) {
 	MessageBlock mb("startstop");
 	ostringstream t;
@@ -536,7 +572,7 @@ string ServerConnection::getProblemDescription(string type) {
 
 bool ServerConnection::setProblemAttributes(uint32_t prob_id, std::string type,
                        const AttributeMap& normal, const AttributeMap& file,
-		               ProblemList dependencies) {
+                       ProblemList dependencies) {
 	ostringstream ostrstrm;
 	AttributeMap::const_iterator i;
 	MessageBlock mb("setprobattrs");
@@ -682,7 +718,7 @@ bool ServerConnection::getProblemFile(uint32_t prob_id, string attrib, char **bu
 	return true;
 }
 
-bool ServerConnection::getSubmissionSource(uint32_t submission_id, char **bufferptr, uint32_t *bufferlen) {
+bool ServerConnection::getSubmissionSource(uint32_t submission_id, char **bufferptr, uint32_t *bufferlen, char **langbufferptr, uint32_t *langbufferlen) {
 	ostringstream str;
 
 	MessageBlock mb("getsubmissionsource");
@@ -703,6 +739,12 @@ bool ServerConnection::getSubmissionSource(uint32_t submission_id, char **buffer
 	*bufferlen = ret->content_size();
 	*bufferptr = new char[(*bufferlen)];
 	memcpy(*bufferptr, ret->content(), *bufferlen);
+
+	if (langbufferptr && langbufferlen) {
+		*langbufferlen = (*ret)["lang"].length();
+		*langbufferptr = new char[*langbufferlen];
+		memcpy(*langbufferptr, (*ret)["lang"].data(), *langbufferlen);
+	}
 
 	delete ret;
 	return true;
@@ -773,6 +815,10 @@ vector<UserInfo> ServerConnection::getUsers() {
 
 		strstrm.str(""); strstrm << "username" << i;
 		tmp.username = (*res)[strstrm.str()];
+		strstrm.str(""); strstrm << "friendlyname" << i;
+		tmp.friendlyname = (*res)[strstrm.str()];
+		strstrm.str(""); strstrm << "type" << i;
+		tmp.type = (*res)[strstrm.str()];
 
 		log(LOG_DEBUG, "Added user '%u' (%s)", (unsigned int) tmp.id, tmp.username.c_str());
 		response.push_back(tmp);
@@ -1113,13 +1159,13 @@ bool ServerConnection::getMarkFile(uint32_t submission_id, uint32_t file_index, 
 	return true;
 }
 
-uint32_t ServerConnection::contestTime() {
+time_t ServerConnection::contestTime() {
 	MessageBlock mb("contesttime");
 
 	MessageBlock *res = sendMB(&mb);
 
 	if(res && res->action() == "ok") {
-		uint32_t time = strtoll((*res)["time"].c_str(), NULL, 0);
+		time_t time = strtoll((*res)["time"].c_str(), NULL, 0);
 		delete res;
 		return time;
 	} else {
@@ -1131,13 +1177,13 @@ uint32_t ServerConnection::contestTime() {
 	}
 }
 
-uint32_t ServerConnection::contestRemain() {
+time_t ServerConnection::contestRemain() {
 	MessageBlock mb("contesttime");
 
 	MessageBlock *res = sendMB(&mb);
 
 	if(res && res->action() == "ok") {
-		uint32_t time = strtoll((*res)["remain"].c_str(), NULL, 0);
+		time_t time = strtoll((*res)["remain"].c_str(), NULL, 0);
 		delete res;
 		return time;
 	} else {

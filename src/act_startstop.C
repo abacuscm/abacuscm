@@ -63,12 +63,12 @@ public:
  */
 class StartStopAction : public TimedAction {
 public:
-	explicit StartStopAction(uint32_t time);
+	explicit StartStopAction(time_t time);
 
 	virtual void perform();
 };
 
-StartStopAction::StartStopAction(uint32_t time)
+StartStopAction::StartStopAction(time_t time)
 : TimedAction(time)
 {
 }
@@ -101,7 +101,7 @@ auto_ptr<MessageBlock> ActStartStop::int_process(ClientConnection* cc, const Mes
 	char *errpnt;
 
 	uint32_t group_id;
-	uint32_t time;
+	time_t time;
 	uint32_t action;
 
 	string t_action = (*mb)["action"];

@@ -150,6 +150,25 @@ uint32_t UserSupportModule::user_group(uint32_t user_id)
 	return ~0U;
 }
 
+bool UserSupportModule::user_bonus(uint32_t user_id, int32_t &points, int32_t &seconds) {
+	DbCon *db = DbCon::getInstance();
+	if (!db)
+		return false;
+
+	ostringstream query;
+	query << "SELECT bonus_points, bonus_seconds from User WHERE user_id=" << user_id;
+
+	QueryResultRow res = db->singleRowQuery(query.str());
+	db->release();
+
+	if (res.size()) {
+		points = strtol(res[0].c_str(), NULL, 10);
+		seconds = strtol(res[1].c_str(), NULL, 10);
+		return true;
+	}
+	return false;
+}
+
 uint32_t UserSupportModule::nextId()
 {
 	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;

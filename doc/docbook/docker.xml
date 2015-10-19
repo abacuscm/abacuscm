@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN" "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<chapter id="docker">
+    <title>Running AbacusCM with Docker</title>
+    <section id="docker.introduction">
+        <title>Introduction</title>
+        <para>
+            <ulink url="https://www.docker.com">Docker</ulink> is a container
+            technology that simplifies deployment of applications with all
+            their dependencies. Abacus contains Docker build instructions,
+            which make it simpler to download or build the image once, and then
+            easily deploy it.
+        </para>
+        <para>
+            Abacus can be used without Docker; see <xref
+                linkend="administrator-core"/> and <xref
+                linkend="administrator-webapp"/> for instructions. The Docker
+            build also does not support multi-server installations. However,
+            it greatly simplifies setting up a server for either development
+            or contest use. You should still read these chapters for
+            information not related to installation.
+        </para>
+        <para>
+            Before using Docker to deploy Abacus, it is worth reading the
+            Docker documentation (and interactive tutorial) to understand
+            Docker basics of container management, port mappings, and
+            volumes.
+        </para>
+    </section>
+    <section id="docker.requirements">
+        <title>Requirements</title>
+        <para>
+            There are only two software requirements: Linux and
+            Docker! Development uses Docker 1.5, but you might be
+            successful with older versions. For Ubuntu, one can obtain the
+            latest version from <ulink
+                url="https://get.docker.com/ubuntu/"/>.
+        </para>
+        <para>
+            Docker currently plays fast-and-loose with security, and many files
+            end up owned by random users or accessed with root permissions. It
+            is recommended not to run AbacusCM through Docker on a server that
+            has any untrusted users. It is also recommended to run the marker
+            and the server on separate machines when in production.
+        </para>
+        <para>
+            The examples below assume that <command>docker</command> commands are
+            run as a user with permission to access to the Docker server. The
+            default Docker installation only allows <systemitem
+                class="username">root</systemitem> to run commands. It is
+            possible to change this, but you must understand the security
+            implications!
+        </para>
+    </section>
+    <section id="docker.building">
+        <title>Building the image</title>
+        <para>
+            This step is not always necessary: the Docker repository already
+            contains an image. However, it is not guaranteed to be up to date
+            with the AbacusCM source.
+        </para>
+        <para>
+            To build the image, change to the root of the AbacusCM repository,
+            and run
+        </para>
+        <screen><userinput>docker build -t bmerry/abacuscm . </userinput></screen>
+        <para>
+            This will download a lot of files, so you should have a cheap, fast
+            internet connection for this step. After the first time, Docker
+            will cache the result for future builds, as long as the
+            corresponding parts of the <filename>Dockerfile</filename> are not
+            touched.
+        </para>
+    </section>
+    <section id="docker.cookbook">
+        <title>Cookbook setup</title>
+        <para>
+            This is a step-by-step guide to setting up a server and marker
+            machine. The steps for the marker machine can be duplicated to
+            create multiple markers. It is also possible to run the marker
+            container on the same host, but in this case the marker must be
+            told to connect to a server IP address that resolves to the host,
+            even from inside the container (which rules out <systemitem
+                class="server">localhost</systemitem>). A useful choice is
+            the IP address associated with the
+            <systemitem>docker0</systemitem> interface.
+        </para>
+        <para>
+            You will need four directories on the host (they could also live
+            entirely in Docker <ulink
+                url="https://docs.docker.com/userguide/dockervolumes/#creating-and-mounting-a-data-volume-container">volume-only
+                containers</ulink>, but this guide assumes they live on the
+            host). They are
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term>The <emphasis>config</emphasis> directory</term>
+                <listitem>
+                    <para>
+                        This directory contains server-specific data, such as
+                        certificates, private keys, configuration files and so
+                        on, but no contest-specific data. This directory can
+                        be shared between the server and the markers.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>The <emphasis>data</emphasis> directory</term>
+                <listitem>
+                    <para>
+                        The data directory contains data generated during a
+                        contest. Most importantly, it contains the MySQL
+                        database containing all the contest data, but it also
+                        contains logs and generated standings.
+                    </para>
+                    <para>
+                        Markers also need a data directory, but it
+                        <emphasis>must not</emphasis> be shared between
+                        containers.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>The <emphasis>contest</emphasis> directory</term>
+                <listitem>
+                    <para>
+                        The contest directory contains files specific to one
+                        contest, such as configuration of the languages and
+                        contest duration. In future it may contain other
+                        configuration such as users and the start time.
+                    </para>
+                    <para>
+                        This directory exists only on the server, not the
+                        markers.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>The <emphasis>www</emphasis> directory</term>
+                <listitem>
+                    <para>
+                        This directory exists only on the server, and is used
+                        to provide the main web page for the server.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        <para>The steps to set up the server are:</para>
+        <procedure>
+            <step>
+                <para>Create the file
+                    <filename><replaceable>config-dir</replaceable>/abacus/server.conf.override</filename>
+                    with the content below, replacing the password with a
+                    secure password.
+                </para>
+                <screen>[initialisation]
+admin_password = <replaceable>password</replaceable></screen>
+            </step>
+            <step>
+                <para>Create the file
+                    <filename><replaceable>config-dir</replaceable>/abacus/marker.conf.override</filename>
+                    with the content below, replacing the hostname and
+                    password.
+                </para>
+                <screen>[server]
+address = <replaceable>hostname</replaceable>
+password = <replaceable>password</replaceable></screen>
+            </step>
+            <step>
+                <para>
+                    If you have x509 certificates signed by a certificate
+                    authority (for the web server to use), put the certificate
+                    and key at
+                    <filename><replaceable>config-dir</replaceable>/jetty-certs/jetty.crt</filename>
+                    and
+                    <filename><replaceable>config-dir</replaceable>/jetty-certs/jetty.key</filename>
+                    respectively. Otherwise, skip this step, and self-signed
+                    certificates will be generated the first time the server
+                    is run.
+                </para>
+            </step>
+            <step>
+                <para>
+                    Create
+                    <filename><replaceable>contest-dir</replaceable>/server.conf.override</filename>
+                    with the content below, replacing the values as
+                    appropriate. Here, <option>duration</option> is the contest
+                    duration and <option>blinds</option> is the amount of time
+                    for which the scoreboard is frozen at the end, both in
+                    seconds.
+                </para>
+                <screen>[contest]
+duration = <replaceable>18000</replaceable> # 5 hours
+blinds = <replaceable>3600</replaceable>    # 1 hour
+languages = <replaceable>C,C++,Python 2.x,Python 3.x,Java</replaceable></screen>
+            </step>
+            <step>
+                <para>
+                    Create
+                    <filename><replaceable>www-dir</replaceable>/index.html</filename>
+                    with a suitable front page for the web server. At a
+                    minimum, it should link to <filename>/abacus/</filename>
+                    for the contest system and
+                    <filename>/abacus/standings.html</filename> for
+                    publicly-viewable standings.
+                </para>
+                <para>
+                    If you want to provide a resources page inside the Abacus
+                    interface (for example, with API references, or sample
+                    code), create
+                    <filename><replaceable>www-dir</replaceable>/resources/index.html</filename>.
+                    This page must contain a <sgmltag>div</sgmltag> with a <sgmltag
+                        class="attribute">id</sgmltag> of <sgmltag
+                        class="attvalue">body</sgmltag>, which will be embedded
+                    into the Abacus interface. Note that it is a good idea for
+                    links to be configured to open in a new window.
+                </para>
+                <para>
+                    If this page will change frequently (such as to provide
+                    resources only after the start of the contest), you can
+                    override the cache control by creating
+                    <filename><replaceable>www-dir</replaceable>/WEB-INF/web.xml</filename>
+                    with the following content. The resources page is
+                    refreshed every 15 seconds.
+                </para>
+                <screen><![CDATA[<web-app>
+    <servlet>
+        <servlet-name>default</servlet-name>
+        <servlet-class>org.eclipse.jetty.servlet.DefaultServlet</servlet-class>
+        <init-param>
+            <param-name>cacheControl</param-name>
+            <param-value>max-age=0,must-revalidate</param-value>
+        </init-param>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>default</servlet-name>
+        <url-pattern>/</url-pattern>
+    </servlet-mapping>
+</web-app>]]></screen>
+            </step>
+            <step>
+                <para>
+                    Start the server by running
+                </para>
+                <screen><userinput>docker run -d -p 443:8443 -p 7368:7368 -p 80:8080 \
+    -v <replaceable>config-dir</replaceable>:/conf -v <replaceable>data-dir</replaceable>:/data -v <replaceable>contest-dir</replaceable>:/contest -v <replaceable>www-dir</replaceable>:/www \
+    bmerry/abacuscm server <optional>--server <replaceable>hostname</replaceable></optional></userinput></screen>
+                <para>
+                    This makes the various services available to the outside
+                    world. If you just want to run a test server on your local
+                    machine, replace all the <option>-p</option> options with
+                    <userinput>-p 127.0.0.1:443:8443 -p 127.0.0.1:7368:7368 -p 127.0.0.1:80:8080
+                        -p <replaceable>172.17.42.1</replaceable>:7368:7368</userinput>,
+                    where the last IP address is the address for the
+                    <systemitem>docker0</systemitem> interface.
+                </para>
+                <para>
+                    The <option>--server</option> option specifies the hostname to use
+                    in the self-signed certificate, if a certificate has not
+                    already been provided. It is only necessary to specify
+                    this the first time, as the generated certificate is saved
+                    to <replaceable>config-dir</replaceable>/jetty-certs.
+                </para>
+            </step>
+            <step>
+                <para>
+                    Monitor the startup process by running
+                </para>
+                <screen><userinput>sudo docker logs <replaceable>container-id</replaceable></userinput></screen>
+                <para>
+                    Check that the server has started successfully by
+                    examining the log files, particularly
+                    <filename><replaceable>data-dir</replaceable>/abacus/log/abacusd.log</filename>.
+                </para>
+            </step>
+            <step>
+                <para>
+                    Synchronise the config directory to the marker machines.
+                    Only the files
+                    <filename>abacus/marker.conf.override</filename> and
+                    <filename>abacus-certs/cacert.crt</filename> are needed,
+                    and it may be safer to copy only these files to prevent
+                    evaluated programs from stealing keys if the permissions
+                    are misconfigured.
+                </para>
+            </step>
+            <step>
+                <para>
+                    Start a marker by running (keeping in mind that each container must have
+                    its own data directory):
+                </para>
+                <screen><userinput>docker run -d -v <replaceable>config-dir</replaceable>:/conf -v <replaceable>data-dir</replaceable>:/data bmerry/abacuscm marker <optional>--server <replaceable>server-address</replaceable></optional></userinput></screen>
+            </step>
+            <step>
+                <para>
+                    Check that the marker has successfully connected to the
+                    server by examining the log files, particularly
+                    <filename><replaceable>data-dir</replaceable>/abacus/log/marker.log</filename>.
+                </para>
+            </step>
+            <step>
+                <para>
+                    Add users and problems and set a start time by using
+                    <command>abacustool</command>. Refer to the <link
+                        linkend="administrator-core.abacustool">manual</link>
+                    for details. The client configuration file will need to
+                    refer to the certificate written to
+                    <filename><replaceable>config-dir</replaceable>/abacus-certs/cacert.crt</filename>.
+                </para>
+            </step>
+        </procedure>
+    </section>
+    <section id="docker.variations">
+        <title>Variations on the setup</title>
+        <section id="docker.ports">
+            <title>Port bindings</title>
+            <para>
+                The cookbook opens up the web server and the Abacus server to
+                the output world. This is obviously necessary for a real
+                contest, but not necessarily a good idea for internal testing.
+                Docker allows port mappings to be bound to a single IP address
+                by specifying, for example, <option>-p
+                    127.0.0.1:443:8443</option> to limit connections to the
+                local host. However, binding the Abacus server to localhost
+                will prevent the marker from connecting. Instead (or in
+                addition, if one wants to use <command>abacustool</command> on
+                the host), bind it to the address of the
+                <systemitem>docker0</systemitem> interface.
+            </para>
+            <para>
+                If the Abacus web interface is accessed over
+                <systemitem>http</systemitem>, the web server will
+                redirect the browser to <systemitem>https</systemitem>. To do
+                so correctly, it needs to know which port the browser should
+                use to connect securely. If this is not 443, then pass
+                <option>--https-port=<replaceable>port</replaceable></option>
+                at the end of the <command>docker</command> command used to
+                start the server.
+            </para>
+        </section>
+    </section>
+</chapter>

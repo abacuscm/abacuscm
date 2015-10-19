@@ -17,10 +17,11 @@
 #include "config.h"
 
 #define DEFAULT_SERVER_CONFIG		SYSCONFDIR "/abacus/server.conf"
-#define DEFAULT_CLIENT_CONFIG		SYSCONFDIR "/abacus/client.conf"
+#define DEFAULT_CLIENT_CONFIG1		SYSCONFDIR "/abacus/client.conf"
+#define DEFAULT_CLIENT_CONFIG2		"abacus.conf"
 #define DEFAULT_MARKER_CONFIG		SYSCONFDIR "/abacus/marker.conf"
 #define DEFAULT_UDPRECEIVER_PORT	7368
-#define DEFAULT_MODULE_DIR			SYSLIBDIR  "/abacusd/modules"
+#define DEFAULT_MODULE_DIR			MODDIR
 
 // Keepalive times, in seconds
 #define KEEPALIVE_INTERVAL 120    // Interval at which server sends keepalives
@@ -42,7 +43,7 @@ public:
 	Config();
 	~Config();
 
-	bool load(const std::string& fname);
+	bool load(const std::string& fname, bool ignore_missing = false);
 	void dumpConfig(std::ostream& os) const;
 
 	ConfigSection& operator[] (const std::string& sect) {

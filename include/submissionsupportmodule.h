@@ -40,7 +40,7 @@ public:
 	virtual void init();
 
 	bool putSubmission(uint32_t sub_id, uint32_t user_id, uint32_t prob_id,
-			uint32_t time, uint32_t server_id, char* content,
+			time_t time, uint32_t server_id, char* content,
 			uint32_t content_size, std::string language);
 
 	/* Take information about a submission from the DB and fill in the details to

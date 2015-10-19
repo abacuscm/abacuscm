@@ -1,4 +1,4 @@
-/*  Copyright (C) 2010-2011, 2013  Bruce Merry and Carl Hultquist
+/*  Copyright (C) 2010-2011, 2013, 2015  Bruce Merry and Carl Hultquist
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -76,6 +76,8 @@
 	}
 
 	this.timeToString = function(time) {
+		if (time < 0)
+			return '-' + timeToString(-time);
 		var seconds = time % 60;
 		var minutes = (time - seconds) / 60 % 60;
 		var hours = (time - 60 * minutes - seconds) / 3600;
@@ -343,6 +345,14 @@
 		}
 	}
 
+	this.hideTab = function(name) {
+		$('#tabs').tabs('disable', '#' + name);
+	}
+
+	this.showTab = function(name) {
+		$('#tabs').tabs('enable', '#' + name);
+	}
+
 	$(document).ready(function() {
 		// Initialisation -- we need to set up the properties of some
 		// reusable dialogs, and initially hide some things.
@@ -441,6 +451,8 @@
 				return true;
 			}
 		});
+		hideTab('tab-resources');
+		hideDebug();
 
 		// Disable the WebSocket transport, which is experimental and possibly
 		// buggy.

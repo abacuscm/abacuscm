@@ -1,0 +1,20 @@
+<settings>
+    <servers>
+        <server>
+            <id>central</id>
+            <configuration>
+                <httpConfiguration>
+                    <get>
+                        <useDefaultHeaders>false</useDefaultHeaders>
+                        <headers>
+                            <header>
+                                <name>Accept-Encoding</name>
+                                <value>gzip</value>
+                            </header>
+                        </headers>
+                    </get>
+                </httpConfiguration>
+            </configuration>
+        </server>
+    </servers>
+</settings>

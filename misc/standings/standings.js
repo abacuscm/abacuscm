@@ -5,10 +5,11 @@ first_time = true;
 STANDING_RAW_ID = 0;
 STANDING_RAW_USERNAME = 1;
 STANDING_RAW_FRIENDLYNAME = 2;
-STANDING_RAW_CONTESTANT = 3;
-STANDING_RAW_TOTAL_SOLVED = 4;
-STANDING_RAW_TOTAL_TIME = 5;
-STANDING_RAW_SOLVED = 6;
+STANDING_RAW_GROUP = 3;
+STANDING_RAW_CONTESTANT = 4;
+STANDING_RAW_TOTAL_SOLVED = 5;
+STANDING_RAW_TOTAL_TIME = 6;
+STANDING_RAW_SOLVED = 7;
 
 COLUMN_PLACE = 0;
 COLUMN_USERNAME = 1;
@@ -31,6 +32,8 @@ function padNumber(num)
 
 function timeToString(time)
 {
+	if (time < 0)
+		return '-' + timeToString(-time);
 	var seconds = time % 60;
 	var minutes = (time - seconds) / 60 % 60;
 	var hours = (time - 60 * minutes - seconds) / 3600;
@@ -161,7 +164,7 @@ function data_callback(text, textStatus)
 		html += '<col />';
 	$("colgroup.problem").html(html);
 
-	html = '<tr><th>Place</th><th>Team</th><th>Name</th><th>Solved</th><th>Time</th>';
+	html = '<tr><th>Place</th><th>Team</th><th>Name</th><th>Points</th><th>Time</th>';
 	for (i = STANDING_RAW_SOLVED; i < raw_header.length; i++)
 		html += '<th>' + raw_header[i] + '</th>';
 	html += '</tr>';

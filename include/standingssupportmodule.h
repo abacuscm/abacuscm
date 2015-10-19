@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2005 - 2006 Kroon Infomation Systems,
+ * Copyright (c) 2005 - 2006, 2013 Kroon Infomation Systems,
  *  with contributions from various authors.
  *
  * This file is distributed under GPLv2, please see
@@ -34,7 +34,8 @@ public:
 	typedef struct
 	{
 		bool in_standings;                 // user has PERMISSION_IN_STANDINGS
-		uint32_t time;
+		time_t time;
+		int points;
 		std::map<uint32_t, int32_t> tries; // sign bit indicates whether correctness has been achieved or not.
 	} StandingsData;
 
@@ -70,7 +71,7 @@ public:
 	bool updateStandings(uint32_t uid, time_t tm);
 
 	/* Takes a copy of the standings and adds it to mb.
-	 * uid is the for whose status should be reported, or 0 to get the full
+	 * uid is the user for whom status should be reported, or 0 to get the full
 	 * standings list.
 	 * If final is true, include last-hour results.
 	 * If see_all is false, show only users with PERMISSION_IN_STANDINGS.

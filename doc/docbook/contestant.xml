@@ -17,6 +17,8 @@
             <year>2010</year>
             <year>2011</year>
             <year>2012</year>
+            <year>2013</year>
+            <year>2015</year>
             <holder>Bruce Merry</holder>
             <holder>Jaco Kroon</holder>
             <holder>Carl Hultquist</holder>
@@ -33,36 +35,22 @@
     </section>
     <section id="contestant.login">
         <title>Logging into Abacus</title>
-        <para condition="qt">
-            The command to start <application>Abacus</application> will depend on your local
-            installation. In most cases you should just be able to type
-            <userinput>abacus</userinput> in a terminal window.
-        </para>
-        <para condition="qt">
-            After starting <application>Abacus</application>, you should select
-            <menuchoice><guimenu>Abacus</guimenu><guimenuitem>Connect</guimenuitem></menuchoice>.
-            This will open a dialog box. The server and port should have
-            already been set for you. Fill in the username and password that
-            you have been given. If you do this correctly, you should receive
-            the message <computeroutput>You are now connected to the
-                server.</computeroutput>
-        </para>
-        <para condition="web">
+        <para>
             <application>Abacus</application> is accessed through the
-            <application>Firefox</application> web browser.
+            <emphasis role="strong"><application>Firefox</application> web
+            browser</emphasis>.
             Depending on your local installation, there may be a direct link
             on the desktop. Other browsers may be available but are not
             supported.
         </para>
-        <para condition="web">
+        <para>
             Once the page has loaded, fill in the username and password that
             you have been given. If you do this correctly, you will be taken
             to the Manual tab.
         </para>
         <para>
             When the contest is running, you will see a clock in the
-            <phrase condition="qt">bottom-right corner</phrase>
-            <phrase condition="web">top-left corner</phrase>
+            top-left corner
             counting down the remaining time.
         </para>
     </section>
@@ -79,8 +67,7 @@
             When a judge responds to your query, the response will
             be available on the
             <guilabel>Clarifications</guilabel> tab (you can
-            <phrase condition="qt">double-click</phrase>
-            <phrase condition="web">click</phrase>
+            click
             on clarification requests and clarifications to see the full
             text).
         </para>
@@ -130,21 +117,26 @@
             If you are using Java, you can call your main class whatever you
             like, but it must be the <emphasis>first</emphasis> class in the
             file. You can include support classes after it, but they should
-            not be <symbol>public</symbol>.
+            not be <symbol>public</symbol>. <application>Abacus</application>
+            determines the package and class name from the contents of the file,
+            so you must not use the keywords
+            <code language="java">package</code> or
+            <code language="java">class</code> in comments before the main class
+            declaration.
         </para>
         <para>
             Your solution will read from standard input
             (<phrase condition="cxx"><code language="c">stdin</code>,
                 <code language="c++">cin</code>,
              </phrase><phrase condition="java"><code language="java">System.in</code>,
-             </phrase><phrase condition="python">
+             </phrase><phrase condition="python;python3">
                 <code language="python">sys.stdin</code>,
             </phrase> depending on language)
             and write to standard output
             (<phrase condition="cxx"><code language="c">stdout</code>,
                 <code language="c++">cout</code>,
             </phrase><phrase condition="java"><code language="java">System.out</code>,
-            </phrase><phrase condition="python"><code language="python">sys.stdout</code>
+            </phrase><phrase condition="python;python3"><code language="python">sys.stdout</code>
             </phrase> again depending on language).
             Your solution is tested by an automated marker, so you must be
             careful to input only what is asked for, and output only what is
@@ -152,6 +144,14 @@
             <computeroutput>The answer is:</computeroutput> unless you are
             asked to.
         </para>
+        <warning>
+            <para>
+                Your program will generally be judged against secret input,
+                which will be different from the sample input shown in the
+                problem statement. Your solution must be able to handle all
+                valid inputs.
+            </para>
+        </warning>
         <section id="contestant.solutions.float">
             <title>Floating-point output</title>
             <para>
@@ -164,8 +164,12 @@
                 to be output).
             </para>
             <example id="contestant.solutions.float.python" condition="python">
-                <title>Floating-point output in Python</title>
+                <title>Floating-point output in Python 2.x</title>
                 <programlisting language="python"><![CDATA[print "Case #%d: %.6f" % (caseNum, x)]]></programlisting>
+            </example>
+            <example id="contestant.solutions.float.python3" condition="python3">
+                <title>Floating-point output in Python 3.x</title>
+                <programlisting language="python"><![CDATA[print("Case #{}: {:.6f}".format(caseNum, x))]]></programlisting>
             </example>
             <example id="contestant.solutions.float.java" condition="java">
                 <title>Floating-point output in Java</title>
@@ -181,6 +185,18 @@
                 <programlisting language="c++"><![CDATA[cout.precision(6);
 cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
             </example>
+        </section>
+        <section id="contestant.solutions.resources">
+            <title>Resource limits</title>
+            <para>
+                When your solution is judged, it will be subject to resource
+                limits, particularly time and memory. Time limits should be
+                stated in the problem text. The total memory for your program
+                is limited to 256 MiB, unless otherwise stated in the problem
+                text. If it writes more than 16 MiB of output, it may be killed
+                with result <computeroutput>Abnormal
+                    termination</computeroutput>.
+            </para>
         </section>
     </section>
     <section id="contestant.submitting">
@@ -199,7 +215,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
             track of the submission status. The possible options are:
         </para>
         <variablelist>
-            <varlistentry>
+            <varlistentry id="contestant.submitting.result.pending">
                 <term><computeroutput>Pending</computeroutput></term>
                 <listitem>
                     <para>
@@ -207,7 +223,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                     </para>
                 </listitem>
             </varlistentry>
-            <varlistentry>
+            <varlistentry id="contestant.submitting.result.compile-failed">
                 <term><computeroutput>Compilation failure</computeroutput></term>
                 <listitem>
                     <para>
@@ -216,14 +232,13 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                         C++ in particular, because the marker might not be
                         using the same version of the compiler.</phrase>
                         To assist you, you can
-                        <phrase condition="qt">double-click</phrase>
-                        <phrase condition="web">click</phrase>
+                        click
                         on the submission to get the compiler output.
                         <phrase condition="cxx">In many cases you just need to add a
                             <code language="c++">#include</code> statement.</phrase>
                         There is no time
                         penalty for compilation failures.
-                        <phrase condition="python"> Note that since
+                        <phrase condition="python;python3"> Note that since
                         Python is an interpreted language, there are no
                         compilation errors &mdash; so be particularly careful
                         before submitting, as what would be a compilation error
@@ -232,7 +247,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                     </para>
                 </listitem>
             </varlistentry>
-            <varlistentry>
+            <varlistentry id="contestant.submitting.result.time-exceeded">
                 <term><computeroutput>Time limit exceeded</computeroutput></term>
                 <listitem>
                     <para>
@@ -242,7 +257,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                     </para>
                 </listitem>
             </varlistentry>
-            <varlistentry>
+            <varlistentry id="contestant.submitting.result.abnormal">
                 <term><computeroutput>Abnormal termination</computeroutput></term>
                 <listitem>
                     <para>
@@ -257,7 +272,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                     </para>
                 </listitem>
             </varlistentry>
-            <varlistentry>
+            <varlistentry id="contestant.submitting.result.judge">
                 <term><computeroutput>Deferred to judge</computeroutput></term>
                 <listitem>
                     <para>
@@ -268,7 +283,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                     </para>
                 </listitem>
             </varlistentry>
-            <varlistentry>
+            <varlistentry id="contestant.submitting.result.format-error">
                 <term><computeroutput>Format error</computeroutput></term>
                 <listitem>
                     <para>
@@ -278,7 +293,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                     </para>
                 </listitem>
             </varlistentry>
-            <varlistentry>
+            <varlistentry id="contestant.submitting.result.wrong">
                 <term><computeroutput>Wrong answer</computeroutput></term>
                 <listitem>
                     <para>
@@ -286,7 +301,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                     </para>
                 </listitem>
             </varlistentry>
-            <varlistentry>
+            <varlistentry id="contestant.submitting.result.correct">
                 <term><computeroutput>Correct answer</computeroutput></term>
                 <listitem>
                     <para>
@@ -295,7 +310,7 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
                 </listitem>
             </varlistentry>
         </variablelist>
-        <para>
+        <para id="contestant.submitting.first-error">
             Judges report the first condition they notice. In particular,
             <computeroutput>Format error</computeroutput> does not indicate
             whether the answers are correct or not, and <computeroutput>Wrong
@@ -306,12 +321,8 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
             If you wish to ask a question about a particular submission, you
             should submit a clarification request and mention the
             <guilabel>Submission ID</guilabel> in your request. A quick way to
-            do this is to <phrase condition="qt">use the <guibutton>Request
-                    Clarification</guibutton> button on the
-                <guilabel>Submissions</guilabel> tab &mdash; if you have selected a
-                submission from the list box, then clicking on this button</phrase>
-            <phrase condition="web">click the <guilabel>Request
-                    Clarification</guilabel> button next to the submission. This</phrase>
+            do this is to click the <guilabel>Request Clarification</guilabel>
+            button next to the submission. This
             will open a clarification request window with the correct problem
             selected, and the <guilabel>Submission ID</guilabel> entered in the
             request text. Even if you include a submission ID, you still need to
@@ -327,13 +338,19 @@ cout << "Case #" << caseNum << ": " << fixed << x << endl;]]></programlisting>
             least one submission will appear in the standings.
         </para>
     </section>
+    <section id="contestant.resources">
+        <title>Resources</title>
+        <para>
+            This tab might or might not be available, depending on how the
+            contest has been configured. If it appears, it will contain
+            material that the contest organisers have made available to you.
+        </para>
+    </section>
     <section id="contestant.alerts">
         <title>Alerts</title>
         <para>
             When a hidden tab has new information (such as a reply to a
             clarification, or the result of a submission),
-            <phrase condition="qt">the flag next to</phrase>
-            <phrase condition="web"></phrase>
             the tab title will light up red.  Click on the tab to see the update.
         </para>
     </section>

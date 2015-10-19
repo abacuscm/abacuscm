@@ -226,9 +226,10 @@ int main(int argc, const char **argv) {
 	ServerConnection _server_con;
 
 	Config &conf = Config::getConfig();
-	conf.load(DEFAULT_CLIENT_CONFIG);
-
-	conf.load(argv[1]);
+	conf.load(DEFAULT_CLIENT_CONFIG1, true);
+	conf.load(DEFAULT_CLIENT_CONFIG2, true);
+	if (!conf.load(argv[1]))
+		return 1;
 
 	log(LOG_DEBUG, "Connecting ...");
 

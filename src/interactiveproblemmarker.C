@@ -95,15 +95,15 @@ void InteractiveProblemMarker::mark_compiled() {
 		setResult((RunResult) status);
 		addResultFile("Evaluation log", outfile, 64 * 1024);
 		addResultFile("Runinfo", runfile, 64 * 1024);
-		addResultFile("Error log", errfile, 64 * 1024);
+		addResultFile("Team's error log", errfile, 64 * 1024);
 		log(LOG_DEBUG, "%s", info.c_str());
 	}
 	else {
-		log(LOG_ERR, "An error has occured whilst running the user program.");
+		log(LOG_ERR, "An error has occurred whilst running the user program.");
 		setResult(OTHER);
 		addResultFile("Evaluation log", outfile, 64 * 1024);
 		addResultFile("Runinfo", runfile, 64 * 1024);
-		addResultFile("Error log", errfile, 64 * 1024);
+		addResultFile("Team's error log", errfile, 64 * 1024);
 	}
 }
 

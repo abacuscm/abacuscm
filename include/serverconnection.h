@@ -44,6 +44,8 @@ typedef struct {
 typedef struct {
 	uint32_t id;
 	std::string username;
+	std::string friendlyname;
+	std::string type;
 } UserInfo;
 
 typedef struct {
@@ -136,6 +138,9 @@ public:
 	bool changePassword(std::string password);
 	bool changePassword(uint32_t id, std::string password);
 
+	bool getBonus(uint32_t user_id, int32_t &points, int32_t &seconds);
+	bool setBonus(uint32_t user_id, int32_t points, int32_t seconds);
+
 	bool startStop(uint32_t group_id, bool start, time_t time);
 
 	std::vector<std::string> getPermissions();
@@ -154,7 +159,7 @@ public:
 		            ProblemList dependencies);
 	bool getProblemAttributes(uint32_t prob_id, AttributeMap& attrs);
 	bool getProblemFile(uint32_t prob_id, std::string attrib, char **bufferptr, uint32_t *bufferlen);
-	bool getSubmissionSource(uint32_t submission_id, char **bufferptr, uint32_t *bufferlen);
+	bool getSubmissionSource(uint32_t submission_id, char **bufferptr, uint32_t *bufferlen, char **langbufferptr=NULL, uint32_t *langbufferlen=NULL);
 	uint32_t submit(uint32_t prob_id, int fd, const std::string& language);
 	bool clarificationRequest(uint32_t prob_id, const std::string& question);
 	bool clarificationReply(uint32_t clarification_req_id, bool pub, const std::string& answer);
@@ -167,8 +172,8 @@ public:
 	uint32_t countMarkFiles(uint32_t submission_id);
 	bool getMarkFile(uint32_t submission_id, uint32_t file_index, std::string &name, void **data, uint32_t &length);
 
-	uint32_t contestTime();
-	uint32_t contestRemain();
+	time_t contestTime();
+	time_t contestRemain();
 	bool contestRunning();
 	bool subscribeTime();
 

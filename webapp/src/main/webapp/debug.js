@@ -1,4 +1,4 @@
-/*  Copyright (C) 2010-2011  Bruce Merry and Carl Hultquist
+/*  Copyright (C) 2010-2011, 2015  Bruce Merry and Carl Hultquist
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,14 +23,16 @@
 	 * Show the debug controls.
 	 */
 	this.showDebug = function() {
-		$('.tab-debug').removeClass('tab-hidden');
+		showTab('tab-debug');
+		showTab('tab-log');
 	}
 
 	/**
 	 * Hide the debug controls.
 	 */
 	this.hideDebug = function() {
-		$('.tab-debug').addClass('tab-hidden');
+		hideTab('tab-debug');
+		hideTab('tab-log');
 	}
 
 	// Output an array of strings to the log

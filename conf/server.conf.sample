@@ -3,7 +3,7 @@ moddir = modules
 peermessenger = udtcpmessenger
 dbconnector = dbmysql
 support = user,timer,submission,standings,keepalive
-actions = auth,passwd,adduser,addgroup,addserver,whatami,problemtypes,problemmanip,status,serverlist,submit,events,startstop,mark,clarify,contesttime,standings
+actions = auth,passwd,adduser,addgroup,addserver,bonus,whatami,problemtypes,problemmanip,status,serverlist,submit,events,startstop,mark,clarify,contesttime,standings
 problemtypes = testcasedriventype,interactivetype
 
 [udtcpmessenger]
@@ -57,4 +57,4 @@ marker = yes
 [contest]
 duration = 18000
 blinds = 3600
-languages = C,C++,Python,Java
+languages = C,C++,Python 2.x,Python 3.x,Java
