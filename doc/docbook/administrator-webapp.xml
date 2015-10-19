@@ -249,5 +249,34 @@ iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT \
 iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT \
     --to-ports <replaceable>8080</replaceable></programlisting>
         </section>
-    </section>
+	</section>
+	<section id="administrator-webapp.configuration.ssl">
+		<title>Configuring SSL certificates for Jetty</title>
+		<para>Configuring SSL for Jetty is a little more complicated than for Apache, so you may want to consider using haproxy, apache, nginx or lighttpd to offload SSL instead.</para>
+		<para>For the purposes of this discussion I'm going to assume you have
+			three files called key.pem, cert.pem and cachain.pem that contains
+			your private key, X.509 certificate (as signed by your certificate
+			authority) and the CA's certificate chain, all in PEM
+			format.</para>
+		<para>First we need to convert the PEM files into PKCS12 format as
+			required by the java keytool.</para>
+		<programlisting>openssl pkcs12 -inkey key.pem -in &lt;(cat cert.pem cachain.pem) -export -out jetty.pkcs12</para>
+		<para>This will generate a password protected pkcs12 file containing
+			both the certificate, along with it's chain, and the private key,
+			which we can import into a java keystore:</para>
+		<programlisting>keytool -importkeystore -srckeystore ~/jetty.pkcs12 -srcstoretype PKCS12 -destkeystore keystore</programlisting>
+		<para>TODO: Explain how to configure the sslengine</para>
+		<para>In order to redirect http to https:</para>
+		<programListing>
+			&lt;security-constraint&gt;
+				&lt;web-resource-collection&gt;
+					&lt;web-resource-name&gt;Everything in the webapp&lt;/web-resource-name&gt;
+					&lt;url-pattern&gt;/*&lt;/url-pattern&gt;
+				&lt;/web-resource-collection&gt;
+				&lt;user-data-constraint&gt;
+					&lt;transport-guarantee&gt;CONFIDENTIAL&lt;/transport-guarantee&gt;
+				&lt;/user-data-constraint&gt;
+			&lt;/security-constraint&gt;
+		</programListing>
+	</section>
 </chapter>
