@@ -15,9 +15,13 @@ public class systest
 			System.out.println("Created foo.txt (bad)");
 			target.delete();
 		}
+		catch (SecurityException e)
+		{
+			System.out.println("SecurityException writing foo.txt (good): " + e.getMessage());
+		}
 		catch (IOException e)
 		{
-			System.out.println("Failed to created foo.txt (good): " + e.getMessage());
+			System.out.println("Failed to created foo.txt (okay): " + e.getMessage());
 		}
 	}
 
