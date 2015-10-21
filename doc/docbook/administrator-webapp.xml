@@ -260,14 +260,14 @@ iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT \
 			format.</para>
 		<para>First we need to convert the PEM files into PKCS12 format as
 			required by the java keytool.</para>
-		<programlisting>openssl pkcs12 -inkey key.pem -in &lt;(cat cert.pem cachain.pem) -export -out jetty.pkcs12</para>
+		<programlisting>openssl pkcs12 -inkey key.pem -in &lt;(cat cert.pem cachain.pem) -export -out jetty.pkcs12</programlisting>
 		<para>This will generate a password protected pkcs12 file containing
 			both the certificate, along with it's chain, and the private key,
 			which we can import into a java keystore:</para>
 		<programlisting>keytool -importkeystore -srckeystore ~/jetty.pkcs12 -srcstoretype PKCS12 -destkeystore keystore</programlisting>
 		<para>TODO: Explain how to configure the sslengine</para>
 		<para>In order to redirect http to https:</para>
-		<programListing>
+		<programlisting>
 			&lt;security-constraint&gt;
 				&lt;web-resource-collection&gt;
 					&lt;web-resource-name&gt;Everything in the webapp&lt;/web-resource-name&gt;
@@ -277,6 +277,6 @@ iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT \
 					&lt;transport-guarantee&gt;CONFIDENTIAL&lt;/transport-guarantee&gt;
 				&lt;/user-data-constraint&gt;
 			&lt;/security-constraint&gt;
-		</programListing>
+		</programlisting>
 	</section>
 </chapter>
