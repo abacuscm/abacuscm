@@ -1,0 +1,21 @@
+This directory contains some tools to quickly bring up a sample contest for
+development purposes. It should NOT be used for production, because it has
+hard-coded keys and passwords. For the same reason, the contest it creates is
+only accessible from localhost.
+
+The dependencies are Docker Engine and Docker Compose. After building the
+docker image, run
+
+- docker-compose up -d
+- ./add.sh
+
+You need to leave about 10 seconds between the steps for the server to come up
+and be ready to accept commands. This creates a contest with some problems and
+users, and sets it running for 50000 hours.
+
+To blow away the whole thing, run
+- docker-compose stop
+- docker-compose rm
+
+If you leave off the second step, it's possible to restart with the transient
+data intact by running docker-compose up -d again.

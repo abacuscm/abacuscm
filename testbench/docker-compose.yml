@@ -1,0 +1,20 @@
+server:
+    image: bmerry/abacuscm
+    ports:
+        - "localhost:443:8443"
+        - "localhost:7368:7368"
+    volumes:
+        - "./conf:/conf"
+        - "./contest:/contest"
+        - "/data"
+        - "/www"
+    command: server
+
+marker:
+    image: bmerry/abacuscm
+    links:
+        - server
+    command: marker
+    volumes:
+        - "./conf:/conf"
+        - "/data"
