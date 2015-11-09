@@ -87,6 +87,65 @@
 		}
 		else {
 			submissionFiles = new Array();
+			var explanation = null;
+			switch (submission.result)
+			{
+			case RunResult.WRONG:
+				explanation =
+					'When given our test data, your solution produced the wrong answers.\n' +
+					'Keep in mind that we test your solution with test data that is\n' +
+					'DIFFERENT TO (and usually harder than) the sample data shown in the\n' +
+					'question.\n' +
+					'\n' +
+					'Please do not ask for more details of what you got wrong. That is up\n' +
+					'to you to discover.\n';
+				break;
+			case RunResult.TIME_EXCEEDED:
+				explanation =
+					'When given our test data, your solution ran for longer than the\n' +
+					'allowed time (which should appear on the question paper).\n' +
+					'Keep in mind that we test your solution with test data that is\n' +
+					'DIFFERENT TO (and usually harder than) the sample data shown in the\n' +
+					'question.\n' +
+					'\n' +
+					'Please do not ask how close your program was to running in time. It\n' +
+					'is killed as soon as it runs over time, so we do not know.\n';
+				break;
+			case RunResult.FORMAT_ERROR:
+				explanation =
+					'The output from your solution did not match the format specified\n' +
+					'in the problem statement. Please check that\n' +
+					'- you do not have any debugging print statements\n' +
+					'- you have no written any prompts for input\n' +
+					'- you have used uppercase and lowercase correctly, if applicable\n' +
+					'Hint: when running on the sample input, the output should EXACTLY\n' +
+					'match the sample output, with nothing added.\n' +
+					'\n' +
+					'Please do not ask what is wrong with your formatting. It is up\n' +
+					'to you to figure this out, and you will not be told.\n';
+				break;
+			case RunResult.ABNORMAL:
+				explanation =
+					'When given our test data, your solution did not terminate cleanly.\n' +
+					'There are many reasons this can happen, including\n' +
+					'- throwing an uncaught exception\n' +
+					'- exceeding the resource limits (such as memory)\n' +
+					'- invalid Python syntax\n' +
+					'- returning an exit code other than 0 from C/C++\n' +
+					'- invalid memory use in C/C++\n' +
+					'- invalid mathematical operations (e.g., divide by zero)\n' +
+					'For more details, refer to the manual (left-hand tab).\n' +
+					'Keep in mind that we test your solution with test data that is\n' +
+					'DIFFERENT TO (and usually harder than) the sample data shown in the\n' +
+					'question.\n' +
+					'\n' +
+					'Please do not ask for more details of your error. You will not be told.\n';
+				break;
+			}
+			if (explanation !== null)
+			{
+				submissionFiles.push({name: 'Explanation', content: explanation});
+			}
 			finishFetch();
 		}
 	}
@@ -156,7 +215,14 @@
 						{
 							text: 'Ok',
 							click: function() { $(this).dialog('close'); }
-						}]
+						},
+						{
+							text: 'Request clarification',
+							click: function() {
+								requestClarificationDialog(submission.prob_id, '[Submission ' + submissionId + '] ');
+							}
+						}
+					]
 				}
 			);
 		}
