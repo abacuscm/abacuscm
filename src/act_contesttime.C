@@ -14,7 +14,6 @@
 #include "timersupportmodule.h"
 #include "misc.h"
 
-#include <sstream>
 #include <memory>
 
 using namespace std;
@@ -31,21 +30,11 @@ auto_ptr<MessageBlock> ActContesttime::int_process(ClientConnection*cc, const Me
 	time_t contestblinds = timer->contestBlindsDuration();
 	bool running = timer->contestStatus(cc->getGroupId()) == TIMER_STATUS_STARTED;
 
-	ostringstream os;
-
 	auto_ptr<MessageBlock> res(MessageBlock::ok());
 	(*res)["running"] = running ? "yes" : "no";
-
-	os << contesttime;
-	(*res)["time"] = os.str();
-
-	os.str("");
-	os << contestremain;
-	(*res)["remain"] = os.str();
-
-	os.str("");
-	os << contestblinds;
-	(*res)["blinds"] = os.str();
+	(*res)["time"] = to_string(contesttime);
+	(*res)["remain"] = to_string(contestremain);
+	(*res)["blinds"] = to_string(contestblinds);
 
 	return res;
 }

@@ -15,6 +15,7 @@
 #include "dbcon.h"
 #include "message_type_ids.h"
 #include "message.h"
+#include "misc.h"
 
 #include <string>
 #include <sstream>
@@ -107,12 +108,9 @@ auto_ptr<MessageBlock> ActGetUsers::int_process(ClientConnection *, const Messag
 	UserSupportModule::UserList::iterator s;
 	int c = 0;
 	for (s = lst.begin(); s != lst.end(); ++s, ++c) {
-		std::ostringstream tmp;
-		tmp << c;
-		std::string cntr = tmp.str();
+		std::string cntr = to_string(c);
 
-		tmp.str(""); tmp << s->user_id;
-		(*res)["id" + cntr] = tmp.str();
+		(*res)["id" + cntr] = to_string(s->user_id);
 		(*res)["username" + cntr] = s->username;
 		(*res)["friendlyname" + cntr] = usm->friendlyname(s->user_id);
 		uint32_t type = usm->usertype(s->user_id);

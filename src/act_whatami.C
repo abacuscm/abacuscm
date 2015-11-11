@@ -15,6 +15,7 @@
 #include "dbcon.h"
 #include "clienteventregistry.h"
 #include "permissionmap.h"
+#include "misc.h"
 
 #include <memory>
 
@@ -32,9 +33,7 @@ auto_ptr<MessageBlock> ActWhatAmI::int_process(ClientConnection *cc, const Messa
 	size_t pos = 0;
 	for (size_t j = 0; j < PERMISSION_COUNT; j++) {
 		if (perms[j]) {
-			std::ostringstream header;
-			header << "permission" << pos;
-			(*resp)[header.str()] = getPermissionName(static_cast<Permission>(j));
+			(*resp)["permission" + to_string(pos)] = getPermissionName(static_cast<Permission>(j));
 			pos++;
 		}
 	}

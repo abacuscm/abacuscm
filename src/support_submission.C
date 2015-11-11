@@ -12,6 +12,7 @@
 #include "dbcon.h"
 #include "messageblock.h"
 #include "logger.h"
+#include "misc.h"
 
 #include <sstream>
 #include <string>
@@ -48,26 +49,21 @@ bool SubmissionSupportModule::submissionToMB(DbCon *db, AttributeList &s, Messag
 	for (AttributeList::const_iterator a = s.begin(); a != s.end(); ++a)
 		mb[a->first + suffix] = a->second;
 
-	std::ostringstream time_str;
-	time_str << timer->contestTime(group_id, time);
-	mb["contesttime" + suffix] = time_str.str();
+	mb["contesttime" + suffix] = to_string(timer->contestTime(group_id, time));
 
 	RunResult resinfo;
 	uint32_t type;
 	std::string comment;
-	std::ostringstream result_str;
 
-	if(db->getSubmissionState(
+	if(!db->getSubmissionState(
 			submission_id,
 			resinfo,
 			type,
 			comment)) {
-		result_str << (int)resinfo;
-	} else {
-		result_str << PENDING;
+		resinfo = PENDING;
 		comment = "Pending";
 	}
-	mb["result" + suffix] = result_str.str();
+	mb["result" + suffix] = to_string((int) resinfo);
 	mb["comment" + suffix] = comment;
 
 	return true;

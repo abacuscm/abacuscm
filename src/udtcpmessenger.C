@@ -33,6 +33,7 @@
 #include "clientconnection.h"
 #include "messageblock.h"
 #include "threadssl.h"
+#include "misc.h"
 
 #include <map>
 #include <algorithm>
@@ -252,7 +253,6 @@ short UDTCPPeerMessenger::TCPRetriever::socket_process()
 {
 	uint8_t *blob = (uint8_t*)malloc(_size);
 	uint32_t pos = 0;
-	ostringstream str;
 	MessageBlock mb("udtcppeermessageget");
 	int sock;
 	SSL *ssl = NULL;
@@ -264,11 +264,8 @@ short UDTCPPeerMessenger::TCPRetriever::socket_process()
 		return 0;
 	}
 
-	str << _server_id;
-	mb["server_id"] = str.str();
-	str.str("");
-	str << _message_id;
-	mb["message_id"] = str.str();
+	mb["server_id"] = to_string(_server_id);
+	mb["message_id"] = to_string(_message_id);
 
 	SSL_CTX *ctx = SSL_CTX_new(TLSv1_client_method());
 	if(!ctx) {
@@ -285,8 +282,7 @@ short UDTCPPeerMessenger::TCPRetriever::socket_process()
 	SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
 
 	while (pos < _size) {
-		str.str(""); str << pos;
-		mb["skip"] = str.str();
+		mb["skip"] = to_string(pos);
 
 		int opt = 30;
 		uint32_t try_server_id = _sq.dequeue();
@@ -906,8 +902,6 @@ auto_ptr<MessageBlock> TCPTransmitAction::int_process(ClientConnection *, const 
 			}
 		}
 	}
-
-	ostringstream str;
 
 	if (skip < mc->blob_size) {
 		resp.reset(new MessageBlock("udtcppeermessageput"));

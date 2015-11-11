@@ -12,6 +12,7 @@
 #include "logger.h"
 #include "buffer.h"
 #include "acmconfig.h"
+#include "misc.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -19,7 +20,6 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <fstream>
-#include <sstream>
 #include <unistd.h>
 
 using namespace std;
@@ -179,21 +179,20 @@ int CompiledProblemMarker::run(const char* infile, const char* outfile, const ch
 }
 
 int CompiledProblemMarker::run(const Buffer& in, Buffer& out, Buffer& err) {
-	ostringstream cntrstrm;
-	cntrstrm << ++_cntr;
+	string cntrstr = to_string(++_cntr);
 
-	ofstream file_stdin((workdir() + "/stdin." + cntrstrm.str()).c_str());
+	ofstream file_stdin((workdir() + "/stdin." + cntrstr).c_str());
 	file_stdin << in;
 	file_stdin.close();
 
 	int res = run(
-			(workdir() + "/stdin." + cntrstrm.str()).c_str(),
-			(workdir() + "/stdout." + cntrstrm.str()).c_str(),
-			(workdir() + "/stderr." + cntrstrm.str()).c_str(),
-			(workdir() + "/runinfo." + cntrstrm.str()).c_str());
+			(workdir() + "/stdin." + cntrstr).c_str(),
+			(workdir() + "/stdout." + cntrstr).c_str(),
+			(workdir() + "/stderr." + cntrstr).c_str(),
+			(workdir() + "/runinfo." + cntrstr).c_str());
 
 	struct stat statdata;
-	int out_file = open((workdir() + "/stdout." + cntrstrm.str()).c_str(), O_RDONLY);
+	int out_file = open((workdir() + "/stdout." + cntrstr).c_str(), O_RDONLY);
 	if(out_file > 0) {
 		if(fstat(out_file, &statdata) < 0) {
 			lerror("fstat");
@@ -209,7 +208,7 @@ int CompiledProblemMarker::run(const Buffer& in, Buffer& out, Buffer& err) {
 		close(out_file);
 	}
 
-	int err_file = open((workdir() + "/stderr." + cntrstrm.str()).c_str(), O_RDONLY);
+	int err_file = open((workdir() + "/stderr." + cntrstr).c_str(), O_RDONLY);
 	if(err_file > 0) {
 		if(fstat(err_file, &statdata) < 0) {
 			lerror("fstat");

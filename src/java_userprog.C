@@ -11,11 +11,11 @@
 #include "acmconfig.h"
 #include "logger.h"
 #include "buffer.h"
+#include "misc.h"
 
 #include <regex.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sstream>
 #include <fstream>
 
 using namespace std;
@@ -58,11 +58,10 @@ list<string> Java_UserProg::getProgramArgv() {
 	argv.push_back("-cp");
 	argv.push_back(_cp_dir);
 	if(_memlimit) {
-		ostringstream tmp;
-		tmp << _memlimit;
+		string memlimit = to_string(_memlimit);
 
-		argv.push_back("-Xms" + tmp.str());
-		argv.push_back("-Xmx" + tmp.str());
+		argv.push_back("-Xms" + memlimit);
+		argv.push_back("-Xmx" + memlimit);
 	}
 	argv.push_back("-Djava.security.manager");
 	argv.push_back("-Djava.security.policy==" + _cp_dir + "/java.policy");

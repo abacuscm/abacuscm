@@ -13,7 +13,7 @@
 #include "messageblock.h"
 #include "usersupportmodule.h"
 #include "message_creategroup.h"
-#include <sstream>
+#include "misc.h"
 
 using namespace std;
 
@@ -61,12 +61,8 @@ auto_ptr<MessageBlock> ActGetGroups::int_process(ClientConnection *, const Messa
 	UserSupportModule::GroupList::iterator s;
 	int c = 0;
 	for (s = groups.begin(); s != groups.end(); ++s, ++c) {
-		std::ostringstream tmp;
-		tmp << c;
-		std::string cntr = tmp.str();
-
-		tmp.str(""); tmp << s->group_id;
-		(*res)["id" + cntr] = tmp.str();
+		std::string cntr = to_string(c);
+		(*res)["id" + cntr] = to_string(s->group_id);
 		(*res)["groupname" + cntr] = s->groupname;
 	}
 

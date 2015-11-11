@@ -135,13 +135,9 @@ void Markers::issue(ClientConnection* cc, uint32_t sd) {
 
 	log(LOG_DEBUG, "Issuing submission %u to %p", sd, cc);
 
-	std::ostringstream tmp;
-
 	MessageBlock mb("mark");
-	tmp << sd;
-	mb["submission_id"] = tmp.str();
-	tmp.str(""); tmp  << prob_id;
-	mb["prob_id"] = tmp.str();
+	mb["submission_id"] = to_string(sd);
+	mb["prob_id"] = to_string(prob_id);
 	mb["language"] = language;
 	mb.setContent(content, length);
 	delete []content;

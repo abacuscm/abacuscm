@@ -32,9 +32,7 @@ auto_ptr<MessageBlock> ActGetProbTypes::int_process(ClientConnection *, const Me
 
 	int c = 0;
 	for(vector<string>::iterator i = types.begin(); i != types.end(); ++i, ++c) {
-		ostringstream t;
-		t << "type" << c;
-		(*resp)[t.str()] = *i;
+		(*resp)["type" + to_string(c)] = *i;
 	}
 
 	return resp;

@@ -11,10 +11,10 @@
 #include "logger.h"
 #include "acmconfig.h"
 #include "buffer.h"
+#include "misc.h"
 
 #include <sys/wait.h>
 #include <fcntl.h>
-#include <sstream>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
@@ -68,13 +68,6 @@ int UserProg::execcompiler(list<string> p_argv, string compiler_log) {
 	}
 }
 
-static string uint2str(unsigned value)
-{
-	ostringstream tmpstrm;
-	tmpstrm << value;
-	return tmpstrm.str();
-}
-
 void UserProg::setWorkDir(string dir) {
 	_work_dir = dir;
 }
@@ -86,22 +79,22 @@ void UserProg::setRootDir(string root) {
 
 void UserProg::setCPUTime(unsigned cputime) {
 	_runlimit_args.push_back("-c");
-	_runlimit_args.push_back(uint2str(cputime));
+	_runlimit_args.push_back(to_string(cputime));
 }
 
 void UserProg::setRealTime(unsigned realtime) {
 	_runlimit_args.push_back("-t");
-	_runlimit_args.push_back(uint2str(realtime));
+	_runlimit_args.push_back(to_string(realtime));
 }
 
 void UserProg::setMemLimit(unsigned bytes) {
 	_runlimit_args.push_back("-m");
-	_runlimit_args.push_back(uint2str(bytes));
+	_runlimit_args.push_back(to_string(bytes));
 }
 
 void UserProg::setFileLimit(unsigned bytes) {
 	_runlimit_args.push_back("-f");
-	_runlimit_args.push_back(uint2str(bytes));
+	_runlimit_args.push_back(to_string(bytes));
 }
 
 void UserProg::setRuntimeUser(std::string uname) {
@@ -116,7 +109,7 @@ void UserProg::setRuntimeGroup(std::string gname) {
 
 void UserProg::setMaxProcs(unsigned nproc) {
 	_runlimit_args.push_back("-n");
-	_runlimit_args.push_back(uint2str(nproc));
+	_runlimit_args.push_back(to_string(nproc));
 }
 
 void UserProg::registerLanguage(string lang, UserProgFunctor func) {

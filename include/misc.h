@@ -10,6 +10,10 @@
 #ifndef __MISC_H__
 #define __MISC_H__
 
+#include <stdexcept>
+#include <sstream>
+#include <locale>
+
 typedef enum {
 	PENDING = -1,
 	CORRECT = 0,
@@ -66,5 +70,33 @@ extern const char * const runMessages[OTHER + 1];
 extern const char * const runCodes[OTHER + 1];
 
 #define NULL_TIME ((time_t) -1)
+
+class bad_string : public std::runtime_error
+{
+public:
+	bad_string(const char *msg) : std::runtime_error(msg) {}
+};
+
+// Throws bad_lexical_cast if the value could not be converted
+template<typename T>
+T from_string(const std::string &s)
+{
+	std::istringstream in(s);
+	in.imbue(std::locale::classic());
+	T value;
+	in >> value;
+	if (!in || !in.eof())
+		throw bad_string("invalid value");
+	return value;
+}
+
+template<typename T>
+std::string to_string(T value)
+{
+	std::ostringstream out;
+	out.imbue(std::locale::classic());
+	out << value;
+	return out.str();
+}
 
 #endif

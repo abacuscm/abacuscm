@@ -11,8 +11,8 @@
 #include "clientconnection.h"
 #include "messageblock.h"
 #include "dbcon.h"
+#include "misc.h"
 
-#include <sstream>
 #include <memory>
 
 using namespace std;
@@ -33,9 +33,7 @@ auto_ptr<MessageBlock> ServerListAct::int_process(ClientConnection *, const Mess
 	auto_ptr<MessageBlock> mb(MessageBlock::ok());
 	int c = 0;
 	for(ServerList::iterator i = list.begin(); i != list.end(); ++i, ++c) {
-		std::ostringstream t;
-		t << "server" << c;
-		(*mb)[t.str()] = i->second;
+		(*mb)["server" + to_string(c)] = i->second;
 	}
 
 	return mb;

@@ -285,9 +285,7 @@ bool StandingsSupportModule::getStandingsInternal(uint32_t uid, bool final, bool
 	db->release(); db = NULL;
 
 	{
-		ostringstream ncols_str;
-		ncols_str << ncols;
-		mb["ncols"] = ncols_str.str();
+		mb["ncols"] = to_string(ncols);
 	}
 
 	if (!caller_locks)
@@ -311,19 +309,12 @@ bool StandingsSupportModule::getStandingsInternal(uint32_t uid, bool final, bool
 			continue;
 		++r;
 
-		ostringstream val;
-
-		val.str("");
-		val << i->first;
-		mb[cell_name(r, STANDING_RAW_ID)] = val.str();
+		mb[cell_name(r, STANDING_RAW_ID)] = to_string(i->first);
 		mb[cell_name(r, STANDING_RAW_USERNAME)] = usm->username(i->first);
 		mb[cell_name(r, STANDING_RAW_FRIENDLYNAME)] = usm->friendlyname(i->first);
 		mb[cell_name(r, STANDING_RAW_GROUP)] = usm->groupname(usm->user_group(i->first));
 		mb[cell_name(r, STANDING_RAW_CONTESTANT)] = (i->second.in_standings ? "1" : "0");
-
-		val.str("");
-		val << i->second.time;
-		mb[cell_name(r, STANDING_RAW_TOTAL_TIME)] = val.str();
+		mb[cell_name(r, STANDING_RAW_TOTAL_TIME)] = to_string(i->second.time);
 
 		map<uint32_t, int32_t>::const_iterator pc;
 		/* Make sure there are no holes by pre-initialising with zeros */
@@ -332,22 +323,13 @@ bool StandingsSupportModule::getStandingsInternal(uint32_t uid, bool final, bool
 
 		for(pc = i->second.tries.begin(); pc != i->second.tries.end(); ++pc) {
 			int col = prob2col[pc->first];
-
-			val.str("");
-			val << pc->second;
-			mb[cell_name(r, col)] = val.str();
+			mb[cell_name(r, col)] = to_string(pc->second);
 		}
 
-		val.str("");
-		val << i->second.points;
-		mb[cell_name(r, STANDING_RAW_TOTAL_SOLVED)] = val.str();
+		mb[cell_name(r, STANDING_RAW_TOTAL_SOLVED)] = to_string(i->second.points);
 	}
 
-	{
-		ostringstream row;
-		row << (r + 1);
-		mb["nrows"] = row.str();
-	}
+	mb["nrows"] = to_string(r + 1);
 
 	if (!caller_locks)
 		pthread_rwlock_unlock(&_lock);

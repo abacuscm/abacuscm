@@ -11,6 +11,7 @@
 #include "logger.h"
 #include "acmconfig.h"
 #include "messageblock.h"
+#include "misc.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -405,13 +406,11 @@ Grid ServerConnection::gridFromMB(const MessageBlock &mb) {
 
 vector<string> ServerConnection::vectorFromMB(MessageBlock &mb, string prefix) {
 	unsigned i = 0;
-	ostringstream nattr;
-	nattr << prefix << i;
+	string nattr = prefix + to_string(i);
 	vector<string> result;
-	while(mb.hasAttribute(nattr.str())) {
-		result.push_back(mb[nattr.str()]);
-		nattr.str("");
-		nattr << prefix << ++i;
+	while(mb.hasAttribute(nattr)) {
+		result.push_back(mb[nattr]);
+		nattr = prefix + to_string(++i);
 	}
 	return result;
 }
@@ -422,7 +421,7 @@ MultiValuedList ServerConnection::multiListFromMB(MessageBlock &mb, list<string>
 	while(true) {
 		ostringstream tmp;
 		tmp << i++;
-		string ival = tmp.str();
+		string ival = to_string(i);
 		bool foundone = false;
 		AttributeMap attrs;
 		list<string>::iterator j;
@@ -457,14 +456,12 @@ vector<string> ServerConnection::getPermissions() {
 
 bool ServerConnection::createuser(string username, string friendlyname, string password, string type, uint32_t group) {
 	MessageBlock mb("adduser");
-	ostringstream g;
-	g << group;
 
 	mb["username"] = username;
 	mb["friendlyname"] = friendlyname;
 	mb["passwd"] = password;
 	mb["type"] = type;
-	mb["group"] = g.str();
+	mb["group"] = to_string(group);
 
 	return simpleAction(mb);
 }
@@ -487,10 +484,8 @@ bool ServerConnection::changePassword(string password) {
 
 bool ServerConnection::changePassword(uint32_t id, string password) {
 	MessageBlock mb("id_passwd");
-	ostringstream id_str;
-	id_str << id;
 
-	mb["user_id"] = id_str.str();
+	mb["user_id"] = to_string(id);
 	mb["newpass"] = password;
 
 	return simpleAction(mb);
@@ -498,9 +493,7 @@ bool ServerConnection::changePassword(uint32_t id, string password) {
 
 bool ServerConnection::getBonus(uint32_t user_id, int32_t &points, int32_t &seconds) {
 	MessageBlock mb("getbonus");
-	ostringstream id_str;
-	id_str << user_id;
-	mb["user_id"] = id_str.str();
+	mb["user_id"] = to_string(user_id);
 
 	MessageBlock *ret = sendMB(&mb);
 	if(!ret)
@@ -520,27 +513,20 @@ bool ServerConnection::getBonus(uint32_t user_id, int32_t &points, int32_t &seco
 
 bool ServerConnection::setBonus(uint32_t user_id, int32_t points, int32_t seconds) {
 	MessageBlock mb("setbonus");
-	ostringstream id_str, points_str, seconds_str;
-	id_str << user_id;
-	points_str << points;
-	seconds_str << seconds;
 
-	mb["user_id"] = id_str.str();
-	mb["points"] = points_str.str();
-	mb["seconds"] = seconds_str.str();
+	mb["user_id"] = to_string(user_id);
+	mb["points"] = to_string(points);
+	mb["seconds"] = to_string(seconds);
 
 	return simpleAction(mb);
 }
 
 bool ServerConnection::startStop(uint32_t group_id, bool start, time_t time) {
 	MessageBlock mb("startstop");
-	ostringstream t;
 
-	t << time;
 	mb["action"] = start ? "start" : "stop";
-	mb["time"] = t.str();
-	t.str(""); t << group_id;
-	mb["group_id"] = t.str();
+	mb["time"] = to_string(time);
+	mb["group_id"] = to_string(group_id);
 
 	return simpleAction(mb);
 }
@@ -573,15 +559,12 @@ string ServerConnection::getProblemDescription(string type) {
 bool ServerConnection::setProblemAttributes(uint32_t prob_id, std::string type,
                        const AttributeMap& normal, const AttributeMap& file,
                        ProblemList dependencies) {
-	ostringstream ostrstrm;
 	AttributeMap::const_iterator i;
 	MessageBlock mb("setprobattrs");
 	list<int> fds;
 	uint32_t file_offset = 0;
 
-	ostrstrm << prob_id;
-
-	mb["prob_id"] = ostrstrm.str();
+	mb["prob_id"] = to_string(prob_id);
 	mb["prob_type"] = type;
 
 	for(i = file.begin(); i != file.end(); ++i) {
@@ -602,7 +585,7 @@ bool ServerConnection::setProblemAttributes(uint32_t prob_id, std::string type,
 			return false;
 		}
 
-		ostrstrm.str("");
+		ostringstream ostrstrm;
 		char *tmp = strdup(i->second.c_str());
 		ostrstrm << file_offset << " " << st_stat.st_size << " " << basename(tmp);
 		free(tmp);
@@ -957,11 +940,8 @@ SubmissionList ServerConnection::getSubmissionsForUser(uint32_t user_id) {
 	if(!_ssl)
 		return SubmissionList();
 
-	ostringstream ostrstrm;
-	ostrstrm << user_id;
-
 	MessageBlock mb("getsubmissions_for_user");
-	mb["user_id"] = ostrstrm.str();
+	mb["user_id"] = to_string(user_id);
 	list<string> attrs;
 	attrs.push_back("submission_id");
 	attrs.push_back("contestant");
@@ -1041,20 +1021,13 @@ bool ServerConnection::becomeMarker() {
 }
 
 bool ServerConnection::mark(uint32_t submission_id, RunResult result, std::string comment, const AttributeMap& file) {
-	ostringstream ostrstrm;
 	AttributeMap::const_iterator i;
 	MessageBlock mb("mark");
 	list<int> fds;
 	uint32_t file_offset = 0;
 
-	ostrstrm << submission_id;
-
-	mb["submission_id"] = ostrstrm.str();
-
-	ostrstrm.str("");
-	ostrstrm << result;
-	mb["result"] = ostrstrm.str();
-
+	mb["submission_id"] = to_string(submission_id);
+	mb["result"] = to_string(result);
 	mb["comment"] = comment;
 
 	int c = 0;
@@ -1076,12 +1049,9 @@ bool ServerConnection::mark(uint32_t submission_id, RunResult result, std::strin
 			return false;
 		}
 
-		ostrstrm.str("");
-		ostrstrm << c;
+		string fileoption = "file" + to_string(c);
 
-		string fileoption = "file" + ostrstrm.str();
-
-		ostrstrm.str("");
+		ostringstream ostrstrm;
 		ostrstrm << file_offset << " " << st_stat.st_size << " " << i->first;
 
 		mb[fileoption] = ostrstrm.str();

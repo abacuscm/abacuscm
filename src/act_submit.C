@@ -21,6 +21,7 @@
 #include "submissionsupportmodule.h"
 #include "permissions.h"
 #include "acmconfig.h"
+#include "misc.h"
 
 #include <algorithm>
 #include <sstream>
@@ -164,9 +165,7 @@ auto_ptr<MessageBlock> ActSubmit::int_process(ClientConnection *cc, const Messag
 	log(LOG_INFO, "User %u submitted solution for problem %u", user_id, prob_id);
 
 	auto_ptr<MessageBlock> reply = MessageBlock::ok();
-	ostringstream tmp;
-	tmp << sub_id;
-	(*reply)["submission_id"] = tmp.str();
+	(*reply)["submission_id"] = to_string(sub_id);
 	return triggerMessage(cc, msg, reply);
 }
 
@@ -192,13 +191,9 @@ auto_ptr<MessageBlock> ActGetProblems::int_process(ClientConnection *cc, const M
 			continue;
 		}
 
-		ostringstream ostrstrm;
-		ostrstrm << c;
-		string cstr = ostrstrm.str();
-		ostrstrm.str("");
-		ostrstrm << *p;
+		string cstr = to_string(c);
 
-		(*mb)["id" + cstr] = ostrstrm.str();
+		(*mb)["id" + cstr] = to_string(*p);
 
 		AttributeList lst = db->getProblemAttributes(*p);
 		(*mb)["code" + cstr] = lst["shortname"];
@@ -231,9 +226,7 @@ auto_ptr<MessageBlock> ActGetSubmissions::int_process(ClientConnection *cc, cons
 	SubmissionList::iterator s;
 	int c = 0;
 	for(s = lst.begin(); s != lst.end(); ++s, ++c) {
-		ostringstream tmp;
-		tmp << c;
-		string cntr = tmp.str();
+		string cntr = to_string(c);
 
 		submission->submissionToMB(db, *s, *mb, cntr);
 	}
@@ -266,9 +259,7 @@ auto_ptr<MessageBlock> ActGetSubmissionsForUser::int_process(ClientConnection *c
 	SubmissionList::iterator s;
 	int c = 0;
 	for(s = lst.begin(); s != lst.end(); ++s, ++c) {
-		ostringstream tmp;
-		tmp << c;
-		string cntr = tmp.str();
+		string cntr = to_string(c);
 
 		submission->submissionToMB(db, *s, *result_mb, cntr);
 	}
@@ -461,9 +452,7 @@ auto_ptr<MessageBlock> ActSubmissionFileFetcher::int_process(ClientConnection *c
 
 	if (request == "count") {
 		uint32_t count = db->countMarkFiles(submission_id);
-		ostringstream str("");
-		str << count;
-		(*result_mb)["count"] = str.str();
+		(*result_mb)["count"] = to_string(count);
 	}
 	else if (request == "data") {
 		uint32_t index = strtoll((*mb)["index"].c_str(), NULL, 0);
@@ -479,9 +468,7 @@ auto_ptr<MessageBlock> ActSubmissionFileFetcher::int_process(ClientConnection *c
 		}
 
 		(*result_mb)["name"] = name;
-		ostringstream str("");
-		str << length;
-		(*result_mb)["length"] = str.str();
+		(*result_mb)["length"] = to_string(length);
 		result_mb->setContent((char *) data, length);
 		delete []data;
 	}
@@ -568,9 +555,7 @@ auto_ptr<MessageBlock> ActGetLanguages::int_process(ClientConnection *, const Me
 	auto_ptr<MessageBlock> result_mb(MessageBlock::ok());
 
 	for (size_t i = 0; i < _languages.size(); i++) {
-		ostringstream header;
-		header << "language" << i;
-		(*result_mb)[header.str()] = _languages[i];
+		(*result_mb)["language" + to_string(i)] = _languages[i];
 	}
 
 	return result_mb;

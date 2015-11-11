@@ -17,8 +17,8 @@
 #include "server.h"
 #include "clienteventregistry.h"
 #include "markers.h"
+#include "misc.h"
 
-#include <sstream>
 #include <string>
 #include <memory>
 #include <time.h>
@@ -93,9 +93,7 @@ auto_ptr<MessageBlock> ActGetClarifications::int_process(ClientConnection *cc, c
 	ClarificationList::iterator s;
 	int c = 0;
 	for (s = lst.begin(); s != lst.end(); ++s, ++c) {
-		std::ostringstream tmp;
-		tmp << c;
-		std::string cntr = tmp.str();
+		std::string cntr = to_string(c);
 
 		AttributeList::iterator a;
 		for(a = s->begin(); a != s->end(); ++a)
@@ -130,9 +128,7 @@ auto_ptr<MessageBlock> ActGetClarificationRequests::int_process(ClientConnection
 	ClarificationRequestList::iterator s;
 	int c = 0;
 	for (s = lst.begin(); s != lst.end(); ++s, ++c) {
-		std::ostringstream tmp;
-		tmp << c;
-		std::string cntr = tmp.str();
+		std::string cntr = to_string(c);
 
 		AttributeList::iterator a;
 		for(a = s->begin(); a != s->end(); ++a)

@@ -14,6 +14,7 @@
 #include "message_type_ids.h"
 #include "standingssupportmodule.h"
 #include "usersupportmodule.h"
+#include "misc.h"
 
 #include <sstream>
 #include <memory>
@@ -80,13 +81,9 @@ auto_ptr<MessageBlock> ActGetbonus::int_process(ClientConnection *, const Messag
 	if (!usm->user_bonus(user_id, points, seconds))
 		return MessageBlock::error("could not get bonus for this user");
 
-	ostringstream os;
 	auto_ptr<MessageBlock> res(MessageBlock::ok());
-	os << points;
-	(*res)["points"] = os.str();
-	os.str("");
-	os << seconds;
-	(*res)["seconds"] = os.str();
+	(*res)["points"] = to_string(points);
+	(*res)["seconds"] = to_string(seconds);
 
 	return res;
 }

@@ -13,6 +13,7 @@
 #include "message.h"
 #include "server.h"
 #include "hashpw.h"
+#include "misc.h"
 
 #include <mysql/mysql.h>
 #include <sstream>
@@ -1460,9 +1461,7 @@ AttributeList MySQL::getProblemAttributes(uint32_t problem_id) {
 }
 
 bool MySQL::setProblemAttribute(uint32_t problem_id, std::string attr, int32_t value) {
-	ostringstream tmp;
-	tmp << value;
-	return setProblemAttribute(problem_id, attr, tmp.str());
+	return setProblemAttribute(problem_id, attr, to_string(value));
 }
 
 bool MySQL::setProblemAttribute(uint32_t problem_id, std::string attr, std::string value) {
