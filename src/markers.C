@@ -16,6 +16,7 @@
 #include "dbcon.h"
 
 #include <sstream>
+#include <algorithm>
 #include <unistd.h>
 
 Markers Markers::_instance;
@@ -49,7 +50,7 @@ void Markers::enqueueMarker(ClientConnection* cc) {
 	pthread_mutex_lock(&_lock);
 	if(_issued.find(cc) != _issued.end()) {
 		log(LOG_NOTICE, "Marker %p currently has issued submissions", cc);
-	} else if(list_find(_markers, cc) != _markers.end()) {
+	} else if(std::find(_markers.begin(), _markers.end(), cc) != _markers.end()) {
 		log(LOG_NOTICE, "Marker %p is already enqueued!", cc);
 	} else {
 		real_enqueueMarker(cc);
@@ -63,7 +64,7 @@ void Markers::preemptMarker(ClientConnection* cc) {
 	std::list<ClientConnection*>::iterator i1;
 	std::map<ClientConnection*, uint32_t>::iterator i2;
 
-	if((i1 = list_find(_markers, cc)) != _markers.end()) {
+	if((i1 = std::find(_markers.begin(), _markers.end(), cc)) != _markers.end()) {
 		log(LOG_DEBUG, "Removing %p from available markers - was not issued anything", cc);
 		_markers.erase(i1);
 	}
