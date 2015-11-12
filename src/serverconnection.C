@@ -326,7 +326,7 @@ uint32_t ServerConnection::scalarAction(MessageBlock &mb, string fieldname) {
 	string value = stringAction(mb, fieldname);
 	uint32_t resp = 0;
 	if (value != "") {
-		resp = strtoul(value.c_str(), NULL, 10);
+		resp = from_string<uint32_t>(value);
 	}
 
 	return resp;
@@ -389,8 +389,8 @@ Grid ServerConnection::gridAction(MessageBlock &mb) {
 Grid ServerConnection::gridFromMB(const MessageBlock &mb) {
 	Grid grid;
 
-	int ncols = strtoll(mb["ncols"].c_str(), NULL, 0);
-	int nrows = strtoll(mb["nrows"].c_str(), NULL, 0);
+	int ncols = from_string<int>(mb["ncols"]);
+	int nrows = from_string<int>(mb["nrows"]);
 
 	for(int r = 0; r < nrows; ++r) {
 		list<string> row;
@@ -503,8 +503,8 @@ bool ServerConnection::getBonus(uint32_t user_id, int32_t &points, int32_t &seco
 	if(!response)
 		log(LOG_ERR, "%s", (*ret)["msg"].c_str());
 	else {
-		points = strtol((*ret)["points"].c_str(), NULL, 10);
-		seconds = strtol((*ret)["seconds"].c_str(), NULL, 10);
+		points = from_string<int32_t>((*ret)["points"]);
+		seconds = from_string<int32_t>((*ret)["seconds"]);
 	}
 
 	delete ret;
@@ -755,7 +755,7 @@ vector<ProblemInfo> ServerConnection::getProblems() {
 			break;
 
 		ProblemInfo tmp;
-		tmp.id = strtoll((*res)[strstrm.str()].c_str(), NULL, 0);
+		tmp.id = from_string<uint32_t>((*res)[strstrm.str()]);
 
 		strstrm.str(""); strstrm << "code" << i;
 		tmp.code = (*res)[strstrm.str()];
@@ -794,7 +794,7 @@ vector<UserInfo> ServerConnection::getUsers() {
 			break;
 
 		UserInfo tmp;
-		tmp.id = strtoll((*res)[strstrm.str()].c_str(), NULL, 0);
+		tmp.id = from_string<uint32_t>((*res)[strstrm.str()]);
 
 		strstrm.str(""); strstrm << "username" << i;
 		tmp.username = (*res)[strstrm.str()];
@@ -834,7 +834,7 @@ vector<GroupInfo> ServerConnection::getGroups() {
 			break;
 
 		GroupInfo tmp;
-		tmp.id = strtoll((*res)[strstrm.str()].c_str(), NULL, 0);
+		tmp.id = from_string<uint32_t>((*res)[strstrm.str()]);
 
 		strstrm.str(""); strstrm << "groupname" << i;
 		tmp.groupname = (*res)[strstrm.str()];
@@ -1104,7 +1104,7 @@ uint32_t ServerConnection::countMarkFiles(uint32_t submission_id) {
 
 	MessageBlock *result = sendMB(&mb);
 
-	uint32_t count = strtoll((*result)["count"].c_str(), NULL, 0);
+	uint32_t count = from_string<uint32_t>((*result)["count"]);
 	delete result;
 	return count;
 }
@@ -1122,7 +1122,7 @@ bool ServerConnection::getMarkFile(uint32_t submission_id, uint32_t file_index, 
 	MessageBlock *result = sendMB(&mb);
 
 	name = (*result)["name"];
-	length = strtoll((*result)["length"].c_str(), NULL, 0);
+	length = from_string<uint32_t>((*result)["length"]);
 	*data = (void *) new char[length + 1];
 	memcpy(*data, result->content(), length);
 	((char *) *data) [length] = 0;
@@ -1135,7 +1135,7 @@ time_t ServerConnection::contestTime() {
 	MessageBlock *res = sendMB(&mb);
 
 	if(res && res->action() == "ok") {
-		time_t time = strtoll((*res)["time"].c_str(), NULL, 0);
+		time_t time = from_string<time_t>((*res)["time"]);
 		delete res;
 		return time;
 	} else {
@@ -1153,7 +1153,7 @@ time_t ServerConnection::contestRemain() {
 	MessageBlock *res = sendMB(&mb);
 
 	if(res && res->action() == "ok") {
-		time_t time = strtoll((*res)["remain"].c_str(), NULL, 0);
+		time_t time = from_string<time_t>((*res)["remain"]);
 		delete res;
 		return time;
 	} else {

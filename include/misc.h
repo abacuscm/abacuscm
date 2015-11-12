@@ -13,6 +13,8 @@
 #include <stdexcept>
 #include <sstream>
 #include <locale>
+#include <stdint.h>
+#include <limits>
 
 typedef enum {
 	PENDING = -1,
@@ -71,28 +73,42 @@ extern const char * const runCodes[OTHER + 1];
 
 #define NULL_TIME ((time_t) -1)
 
-class bad_string : public std::runtime_error
-{
+class bad_string : public std::runtime_error {
 public:
 	bad_string(const char *msg) : std::runtime_error(msg) {}
 };
 
-// Throws bad_lexical_cast if the value could not be converted
+// Returns true on success. On failure, returns false and does not
+// modify out.
 template<typename T>
-T from_string(const std::string &s)
-{
+bool from_string(const std::string &s, T &out) {
 	std::istringstream in(s);
 	in.imbue(std::locale::classic());
-	T value;
+	// Reading into an unsigned type allows negative values to wrap.
+	// Instead, we pick a larger signed type, and manually check for
+	// overflow.
+	intmax_t value;
 	in >> value;
-	if (!in || !in.eof())
+	if (!in || !in.eof()
+		|| value < std::numeric_limits<T>::min()
+		|| value > std::numeric_limits<T>::max())
+		return false;
+	out = static_cast<T>(value);
+	return true;
+}
+
+// Throws bad_lexical_cast if the value could not be converted
+// Values bigger than INTMAX_MAX are not accepted.
+template<typename T>
+T from_string(const std::string &s) {
+	T out;
+	if (!from_string<T>(s, out))
 		throw bad_string("invalid value");
-	return value;
+	return out;
 }
 
 template<typename T>
-std::string to_string(T value)
-{
+std::string to_string(T value) {
 	std::ostringstream out;
 	out.imbue(std::locale::classic());
 	out << value;

@@ -840,17 +840,17 @@ auto_ptr<MessageBlock> TCPTransmitAction::int_process(ClientConnection *, const 
 {
 #if 0
 	// NOTE: This authentication is WEAK!! TODO
-	uint32_t remote_id = strtoull((*mb)["requester_id"].c_str(), NULL, 10);
-	uint32_t creds = strtoull((*mb)["cred"].c_str(), NULL, 10) ^ remote_id ^ auth_cred ^ Server::getId();
+	uint32_t remote_id = from_string((*mb)["requester_id"]);
+	uint32_t creds = from_string((*mb)["cred"]) ^ remote_id ^ auth_cred ^ Server::getId();
 	if (!remote_id || creds)
 		return false;
 #endif
 
 	auto_ptr<MessageBlock> resp;
 
-	uint32_t server_id = strtoull((*mb)["server_id"].c_str(), NULL, 10);
-	uint32_t message_id = strtoull((*mb)["message_id"].c_str(), NULL, 10);
-	uint32_t skip = strtoull((*mb)["skip"].c_str(), NULL, 10);
+	uint32_t server_id = from_string<uint32_t>((*mb)["server_id"]);
+	uint32_t message_id = from_string<uint32_t>((*mb)["message_id"]);
+	uint32_t skip = from_string<uint32_t>((*mb)["skip"]);
 
 	if (!server_id || !message_id)
 		return MessageBlock::error("Ill-formed message");

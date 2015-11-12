@@ -13,6 +13,7 @@
 #include "serverconnection.h"
 #include "messageblock.h"
 #include "score.h"
+#include "misc.h"
 
 #include <vector>
 #include <map>
@@ -87,15 +88,15 @@ public:
 };
 
 Standing::Standing(const list<string> &row) : _raw(row.begin(), row.end()) {
-	setId(strtoul(_raw[STANDING_RAW_ID].c_str(), NULL, 10));
+	setId(from_string<uint32_t>(_raw[STANDING_RAW_ID]));
 	setUsername(_raw[STANDING_RAW_USERNAME]);
 	setFriendlyname(_raw[STANDING_RAW_FRIENDLYNAME]);
 	setGroup(_raw[STANDING_RAW_GROUP]);
-	setContestant(strtoul(_raw[STANDING_RAW_CONTESTANT].c_str(), NULL, 10) != 0);
-	setTotalTime(strtoull(_raw[STANDING_RAW_TOTAL_TIME].c_str(), NULL, 10));
-	setTotalSolved(strtoull(_raw[STANDING_RAW_TOTAL_SOLVED].c_str(), NULL, 10));
+	setContestant(bool(from_string<int>(_raw[STANDING_RAW_CONTESTANT])));
+	setTotalTime(from_string<time_t>(_raw[STANDING_RAW_TOTAL_TIME]));
+	setTotalSolved(from_string<unsigned int>(_raw[STANDING_RAW_TOTAL_SOLVED]));
 	for (size_t i = STANDING_RAW_SOLVED; i < _raw.size(); i++)
-		setSolved(i - STANDING_RAW_SOLVED, strtol(_raw[i].c_str(), NULL, 10));
+		setSolved(i - STANDING_RAW_SOLVED, from_string<int>(_raw[i]));
 }
 
 typedef map<uint32_t, Standing> StandingMap;
@@ -162,44 +163,6 @@ static void usage() {
 		"Commands that run forever:\n"
 		"   balloon [<group>]\n"
 		"   standings [<filename>]\n";
-}
-
-/* Converts a string to a uint32_t. On success, returns true. On failure,
- * sets *out to 0 and returns false.
- */
-static bool parse_uint32(const char *s, uint32_t *out) {
-	long long tmp;
-	char *end;
-	errno = 0;
-	tmp = strtoll(s, &end, 10);
-	if (errno != 0 || tmp < 0 || tmp > UINT32_MAX || end == s || *end != '\0')
-	{
-		*out = 0;
-		return false;
-	}
-	else
-	{
-		*out = (uint32_t) tmp;
-		return true;
-	}
-}
-
-// Same as parse_uint32, but signed
-static bool parse_int32(const char *s, int32_t *out) {
-	long long tmp;
-	char *end;
-	errno = 0;
-	tmp = strtoll(s, &end, 10);
-	if (errno != 0 || tmp < INT32_MIN || tmp > INT32_MAX || end == s || *end != '\0')
-	{
-		*out = 0;
-		return false;
-	}
-	else
-	{
-		*out = (int32_t) tmp;
-		return true;
-	}
 }
 
 static string read_password(const char *filename) {
@@ -758,7 +721,7 @@ static int do_getsource(ServerConnection &con, int argc, char * const *argv) {
 	}
 
 	uint32_t submission_id;
-	if (!parse_uint32(argv[1], &submission_id)) {
+	if (!from_string(argv[1], submission_id)) {
 		cerr << "Invalidly formatted submission id\n";
 		return 2;
 	}
@@ -793,10 +756,10 @@ static int do_getlatestsource(ServerConnection &con, int argc, char * const *arg
 		 it != submissions.end();
 		 it++)
 	{
-		uint32_t s_problem_id = strtoul((*it)["prob_id"].c_str(), NULL, 10);
-		uint32_t s_submission_id = strtoul((*it)["submission_id"].c_str(), NULL, 10);
-		time_t s_time = strtoul((*it)["time"].c_str(), NULL, 10);
-		int result = atoi((*it)["result"].c_str());
+		uint32_t s_problem_id = from_string<uint32_t>((*it)["prob_id"]);
+		uint32_t s_submission_id = from_string<uint32_t>((*it)["submission_id"]);
+		time_t s_time = from_string<time_t>((*it)["time"]);
+		int result = from_string<int>((*it)["result"]);
 
 		log(LOG_DEBUG, "Submission %u was for problem %i at time %lu with comment %s and result %d", s_submission_id, s_problem_id, (unsigned long) s_time, (*it)["comment"].c_str(), atoi((*it)["result"].c_str()));
 
@@ -862,8 +825,7 @@ static int do_setbonus(ServerConnection &con, int argc, char *const *argv) {
 	}
 
 	int32_t points, seconds;
-	if (!parse_int32(argv[2], &points)
-		|| !parse_int32(argv[3], &seconds)) {
+	if (!from_string(argv[2], points) || !from_string(argv[3], seconds)) {
 		cerr << "Could not parse values\n";
 		return 2;
 	}

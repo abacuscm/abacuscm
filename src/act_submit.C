@@ -116,9 +116,8 @@ auto_ptr<MessageBlock> ActSubmit::int_process(ClientConnection *cc, const Messag
 	}
 
 	uint32_t user_id = cc->getUserId();
-	char *errptr;
-	uint32_t prob_id = strtol((*mb)["prob_id"].c_str(), &errptr, 0);
-	if(*errptr || (*mb)["prob_id"] == "")
+	uint32_t prob_id;
+	if (!from_string((*mb)["prob_id"], prob_id))
 		return MessageBlock::error("prob_id isn't a valid integer");
 
 	DbCon *db = DbCon::getInstance();
@@ -245,7 +244,7 @@ auto_ptr<MessageBlock> ActGetSubmissionsForUser::int_process(ClientConnection *c
 
 	uint32_t uid = cc->getUserId();
 
-	uint32_t user_id = strtoul((*mb)["user_id"].c_str(), NULL, 0);
+	uint32_t user_id = from_string<uint32_t>((*mb)["user_id"]);
 
 	SubmissionList lst;
 
@@ -415,7 +414,7 @@ auto_ptr<MessageBlock> ActSubmissionFileFetcher::int_process(ClientConnection *c
 	uint32_t uid = cc->getUserId();
 
 	string request = (*mb)["request"];
-	uint32_t submission_id = strtoll((*mb)["submission_id"].c_str(), NULL, 0);
+	uint32_t submission_id = from_string<uint32_t>((*mb)["submission_id"]);
 
 	auto_ptr<MessageBlock> result_mb(MessageBlock::ok());
 
@@ -455,7 +454,7 @@ auto_ptr<MessageBlock> ActSubmissionFileFetcher::int_process(ClientConnection *c
 		(*result_mb)["count"] = to_string(count);
 	}
 	else if (request == "data") {
-		uint32_t index = strtoll((*mb)["index"].c_str(), NULL, 0);
+		uint32_t index = from_string<uint32_t>((*mb)["index"]);
 		string name;
 		char *data;
 		uint32_t length;
@@ -483,7 +482,7 @@ auto_ptr<MessageBlock> ActGetSubmissionSource::int_process(ClientConnection *cc,
 	if (!db)
 		return MessageBlock::error("Error connecting to database");
 
-	uint32_t submission_id = strtoll((*mb)["submission_id"].c_str(), NULL, 0);
+	uint32_t submission_id = from_string<uint32_t>((*mb)["submission_id"]);
 	char* content;
 	int length;
 	string language;

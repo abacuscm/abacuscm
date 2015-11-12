@@ -91,22 +91,22 @@ void CompiledProblemMarker::mark() {
 			return;
 		}
 
-		uint32_t timelimit = strtoll(attrib("time_limit").c_str(), NULL, 0);
-		log(LOG_INFO, "Attribute time limit = %u", (unsigned)timelimit);
-
-		if(!timelimit) {
+		uint32_t timelimit;
+		if (!from_string(attrib("time_limit"), timelimit) || timelimit == 0) {
 			timelimit = 120;
 			log(LOG_WARNING, "timelimit==0 is invalid, defaulting to %us.", (unsigned)timelimit);
 		}
+		else
+			log(LOG_INFO, "Attribute time limit = %u", (unsigned)timelimit);
 
-		uint32_t memorylimit = strtoll(attrib("memory_limit").c_str(), NULL, 0);
-		log(LOG_INFO, "Attribute memory limit = %u", (unsigned)memorylimit);
-
-		if(!memorylimit) {
+		uint32_t memorylimit;
+		if (!from_string(attrib("memory_limit"), memorylimit) || memorylimit == 0) {
 			// If you change this, remember to update the contestant manual.
 			memorylimit = 256;
 			log(LOG_WARNING, "memorylimit==0 is invalid, defaulting to %u MB.", (unsigned)memorylimit);
 		}
+		else
+			log(LOG_INFO, "Attribute memory limit = %u", (unsigned)memorylimit);
 
 		timelimit *= 1000; // convert to milli-seconds.
 		memorylimit *= 1024 * 1024; // convert to bytes

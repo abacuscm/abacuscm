@@ -20,6 +20,7 @@
 #include "timersupportmodule.h"
 #include "standingssupportmodule.h"
 #include "usersupportmodule.h"
+#include "misc.h"
 
 #include <string>
 #include <memory>
@@ -98,8 +99,6 @@ void StartStopAction::perform() {
 }
 
 auto_ptr<MessageBlock> ActStartStop::int_process(ClientConnection* cc, const MessageBlock *mb) {
-	char *errpnt;
-
 	uint32_t group_id;
 	time_t time;
 	uint32_t action;
@@ -112,8 +111,7 @@ auto_ptr<MessageBlock> ActStartStop::int_process(ClientConnection* cc, const Mes
 	} else
 		return MessageBlock::error("Invalid 'action', must be either 'start' or 'stop'");
 
-	time = strtoll((*mb)["time"].c_str(), &errpnt, 0);
-	if(time == 0 || *errpnt)
+	if (!from_string((*mb)["time"], time) || time == 0)
 		return MessageBlock::error("Invalid start/stop time specified");
 
 	// note that an omitted or blank group_id translates to 0, meaning
@@ -123,8 +121,7 @@ auto_ptr<MessageBlock> ActStartStop::int_process(ClientConnection* cc, const Mes
 		group_id = 0;
 	else
 	{
-		group_id = strtoll((*mb)["group_id"].c_str(), &errpnt, 0);
-		if(*errpnt)
+		if (!from_string((*mb)["group_id"], group_id))
 			return MessageBlock::error("Invalid group_id specified");
 	}
 

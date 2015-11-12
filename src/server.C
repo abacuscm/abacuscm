@@ -40,7 +40,7 @@ uint32_t Server::server_id(const string& name)
 	QueryResultRow r = db->singleRowQuery(query.str());
 	db->release();
 
-	return r.size() ? strtoul(r.begin()->c_str(), NULL, 0) : 0;
+	return r.size() ? from_string<uint32_t>(r[0]) : 0;
 }
 
 string Server::servername(uint32_t server_id)

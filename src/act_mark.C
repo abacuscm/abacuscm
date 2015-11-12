@@ -20,6 +20,7 @@
 #include "standingssupportmodule.h"
 #include "submissionsupportmodule.h"
 #include "permissionmap.h"
+#include "misc.h"
 
 #include <string>
 #include <list>
@@ -233,11 +234,9 @@ auto_ptr<MessageBlock> ActSubscribeMark::int_process(ClientConnection* cc, const
 }
 
 auto_ptr<MessageBlock> ActPlaceMark::int_process(ClientConnection* cc, const MessageBlock*mb) {
-	string submission_id_str = (*mb)["submission_id"];
-	char *errpnt;
-	uint32_t submission_id = strtoll(submission_id_str.c_str(), &errpnt, 0);
+	uint32_t submission_id;
 
-	if (*errpnt || submission_id_str == "") {
+	if (!from_string((*mb)["submission_id"], submission_id)) {
 		Markers::getInstance().preemptMarker(cc);
 		return MessageBlock::error("Invalid submission_id");
 	}
@@ -303,8 +302,8 @@ auto_ptr<MessageBlock> ActPlaceMark::int_process(ClientConnection* cc, const Mes
 		return MessageBlock::error(msg);
 	}
 
-	uint32_t result = strtoll((*mb)["result"].c_str(), &errpnt, 0);
-	if(*errpnt || (*mb)["result"] == "") {
+	uint32_t result;
+	if (!from_string((*mb)["result"], result)) {
 		Markers::getInstance().preemptMarker(cc);
 		return MessageBlock::error("You must specify the result");
 	}
@@ -326,8 +325,8 @@ auto_ptr<MessageBlock> ActPlaceMark::int_process(ClientConnection* cc, const Mes
 		if (regexec(&file_reg, fdesc.c_str(), 4, m, 0)) {
 			log(LOG_ERR, "Invalid file description for '%s' for mark submission for submission_id = %u", fdesc.c_str(), submission_id);
 		} else {
-			int start = strtoll(fdesc.substr(m[1].rm_so, m[1].rm_eo - m[1].rm_so).c_str(), NULL, 0);
-			int size  = strtoll(fdesc.substr(m[2].rm_so, m[2].rm_eo - m[2].rm_so).c_str(), NULL, 0);
+			uint32_t start = from_string<uint32_t>(fdesc.substr(m[1].rm_so, m[1].rm_eo - m[1].rm_so));
+			uint32_t size  = from_string<uint32_t>(fdesc.substr(m[2].rm_so, m[2].rm_eo - m[2].rm_so));
 			string desc = fdesc.substr(m[3].rm_so, m[3].rm_eo - m[3].rm_so);
 
 			markmsg->addFile(desc, size, mb->content() + start);

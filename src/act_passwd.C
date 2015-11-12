@@ -71,9 +71,8 @@ auto_ptr<MessageBlock> ActPasswd::int_process(ClientConnection *cc, const Messag
 
 auto_ptr<MessageBlock> ActIdPasswd::int_process(ClientConnection *cc, const MessageBlock *mb) {
 	UserSupportModule *usm = getUserSupportModule();
-	char *errptr;
-	uint32_t user_id = strtol((*mb)["user_id"].c_str(), &errptr, 0);
-	if(*errptr || (*mb)["user_id"] == "")
+	uint32_t user_id;
+	if (!from_string((*mb)["user_id"], user_id))
 		return MessageBlock::error("user_id isn't a valid integer");
 
 	string newpass = (*mb)["newpass"];

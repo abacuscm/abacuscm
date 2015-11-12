@@ -17,6 +17,7 @@
 #include "server.h"
 #include "dbcon.h"
 #include "clienteventregistry.h"
+#include "misc.h"
 
 #include <map>
 #include <string>
@@ -502,10 +503,8 @@ auto_ptr<MessageBlock> ActSetProbAttrs::int_process(ClientConnection *cc, const 
 			} else if(attr_desc[pos] == 'S') {
 				msg->addStringAttrib(attr, (*mb)[attr]);
 			} else if(attr_desc[pos] == 'I') {
-				const char* i = (*mb)[attr].c_str();
-				char *eptr;
-				long val = strtol(i, &eptr, 0);
-				if(*eptr)
+				int32_t val;
+				if (!from_string((*mb)[attr], val))
 					act_error("Value for " + attr + " is not a valid integer");
 				msg->addIntAttrib(attr, val);
 			} else if(attr_desc[pos] == 'F') {
@@ -522,11 +521,11 @@ auto_ptr<MessageBlock> ActSetProbAttrs::int_process(ClientConnection *cc, const 
 						act_error("Invalid filename structure, filename attributes must match the structure 'int int filename'");
 
 					// no need for error checking, the regex already took care of that.
-					int start = strtol(file_attr_desc.substr(m[1].rm_so, m[1].rm_eo - m[1].rm_so).c_str(), NULL, 0);
-					int size  = strtol(file_attr_desc.substr(m[2].rm_so, m[2].rm_eo - m[2].rm_so).c_str(), NULL, 0);
+					uint32_t start = from_string<uint32_t>(file_attr_desc.substr(m[1].rm_so, m[1].rm_eo - m[1].rm_so));
+					uint32_t size  = from_string<uint32_t>(file_attr_desc.substr(m[2].rm_so, m[2].rm_eo - m[2].rm_so));
 					string filename  = file_attr_desc.substr(m[3].rm_so, m[3].rm_eo - m[3].rm_so);
 
-					if(start + size > mb->content_size())
+					if(start + size > (uint32_t) mb->content_size())
 						act_error("File limits for file '" + attr + "' out of bounds for passed data");
 
 					msg->addFileAttrib(attr, filename, &mb->content()[start], size);
@@ -571,9 +570,8 @@ auto_ptr<MessageBlock> ActSetProbAttrs::int_process(ClientConnection *cc, const 
 #undef act_error
 
 auto_ptr<MessageBlock> ActGetProbAttrs::int_process(ClientConnection*, const MessageBlock*mb) {
-	char *errpnt;
-	uint32_t prob_id = strtoll((*mb)["prob_id"].c_str(), &errpnt, 0);
-	if(!prob_id || *errpnt)
+	uint32_t prob_id;
+	if (!from_string((*mb)["prob_id"], prob_id))
 		return MessageBlock::error("Invalid problem Id");
 
 	DbCon *db = DbCon::getInstance();
@@ -598,13 +596,11 @@ auto_ptr<MessageBlock> ActGetProbAttrs::int_process(ClientConnection*, const Mes
 }
 
 auto_ptr<MessageBlock> ActGetProblemFile::int_process(ClientConnection*, const MessageBlock* mb) {
-	char *errpnt;
-	uint32_t prob_id = strtoll((*mb)["prob_id"].c_str(), &errpnt, 0);
-	string file = (*mb)["file"];
-
-	if(!prob_id || *errpnt)
+	uint32_t prob_id = 0;
+	if (!from_string((*mb)["prob_id"], prob_id) || prob_id == 0)
 		return MessageBlock::error("Invalid problem Id");
 
+	string file = (*mb)["file"];
 	if(file == "")
 		return MessageBlock::error("You have not specified which 'file' you'd like");
 

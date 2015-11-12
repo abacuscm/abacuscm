@@ -1122,12 +1122,12 @@ bool MySQL::retrieveSubmission(uint32_t user_id, uint32_t sub_id, char** buffer,
 		} else {
 			MYSQL_ROW row;
 			if((row = mysql_fetch_row(res)) != NULL) {
-				*length = strtoll(row[1], NULL, 10);
+				*length = from_string<int>(row[1]);
 				*buffer = new char[*length];
 				memcpy(*buffer, row[0], *length);
 				language = row[2];
 				if(prob_id)
-					*prob_id = strtoll(row[3], NULL, 0);
+					*prob_id = from_string<uint32_t>(row[3]);
 			}
 			mysql_free_result(res);
 		}
@@ -1150,7 +1150,7 @@ IdList MySQL::getUnmarked(uint32_t server_id) {
 	} else {
 		MYSQL_ROW row;
 		while((row = mysql_fetch_row(res)) != NULL) {
-			result.push_back(strtoll(row[0], NULL, 0));
+			result.push_back(from_string<uint32_t>(row[0]));
 		}
 		mysql_free_result(res);
 	}
@@ -1207,7 +1207,7 @@ uint32_t MySQL::countMarkFiles(uint32_t submission_id) {
 		uint32_t result;
 
 		if (row)
-			result = strtoll(row[0], NULL, 0);
+			result = from_string<uint32_t>(row[0]);
 		else
 			result = 0;
 		mysql_free_result(res);
@@ -1273,9 +1273,9 @@ bool MySQL::getSubmissionState(uint32_t submission_id, RunResult& state, uint32_
 		bool result = false;
 
 		if(row) {
-			state = (RunResult)strtoll(row[0], NULL, 0);
+			state = (RunResult) from_string<int>(row[0]);
 			comment = row[1];
-			utype = strtoll(row[2], NULL, 0);
+			utype = from_string<uint32_t>(row[2]);
 			result = true;
 		}
 
@@ -1301,7 +1301,7 @@ uint32_t MySQL::submission2user_id(uint32_t submission_id) {
 		uint32_t uid = ~0U;
 		MYSQL_ROW row = mysql_fetch_row(res);
 		if(row)
-			uid = strtoll(row[0], NULL, 0);
+			uid = from_string<uint32_t>(row[0]);
 		mysql_free_result(res);
 		return uid;
 	}
@@ -1324,7 +1324,7 @@ uint32_t MySQL::submission2server_id(uint32_t submission_id) {
 		uint32_t sid = ~0U;
 		MYSQL_ROW row = mysql_fetch_row(res);
 		if(row)
-			sid = strtoll(row[0], NULL, 0);
+			sid = from_string<uint32_t>(row[0]);
 		mysql_free_result(res);
 		return sid;
 	}

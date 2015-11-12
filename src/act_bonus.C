@@ -51,18 +51,14 @@ public:
 auto_ptr<MessageBlock> ActSetbonus::int_process(ClientConnection *cc, const MessageBlock *mb) {
 	uint32_t user_id;
 	int32_t points, seconds;
-	char *errptr;
 
-	user_id = strtoul((*mb)["user_id"].c_str(), &errptr, 0);
-	if(*errptr || (*mb)["user_id"] == "")
+	if (!from_string((*mb)["user_id"], user_id))
 		return MessageBlock::error("user_id isn't a valid integer");
 
-	points = strtol((*mb)["points"].c_str(), &errptr, 0);
-	if (*errptr || (*mb)["points"] == "")
+	if (!from_string((*mb)["points"], points))
 		return MessageBlock::error("points isn't a valid integer");
 
-	seconds = strtol((*mb)["seconds"].c_str(), &errptr, 0);
-	if (*errptr || (*mb)["seconds"] == "")
+	if (!from_string((*mb)["seconds"], seconds))
 		return MessageBlock::error("seconds isn't a valid integer");
 
 	return triggerMessage(cc, new BonusMessage(user_id, points, seconds));
@@ -71,10 +67,8 @@ auto_ptr<MessageBlock> ActSetbonus::int_process(ClientConnection *cc, const Mess
 auto_ptr<MessageBlock> ActGetbonus::int_process(ClientConnection *, const MessageBlock *mb) {
 	uint32_t user_id;
 	int32_t points, seconds;
-	char *errptr;
 
-	user_id = strtoul((*mb)["user_id"].c_str(), &errptr, 0);
-	if(*errptr || (*mb)["user_id"] == "")
+	if (!from_string((*mb)["user_id"], user_id))
 		return MessageBlock::error("user_id isn't a valid integer");
 
 	UserSupportModule *usm = getUserSupportModule();

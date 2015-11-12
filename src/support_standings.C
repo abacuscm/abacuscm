@@ -112,7 +112,7 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 
 	SubmissionList::iterator s;
 	for(s = submissions.begin(); s != submissions.end(); ++s) {
-		uint32_t sub_id = strtoll((*s)["submission_id"].c_str(), NULL, 0);
+		uint32_t sub_id = from_string<uint32_t>((*s)["submission_id"]);
 
 		RunResult state;
 		uint32_t utype;
@@ -125,7 +125,7 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 				uint32_t user_id = db->submission2user_id(sub_id);
 				uint32_t group_id = usm->user_group(user_id);
 				tmp.correct = state == CORRECT;
-				tmp.time = timer->contestTime(group_id, strtoull((*s)["time"].c_str(), NULL, 0));
+				tmp.time = timer->contestTime(group_id, from_string<time_t>((*s)["time"]));
 
 #if 0 // disabled until we can support per-group cached standings
 				if (tmp.time > server_time) {
@@ -136,7 +136,7 @@ bool StandingsSupportModule::updateStandings(uint32_t uid, time_t tm)
 				} else
 #endif
 				{
-					uint32_t prob_id = strtoll((*s)["prob_id"].c_str(), NULL, 0);
+					uint32_t prob_id = from_string<uint32_t>((*s)["prob_id"]);
 					tmp.final_only = timer->isBlinded(tmp.time);
 					problemdata[user_id][prob_id].push_back(tmp);
 				}

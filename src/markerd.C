@@ -14,6 +14,7 @@
 #include "serverconnection.h"
 #include "queue.h"
 #include "messageblock.h"
+#include "misc.h"
 
 #include <iostream>
 #include <cstdlib>
@@ -25,8 +26,8 @@ static Queue<MarkRequest*> _mark_requests;
 
 static void mark_request(const MessageBlock* mb, void*) {
 	MarkRequest *mr = new MarkRequest;
-	mr->prob_id = strtoll((*mb)["prob_id"].c_str(), NULL, 0);
-	mr->submission_id = strtoll((*mb)["submission_id"].c_str(), NULL, 0);
+	mr->prob_id = from_string<uint32_t>((*mb)["prob_id"]);
+	mr->submission_id = from_string<uint32_t>((*mb)["submission_id"]);
 	mr->lang = (*mb)["language"];
 	mr->submission.appendData(mb->content(), mb->content_size());
 	_mark_requests.enqueue(mr);

@@ -37,9 +37,9 @@ void SubmissionSupportModule::init()
 }
 
 bool SubmissionSupportModule::submissionToMB(DbCon *db, AttributeList &s, MessageBlock &mb, const std::string &suffix) {
-	uint32_t submission_id = strtoul(s["submission_id"].c_str(), NULL, 10);
-	time_t time = strtoull(s["time"].c_str(), NULL, 10);
-	uint32_t group_id = strtoul(s["group_id"].c_str(), NULL, 10);
+	uint32_t submission_id = from_string<uint32_t>(s["submission_id"]);
+	time_t time = from_string<time_t>(s["time"]);
+	uint32_t group_id = from_string<uint32_t>(s["group_id"]);
 	TimerSupportModule *timer = getTimerSupportModule();
 	if (!timer) {
 		log(LOG_CRIT, "Could not get timer support module");

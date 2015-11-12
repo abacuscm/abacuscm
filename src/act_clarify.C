@@ -293,7 +293,7 @@ bool ClarificationMessage::int_process() const {
 						0, PERMISSION_AUTH, &notify);
 				else
 					ClientEventRegistry::getInstance().broadcastEvent(
-						strtoul(req["user_id"].c_str(), NULL, 10),
+						from_string<uint32_t>(req["user_id"]),
 						PERMISSION_SEE_ALL_CLARIFICATIONS,
 						&notify);
 			}
@@ -311,9 +311,7 @@ auto_ptr<MessageBlock> ActClarificationRequest::int_process(ClientConnection *cc
 
 	if (prob_id_str != "0" && prob_id_str != "")
 	{
-		char *errptr;
-		prob_id = strtol((*mb)["prob_id"].c_str(), &errptr, 0);
-		if(*errptr || (*mb)["prob_id"] == "")
+		if (!from_string((*mb)["prob_id"], prob_id))
 			return MessageBlock::error("prob_id isn't a valid integer");
 
 		DbCon *db = DbCon::getInstance();
@@ -343,9 +341,8 @@ auto_ptr<MessageBlock> ActClarification::int_process(ClientConnection *cc, const
 	uint32_t user_id = cc->getUserId();
 	std::string answer = (*mb)["answer"];
 
-	char *errptr;
-	uint32_t cr_id = strtol((*mb)["clarification_request_id"].c_str(), &errptr, 0);
-	if(*errptr || (*mb)["clarification_request_id"] == "")
+	uint32_t cr_id;
+	if (!from_string((*mb)["clarification_request_id"], cr_id))
 		return MessageBlock::error("clarification_request_id isn't a valid integer");
 	DbCon *db = DbCon::getInstance();
 	if(!db)
