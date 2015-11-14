@@ -1,32 +1,14 @@
 #!/bin/bash
 set -e
 
-# Before using this script: on the server
-# 1. Wipe out the server database:
-# db/reload_sql.sh conf/server.conf
-# 2. Start the server.
-# 3. Now run this script as
-#    tests/batch/run-tests.sh client.conf server.conf marker.conf
-# 4. When prompted, start the marker.
+# This script is designed to run against the test server created by the
+# docker-compose files in the testbench/ directory. After starting that
+# server, run this script as
+#    tests/batch/run-tests.sh
 
-if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 client.conf server.conf marker.conf" 1>&2
-    exit 2
-fi
-
-client_conf="$1"
-server_conf="$2"
-marker_conf="$3"
+client_conf="tests/batch/client.conf"
 if [ ! -f "$client_conf" ]; then
     echo "'$client_conf' not found" 1>&2
-    exit 1
-fi
-if [ ! -f "$server_conf" ]; then
-    echo "'$server_conf' not found" 1>&2
-    exit 1
-fi
-if [ ! -f "$marker_conf" ]; then
-    echo "'$marker_conf' not found" 1>&2
     exit 1
 fi
 
@@ -35,17 +17,12 @@ function get_setting()
     local section="$1"
     local name="$2"
     local filename="$3"
-    sed -n -e '/^\['"$section"'\]/,/^\[/s/^'"$name"' *= *\(.*\)/\1/p' "$filename"
+    sed -n -e '/^\['"$section"'\]/,/^\[/s/^'"$name"' *= *\([^#]*\)\( *#.*\)\?$/\1/p' "$filename"
 }
 
-admin_password="$(get_setting initialisation admin_password "$server_conf")"
-if [ -z "$admin_password" ]; then
-    admin_password="admin"
-fi
-marker_username="$(get_setting server username "$marker_conf")"
-marker_password="$(get_setting server password "$marker_conf")"
-duration="$(get_setting contest duration "$server_conf")"
-blinds="$(get_setting contest blinds "$server_conf")"
+admin_password="$(get_setting initialisation admin_password "testbench/conf/abacus/server.conf.override")"
+duration="$(get_setting contest duration "testbench/contest/server.conf.override")"
+blinds="$(get_setting contest blinds "testbench/contest/server.conf.override")"
 now=$(date +%s)
 
 # A time in the recent past, useful for starting the contest
@@ -118,7 +95,7 @@ group:17
 adduser
 username:
 friendlyname:Blank
-password:blank
+passwd:blank
 type:contestant
 group:1
 ?err
@@ -136,7 +113,7 @@ group:1
 adduser
 username:nogroup
 friendlyname:nogroup
-password:nogroup
+passwd:nogroup
 type:contestant
 ?err
 ?msg:*
@@ -145,20 +122,11 @@ type:contestant
 adduser
 username:badgroup
 friendlyname:badgroup
-password:badgroup
+passwd:badgroup
 type:contestant
 group:3
 ?err
 ?msg:*
-
-# Not used in test, but allows a marker to be connected afterwards
-adduser
-username:$marker_username
-friendlyname:Marker
-passwd:$marker_password
-type:marker
-group:1
-?ok
 
 getusers
 ?ok
@@ -166,32 +134,37 @@ getusers
 ?username0:admin
 ?friendlyname0:Administrator
 ?type0:admin
-?id1:33
+?id1:65
 ?username1:judge
 ?friendlyname1:HTML: <b>not bold</b>
 ?type1:judge
-?id2:49
+?id2:33
 ?username2:marker
-?friendlyname2:Marker
+?friendlyname2:Marker bot
 ?type2:marker
 ?id3:17
-?username3:test1
-?friendlyname3:<b>Unicode</b>: ēßõ±°½—£
+?username3:standings
+?friendlyname3:Standings bot
 ?type3:contestant
+?id4:49
+?username4:test1
+?friendlyname4:<b>Unicode</b>: ēßõ±°½—£
+?type4:contestant
 
 # TEST: Changing a password must succeed
 # Later we test logging in with this new password.
 id_passwd
-user_id:17
+user_id:49
 newpass:test1
 ?ok
 
 getlanguages
 ?ok
-?language0:C++
-?language1:Java
-?language2:Python 2.x
-?language3:Python 3.x
+?language0:C
+?language1:C++
+?language2:Java
+?language3:Python 2.x
+?language4:Python 3.x
 
 getprobtypes
 ?ok
@@ -1006,7 +979,7 @@ standings
 ?row_0_6:Time
 ?row_0_7:test
 ?row_0_8:test2
-?row_1_0:17
+?row_1_0:49
 ?row_1_1:test1
 ?row_1_2:<b>Unicode</b>: ēßõ±°½—£
 ?row_1_3:default
@@ -1047,21 +1020,21 @@ comment:Correct answer
 
 # TEST: default bonus must be zero
 getbonus
-user_id:17
+user_id:49
 ?ok
 ?points:0
 ?seconds:0
 
 # TEST: Judges must be able to set a bonus
 setbonus
-user_id:17
+user_id:49
 points:1
 seconds:123
 ?ok
 
 # TEST: Everyone must be able to see bonuses
 getbonus
-user_id:17
+user_id:49
 ?ok
 ?points:1
 ?seconds:123
