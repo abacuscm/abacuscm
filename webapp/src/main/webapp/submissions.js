@@ -212,18 +212,20 @@
 				continue;
 			var commentClass = '';
 			var rowClass = 'submission-row';
-			var allowClick = hasPermission('judge');
+			var clickable = false;
+			var extra = '';
 
 			switch (submission.result) {
 			case RunResult.COMPILE_FAILED:
 				commentClass = 'submission-compilation-failed';
-				allowClick = true;
+				clickable = true;
 				break;
 			case RunResult.ABNORMAL:
 			case RunResult.WRONG:
 			case RunResult.TIME_EXCEEDED:
 			case RunResult.FORMAT_ERROR:
 				commentClass = 'submission-wrong';
+				clickable = true;
 				break;
 			case RunResult.CORRECT:
 				commentClass = 'submission-correct';
@@ -232,28 +234,19 @@
 				commentClass = '';
 				break;
 			}
-			if (allowClick)
-				rowClass = 'submission-row-clickable ' + rowClass;
+			if (clickable)
+				extra = ' (click for details)';
 
 			html += '<tr class="' + rowClass + '">' +
 				'<td>' + escapeHTML(submission.submission_id) + '</td>' +
 				'<td>' + escapeHTML(timeToString(submission.contesttime)) + '</td>' +
 				'<td>' + escapeHTML(epochTimeToString(submission.time)) + '</td>' +
 				'<td>' + escapeHTML(submission.problem) + '</td>' +
-				'<td><div class="' + commentClass + '">' + escapeHTML(submission.comment) + '</div></td>' +
-				'<td><button class="abacus-button ui-state-default submission-request-clarification">Request clarification</button></td>' +
+				'<td><div class="' + commentClass + '">' + escapeHTML(submission.comment) + extra + '</div></td>' +
 				'</tr>';
 		}
 
 		$('#submissions-tbody').html(html);
-
-		$('.submission-request-clarification').click(function(event) {
-			event.stopPropagation(); // prevents submission details from coming up
-			var row = $(this).parent().parent();
-			var submissionId = $(row.children()[0]).text();
-			var problemId = getProblemForCode($(row.children()[3]).text()).id;
-			requestClarificationDialog(problemId, '[Submission ' + submissionId + '] ');
-		});
 
 		$('tr.submission-row').hover(
 			function() {
