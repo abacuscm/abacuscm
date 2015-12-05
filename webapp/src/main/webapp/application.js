@@ -239,25 +239,32 @@
 				updateClarificationRequests(msg);
 				// Contestants will be alerted to their own clarification requests, but
 				// in general this will be the active tab anyway so this has no effect.
-				highlightTab('clarification-requests');
+				showNotification('clarification-requests', 'New clarification request',
+					msg.data.headers.question);
 				break;
 
 			case 'updateclarifications':
 				// A new clarification
 				updateClarifications(msg);
-				highlightTab('clarifications');
+				showNotification('clarifications', 'New clarification',
+					msg.data.headers.answer);
 				break;
 
 			case 'updatesubmissions':
 				// A new or updated submission
 				if (updateSubmissions(msg))
-					highlightTab('submissions');
+				{
+					showNotification('submissions', 'Updated submission',
+						'#' + msg.data.headers.submission_id + ": " + msg.data.headers.comment);
+				}
 				break;
 
 			case 'updatestandings':
 				// New information for the standings tab
 				updateStandings(msg);
-				highlightTab('standings');
+				// No notification: standings are updated frequently and they
+				// generally do not require attention, so they are not
+				// signalled.
 				break;
 
 			case 'startstop':
@@ -338,10 +345,18 @@
 	 * Highlights the given tab name to indicate that the tab has new data.
 	 * Will not highlight the tab if it is currently selected.
 	 */
-	this.highlightTab = function(name) {
-		var tab = $('#' + name + '-tab-label');
+	this.showNotification = function(tabName, title, body) {
+		var tab = $('#' + tabName + '-tab-label');
 		if (!tab.parent().parent().hasClass('ui-tabs-active')) {
 			tab.addClass('tab-highlight');
+		}
+		if (title !== null && "Notification" in window)
+		{
+			if (Notification.permission === "granted")
+			{
+				var n = new Notification(title, {body: body, tag: tabName});
+				setTimeout(n.close.bind(n), 5000);
+			}
 		}
 	}
 
@@ -453,6 +468,12 @@
 		});
 		hideTab('tab-resources');
 		hideDebug();
+
+		// Request permission for notifications, if the browser supports it
+		if ("Notification" in window)
+		{
+			Notification.requestPermission();
+		}
 
 		// Disable the WebSocket transport, which is experimental and possibly
 		// buggy.
