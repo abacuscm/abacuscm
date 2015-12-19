@@ -31,13 +31,13 @@ enum PythonVersion {
  */
 string version_codename(PythonVersion v) {
 	switch (v) {
-    case PYTHON2x:
-        return "python";
-    case PYTHON3x:
-        return "python3";
-    default:
-        log(LOG_ERR, "Invalid value for PythonVersion in version_codename: %d. Defaulting to 2.", (int)v);
-        return "python";
+	case PYTHON2x:
+		return "python";
+	case PYTHON3x:
+		return "python3";
+	default:
+		log(LOG_ERR, "Invalid value for PythonVersion in version_codename: %d. Defaulting to 2.", (int)v);
+		return "python";
 	}
 }
 
@@ -45,13 +45,13 @@ string version_codename(PythonVersion v) {
  */
 string version_extension(PythonVersion v) {
 	switch (v) {
-    case PYTHON2x:
-        return ".py";
-    case PYTHON3x:
-        return ".py3";
-    default:
-        log(LOG_ERR, "Invalid value for PythonVersion in version_extension: %d. Defaulting to 2.", (int)v);
-        return ".py";
+	case PYTHON2x:
+		return ".py";
+	case PYTHON3x:
+		return ".py3";
+	default:
+		log(LOG_ERR, "Invalid value for PythonVersion in version_extension: %d. Defaulting to 2.", (int)v);
+		return ".py";
 	}
 }
 
