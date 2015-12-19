@@ -58,7 +58,6 @@ string version_extension(PythonVersion v) {
 class Python_UserProg : public UserProg {
 private:
 	string _progname;
-	string _dir;
 	PythonVersion _version;
 
 public:
@@ -66,6 +65,7 @@ public:
 	virtual ~Python_UserProg();
 protected:
 	virtual list<string> getProgramArgv();
+	virtual list<string> getProgramEnv();
 public:
 	virtual void setRootDir(string root);
 	virtual string sourceFilename(const Buffer&);
@@ -81,26 +81,19 @@ Python_UserProg::~Python_UserProg() {
 }
 
 void Python_UserProg::setRootDir(string root) {
-	_dir = root;
+	UserProg::setRootDir(root + "/userprog");
 }
 
 list<string> Python_UserProg::getProgramArgv() {
 	list<string> argv;
-	string version = version_codename(_version);
-	string interpreter = Config::getConfig()[version]["interpreter"];
-	if (interpreter == "") {
-		log(LOG_INFO, "[%s][interpreter] not set, defaulting to /usr/bin/%s", version.c_str(), version.c_str());
-		interpreter = "/usr/bin/" + version;
-	}
-	argv.push_back(interpreter);
-	
-	string progname;
-	if (_dir != "")
-		progname = _dir + "/" + _progname;
-	else
-		progname = _progname;
-	argv.push_back(progname);
+	argv.push_back("./userprog");
 	return argv;
+}
+
+list<string> Python_UserProg::getProgramEnv() {
+	list<string> env;
+	env.push_back("LD_LIBRARY_PATH=/");
+	return env;
 }
 
 string Python_UserProg::sourceFilename(const Buffer&) {
@@ -111,10 +104,17 @@ bool Python_UserProg::compile(string infile, string compiler_log, string outdir)
 {
 	list<string> argv;
 
-	argv.push_back("/bin/cp");
+	string version = version_codename(_version);
+	string interpreter = Config::getConfig()[version]["interpreter"];
+	if (interpreter == "") {
+		log(LOG_INFO, "[%s][interpreter] not set, defaulting to /usr/bin/%s", version.c_str(), version.c_str());
+		interpreter = "/usr/bin/" + version;
+	}
+	argv.push_back(interpreter);
+	argv.push_back("/usr/local/bin/python_compile.py");
 	argv.push_back("--");
 	argv.push_back(infile);
-	argv.push_back(outdir + "/" + _progname);
+	argv.push_back(outdir);
 	return execcompiler(argv, compiler_log) == 0;
 }
 

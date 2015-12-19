@@ -68,6 +68,10 @@ int UserProg::execcompiler(list<string> p_argv, string compiler_log) {
 	}
 }
 
+list<string> UserProg::getProgramEnv() {
+	return list<string>();
+}
+
 void UserProg::setWorkDir(string dir) {
 	_work_dir = dir;
 }
@@ -134,8 +138,9 @@ int UserProg::exec(int fd_in, int fd_out, int fd_err, int fd_run, const string &
 	}
 
 	list<string> prog_argv = getProgramArgv();
+	list<string> prog_env = getProgramEnv();
 
-	char ** argv = new char*[_runlimit_args.size() + prog_argv.size() + 4];
+	char ** argv = new char*[_runlimit_args.size() + 2 * prog_env.size() + prog_argv.size() + 4];
 	char ** ptr = argv;
 
 	if (evaluator != "")
@@ -145,6 +150,10 @@ int UserProg::exec(int fd_in, int fd_out, int fd_err, int fd_run, const string &
 	list<string>::iterator i;
 	for(i = _runlimit_args.begin(); i != _runlimit_args.end(); ++i)
 		*ptr++ = strdup(i->c_str());
+	for(i = prog_env.begin(); i != prog_env.end(); ++i) {
+		*ptr++ = strdup("-e");
+		*ptr++ = strdup(i->c_str());
+	}
 
 	*ptr++ = strdup("--");
 

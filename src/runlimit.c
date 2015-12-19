@@ -41,10 +41,11 @@ static struct option const long_options[] = {
 	{"user", required_argument, 0, 'u'},
 	{"group", required_argument, 0, 'g'},
 	{"nproc", required_argument, 0, 'n'},
+	{"env", required_argument, 0, 'e'},
 	{NULL, 0, NULL, 0}
 };
 
-static const char *optstring = "hvdr:c:f:t:m:u:g:n:";
+static const char *optstring = "hvdr:c:f:t:m:u:g:n:e:";
 
 static unsigned cputime = 0;
 static unsigned realtime = 0;
@@ -58,6 +59,9 @@ static gid_t to_grp = 0;
 static const char* to_uname = NULL;
 static const char* to_gname = NULL;
 static FILE* runmsg = NULL;
+static unsigned n_env = 0;
+static unsigned n_env_cap = 0;
+static char **env = NULL;
 
 static volatile int realtime_fired = 0;
 
@@ -111,11 +115,13 @@ static void help() {
 			"    --user, -u      User to run command as\n"
 			"    --group, -g     Group to run command as\n"
 			"    --nproc, -n     Max number of processes (BE WARNED: This is enforced on a per user basis)\n"
+			"    --env, -e       Add an environment variable\n"
 		   );
 }
 
 void __attribute__((noreturn)) do_child(char **argv) {
 	struct rlimit limit;
+	int i;
 
 	if(chrootdir) {
 		if(geteuid() == 0) {
@@ -205,8 +211,18 @@ void __attribute__((noreturn)) do_child(char **argv) {
 	fflush(runmsg);
 	close(3);
 
-	execve(argv[0], argv, NULL);
+	if (env == NULL)
+		execv(argv[0], argv);
+	else
+		execve(argv[0], argv, env);
 	perror("execve");
+	fprintf(stderr, "argv:");
+	for (i = 0; argv[i]; i++)
+		fprintf(stderr, " %s", argv[i]);
+	fprintf(stderr, "\nenv:");
+	for (i = 0; env && env[i]; i++)
+		fprintf(stderr, " %s", env[i]);
+	fprintf(stderr, "\n");
 	exit(-1);
 }
 
@@ -296,6 +312,24 @@ int main(int argc, char** argv) {
 					to_gname = optarg;
 					to_grp = grent->gr_gid;
 				}
+			}
+			break;
+		case 'e':
+			{
+				if (n_env + 1 > n_env_cap) {
+					if (n_env_cap == 0)
+						n_env_cap = 4;
+					else
+						n_env_cap *= 2;
+					/* + 1 is to make space for null terminator */
+					env = realloc(env, (n_env_cap + 1) * sizeof(char *));
+					if (env == NULL) {
+						errmsg("Failed to allocate space for environment");
+						return -1;
+					}
+				}
+				env[n_env++] = optarg;
+				env[n_env] = NULL;
 			}
 			break;
 		default:

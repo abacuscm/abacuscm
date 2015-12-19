@@ -57,6 +57,11 @@ RUN for artifact in \
         org.sonatype.plexus:plexus-sec-dispatcher:1.3 \
     ; do cd ~ && mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=$artifact; done
 
+# Install PyInstaller
+RUN apt-get install --no-install-recommends -y python-pip python3-pip python-dev python3-dev && \
+    pip install pyinstaller==3.0 && \
+    pip3 install pyinstaller==3.0
+
 # Fix https://bugs.launchpad.net/ubuntu/+source/w3c-dtd-xhtml/+bug/400259
 RUN find /usr/share/xml/xhtml /usr/share/xml/entities/xhtml -name catalog.xml -exec sed -i 's!http://globaltranscorp.org/oasis/catalog/xml/tr9401\.dtd!file:////usr/share/xml/schema/xml-core/tr9401.dtd!g' '{}' ';'
 
@@ -73,7 +78,8 @@ COPY . /usr/src/abacuscm
 RUN cp /usr/src/abacuscm/docker/abacuscm.xml /etc/jetty8/contexts/abacuscm.xml && \
     cp /usr/src/abacuscm/docker/root.xml /etc/jetty8/contexts/root.xml && \
     cp /usr/src/abacuscm/docker/abacuscm-secret-web.xml /etc/jetty8/abacuscm-secret-web.xml && \
-    cp /usr/src/abacuscm/docker/jetty*.xml /etc/jetty8/
+    cp /usr/src/abacuscm/docker/jetty*.xml /etc/jetty8/ && \
+    cp /usr/src/abacuscm/src/python_compile.py /usr/local/bin
 
 # Make mysql use data from a mount
 RUN sed -i 's!^datadir\s*= /var/lib/mysql!datadir = /data/mysql!' /etc/mysql/mysql.conf.d/mysqld.cnf

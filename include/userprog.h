@@ -37,6 +37,12 @@ protected:
 	 */
 	virtual std::list<std::string> getProgramArgv() = 0;
 
+	/**
+	 * Return list of environment strings (of the form key=value) to set when
+	 * executing. The default is empty.
+	 */
+	virtual std::list<std::string> getProgramEnv();
+
 	int execcompiler(std::list<std::string> compiler_argv, std::string compiler_log);
 
 	/**
