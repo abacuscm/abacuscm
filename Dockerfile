@@ -7,6 +7,7 @@ RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-rec
     gcc-doc libstdc++-4.9-doc openjdk-8-doc python-doc python3-doc \
     cppreference-doc-en-html stl-manual \
     build-essential libssl-dev libmysqlclient-dev maven \
+    python-pip python3-pip python-dev python3-dev \
     xsltproc docbook-xsl docbook-xml w3c-dtd-xhtml fop libxml2-utils \
     openssl mysql-server jetty8 supervisor && \
     apt-get clean
@@ -43,6 +44,7 @@ RUN for artifact in \
         org.apache.maven.plugins:maven-surefire-plugin:2.10 \
         org.apache.maven.plugins:maven-war-plugin:2.3 \
         org.apache.maven.surefire:surefire-junit3:2.10 \
+        org.apache.maven.plugins:maven-install-plugin:2.4 \
         org.apache.maven.plugins:maven-war-plugin:2.3 \
         org.codehaus.mojo:xml-maven-plugin:1.0 \
         org.cometd.java:bayeux-api:2.6.0 \
@@ -58,9 +60,7 @@ RUN for artifact in \
     ; do cd ~ && mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=$artifact; done
 
 # Install PyInstaller
-RUN apt-get install --no-install-recommends -y python-pip python3-pip python-dev python3-dev && \
-    pip install pyinstaller==3.0 && \
-    pip3 install pyinstaller==3.0
+RUN pip install pyinstaller==3.0 && pip3 install pyinstaller==3.0
 
 # Fix https://bugs.launchpad.net/ubuntu/+source/w3c-dtd-xhtml/+bug/400259
 RUN find /usr/share/xml/xhtml /usr/share/xml/entities/xhtml -name catalog.xml -exec sed -i 's!http://globaltranscorp.org/oasis/catalog/xml/tr9401\.dtd!file:////usr/share/xml/schema/xml-core/tr9401.dtd!g' '{}' ';'
@@ -112,11 +112,6 @@ RUN adduser --disabled-password --gecos 'abacus user' abacus && \
     adduser --no-create-home --shell /bin/false --disabled-login --gecos 'tournament user 1' sandbox1 && \
     adduser --no-create-home --shell /bin/false --disabled-login --gecos 'tournament user 2' sandbox2
 
-VOLUME /conf
-VOLUME /data
-VOLUME /contest
-VOLUME /www
-EXPOSE 8080
-EXPOSE 8443
-EXPOSE 7368
+VOLUME /conf /data /contest /www
+EXPOSE 8080 8443 7368
 ENTRYPOINT ["/usr/src/abacuscm/docker/run.py"]
