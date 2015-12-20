@@ -12,6 +12,7 @@
 #include "acmconfig.h"
 #include "logger.h"
 #include "buffer.h"
+#include "misc.h"
 
 #include <regex.h>
 #include <stdlib.h>
@@ -68,6 +69,7 @@ protected:
 	virtual list<string> getProgramEnv();
 public:
 	virtual void setRootDir(string root);
+	virtual void setMaxProcs(unsigned nproc);
 	virtual string sourceFilename(const Buffer&);
 	virtual bool compile(string infile, string compiler_log, string outdir);
 };
@@ -82,6 +84,11 @@ Python_UserProg::~Python_UserProg() {
 
 void Python_UserProg::setRootDir(string root) {
 	UserProg::setRootDir(root + "/userprog");
+}
+
+void Python_UserProg::setMaxProcs(unsigned) {
+	// TODO: disabled for now because it interferes with PyInstaller's
+	// bootstrapping.
 }
 
 list<string> Python_UserProg::getProgramArgv() {
