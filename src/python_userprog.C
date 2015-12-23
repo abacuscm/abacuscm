@@ -68,8 +68,6 @@ protected:
 	virtual list<string> getProgramArgv();
 	virtual list<string> getProgramEnv();
 public:
-	virtual void setRootDir(string root);
-	virtual void setMaxProcs(unsigned nproc);
 	virtual string sourceFilename(const Buffer&);
 	virtual bool compile(string infile, string compiler_log, string outdir);
 };
@@ -80,15 +78,6 @@ Python_UserProg::Python_UserProg(PythonVersion v) : _version(v) {
 
 Python_UserProg::~Python_UserProg() {
 	/* Nothing required */
-}
-
-void Python_UserProg::setRootDir(string root) {
-	UserProg::setRootDir(root + "/userprog");
-}
-
-void Python_UserProg::setMaxProcs(unsigned) {
-	// TODO: disabled for now because it interferes with PyInstaller's
-	// bootstrapping.
 }
 
 list<string> Python_UserProg::getProgramArgv() {

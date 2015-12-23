@@ -59,8 +59,15 @@ RUN for artifact in \
         org.sonatype.plexus:plexus-sec-dispatcher:1.3 \
     ; do cd ~ && mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=$artifact; done
 
-# Install PyInstaller
-RUN pip install pyinstaller==3.0 && pip3 install pyinstaller==3.0
+# Install cx_Freeze. A bug workaround is needed due to
+# https://bitbucket.org/anthony_tuininga/cx_freeze/issues/32/cant-compile-cx_freeze-in-ubuntu-1304
+RUN mkdir /tmp/cx_Freeze && \
+    pip install --download /tmp/cx_Freeze cx_Freeze==4.3.4 && \
+    tar -C /tmp/cx_Freeze -zxf /tmp/cx_Freeze/cx_Freeze-4.3.4.tar.gz && \
+    sed -i 's/if not vars\.get("Py_ENABLE_SHARED", 0):/if True:/' /tmp/cx_Freeze/cx_Freeze-4.3.4/setup.py && \
+    pip install /tmp/cx_Freeze/cx_Freeze-4.3.4 && \
+    pip3 install /tmp/cx_Freeze/cx_Freeze-4.3.4 && \
+    rm -rf /tmp/cx_Freeze
 
 # Fix https://bugs.launchpad.net/ubuntu/+source/w3c-dtd-xhtml/+bug/400259
 RUN find /usr/share/xml/xhtml /usr/share/xml/entities/xhtml -name catalog.xml -exec sed -i 's!http://globaltranscorp.org/oasis/catalog/xml/tr9401\.dtd!file:////usr/share/xml/schema/xml-core/tr9401.dtd!g' '{}' ';'

@@ -23,25 +23,19 @@ def main():
     parser.add_argument('output_dir')
     args = parser.parse_args()
 
-    pyinstaller = find_executable('pyinstaller')
-    if pyinstaller is None:
-        print('Could not find pyinstaller in PATH', file=sys.stderr)
+    cxfreeze = find_executable('cxfreeze')
+    if cxfreeze is None:
+        print('Could not find cxfreeze in PATH', file=sys.stderr)
         sys.exit(1)
-    build_dir = os.path.join(args.output_dir, 'build')
-    pyinstaller_env = dict(os.environ)
-    pyinstaller_env['HOME'] = build_dir   # To keep cache files local
     subprocess.check_call([
-        sys.executable, pyinstaller,
-        '--clean', '--noconfirm', '--name=userprog', '--strip',
-        '--workpath=' + build_dir,
-        '--specpath=' + build_dir,
-        '--distpath=' + args.output_dir,
-        args.script], env=pyinstaller_env)
+        sys.executable, cxfreeze,
+        '--target-dir=' + args.output_dir,
+        '--target-name=userprog',
+        args.script])
 
     dep_re = re.compile('^\t(?:(.+) => )?(/.*) \\(0x[a-f0-9]+\\)$')
-    output_dir = os.path.join(args.output_dir, 'userprog')
     req = {}
-    libs = glob.glob(os.path.join(output_dir, '*.so*'))
+    libs = glob.glob(os.path.join(args.output_dir, '*.so*'))
     for so in libs:
         deps = subprocess.check_output(['ldd', '--', so]).decode('utf-8')
         deps = deps.splitlines()
@@ -51,7 +45,7 @@ def main():
                 filename = match.group(2)
                 soname = match.group(1) if match.group(1) else filename
                 req[soname] = filename
-    # PyInstaller will have copied some of the libraries already
+    # cxfreeze will have copied some of the libraries already
     for so in libs:
         soname = os.path.basename(so)
         if soname in req:
@@ -63,7 +57,7 @@ def main():
             dest = os.path.relpath(soname, '/')  # Turn into a relative path
         else:
             dest = soname
-        dest = os.path.join(output_dir, dest)
+        dest = os.path.join(args.output_dir, dest)
         dest_dir = os.path.dirname(dest)
         if not os.path.isdir(dest_dir):
             os.makedirs(dest_dir)
