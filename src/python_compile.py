@@ -62,6 +62,8 @@ def main():
         if not os.path.isdir(dest_dir):
             os.makedirs(dest_dir)
         shutil.copy(filename, dest)
+    # Create a /dev so that runlimit will provide /dev/urandom
+    os.mkdir(os.path.join(args.output_dir, "dev"))
 
 
 if __name__ == '__main__':

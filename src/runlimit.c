@@ -20,6 +20,8 @@
 #include <grp.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <pwd.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -125,12 +127,23 @@ void __attribute__((noreturn)) do_child(char **argv) {
 
 	if(chrootdir) {
 		if(geteuid() == 0) {
+			struct stat urandom_stat;
+			int stat_result = stat("/dev/urandom", &urandom_stat);
 			if(chroot(chrootdir) < 0) {
 				errmsg("chroot: %s\n", strerror(errno));
 				exit(-1);
 			}
 			if(chdir("/") < 0) {
 				errmsg("chdir(\"/\") - non-critical: %s\n", strerror(errno));
+			}
+			/* If the user has provided a /dev, give them /dev/urandom
+			 * (needed by Python).
+			 */
+			if (stat_result == 0) {
+				int result = mknod("/dev/urandom", urandom_stat.st_mode, urandom_stat.st_rdev);
+				if (result < 0 && errno != ENOENT) {
+					errmsg("mknod(\"/dev/urandom\") - non-critical: %s\n", strerror(errno));
+				}
 			}
 		} else { /* we are not root! */
 			errmsg("Need suid root in order chroot!  chdir()ing instead.\n");
