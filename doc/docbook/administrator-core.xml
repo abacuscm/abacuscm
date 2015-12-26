@@ -585,6 +585,13 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
                     <parameter>policy</parameter> must point at the policy
                     file provided with the abacuscm source bundle.
                 </para>
+                <para>
+                    For Python (2 and 3), the <parameter>compiler</parameter>
+                    must point to <filename>src/python_compile.py</filename>,
+                    which must be installed somewhere on the system. If it is
+                    not specified, the default search location is
+                    <filename class="directory">/usr/local/bin</filename>.
+                </para>
             </step>
             <step>
                 <para>
