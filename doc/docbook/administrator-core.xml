@@ -58,6 +58,18 @@
                         <command>make</command>.
                     </para>
                 </listitem>
+                <listitem>
+                    <para>
+                        Compilers/interpreters for whichever languages you
+                        will support in your contest (C/C++, Java and Python
+                        are supported).
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        For Python support, you need <application>cx_Freeze</application>.
+                    </para>
+                </listitem>
             </itemizedlist>
             <para>
                 TODO: add notes about tools to build the documentation.
