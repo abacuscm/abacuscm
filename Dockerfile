@@ -7,6 +7,7 @@ RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-rec
     gcc-doc libstdc++-4.9-doc openjdk-8-doc python-doc python3-doc \
     cppreference-doc-en-html stl-manual \
     build-essential libssl-dev libmysqlclient-dev maven \
+    python-pip python3-pip python-dev python3-dev \
     xsltproc docbook-xsl docbook-xml w3c-dtd-xhtml fop libxml2-utils \
     openssl mysql-server jetty8 supervisor && \
     apt-get clean
@@ -43,6 +44,7 @@ RUN for artifact in \
         org.apache.maven.plugins:maven-surefire-plugin:2.10 \
         org.apache.maven.plugins:maven-war-plugin:2.3 \
         org.apache.maven.surefire:surefire-junit3:2.10 \
+        org.apache.maven.plugins:maven-install-plugin:2.4 \
         org.apache.maven.plugins:maven-war-plugin:2.3 \
         org.codehaus.mojo:xml-maven-plugin:1.0 \
         org.cometd.java:bayeux-api:2.6.0 \
@@ -56,6 +58,16 @@ RUN for artifact in \
         org.sonatype.plexus:plexus-cipher:1.4 \
         org.sonatype.plexus:plexus-sec-dispatcher:1.3 \
     ; do cd ~ && mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=$artifact; done
+
+# Install cx_Freeze. A bug workaround is needed due to
+# https://bitbucket.org/anthony_tuininga/cx_freeze/issues/32/cant-compile-cx_freeze-in-ubuntu-1304
+RUN mkdir /tmp/cx_Freeze && \
+    pip install --download /tmp/cx_Freeze cx_Freeze==4.3.4 && \
+    tar -C /tmp/cx_Freeze -zxf /tmp/cx_Freeze/cx_Freeze-4.3.4.tar.gz && \
+    sed -i 's/if not vars\.get("Py_ENABLE_SHARED", 0):/if True:/' /tmp/cx_Freeze/cx_Freeze-4.3.4/setup.py && \
+    pip install /tmp/cx_Freeze/cx_Freeze-4.3.4 && \
+    pip3 install /tmp/cx_Freeze/cx_Freeze-4.3.4 && \
+    rm -rf /tmp/cx_Freeze
 
 # Fix https://bugs.launchpad.net/ubuntu/+source/w3c-dtd-xhtml/+bug/400259
 RUN find /usr/share/xml/xhtml /usr/share/xml/entities/xhtml -name catalog.xml -exec sed -i 's!http://globaltranscorp.org/oasis/catalog/xml/tr9401\.dtd!file:////usr/share/xml/schema/xml-core/tr9401.dtd!g' '{}' ';'
@@ -106,11 +118,6 @@ RUN adduser --disabled-password --gecos 'abacus user' abacus && \
     adduser --no-create-home --shell /bin/false --disabled-login --gecos 'tournament user 1' sandbox1 && \
     adduser --no-create-home --shell /bin/false --disabled-login --gecos 'tournament user 2' sandbox2
 
-VOLUME /conf
-VOLUME /data
-VOLUME /contest
-VOLUME /www
-EXPOSE 8080
-EXPOSE 8443
-EXPOSE 7368
+VOLUME /conf /data /contest /www
+EXPOSE 8080 8443 7368
 ENTRYPOINT ["/usr/src/abacuscm/docker/run.py"]

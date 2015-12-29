@@ -12,6 +12,7 @@
 #include "acmconfig.h"
 #include "logger.h"
 #include "buffer.h"
+#include "misc.h"
 
 #include <regex.h>
 #include <stdlib.h>
@@ -31,13 +32,13 @@ enum PythonVersion {
  */
 string version_codename(PythonVersion v) {
 	switch (v) {
-    case PYTHON2x:
-        return "python";
-    case PYTHON3x:
-        return "python3";
-    default:
-        log(LOG_ERR, "Invalid value for PythonVersion in version_codename: %d. Defaulting to 2.", (int)v);
-        return "python";
+	case PYTHON2x:
+		return "python";
+	case PYTHON3x:
+		return "python3";
+	default:
+		log(LOG_ERR, "Invalid value for PythonVersion in version_codename: %d. Defaulting to 2.", (int)v);
+		return "python";
 	}
 }
 
@@ -45,20 +46,19 @@ string version_codename(PythonVersion v) {
  */
 string version_extension(PythonVersion v) {
 	switch (v) {
-    case PYTHON2x:
-        return ".py";
-    case PYTHON3x:
-        return ".py3";
-    default:
-        log(LOG_ERR, "Invalid value for PythonVersion in version_extension: %d. Defaulting to 2.", (int)v);
-        return ".py";
+	case PYTHON2x:
+		return ".py";
+	case PYTHON3x:
+		return ".py3";
+	default:
+		log(LOG_ERR, "Invalid value for PythonVersion in version_extension: %d. Defaulting to 2.", (int)v);
+		return ".py";
 	}
 }
 
 class Python_UserProg : public UserProg {
 private:
 	string _progname;
-	string _dir;
 	PythonVersion _version;
 
 public:
@@ -66,8 +66,8 @@ public:
 	virtual ~Python_UserProg();
 protected:
 	virtual list<string> getProgramArgv();
+	virtual list<string> getProgramEnv();
 public:
-	virtual void setRootDir(string root);
 	virtual string sourceFilename(const Buffer&);
 	virtual bool compile(string infile, string compiler_log, string outdir);
 };
@@ -80,27 +80,16 @@ Python_UserProg::~Python_UserProg() {
 	/* Nothing required */
 }
 
-void Python_UserProg::setRootDir(string root) {
-	_dir = root;
-}
-
 list<string> Python_UserProg::getProgramArgv() {
 	list<string> argv;
-	string version = version_codename(_version);
-	string interpreter = Config::getConfig()[version]["interpreter"];
-	if (interpreter == "") {
-		log(LOG_INFO, "[%s][interpreter] not set, defaulting to /usr/bin/%s", version.c_str(), version.c_str());
-		interpreter = "/usr/bin/" + version;
-	}
-	argv.push_back(interpreter);
-	
-	string progname;
-	if (_dir != "")
-		progname = _dir + "/" + _progname;
-	else
-		progname = _progname;
-	argv.push_back(progname);
+	argv.push_back("./userprog");
 	return argv;
+}
+
+list<string> Python_UserProg::getProgramEnv() {
+	list<string> env;
+	env.push_back("LD_LIBRARY_PATH=/");
+	return env;
 }
 
 string Python_UserProg::sourceFilename(const Buffer&) {
@@ -111,10 +100,22 @@ bool Python_UserProg::compile(string infile, string compiler_log, string outdir)
 {
 	list<string> argv;
 
-	argv.push_back("/bin/cp");
+	string version = version_codename(_version);
+	string interpreter = Config::getConfig()[version]["interpreter"];
+	if (interpreter == "") {
+		log(LOG_INFO, "[%s][interpreter] not set, defaulting to /usr/bin/%s", version.c_str(), version.c_str());
+		interpreter = "/usr/bin/" + version;
+	}
+	argv.push_back(interpreter);
+	string compiler = Config::getConfig()[version]["compiler"];
+	if (compiler == "") {
+		log(LOG_INFO, "[%s][compiler] not set, defaulting to %s/python_compile.py", version.c_str(), BINDIR);
+		compiler = BINDIR "/python_compile.py";
+	}
+	argv.push_back(compiler);
 	argv.push_back("--");
 	argv.push_back(infile);
-	argv.push_back(outdir + "/" + _progname);
+	argv.push_back(outdir);
 	return execcompiler(argv, compiler_log) == 0;
 }
 

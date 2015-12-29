@@ -62,7 +62,7 @@ ETCDIR ?= $(PREFIX)/etc
 
 DESTDIR ?= /
 
-DEFS += -DPREFIX=\"$(PREFIX)\" -DSYSCONFDIR=\"$(ETCDIR)\" -DMODDIR=\"$(MODDIR)\"
+DEFS += -DPREFIX=\"$(PREFIX)\" -DSYSCONFDIR=\"$(ETCDIR)\" -DMODDIR=\"$(MODDIR)\" -DBINDIR=\"$(BINDIR)\"
 
 -include $(TOPDIR)/Makefile.extra
 
@@ -265,10 +265,15 @@ endif
 .PHONY: install
 install : all
 	@echo "Preparing to install into $(DESTDIR)."
-ifneq ($(BIN_TARGET),)
+ifneq ($(BIN_TARGET)$(EXTRA_BINFILES),)
 	@$(ECHO_E) "\t[DIR] $(BINDIR)"
 	$(SHOWCL)install -d "$(DESTDIR)$(BINDIR)"
+endif
+ifneq ($(BIN_TARGET),)
 	$(SHOWCL)$(foreach B,$(BIN_TARGET),$(ECHO_E) "\t[BIN] $(B)"; install $(B) "$(DESTDIR)$(BINDIR)";)
+endif
+ifneq ($(EXTRA_BINFILES),)
+	$(SHOWCL)$(foreach B,$(EXTRA_BINFILES),$(ECHO_E) "\t[BIN] $(B)"; install $(B) "$(DESTDIR)$(BINDIR)";)
 endif
 ifneq ($(LIB_TARGET_SO),)
 	@$(ECHO_E) "\t[DIR] $(LIBDIR)"
