@@ -98,6 +98,7 @@ MODS_markerd += userprog \
 	interactiveproblemmarker \
 	sigsegv
 LIBS_markerd = ssl crypto pthread rt dl
+EXTRA_BINFILES = src/python_compile.py
 endif
 
 ifneq ($(filter admintools,$(mods)),)

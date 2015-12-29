@@ -109,8 +109,8 @@ bool Python_UserProg::compile(string infile, string compiler_log, string outdir)
 	argv.push_back(interpreter);
 	string compiler = Config::getConfig()[version]["compiler"];
 	if (compiler == "") {
-		log(LOG_INFO, "[%s][compiler] not set, defaulting to /usr/local/bin/python_compile.py", version.c_str());
-		compiler = "/usr/local/bin/python_compile.py";
+		log(LOG_INFO, "[%s][compiler] not set, defaulting to %s/python_compile.py", version.c_str(), BINDIR);
+		compiler = BINDIR "/python_compile.py";
 	}
 	argv.push_back(compiler);
 	argv.push_back("--");

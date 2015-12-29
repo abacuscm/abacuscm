@@ -85,8 +85,7 @@ COPY . /usr/src/abacuscm
 RUN cp /usr/src/abacuscm/docker/abacuscm.xml /etc/jetty8/contexts/abacuscm.xml && \
     cp /usr/src/abacuscm/docker/root.xml /etc/jetty8/contexts/root.xml && \
     cp /usr/src/abacuscm/docker/abacuscm-secret-web.xml /etc/jetty8/abacuscm-secret-web.xml && \
-    cp /usr/src/abacuscm/docker/jetty*.xml /etc/jetty8/ && \
-    cp /usr/src/abacuscm/src/python_compile.py /usr/local/bin
+    cp /usr/src/abacuscm/docker/jetty*.xml /etc/jetty8/
 
 # Make mysql use data from a mount
 RUN sed -i 's!^datadir\s*= /var/lib/mysql!datadir = /data/mysql!' /etc/mysql/mysql.conf.d/mysqld.cnf
