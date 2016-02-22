@@ -246,6 +246,27 @@ getproblems
 ?code1:test2
 ?name1:<b>Unicode</b> £etterß
 
+# TEST: creating a problem with a checker must succeed
+setprobattrs
+prob_id:0
+prob_type:tcprob
+time_limit:1
+memory_limit:64
+ignore_whitespace:Yes
+shortname:test3
+longname:With checker
+multi_submit:No
+testcase.input<tests/batch/data.in
+testcase.output<tests/batch/data.out
+checker<tests/batch/checker.py
+?ok
+
+getprobfile
+prob_id:33
+file:checker
+?ok
+?<tests/batch/checker.py
+
 # TEST: replacing a problem input and output must work
 setprobattrs
 prob_id:17
@@ -291,7 +312,7 @@ getsubmissions
 
 standings
 ?ok
-?ncols:9
+?ncols:10
 ?nrows:1
 ?row_0_0:ID
 ?row_0_1:Team
@@ -302,6 +323,7 @@ standings
 ?row_0_6:Time
 ?row_0_7:test
 ?row_0_8:test2
+?row_0_9:test3
 
 clarificationrequest
 prob_id:1
@@ -468,7 +490,7 @@ whatami
 
 standings
 ?ok
-?ncols:9
+?ncols:10
 ?nrows:1
 ?row_0_0:ID
 ?row_0_1:Team
@@ -479,6 +501,7 @@ standings
 ?row_0_6:Time
 ?row_0_7:test
 ?row_0_8:test2
+?row_0_9:test3
 
 # Submit assorted solutions
 # Use gentests.py to regenerate
@@ -671,6 +694,20 @@ lang:Python 2.x
 ?ok
 ?submission_id:417
 
+submit
+prob_id:33
+lang:C++
+<tests/solutions/do_nothing.cpp
+?ok
+?submission_id:433
+
+submit
+prob_id:33
+lang:Python 2.x
+<tests/solutions/whitespace.py
+?ok
+?submission_id:449
+
 ### END OF GENERATED TESTS
 
 # TEST: Contestants must not be able to see problems with unmet dependencies.
@@ -679,6 +716,9 @@ getproblems
 ?id0:1
 ?code0:test
 ?name0:Test Problem
+?id1:33
+?code1:test3
+?name1:With checker
 
 # TEST: It must not be possible to submit a problem until its dependencies are satisfied.
 submit
@@ -708,6 +748,9 @@ getproblems
 ?id1:17
 ?code1:test2
 ?name1:<b>Unicode</b> £etterß
+?id2:33
+?code2:test3
+?name2:With checker
 
 getsubmissionsource
 submission_id:1
@@ -716,9 +759,9 @@ submission_id:1
 ?<tests/solutions/bad_class.java
 EOF
 
-echo "***************************************************************"
-echo "Waiting for marking of 27 submissions - press enter when marked"
-echo "***************************************************************"
+echo "************************************************************"
+echo "Waiting for marking of submissions - press enter when marked"
+echo "************************************************************"
 read
 
 bin/batch "$client_conf" <<EOF
@@ -745,6 +788,8 @@ pass:judge
 # TEST: Submitting a solution that produces an infinite stream of output must return appropriate error.
 # TEST: Submitting an empty solution must return an appropriate error.
 # TEST: Submitting a Java solution with a package statement must work.
+# TEST: Submitting a solution that fails a checker must return appropriate error.
+# TEST: Submitting a solution that passes a checker must return appropriate error.
 # Use gentests.py to regenerate
 getsubmissions
 ?ok
@@ -964,11 +1009,27 @@ getsubmissions
 ?submission_id26:417
 ?group_id26:1
 ?time26:*
+?comment27:Deferred to judge
+?contesttime27:*
+?prob_id27:33
+?problem27:test3
+?result27:5
+?submission_id27:433
+?group_id27:1
+?time27:*
+?comment28:Correct answer
+?contesttime28:*
+?prob_id28:33
+?problem28:test3
+?result28:0
+?submission_id28:449
+?group_id28:1
+?time28:*
 
 # TEST: Time penalties must not apply for failed compilation
 standings
 ?ok
-?ncols:9
+?ncols:10
 ?nrows:2
 ?row_0_0:ID
 ?row_0_1:Team
@@ -979,15 +1040,17 @@ standings
 ?row_0_6:Time
 ?row_0_7:test
 ?row_0_8:test2
+?row_0_9:test3
 ?row_1_0:49
 ?row_1_1:test1
 ?row_1_2:<b>Unicode</b>: ēßõ±°½—£
 ?row_1_3:default
 ?row_1_4:1
-?row_1_5:1
+?row_1_5:2
 ?row_1_6:*
 ?row_1_7:13
 ?row_1_8:0
+?row_1_9:1
 
 # TEST: Judges must be able to mark a solution as wrong
 mark

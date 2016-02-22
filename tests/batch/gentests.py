@@ -28,40 +28,42 @@ exts = {
 }
 
 files = [
-        ('bad_class.java', COMPILE_FAILED),
-        ('bad_class2.java', COMPILE_FAILED),
-        ('bad_class3.java', COMPILE_FAILED),
-        ('compile_fail.cpp', COMPILE_FAILED),
-        ('compile_fail.java', COMPILE_FAILED),
-        ('do_nothing.cpp', JUDGE),
-        ('do_nothing.py', JUDGE),
-        ('do_nothing_unicode.cpp', JUDGE),
-        ('empty.cpp', COMPILE_FAILED),
-        ('empty.java', COMPILE_FAILED),
-        ('empty.py', JUDGE),
-        ('exception.cpp', ABNORMAL),
-        ('exception.java', ABNORMAL),
-        ('exception.py', ABNORMAL),
-        ('infinite_stream.cpp', ABNORMAL),
-        ('infinite_stream.py', ABNORMAL),
-        ('package.java', JUDGE),
-        ('pathclass.java', COMPILE_FAILED),
-        ('sleep_forever.cpp', TIME_EXCEEDED),
-        ('sleep_forever.py', TIME_EXCEEDED),
-        ('spin_forever.cpp', TIME_EXCEEDED),
-        ('spin_forever.java', TIME_EXCEEDED),
-        ('spin_forever.py', TIME_EXCEEDED),
-        ('wrong_retcode.cpp', ABNORMAL),
-        ('wrong_retcode.py', ABNORMAL),
-        ('exact.py', CORRECT),
-        ('whitespace.py', CORRECT)
+        (1, 'bad_class.java', COMPILE_FAILED),
+        (1, 'bad_class2.java', COMPILE_FAILED),
+        (1, 'bad_class3.java', COMPILE_FAILED),
+        (1, 'compile_fail.cpp', COMPILE_FAILED),
+        (1, 'compile_fail.java', COMPILE_FAILED),
+        (1, 'do_nothing.cpp', JUDGE),
+        (1, 'do_nothing.py', JUDGE),
+        (1, 'do_nothing_unicode.cpp', JUDGE),
+        (1, 'empty.cpp', COMPILE_FAILED),
+        (1, 'empty.java', COMPILE_FAILED),
+        (1, 'empty.py', JUDGE),
+        (1, 'exception.cpp', ABNORMAL),
+        (1, 'exception.java', ABNORMAL),
+        (1, 'exception.py', ABNORMAL),
+        (1, 'infinite_stream.cpp', ABNORMAL),
+        (1, 'infinite_stream.py', ABNORMAL),
+        (1, 'package.java', JUDGE),
+        (1, 'pathclass.java', COMPILE_FAILED),
+        (1, 'sleep_forever.cpp', TIME_EXCEEDED),
+        (1, 'sleep_forever.py', TIME_EXCEEDED),
+        (1, 'spin_forever.cpp', TIME_EXCEEDED),
+        (1, 'spin_forever.java', TIME_EXCEEDED),
+        (1, 'spin_forever.py', TIME_EXCEEDED),
+        (1, 'wrong_retcode.cpp', ABNORMAL),
+        (1, 'wrong_retcode.py', ABNORMAL),
+        (1, 'exact.py', CORRECT),
+        (1, 'whitespace.py', CORRECT),
+        (33, 'do_nothing.cpp', JUDGE),
+        (33, 'whitespace.py', CORRECT)
         ]
 
 submit_id = 1
-for (filename, state) in files:
+for (prob_id, filename, state) in files:
     (base, ext) = os.path.splitext(filename)
     print("submit")
-    print("prob_id:1")
+    print("prob_id:{}".format(prob_id))
     print("lang:" + exts[ext])
     print("<tests/solutions/" + filename)
     print("?ok");
@@ -72,16 +74,17 @@ for (filename, state) in files:
 print("getsubmissions")
 print("?ok");
 idx = 0
+names = {1: 'test', 33: 'test3'}
 submit_id = 1
-for (filename, state) in files:
+for (prob_id, filename, state) in files:
     print(dedent("""\
             ?comment{0}:{2}
             ?contesttime{0}:*
-            ?prob_id{0}:1
-            ?problem{0}:test
+            ?prob_id{0}:{4}
+            ?problem{0}:{5}
             ?result{0}:{1}
             ?submission_id{0}:{3}
             ?group_id{0}:1
-            ?time{0}:*""").format(idx, state, comments[state], submit_id))
+            ?time{0}:*""").format(idx, state, comments[state], submit_id, prob_id, names[prob_id]))
     idx += 1
     submit_id += 16
