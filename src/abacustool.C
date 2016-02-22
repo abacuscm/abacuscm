@@ -384,7 +384,7 @@ static int do_addgroup(ServerConnection &con, int argc, char * const *argv) {
 }
 
 static bool is_problem_special(char ch) {
-	static const string problem_special = "()[]{}*, ";
+	static const string problem_special = "()[]{}*?, ";
 	return problem_special.find(ch) != string::npos;
 }
 
@@ -510,6 +510,11 @@ static map<string, ProblemAttribute> problem_parse_desc(const string &desc) {
 		ans[name] = ProblemAttribute(name, type, values);
 
 		ofs++;
+		if (ofs < sz && toks[ofs] == "?") {
+			// Optional attribute. We don't need to store this information,
+			// because it's part of server-side checking.
+			ofs++;
+		}
 		while (ofs < sz && toks[ofs] == ")") {
 			if (name_stack.empty())
 				throw ProblemBadFormat("Mismatched )");

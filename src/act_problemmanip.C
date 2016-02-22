@@ -497,60 +497,73 @@ auto_ptr<MessageBlock> ActSetProbAttrs::int_process(ClientConnection *cc, const 
 			string attr = attrname.str();
 			attr += attr_name;
 			log(LOG_DEBUG, "attr: '%s'", attr.c_str());
+			bool found = mb->hasAttribute(attr);
 
-			if(!mb->hasAttribute(attr)) {
-				act_error("Missing attribute " + attr);
-			} else if(attr_desc[pos] == 'S') {
-				msg->addStringAttrib(attr, (*mb)[attr]);
+			if(attr_desc[pos] == 'S') {
+				if (found)
+					msg->addStringAttrib(attr, (*mb)[attr]);
 			} else if(attr_desc[pos] == 'I') {
-				int32_t val;
-				if (!from_string((*mb)[attr], val))
-					act_error("Value for " + attr + " is not a valid integer");
-				msg->addIntAttrib(attr, val);
+				if (found) {
+					int32_t val;
+					if (!from_string((*mb)[attr], val))
+						act_error("Value for " + attr + " is not a valid integer");
+					msg->addIntAttrib(attr, val);
+				}
 			} else if(attr_desc[pos] == 'F') {
-				string file_attr_desc = (*mb)[attr];
-				if(file_attr_desc == "-") {
-					// TODO: Find a better heuristic.
-					if(prob_id == 0)
-						act_error("You cannot 'keep' a file that was never available to begin with.  This applies to 'new' problems only");
-					else
-						msg->keepFileAttrib(attr);
-				} else {
-					regmatch_t m[4];
-					if(regexec(&_file_reg, file_attr_desc.c_str(), 4, m, 0))
-						act_error("Invalid filename structure, filename attributes must match the structure 'int int filename'");
+				if (found) {
+					string file_attr_desc = (*mb)[attr];
+					if(file_attr_desc == "-") {
+						// TODO: Find a better heuristic.
+						if(prob_id == 0)
+							act_error("You cannot 'keep' a file that was never available to begin with.  This applies to 'new' problems only");
+						else
+							msg->keepFileAttrib(attr);
+					} else {
+						regmatch_t m[4];
+						if(regexec(&_file_reg, file_attr_desc.c_str(), 4, m, 0))
+							act_error("Invalid filename structure, filename attributes must match the structure 'int int filename'");
 
-					// no need for error checking, the regex already took care of that.
-					uint32_t start = from_string<uint32_t>(file_attr_desc.substr(m[1].rm_so, m[1].rm_eo - m[1].rm_so));
-					uint32_t size  = from_string<uint32_t>(file_attr_desc.substr(m[2].rm_so, m[2].rm_eo - m[2].rm_so));
-					string filename  = file_attr_desc.substr(m[3].rm_so, m[3].rm_eo - m[3].rm_so);
+						// no need for error checking, the regex already took care of that.
+						uint32_t start = from_string<uint32_t>(file_attr_desc.substr(m[1].rm_so, m[1].rm_eo - m[1].rm_so));
+						uint32_t size  = from_string<uint32_t>(file_attr_desc.substr(m[2].rm_so, m[2].rm_eo - m[2].rm_so));
+						string filename  = file_attr_desc.substr(m[3].rm_so, m[3].rm_eo - m[3].rm_so);
 
-					if(start + size > (uint32_t) mb->content_size())
-						act_error("File limits for file '" + attr + "' out of bounds for passed data");
+						if(start + size > (uint32_t) mb->content_size())
+							act_error("File limits for file '" + attr + "' out of bounds for passed data");
 
-					msg->addFileAttrib(attr, filename, &mb->content()[start], size);
+						msg->addFileAttrib(attr, filename, &mb->content()[start], size);
+					}
 				}
 			} else if(attr_desc[pos] == '{') {
 				epos = attr_desc.find('}', pos);
-				bool correct = false;
-				while(++pos < epos && !correct) {
-					size_t ncomma = attr_desc.find(',', pos);
-					if(ncomma > epos || ncomma == string::npos)
-						ncomma = epos;
+				if (found) {
+					bool correct = false;
+					while(++pos < epos && !correct) {
+						size_t ncomma = attr_desc.find(',', pos);
+						if(ncomma > epos || ncomma == string::npos)
+							ncomma = epos;
 
-					correct = attr_desc.substr(pos, ncomma - pos) == (*mb)[attr];
-					pos = ncomma;
+						correct = attr_desc.substr(pos, ncomma - pos) == (*mb)[attr];
+						pos = ncomma;
+					}
+					if(!correct)
+						act_error("Invalid value for attribute " + attr);
+					msg->addStringAttrib(attr, (*mb)[attr]);
 				}
 				pos = epos;
-				if(!correct)
-					act_error("Invalid value for attribute " + attr);
-				msg->addStringAttrib(attr, (*mb)[attr]);
 			} else {
 				log(LOG_NOTICE, "Invalid attr_desc string '%s' (Invalid type '%c' for '%s')", attr_desc.c_str(), attr_desc[pos], attr.c_str());
 				act_error("Internal Server Error");
 			}
 
 			pos++;
+			bool optional = false;
+			if (pos + 1 < attr_desc.length() && attr_desc[pos] == ' ' && attr_desc[pos + 1] == '?') {
+				optional = true;
+				pos += 2;
+			}
+			if (!optional && !found)
+				act_error("Missing attribute " + attr);
 		}
 
 		while(pos < attr_desc.length() && attr_desc[pos] == ')') {

@@ -20,6 +20,8 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <fstream>
+#include <sstream>
+#include <iomanip>
 #include <unistd.h>
 
 using namespace std;
@@ -225,4 +227,54 @@ int CompiledProblemMarker::run(const Buffer& in, Buffer& out, Buffer& err) {
 	}
 
 	return res;
+}
+
+void CompiledProblemMarker::parse_checker(istream &in, RunResult &status, string &info) {
+	string line;
+	bool found = false;
+	status = OTHER;
+	info = "";
+	while (getline(in, line)) {
+		istringstream toks(line);
+		string tok, status_str;
+		if (toks >> tok && tok == "STATUS") {
+			toks >> status_str >> ws;
+			if (!toks) {
+				
+				status = OTHER;
+				info = "Invalid formatting on STATUS line";
+				log(LOG_ERR, "Invalid formatting on STATUS line: '%s'", line.c_str());
+				return;
+			}
+			getline(toks, info);
+
+			bool matched = false;
+			for (int i = 0; i <= OTHER; i++)
+				if (status_str == runCodes[i])
+				{
+					status = (RunResult) i;
+					matched = true;
+					break;
+				}
+			if (!matched)
+			{
+				status = OTHER;
+				info = "Unrecognised status code";
+				log(LOG_ERR, "Unrecognised status code %s", status_str.c_str());
+				return;
+			}
+			if (found) {
+				status = OTHER;
+				info = "Multiple STATUS lines found";
+				log(LOG_ERR, "Multiple STATUS lines found");
+				return;
+			}
+			found = true;
+		}
+	}
+	if (!found) {
+		status = OTHER;
+		info = "Did not find STATUS line";
+		log(LOG_ERR, "Did not find STATUS line");
+	}
 }

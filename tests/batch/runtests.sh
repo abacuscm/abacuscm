@@ -174,7 +174,7 @@ getprobtypes
 getprobdescript
 type:tcprob
 ?ok
-?descript:shortname S, longname S, multi_submit {No,Yes}, testcase (input F, output F), ignore_whitespace {Yes,No}, time_limit I, memory_limit I
+?descript:shortname S, longname S, multi_submit {No,Yes}, testcase (input F, output F), ignore_whitespace {Yes,No}, time_limit I, memory_limit I, checker F ?
 
 # TEST: creating a problem must succeed
 setprobattrs

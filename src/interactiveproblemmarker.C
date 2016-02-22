@@ -47,52 +47,12 @@ void InteractiveProblemMarker::mark_compiled() {
 
 	if (run("/dev/null", outfile.c_str(), errfile.c_str(), runfile.c_str(), evaluatorfile.c_str()) == 0) {
 		string status_str = "";
-		int status = OTHER;
+		RunResult status = OTHER;
 		string info = "";
-		bool found = false;
-		string line;
-
-		/* Looks for exactly one line of the form
-		 * STATUS <code> <text>.
-		 * Code are from the runCodes array in misc.C.
-		 */
 		ifstream out(outfile.c_str());
-		while (getline(out, line)) {
-			istringstream toks(line);
-			string tok;
-			if (toks >> tok && tok == "STATUS") {
-				toks >> status_str >> ws;
-				if (!toks) {
-					log(LOG_ERR, "Invalid formatting on STATUS line: '%s'", line.c_str());
-					return;
-				}
-				getline(toks, info);
+		parse_checker(out, status, info);
 
-				status = -2;
-				for (int i = 0; i <= OTHER; i++)
-					if (status_str == runCodes[i])
-					{
-						status = i;
-						break;
-					}
-				if (status == -2)
-				{
-					log(LOG_ERR, "Unrecognised status code %s", status_str.c_str());
-					return;
-				}
-				if (found) {
-					log(LOG_ERR, "Multiple STATUS lines found");
-					return;
-				}
-				found = true;
-			}
-		}
-		if (!found) {
-			log(LOG_ERR, "Did not find STATUS line");
-			return;
-		}
-
-		setResult((RunResult) status);
+		setResult(status);
 		addResultFile("Evaluation log", outfile, 64 * 1024);
 		addResultFile("Runinfo", runfile, 64 * 1024);
 		addResultFile("Team's error log", errfile, 64 * 1024);

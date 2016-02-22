@@ -16,6 +16,7 @@
 #include "problemmarker.h"
 
 #include <string>
+#include <istream>
 
 class UserProg;
 class Buffer;
@@ -44,6 +45,16 @@ protected:
 	 * You need to override this to receive control after the user program has been compiled.
 	 */
 	virtual void mark_compiled() = 0;
+
+	/**
+	 * Utility to parse a checker or interactive log for a line of the form
+	 * STATUS <code> <text>.
+	 * There must be exactly one such line. If there was a parsing error,
+	 * status is set to OTHER and info to an error message. An error is also
+	 * written to the log.
+	 */
+	void parse_checker(std::istream &in, RunResult &status, std::string &info);
+
 public:
 	CompiledProblemMarker();
 	virtual ~CompiledProblemMarker();

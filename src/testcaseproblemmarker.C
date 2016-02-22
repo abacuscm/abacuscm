@@ -13,6 +13,7 @@
 
 #include <string>
 #include <fstream>
+#include <sys/stat.h>
 
 using namespace std;
 
@@ -30,6 +31,7 @@ void TestCaseProblemMarker::mark_compiled() {
 	string runfile = workdir() + "/runinfo";
 	string corrfile = workdir() + "/correct";
 	string difffile = workdir() + "/diff";
+	string checkerfile = workdir() + "/checker";
 
 	ofstream file_stdin(infile.c_str());
 	file_stdin << *in;
@@ -83,21 +85,58 @@ void TestCaseProblemMarker::mark_compiled() {
 		file_correct.close();
 		delete out;
 
-		string diff_cmd = "/usr/bin/diff -U 10000000 ";
-		if(attrib("ignore_whitespace") == "Yes")
-			diff_cmd += "-B -b ";
-		diff_cmd += outfile + " " + corrfile + " >" + difffile + " 2>&1";
-		log(LOG_DEBUG, "Using diff command '%s'", diff_cmd.c_str());
+		Buffer *checker = getProblemFile("checker");
+		if (checker) {
+			ofstream file_checker(checkerfile.c_str());
+			file_checker << *checker;
+			if (!file_checker) {
+				log(LOG_ERR, "failed to write checker");
+				return;
+			}
+			file_checker.close();
+			delete checker;
+			if (chmod(checkerfile.c_str(), 0700) != 0) {
+				lerror("chmod");
+				return;
+			}
+			// TODO: use safe_system
+			string checker_cmd = checkerfile + " " + infile + " " + outfile + " " + corrfile + " >" + difffile;
+			log(LOG_DEBUG, "Using checker command '%s'", checker_cmd.c_str());
 
-		int excode = system(diff_cmd.c_str());
-		if(excode == 0) {
-			setResult(CORRECT);
-			log(LOG_DEBUG, "Correct!");
-		} else {
-			setResult(JUDGE);
-			addResultFile("Team's output", outfile, 64 * 1024);
-			addResultFile("Diff of team's output versus expected output", difffile, 64 * 1024);
-			log(LOG_DEBUG, "Incorrect!");
+			int excode = system(checker_cmd.c_str());
+			if (excode != 0) {
+				setResult(OTHER);
+				addResultFile("Team's output", outfile, 64 * 1024);
+				log(LOG_ERR, "Checker returned exit code %d", excode);
+			}
+			else {
+				RunResult status;
+				string info;
+				ifstream out(difffile.c_str());
+				parse_checker(out, status, info);
+				setResult(status);
+				out.close();
+				addResultFile("Team's output", outfile, 64 * 1024);
+				addResultFile("Checker log", difffile, 64 * 1024);
+			}
+		}
+		else {
+			string diff_cmd = "/usr/bin/diff -U 10000000 ";
+			if(attrib("ignore_whitespace") == "Yes")
+				diff_cmd += "-B -b ";
+			diff_cmd += outfile + " " + corrfile + " >" + difffile + " 2>&1";
+			log(LOG_DEBUG, "Using diff command '%s'", diff_cmd.c_str());
+
+			int excode = system(diff_cmd.c_str());
+			if(excode == 0) {
+				setResult(CORRECT);
+				log(LOG_DEBUG, "Correct!");
+			} else {
+				setResult(JUDGE);
+				addResultFile("Team's output", outfile, 64 * 1024);
+				addResultFile("Diff of team's output versus expected output", difffile, 64 * 1024);
+				log(LOG_DEBUG, "Incorrect!");
+			}
 		}
 	} else {
 		log(LOG_ERR, "An error has occured whilst running the user program.");
