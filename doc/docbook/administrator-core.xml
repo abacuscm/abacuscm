@@ -496,16 +496,123 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
     </section>
     <section id="administrator-core.addproblem">
         <title>Adding problems</title>
+        <para>
+            Problems are added using the <command>addproblem</command>
+            subcommand. The first argument is the problem type, followed by a
+            sequence of key-value pairs (key and value as separate arguments).
+            Refer to the following sections for details of the problem types
+            supported and their required keys.
+        </para>
+        <section id="administrator-core.addproblem.batch">
+            <title>Batch problems</title>
+            <para>
+                This is the standard problem type, called
+                <literal>tcprob</literal>. The required fields are:
+            </para>
+            <variablelist>
+                <varlistentry>
+                    <term>shortname</term>
+                    <listitem>
+                        <para>A short name for the problem, shown (for example) on the scoreboard</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>longname</term>
+                    <listitem>
+                        <para>A full problem name, shown when selecting which problem to submit</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>time_limit</term>
+                    <listitem>
+                        <para>Time limit in seconds</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>memory_limit</term>
+                    <listitem>
+                        <para>Memory limit in megabytes</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>ignore_whitespace</term>
+                    <listitem>
+                        <para>
+                            Either <literal>Yes</literal> or
+                            <literal>No</literal>, indicating whether to ignore
+                            whitespace differences in the output file.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>multi_submit</term>
+                    <listitem>
+                        <para>
+                            Either <literal>Yes</literal> or
+                            <literal>No</literal>. If <literal>Yes</literal>,
+                            then contestants may continue to submit solutions to a
+                            problem even after they have correctly solved it, with
+                            no effect on their score. This is intended for cases
+                            where solutions are further judged in some other way
+                            after the contest.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>testcase.input</term>
+                    <listitem>
+                        <para>Filename of the input file</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>testcase.output</term>
+                    <listitem>
+                        <para>Filename of the model output file</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>dependencies</term>
+                    <listitem>
+                        <para>
+                            An optional key, whose value is a comma-separated
+                            list of short problem names. It will not be possible
+                            to submit this problem until those problems have
+                            been solved. Those problems must already have been
+                            added.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>checker</term>
+                    <listitem>
+                        <para>
+                            Optional key, specifying the filename of the output
+                            checker (see <xref
+                                linkend="administrator-core.addproblem.checker"/>).
+                        </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        </section>
         <section id="administrator-core.addproblem.interactive">
             <title>Interactive problems</title>
-            <para>This section covers the interface needed to write an evaluator for
-            interactive problems.</para>
+            <para>
+                Interactive problems have the type
+                <literal>interactiveprob</literal>. They have most of the same
+                attributes as batch problems, but lack the keys
+                <literal>testcase.input</literal>,
+                <literal>testcase.output</literal> and
+                <literal>ignore_whitespace</literal>.
+                This section covers the interface needed to write an evaluator for
+                interactive problems.
+            </para>
             <para>The marker is a single executable (which may be a script if it
             has the appropriate shebang line). This executable is stored in the
             database, and will be written out by the marker as needed.
             Therefore, it should not rely on being at a certain path; if it
             needs external files, they should be installed on each marker
-            machine.</para>
+            machine. It is specified with the key <literal>evaluator</literal>.
+            </para>
             <para>The evaluator will be run with an argument list specifying the
             command-line to run the submission. This will include the necessary
             programs and options to run the submission with limited permissions,
@@ -545,9 +652,18 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
             <computeroutput>STATUS</computeroutput> line, but all other lines
             are ignored.</para>
         </section>
-        <section id="administrator-core.addproblem.dependencies">
-            <title>Problem dependencies</title>
-            <para>TODO</para>
+        <section id="administrator-core.addproblem.checker">
+            <title>Solution checkers</title>
+            <para>
+                For batch problems, solutions are normally checked
+                using <command>diff</command>. However, for problems where
+                there is not a unique correct output, you can supply a program
+                to check the output. The command-line arguments are the
+                input file, output file, and model output file, and it must
+                write its report to standard output. The format is the same as
+                for <xref
+                    linkend="administrator-core.addproblem.interactive"/>.
+            </para>
         </section>
     </section>
     <section id="administrator-core.marking">
