@@ -80,7 +80,7 @@ class SBITCProblem(Problem):
         self.settings['time_limit'] = self._get_tex('timelimit', int, default=self.settings['time_limit'])
         self.settings['memory_limit'] = self._get_tex('memorylimit', int, default=self.settings['memory_limit'])
         self._check_interactive(os.path.join(self.path, 'tools', 'eval.py'))
-        self._check_checker(os.path.join(self.path, 'tools', 'checker.py'))
+        self._check_checker(os.path.join(self.path, 'checker'))
         if self.probtype == 'tcprob':
             self.settings['testcase.input'] = os.path.join(self.path, 'data.in')
             self.settings['testcase.output'] = os.path.join(self.path, 'data.out')
