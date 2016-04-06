@@ -148,7 +148,7 @@ def main():
             except NotProblemException as e:
                 pass
             except InvalidProblemError as e:
-                print('WARNING: {}: {} (skipping)'.format(d, e.msg))
+                print('WARNING: {}: {} (skipping)'.format(d, e))
 
         # Prevent recursing into the subdirectories
         del dirs[:]
