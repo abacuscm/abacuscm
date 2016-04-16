@@ -285,7 +285,7 @@ auto_ptr<MessageBlock> ActPlaceMark::int_process(ClientConnection* cc, const Mes
 			msg = "This hasn't been compiled or even run: you really think I'm going to let you fiddle with the marks?";
 		}
 		else if (uperms[PERMISSION_JUDGE]) {
-			msg = "Another judge has already this submission, sorry!";
+			msg = "Another judge has already judged this submission, sorry!";
 		}
 		else if (resinfo != JUDGE) {
 			msg = "You cannot change the status of this submission: the decision was black and white; no human required.";
