@@ -71,7 +71,7 @@ TARGET_MODS += dbmysql \
 	prob_testcasedriventype \
 	prob_interactivetype
 
-MODLIBS_dbmysql = mysqlclient_r
+MODLIBS_dbmysql = mysqlclient
 endif
 
 ifneq ($(filter marker,$(mods)),)

@@ -1,14 +1,14 @@
-FROM ubuntu:vivid-20150802
+FROM ubuntu:xenial-20160914
 MAINTAINER Bruce Merry <bmerry@gmail.com>
 
 RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y install \
     build-essential git-core sudo \
     g++ openjdk-8-jdk python2.7 python3 \
-    gcc-doc libstdc++-4.9-doc openjdk-8-doc python-doc python3-doc \
+    gcc-doc libstdc++-5-doc openjdk-8-doc python-doc python3-doc \
     cppreference-doc-en-html stl-manual \
     build-essential libssl-dev libmysqlclient-dev maven \
-    python-pip python3-pip python-dev python3-dev \
-    xsltproc docbook-xsl docbook-xml w3c-dtd-xhtml fop libxml2-utils \
+    python-setuptools python3-setuptools python-pip python3-pip python-dev python3-dev \
+    xsltproc docbook-xsl docbook-xml w3c-sgml-lib fop libxml2-utils \
     openssl mysql-server jetty8 supervisor && \
     apt-get clean
 
@@ -62,15 +62,12 @@ RUN for artifact in \
 # Install cx_Freeze. A bug workaround is needed due to
 # https://bitbucket.org/anthony_tuininga/cx_freeze/issues/32/cant-compile-cx_freeze-in-ubuntu-1304
 RUN mkdir /tmp/cx_Freeze && \
-    pip install --download /tmp/cx_Freeze cx_Freeze==4.3.4 && \
+    pip download -d /tmp/cx_Freeze cx_Freeze==4.3.4 && \
     tar -C /tmp/cx_Freeze -zxf /tmp/cx_Freeze/cx_Freeze-4.3.4.tar.gz && \
     sed -i 's/if not vars\.get("Py_ENABLE_SHARED", 0):/if True:/' /tmp/cx_Freeze/cx_Freeze-4.3.4/setup.py && \
     pip install /tmp/cx_Freeze/cx_Freeze-4.3.4 && \
     pip3 install /tmp/cx_Freeze/cx_Freeze-4.3.4 && \
     rm -rf /tmp/cx_Freeze
-
-# Fix https://bugs.launchpad.net/ubuntu/+source/w3c-dtd-xhtml/+bug/400259
-RUN find /usr/share/xml/xhtml /usr/share/xml/entities/xhtml -name catalog.xml -exec sed -i 's!http://globaltranscorp.org/oasis/catalog/xml/tr9401\.dtd!file:////usr/share/xml/schema/xml-core/tr9401.dtd!g' '{}' ';'
 
 # Install abacus. Copies are done piecemeal to make the build cache more
 # effective.
@@ -106,7 +103,7 @@ RUN DOC_DIR=/usr/share/jetty8/webapps/docs && \
     ln -s /usr/share/doc/python-doc/html/ $DOC_DIR/python2 && \
     ln -s /usr/share/doc/python3-doc/html/ $DOC_DIR/python3 && \
     ln -s /usr/share/doc/openjdk-8-doc/api/ $DOC_DIR/java && \
-    ln -s /usr/share/doc/gcc-4.9-base/libstdc++/ $DOC_DIR/libstdc++ && \
+    ln -s /usr/share/doc/gcc-5-base/libstdc++/ $DOC_DIR/libstdc++ && \
     mkdir -p $DOC_DIR/gcc && ln -s /usr/share/doc/gcc-doc/*.html $DOC_DIR/gcc && \
     cp -r /usr/src/abacuscm/docker/doc/* $DOC_DIR/ && \
     rm /etc/jetty8/contexts/javadoc.xml
