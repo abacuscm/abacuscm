@@ -35,7 +35,7 @@ TRUSTSTORE = os.path.join(JETTY_DIR, 'abacus_keystore')
 KEYSTORE = os.path.join(JETTY_DIR, 'keystore')
 DEFAULT_DAYS = 365    # Certificate validity for new certs
 
-MYSQL_DIR = os.path.join(DATA_DIR, 'mysql')
+MYSQL_DIR = os.path.join(DATA_DIR, 'mysql', 'db')
 SERVER_CONF = os.path.join(DATA_DIR, 'abacus', 'server.conf')
 MARKER_CONF = os.path.join(DATA_DIR, 'abacus', 'marker.conf')
 SERVER_LOG = os.path.join(DATA_DIR, 'abacus', 'abacusd.log')
@@ -245,7 +245,8 @@ def make_password(pwfile):
 def make_mysql(args):
     """Initialise mysql db if it does not exist"""
     if not os.path.isdir(os.path.join(MYSQL_DIR, 'mysql')):
-        subprocess.check_call(['mysql_install_db', '--user', 'mysql'])
+        fix_permission(os.path.join(DATA_DIR, 'mysql'), 'mysql', 'mysql')
+        subprocess.check_call(['mysqld', '--initialize-insecure'])
         with run_mysql():
             # TODO: maybe use Python MySQL bindings for this?
             commands = [textwrap.dedent("""\
