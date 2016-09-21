@@ -1,4 +1,5 @@
-#! /bin/bash
+#!/bin/bash
+set -e -x
 
 if [ -n "$1" ]; then
 	[ ! -f "$1" ] && echo "USAGE: $0 [server_conf_file]" && exit -1

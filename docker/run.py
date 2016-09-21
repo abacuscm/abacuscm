@@ -35,7 +35,7 @@ TRUSTSTORE = os.path.join(JETTY_DIR, 'abacus_keystore')
 KEYSTORE = os.path.join(JETTY_DIR, 'keystore')
 DEFAULT_DAYS = 365    # Certificate validity for new certs
 
-MYSQL_DIR = os.path.join(DATA_DIR, 'mysql', 'db')
+MYSQL_DIR = os.path.join(DATA_DIR, 'mysql')
 SERVER_CONF = os.path.join(DATA_DIR, 'abacus', 'server.conf')
 MARKER_CONF = os.path.join(DATA_DIR, 'abacus', 'marker.conf')
 SERVER_LOG = os.path.join(DATA_DIR, 'abacus', 'abacusd.log')
@@ -244,19 +244,19 @@ def make_password(pwfile):
 
 def make_mysql(args):
     """Initialise mysql db if it does not exist"""
-    if not os.path.isdir(os.path.join(MYSQL_DIR, 'mysql')):
-        fix_permission(os.path.join(DATA_DIR, 'mysql'), 'mysql', 'mysql')
-        subprocess.check_call(['mysqld', '--initialize-insecure'])
-        with run_mysql():
-            # TODO: maybe use Python MySQL bindings for this?
-            commands = [textwrap.dedent("""\
-                create database abacus;
-                grant all privileges on abacus.* to abacus@localhost identified by 'abacus';
-                use abacus;
-                """)]
-            with open(os.path.join(SRC_DIR, 'db', 'structure.sql')) as structure:
-                commands.extend(list(structure))
-            exec_sql(''.join(commands))
+    if not os.path.isdir(os.path.join(MYSQL_DIR, 'db', 'mysql')):
+        fix_permission(MYSQL_DIR, 'mysql', 'mysql')
+        commands = [textwrap.dedent("""\
+            create database abacus;
+            grant all privileges on abacus.* to abacus@localhost identified by 'abacus';
+            use abacus;
+            """)]
+        with open(os.path.join(SRC_DIR, 'db', 'structure.sql')) as structure:
+            commands.extend(list(structure))
+        init_file = os.path.join(MYSQL_DIR, 'initdb.sql')
+        with open(init_file, 'w') as init:
+            init.write(''.join(commands))
+        subprocess.check_call(['mysqld', '--initialize-insecure', '--init-file', init_file])
 
 def make_server_conf(args):
     """Merges override configuration with preconfigured values"""
