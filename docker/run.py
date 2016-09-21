@@ -179,8 +179,11 @@ def is_abacusd_running():
 def run_abacusd():
     """Start abacusd and wait for it to be ready; on context exit, shut down
     the server again."""
+    logging.debug('Starting abacusd')
+    # See http://stackoverflow.com/questions/34337840/cant-terminate-a-sudo-process-created-with-python-in-ubuntu-15-10
+    # for an explanation of why os.setpgrp is used.
     proc = subprocess.Popen(['sudo', '-u', 'abacus', '--', '/usr/bin/abacusd', SERVER_CONF],
-            stdin=subprocess.PIPE, close_fds=True, cwd='/')
+            stdin=subprocess.PIPE, close_fds=True, cwd='/', preexec_fn=os.setpgrp)
     # Wait until the socket is open
     running = False
     for i in range(10):
