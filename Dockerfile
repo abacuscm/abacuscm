@@ -9,7 +9,7 @@ RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-rec
     build-essential libssl-dev libmysqlclient-dev maven \
     python-setuptools python3-setuptools python-pip python3-pip python-dev python3-dev \
     xsltproc docbook-xsl docbook-xml w3c-sgml-lib fop libxml2-utils \
-    openssl mysql-server jetty8 supervisor && \
+    openssl mysql-server jetty8 supervisor wget && \
     apt-get clean
 
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
@@ -58,6 +58,9 @@ RUN for artifact in \
         org.sonatype.plexus:plexus-cipher:1.4 \
         org.sonatype.plexus:plexus-sec-dispatcher:1.3 \
     ; do cd ~ && mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=$artifact; done
+
+RUN wget https://github.com/krallin/tini/releases/download/v0.10.0/tini -O /sbin/tini && \
+    chmod +x /sbin/tini
 
 # Install cx_Freeze. A bug workaround is needed due to
 # https://bitbucket.org/anthony_tuininga/cx_freeze/issues/32/cant-compile-cx_freeze-in-ubuntu-1304
@@ -117,4 +120,4 @@ RUN adduser --disabled-password --gecos 'abacus user' abacus && \
 
 VOLUME /conf /data /contest /www
 EXPOSE 8080 8443 7368
-ENTRYPOINT ["/usr/src/abacuscm/docker/run.py"]
+ENTRYPOINT ["/sbin/tini", "--", "/usr/src/abacuscm/docker/run.py"]
