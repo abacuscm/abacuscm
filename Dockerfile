@@ -62,17 +62,14 @@ RUN for artifact in \
 RUN wget https://github.com/krallin/tini/releases/download/v0.10.0/tini -O /sbin/tini && \
     chmod +x /sbin/tini
 
-# Install cx_Freeze. The last release (4.3.4) doesn't work, due to bugs:
-# - https://bitbucket.org/anthony_tuininga/cx_freeze/issues/32/cant-compile-cx_freeze-in-ubuntu-1304
-# - https://bitbucket.org/anthony_tuininga/cx_freeze/issues/156/running-frozen-app-with-python-35-no
-# So we grab the top-of-tree as of 2016-10-14.
+# Install cx_Freeze. A bug workaround is needed due to
+# https://bitbucket.org/anthony_tuininga/cx_freeze/issues/32/cant-compile-cx_freeze-in-ubuntu-1304
 RUN mkdir /tmp/cx_Freeze && \
-    cd /tmp/cx_Freeze && \
-    wget https://bitbucket.org/anthony_tuininga/cx_freeze/get/71554144c9cc.zip -O cx_Freeze.zip && \
-    unzip cx_Freeze.zip && \
-    mv anthony_tuininga-cx_freeze-71554144c9cc cx_freeze && \
-    pip install /tmp/cx_Freeze/cx_freeze && \
-    pip3 install /tmp/cx_Freeze/cx_freeze && \
+    pip download -d /tmp/cx_Freeze cx_Freeze==4.3.4 && \
+    tar -C /tmp/cx_Freeze -zxf /tmp/cx_Freeze/cx_Freeze-4.3.4.tar.gz && \
+    sed -i 's/if not vars\.get("Py_ENABLE_SHARED", 0):/if True:/' /tmp/cx_Freeze/cx_Freeze-4.3.4/setup.py && \
+    pip install /tmp/cx_Freeze/cx_Freeze-4.3.4 && \
+    pip3 install /tmp/cx_Freeze/cx_Freeze-4.3.4 && \
     rm -rf /tmp/cx_Freeze
 
 # Install abacus. Copies are done piecemeal to make the build cache more
