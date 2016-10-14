@@ -24,7 +24,8 @@ comments = {
 exts = {
         '.cpp': 'C++',
         '.java': 'Java',
-        '.py': 'Python 2.x'
+        '.py': 'Python 2.x',
+        '.py3': 'Python 3.x'
 }
 
 files = [
@@ -54,6 +55,7 @@ files = [
         (1, 'wrong_retcode.cpp', ABNORMAL),
         (1, 'wrong_retcode.py', ABNORMAL),
         (1, 'exact.py', CORRECT),
+        (1, 'exact.py3', CORRECT),
         (1, 'whitespace.py', CORRECT),
         (33, 'do_nothing.cpp', JUDGE),
         (33, 'whitespace.py', CORRECT)
