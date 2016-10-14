@@ -62,12 +62,16 @@ RUN for artifact in \
 RUN wget https://github.com/krallin/tini/releases/download/v0.10.0/tini -O /sbin/tini && \
     chmod +x /sbin/tini
 
-# Install cx_Freeze. A bug workaround is needed due to
-# https://bitbucket.org/anthony_tuininga/cx_freeze/issues/32/cant-compile-cx_freeze-in-ubuntu-1304
-RUN mkdir /tmp/cx_Freeze && \
-    pip download -d /tmp/cx_Freeze cx_Freeze==4.3.4 && \
+# Install cx_Freeze. Patches are needed to work around bugs:
+# https://bitbucket.org/anthony_tuininga/cx_freeze/issues/32
+# https://bitbucket.org/anthony_tuininga/cx_freeze/issues/156
+# Can't just use the latest (as of writing, 2016-10-14) because of another bug:
+# https://bitbucket.org/anthony_tuininga/cx_freeze/issues/192
+COPY docker/cx_Freeze*.patch /tmp/cx_Freeze/
+RUN pip download -d /tmp/cx_Freeze cx_Freeze==4.3.4 && \
     tar -C /tmp/cx_Freeze -zxf /tmp/cx_Freeze/cx_Freeze-4.3.4.tar.gz && \
-    sed -i 's/if not vars\.get("Py_ENABLE_SHARED", 0):/if True:/' /tmp/cx_Freeze/cx_Freeze-4.3.4/setup.py && \
+    patch -d /tmp/cx_Freeze/cx_Freeze-4.3.4 -p1 < /tmp/cx_Freeze/cx_Freeze_debian.patch && \
+    patch -d /tmp/cx_Freeze/cx_Freeze-4.3.4 -p1 < /tmp/cx_Freeze/cx_Freeze_py3.5.patch && \
     pip install /tmp/cx_Freeze/cx_Freeze-4.3.4 && \
     pip3 install /tmp/cx_Freeze/cx_Freeze-4.3.4 && \
     rm -rf /tmp/cx_Freeze
