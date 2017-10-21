@@ -172,6 +172,8 @@ bool Java_UserProg::compile(string infile, string compiler_log, string outdir) {
 
 	list<string> argv;
 	argv.push_back(compiler);
+	argv.push_back("-encoding");
+	argv.push_back("UTF-8");
 	argv.push_back("-d");
 	argv.push_back(outdir);
 	argv.push_back(infile);
