@@ -116,7 +116,7 @@
 					'The output from your solution did not match the format specified\n' +
 					'in the problem statement. Please check that\n' +
 					'- you do not have any debugging print statements\n' +
-					'- you have no written any prompts for input\n' +
+					'- you have not written any prompts for input\n' +
 					'- you have used uppercase and lowercase correctly, if applicable\n' +
 					'Hint: when running on the sample input, the output should EXACTLY\n' +
 					'match the sample output, with nothing added.\n' +
