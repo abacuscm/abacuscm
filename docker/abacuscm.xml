@@ -4,6 +4,6 @@
     "http://www.eclipse.org/jetty/configure.dtd">
 <Configure class="org.eclipse.jetty.webapp.WebAppContext">
   <Set name="contextPath">/abacus</Set>
-  <Set name="war">/usr/src/abacuscm/webapp/target/abacuscm-1.0-SNAPSHOT.war</Set>
+  <Set name="war">/var/lib/abacuscm/abacuscm-1.0-SNAPSHOT.war</Set>
   <Set name="overrideDescriptor"><SystemProperty name="jetty.home" default="." />/etc/abacuscm-secret-web.xml</Set>
 </Configure>

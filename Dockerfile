@@ -1,16 +1,16 @@
-FROM ubuntu:xenial-20160914
-MAINTAINER Bruce Merry <bmerry@gmail.com>
+FROM ubuntu:xenial-20180417 as build
 
 RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y install \
-    build-essential git-core sudo \
-    g++ openjdk-8-jdk python2.7 python3 \
-    gcc-doc libstdc++-5-doc openjdk-8-doc python-doc python3-doc \
-    cppreference-doc-en-html stl-manual \
-    build-essential libssl-dev libmysqlclient-dev maven \
-    python-setuptools python3-setuptools python-pip python3-pip python-dev python3-dev \
-    xsltproc docbook-xsl docbook-xml w3c-sgml-lib fop libxml2-utils \
-    openssl mysql-server jetty8 supervisor wget && \
-    apt-get clean
+        build-essential \
+        g++ openjdk-8-jre-headless openjdk-8-jdk-headless python2.7 python3 \
+        libssl-dev libmysqlclient-dev maven \
+        xsltproc docbook-xsl docbook-xml w3c-sgml-lib fop libxml2-utils \
+        wget \
+        python-dev python3-dev \
+        python-pip python3-pip \
+        python-wheel python3-wheel \
+        python-setuptools python3-setuptools \
+        zlib1g-dev
 
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 
@@ -59,22 +59,9 @@ RUN for artifact in \
         org.sonatype.plexus:plexus-sec-dispatcher:1.3 \
     ; do cd ~ && mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=$artifact; done
 
-RUN wget https://github.com/krallin/tini/releases/download/v0.10.0/tini -O /sbin/tini && \
-    chmod +x /sbin/tini
-
-# Install cx_Freeze. Patches are needed to work around bugs:
-# https://bitbucket.org/anthony_tuininga/cx_freeze/issues/32
-# https://bitbucket.org/anthony_tuininga/cx_freeze/issues/156
-# Can't just use the latest (as of writing, 2016-10-14) because of another bug:
-# https://bitbucket.org/anthony_tuininga/cx_freeze/issues/192
-COPY docker/cx_Freeze*.patch /tmp/cx_Freeze/
-RUN pip download -d /tmp/cx_Freeze cx_Freeze==4.3.4 && \
-    tar -C /tmp/cx_Freeze -zxf /tmp/cx_Freeze/cx_Freeze-4.3.4.tar.gz && \
-    patch -d /tmp/cx_Freeze/cx_Freeze-4.3.4 -p1 < /tmp/cx_Freeze/cx_Freeze_debian.patch && \
-    patch -d /tmp/cx_Freeze/cx_Freeze-4.3.4 -p1 < /tmp/cx_Freeze/cx_Freeze_py3.5.patch && \
-    pip install /tmp/cx_Freeze/cx_Freeze-4.3.4 && \
-    pip3 install /tmp/cx_Freeze/cx_Freeze-4.3.4 && \
-    rm -rf /tmp/cx_Freeze
+RUN mkdir -p /install/sbin
+RUN wget https://github.com/krallin/tini/releases/download/v0.18.0/tini -O /install/sbin/tini && \
+    chmod +x /install/sbin/tini
 
 # Install abacus. Copies are done piecemeal to make the build cache more
 # effective.
@@ -82,17 +69,55 @@ COPY Makefile Makefile.inc /usr/src/abacuscm/
 COPY src /usr/src/abacuscm/src
 COPY include /usr/src/abacuscm/include
 COPY doc /usr/src/abacuscm/doc
-RUN cd /usr/src/abacuscm && make && make install
+RUN cd /usr/src/abacuscm && make && make DESTDIR=/install install
 COPY webapp /usr/src/abacuscm/webapp
 RUN cd /usr/src/abacuscm/webapp && mvn
 COPY . /usr/src/abacuscm
-RUN cp /usr/src/abacuscm/docker/abacuscm.xml /etc/jetty8/contexts/abacuscm.xml && \
-    cp /usr/src/abacuscm/docker/root.xml /etc/jetty8/contexts/root.xml && \
-    cp /usr/src/abacuscm/docker/abacuscm-secret-web.xml /etc/jetty8/abacuscm-secret-web.xml && \
-    cp /usr/src/abacuscm/docker/jetty*.xml /etc/jetty8/
+RUN mkdir -p \
+       /install/etc/jetty8/contexts \
+       /install/usr/bin \
+       /install/var/lib/abacuscm
+RUN cp /usr/src/abacuscm/docker/abacuscm.xml \
+       /usr/src/abacuscm/docker/root.xml \
+    /install/etc/jetty8/contexts/
+RUN cp /usr/src/abacuscm/docker/abacuscm-secret-web.xml \
+       /usr/src/abacuscm/docker/jetty*.xml \
+    /install/etc/jetty8/
+RUN cp /usr/src/abacuscm/docker/run.py /usr/src/abacuscm/docker/inichange.py /install/usr/bin/
+RUN cp /usr/src/abacuscm/webapp/target/abacuscm-1.0-SNAPSHOT.war \
+       /usr/src/abacuscm/conf/java.policy \
+       /usr/src/abacuscm/docker/*.conf \
+       /usr/src/abacuscm/db/structure.sql \
+    /install/var/lib/abacuscm
 
-# Make mysql use data from a mount
+# Install cx_Freeze
+RUN pip install --root /install cx_Freeze==5.*
+RUN pip3 install --root /install cx_Freeze==5.*
+
+
+#######################################################################
+# Runtime image, which copies artefacts from the build image
+
+FROM ubuntu:xenial-20180417
+MAINTAINER Bruce Merry <bmerry@gmail.com>
+
+RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y install \
+        gcc g++ openjdk-8-jre-headless openjdk-8-jdk-headless python2.7 python3 \
+        libpython2.7 libpython3.5 \
+        gcc-doc libstdc++-5-doc openjdk-8-doc python-doc python3-doc \
+        cppreference-doc-en-html stl-manual \
+        libssl1.0.0 libmysqlclient20 \
+        openssl mysql-server jetty8 supervisor sudo && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
+
+# Install from build image
+COPY --from=build /install /
+
+# Make mysql use data from a mount, and set up run-dir for it
 RUN sed -i 's!^datadir\s*= /var/lib/mysql!datadir = /data/mysql/db!' /etc/mysql/mysql.conf.d/mysqld.cnf
+RUN mkdir /var/run/mysqld && chown mysql:mysql /var/run/mysqld
 
 # Make logging go onto the mount, so that it is preserved
 RUN rm -rf /var/log/supervisor /var/log/mysql /var/log/jetty8 && \
@@ -112,8 +137,8 @@ RUN DOC_DIR=/usr/share/jetty8/webapps/docs && \
     ln -s /usr/share/doc/openjdk-8-doc/api/ $DOC_DIR/java && \
     ln -s /usr/share/doc/gcc-5-base/libstdc++/ $DOC_DIR/libstdc++ && \
     mkdir -p $DOC_DIR/gcc && ln -s /usr/share/doc/gcc-doc/*.html $DOC_DIR/gcc && \
-    cp -r /usr/src/abacuscm/docker/doc/* $DOC_DIR/ && \
     rm /etc/jetty8/contexts/javadoc.xml
+COPY docker/doc/* /usr/share/jetty8/webapps/docs/
 # Patch the webdefault.xml to allow symlinks for the docs
 RUN sed -i '\!<param-name>aliases</param-name>!,+2 s!<param-value>false</param-value>!<param-value>true</param-value>!' /etc/jetty8/webdefault.xml
 
@@ -124,4 +149,4 @@ RUN adduser --disabled-password --gecos 'abacus user' abacus && \
 
 VOLUME /conf /data /contest /www
 EXPOSE 8080 8443 7368
-ENTRYPOINT ["/sbin/tini", "--", "/usr/src/abacuscm/docker/run.py"]
+ENTRYPOINT ["/sbin/tini", "--", "/usr/bin/run.py"]

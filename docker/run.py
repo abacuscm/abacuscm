@@ -20,7 +20,7 @@ import logging
 import dbm.ndbm
 from contextlib import contextmanager, closing
 
-SRC_DIR = '/usr/src/abacuscm'
+LIB_DIR = '/var/lib/abacuscm'
 CONF_DIR = '/conf'
 DATA_DIR = '/data'
 CONTEST_DIR = '/contest'
@@ -41,7 +41,7 @@ SERVER_CONF = os.path.join(DATA_DIR, 'abacus', 'server.conf')
 MARKER_CONF = os.path.join(DATA_DIR, 'abacus', 'marker.conf')
 SERVER_LOG = os.path.join(DATA_DIR, 'abacus', 'abacusd.log')
 MARKER_LOG = os.path.join(DATA_DIR, 'abacus', 'markerd.log')
-ADMIN_CONF = os.path.join(SRC_DIR, 'docker', 'admin.conf')
+ADMIN_CONF = os.path.join(LIB_DIR, 'admin.conf')
 STANDINGS_PWFILE = os.path.join(DATA_DIR, 'abacus', 'standings.pw')
 STANDINGS_DIR = os.path.join(DATA_DIR, 'standings')
 
@@ -278,7 +278,7 @@ def make_mysql(args):
             grant all privileges on abacus.* to abacus@localhost identified by 'abacus';
             use abacus;
             """)]
-        with open(os.path.join(SRC_DIR, 'db', 'structure.sql')) as structure:
+        with open(os.path.join(LIB_DIR, 'structure.sql')) as structure:
             commands.extend(list(structure))
         init_file = os.path.join(MYSQL_DIR, 'initdb.sql')
         with open(init_file, 'w') as init:
@@ -289,7 +289,7 @@ def make_mysql(args):
 def make_server_conf(args):
     """Merges override configuration with preconfigured values"""
     logging.debug('Creating server config')
-    filenames = [os.path.join(SRC_DIR, 'docker', 'server.conf')]
+    filenames = [os.path.join(LIB_DIR, 'server.conf')]
     for path in [os.path.join(CONF_DIR, 'abacus'), CONTEST_DIR]:
         filename = os.path.join(path, 'server.conf.override')
         if os.path.isfile(filename):
@@ -302,7 +302,7 @@ def make_server_conf(args):
 def make_marker_conf(args):
     """Merges override configuration for a marker with preconfigured values"""
     logging.debug('Creating marker config')
-    filenames = [os.path.join(SRC_DIR, 'docker', 'marker.conf')]
+    filenames = [os.path.join(LIB_DIR, 'marker.conf')]
     override_file = os.path.join(CONF_DIR, 'abacus', 'marker.conf.override')
     overrides = []
     if os.path.isfile(override_file):
@@ -347,7 +347,7 @@ def add_user(username, name, password, usertype):
 
 def add_marker_user():
     # TODO: share this logic with make_marker_conf
-    filenames = [os.path.join(SRC_DIR, 'docker', 'marker.conf')]
+    filenames = [os.path.join(LIB_DIR, 'marker.conf')]
     override_file = os.path.join(CONF_DIR, 'abacus', 'marker.conf.override')
     overrides = []
     if os.path.isfile(override_file):
@@ -379,8 +379,8 @@ def suid_runlimit(args):
 
 def install_supervisor_conf(basename, args):
     logging.debug('Installing supervisord config')
-    shutil.copy(os.path.join(SRC_DIR, 'docker', basename),
-            os.path.join('/etc/supervisor/conf.d', basename))
+    shutil.copy(os.path.join(LIB_DIR, basename),
+                os.path.join('/etc/supervisor/conf.d', basename))
 
 def mkdir_logs(services):
     for service in ['supervisor', 'mysql', 'jetty8', 'abacus']:

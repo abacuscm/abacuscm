@@ -1,20 +1,27 @@
-server:
+version: '2'
+services:
+  server:
     image: bmerry/abacuscm
     ports:
-        - "localhost:443:8443"
-        - "localhost:7368:7368"
+      - "127.0.0.1:443:8443"
+      - "127.0.0.1:7368:7368"
     volumes:
-        - "./conf:/conf"
-        - "./contest:/contest"
-        - "/data"
-        - "/www"
+      - "./conf:/conf"
+      - "./contest:/contest"
+      - "server_data:/data"
+      - "server_www:/www"
     command: server
 
-marker:
+  marker:
     image: bmerry/abacuscm
     links:
-        - server
+      - server
     command: marker
     volumes:
-        - "./conf:/conf"
-        - "/data"
+      - "./conf:/conf"
+      - "marker_data:/data"
+
+volumes:
+  server_data: {}
+  server_www: {}
+  marker_data: {}
