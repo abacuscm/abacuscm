@@ -107,7 +107,7 @@ RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-rec
         gcc-doc libstdc++-5-doc openjdk-8-doc python-doc python3-doc \
         cppreference-doc-en-html stl-manual \
         libssl1.0.0 libmysqlclient20 \
-        openssl mysql-server jetty8 supervisor sudo && \
+        openssl mariadb-server jetty8 supervisor sudo && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
@@ -115,8 +115,8 @@ ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 # Install from build image
 COPY --from=build /install /
 
-# Make mysql use data from a mount, and set up run-dir for it
-RUN sed -i 's!^datadir\s*= /var/lib/mysql!datadir = /data/mysql/db!' /etc/mysql/mysql.conf.d/mysqld.cnf
+# Make mariadb use data from a mount, and set up run-dir for it
+RUN sed -i 's!^datadir\s*= /var/lib/mysql!datadir = /data/mysql/db!' /etc/mysql/mariadb.conf.d/50-server.cnf
 RUN mkdir /var/run/mysqld && chown mysql:mysql /var/run/mysqld
 
 # Make logging go onto the mount, so that it is preserved

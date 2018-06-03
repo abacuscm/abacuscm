@@ -37,6 +37,7 @@ KEYSTORE = os.path.join(JETTY_DIR, 'keystore')
 DEFAULT_DAYS = 365    # Certificate validity for new certs
 
 MYSQL_DIR = os.path.join(DATA_DIR, 'mysql')
+MYSQL_DB_DIR = os.path.join(MYSQL_DIR, 'db')
 SERVER_CONF = os.path.join(DATA_DIR, 'abacus', 'server.conf')
 MARKER_CONF = os.path.join(DATA_DIR, 'abacus', 'marker.conf')
 SERVER_LOG = os.path.join(DATA_DIR, 'abacus', 'abacusd.log')
@@ -270,9 +271,12 @@ def make_password(pwfile):
 
 def make_mysql(args):
     """Initialise mysql db if it does not exist"""
-    if not os.path.isdir(os.path.join(MYSQL_DIR, 'db', 'mysql')):
+    if not os.path.isdir(os.path.join(MYSQL_DB_DIR)):
         logging.debug('Initialising MySQL')
         fix_permission(MYSQL_DIR, 'mysql', 'mysql')
+        subprocess.check_call(['mysql_install_db', '--datadir', MYSQL_DB_DIR, '--user', 'mysql'])
+        logging.debug('MySQL initialised')
+    if not os.path.isdir(os.path.join(MYSQL_DB_DIR, 'abacus')):
         commands = [textwrap.dedent("""\
             create database abacus;
             grant all privileges on abacus.* to abacus@localhost identified by 'abacus';
@@ -280,11 +284,10 @@ def make_mysql(args):
             """)]
         with open(os.path.join(LIB_DIR, 'structure.sql')) as structure:
             commands.extend(list(structure))
-        init_file = os.path.join(MYSQL_DIR, 'initdb.sql')
-        with open(init_file, 'w') as init:
-            init.write(''.join(commands))
-        subprocess.check_call(['mysqld', '--initialize-insecure', '--init-file', init_file])
-        logging.debug('MySQL initialised')
+        commands = ''.join(commands)
+        with run_mysql():
+            subprocess.check_call(['mysql', '--execute', commands])
+        logging.debug('Abacus database initialised')
 
 def make_server_conf(args):
     """Merges override configuration with preconfigured values"""

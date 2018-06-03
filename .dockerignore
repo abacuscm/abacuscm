@@ -8,3 +8,4 @@ doc/pdf
 doc/html/*.html
 doc/tmp
 webapp/target
+Dockerfile
