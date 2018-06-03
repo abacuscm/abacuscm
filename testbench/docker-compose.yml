@@ -9,7 +9,7 @@ services:
       - "./conf:/conf"
       - "./contest:/contest"
       - "server_data:/data"
-      - "server_www:/www"
+      - "./www:/www:ro"
     command: server
 
   marker:
@@ -23,5 +23,4 @@ services:
 
 volumes:
   server_data: {}
-  server_www: {}
   marker_data: {}
