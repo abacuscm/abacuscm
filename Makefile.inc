@@ -17,6 +17,8 @@ AR := ar
 RANLIB ?= ranlib
 ECHO_E ?= /bin/echo -e   # Don't just use echo: in dash it doesn't process -e
 
+CXXFLAGS = -std=c++98    # Uses auto_ptr heavily, and it's deprecated in C++11
+
 CFLAGS ?= -W -Wall
 LDFLAGS ?=
 
