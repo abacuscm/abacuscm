@@ -420,24 +420,22 @@ bool UDPPeerMessenger::sendFrame(uint8_t *buffer, int packetsize,
 	// to be larger.
 	uint8_t sendbuffer[BUFFER_SIZE + MAX_BLOCKSIZE];
 
-	EVP_CIPHER_CTX enc_ctx;
+	EVP_CIPHER_CTX *enc_ctx = EVP_CIPHER_CTX_new();
+	EVP_EncryptInit(enc_ctx, _cipher, _cipher_key, _cipher_iv);
 
-	EVP_CIPHER_CTX_init(&enc_ctx);
-	EVP_EncryptInit(&enc_ctx, _cipher, _cipher_key, _cipher_iv);
-
-	if(EVP_EncryptUpdate(&enc_ctx, sendbuffer, &sendlen, buffer,
+	if(EVP_EncryptUpdate(enc_ctx, sendbuffer, &sendlen, buffer,
 				packetsize) != 1) {
 		log_ssl_errors("EVP_EncryptUpdate");
-		EVP_CIPHER_CTX_cleanup(&enc_ctx);
+		EVP_CIPHER_CTX_free(enc_ctx);
 		return false;
 	}
-	if(EVP_EncryptFinal(&enc_ctx, sendbuffer + sendlen, &tlen) != 1) {
+	if(EVP_EncryptFinal(enc_ctx, sendbuffer + sendlen, &tlen) != 1) {
 		log_ssl_errors("EVP_EncryptFinal");
-		EVP_CIPHER_CTX_cleanup(&enc_ctx);
+		EVP_CIPHER_CTX_free(enc_ctx);
 		return false;
 	}
 	sendlen += tlen;
-	EVP_CIPHER_CTX_cleanup(&enc_ctx);
+	EVP_CIPHER_CTX_free(enc_ctx);
 
 	int result = sendto(_sock, sendbuffer, sendlen, 0,
 			(const struct sockaddr*)dest, sizeof(*dest));
@@ -586,14 +584,13 @@ Message* UDPPeerMessenger::getMessage() {
 					"bigger than the buffer (%d bytes)",
 					(unsigned)bytes_received, BUFFER_SIZE + MAX_BLOCKSIZE);
 		} else {
-			EVP_CIPHER_CTX dec_ctx;
-			EVP_CIPHER_CTX_init(&dec_ctx);
-			EVP_DecryptInit(&dec_ctx, _cipher, _cipher_key, _cipher_iv);
+			EVP_CIPHER_CTX *dec_ctx = EVP_CIPHER_CTX_new();
+			EVP_DecryptInit(dec_ctx, _cipher, _cipher_key, _cipher_iv);
 
-			if(EVP_DecryptUpdate(&dec_ctx, buffer, &packet_size,
+			if(EVP_DecryptUpdate(dec_ctx, buffer, &packet_size,
 						inbuffer, bytes_received) != 1) {
 				log_ssl_errors("EVP_DecryptUpdate");
-			} else if(EVP_DecryptFinal(&dec_ctx, buffer + packet_size,
+			} else if(EVP_DecryptFinal(dec_ctx, buffer + packet_size,
 						&tlen) != 1) {
 				log_ssl_errors("EVP_DecryptFinal");
 			} else if((size_t)(packet_size + tlen) < sizeof(st_frame)) {
@@ -674,7 +671,7 @@ Message* UDPPeerMessenger::getMessage() {
 				}
 			}
 
-			EVP_CIPHER_CTX_cleanup(&dec_ctx);
+			EVP_CIPHER_CTX_free(dec_ctx);
 		}
 	}
 	return message;

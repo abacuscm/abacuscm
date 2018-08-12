@@ -171,14 +171,13 @@ short UDTCPPeerMessenger::UDPReceiver::socket_process()
 		return POLLIN;
 	}
 
-	EVP_CIPHER_CTX dec_ctx;
-	EVP_CIPHER_CTX_init(&dec_ctx);
-	EVP_DecryptInit(&dec_ctx, _messenger->cipher(), _messenger->cipher_key(), _messenger->cipher_iv());
+	EVP_CIPHER_CTX *dec_ctx = EVP_CIPHER_CTX_new();
+	EVP_DecryptInit(dec_ctx, _messenger->cipher(), _messenger->cipher_key(), _messenger->cipher_iv());
 
-	if (EVP_DecryptUpdate(&dec_ctx, buffer, &packet_size,
+	if (EVP_DecryptUpdate(dec_ctx, buffer, &packet_size,
 				inbuffer, bytes_received) != 1) {
 		log_ssl_errors("EVP_DecryptUpdate");
-	} else if (EVP_DecryptFinal(&dec_ctx, buffer + packet_size, &tlen) != 1) {
+	} else if (EVP_DecryptFinal(dec_ctx, buffer + packet_size, &tlen) != 1) {
 		log_ssl_errors("EVP_DecryptFinal");
 	} else if ((size_t)(packet_size += tlen) < sizeof(st_frame)) { /* HEADS UP: packet_size __+=__ tlen */
 		char host[47];
@@ -232,7 +231,7 @@ short UDTCPPeerMessenger::UDPReceiver::socket_process()
 		}
 	}
 
-	EVP_CIPHER_CTX_cleanup(&dec_ctx);
+	EVP_CIPHER_CTX_free(dec_ctx);
 
 	return POLLIN;
 }
@@ -650,23 +649,21 @@ bool UDTCPPeerMessenger::sendFrame(st_frame *buffer, int packetsize, const struc
 	// to be larger.
 	uint8_t sendbuffer[BUFFER_SIZE + MAX_BLOCKSIZE];
 
-	EVP_CIPHER_CTX enc_ctx;
+	EVP_CIPHER_CTX *enc_ctx = EVP_CIPHER_CTX_new();
+	EVP_EncryptInit(enc_ctx, _cipher, _cipher_key, _cipher_iv);
 
-	EVP_CIPHER_CTX_init(&enc_ctx);
-	EVP_EncryptInit(&enc_ctx, _cipher, _cipher_key, _cipher_iv);
-
-	if(EVP_EncryptUpdate(&enc_ctx, sendbuffer, &sendlen, (unsigned char*)buffer, packetsize) != 1) {
+	if(EVP_EncryptUpdate(enc_ctx, sendbuffer, &sendlen, (unsigned char*)buffer, packetsize) != 1) {
 		log_ssl_errors("EVP_EncryptUpdate");
-		EVP_CIPHER_CTX_cleanup(&enc_ctx);
+		EVP_CIPHER_CTX_free(enc_ctx);
 		return false;
 	}
-	if(EVP_EncryptFinal(&enc_ctx, sendbuffer + sendlen, &tlen) != 1) {
+	if(EVP_EncryptFinal(enc_ctx, sendbuffer + sendlen, &tlen) != 1) {
 		log_ssl_errors("EVP_EncryptFinal");
-		EVP_CIPHER_CTX_cleanup(&enc_ctx);
+		EVP_CIPHER_CTX_free(enc_ctx);
 		return false;
 	}
 	sendlen += tlen;
-	EVP_CIPHER_CTX_cleanup(&enc_ctx);
+	EVP_CIPHER_CTX_free(enc_ctx);
 
 	int result = sendto(_sock, sendbuffer, sendlen, 0,
 			dest->ai_addr, dest->ai_addrlen);
