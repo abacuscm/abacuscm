@@ -7,6 +7,7 @@
  *
  * $Id$
  */
+#include <cstring>
 #include "message_createuser.h"
 #include "message_type_ids.h"
 #include "logger.h"

@@ -27,6 +27,7 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <cstring>
 #include <memory>
 #include <time.h>
 

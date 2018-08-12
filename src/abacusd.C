@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <memory>
 #include <cassert>
+#include <cstring>
 
 #include "acmconfig.h"
 #include "logger.h"
