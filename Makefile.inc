@@ -172,7 +172,7 @@ obj/%.o : src/%.c Makefile | obj/.d
 
 obj/%.o : src/%.C Makefile | obj/.d
 	@$(ECHO_E) "\t[CXX] $@"
-	$(SHOWCL)$(CC) $(CFLAGS) -o $@ -c $<
+	$(SHOWCL)$(CC) $(CXXFLAGS) $(CFLAGS) -o $@ -c $<
 
 deps/%.d : src/%.c Makefile | deps/.d
 	@$(ECHO_E) "\t[DEP] $@"
@@ -184,14 +184,9 @@ deps/%.d : src/%.C Makefile | deps/.d
 	$(SHOWCL)$(CC) $(CFLAGS) -o $@ -MG -MM $<
 	$(SHOWCL)sed -e 's,$(notdir $*.o):,$@ obj/$*.o:,' -i $@
 
-# Fop changed behaviour between 1.0 and 1.1 as to how a <base> tag in the
-# configuration file is interpreted: in 1.0 it is taken relative to the current
-# directory, while in fop 1.1 is is relative to one of the files (I haven't
-# checked which one). Changing directory is thus necessary to ensure that the
-# rule works with both fop versions.
-doc/pdf/%.pdf: doc/tmp/%.fo | doc/pdf/.d
+doc/pdf/%.pdf: doc/tmp/%.fo doc/docbook/fop.xconf | doc/pdf/.d
 	@$(ECHO_E) "\t[PDF] $@"
-	$(SHOWCL)cd doc/docbook && $(FOP) -q -c fop.xconf -fo $(abspath $<) -pdf $(abspath $@)
+	$(SHOWCL)$(FOP) -q -c doc/docbook/fop.xconf -fo $< -pdf $@
 
 doc/tmp/%.fo: doc/tmp/%.xml
 	@$(ECHO_E) "\t[FO] $@"
