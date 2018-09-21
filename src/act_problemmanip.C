@@ -25,6 +25,7 @@
 #include <iterator>
 #include <sstream>
 #include <memory>
+#include <cstring>
 #include <sys/types.h>
 #include <regex.h>
 #include <time.h>

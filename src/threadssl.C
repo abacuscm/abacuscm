@@ -25,20 +25,6 @@ using namespace std;
 static int n_ssl_locks;
 static pthread_mutex_t *ssl_locks;
 
-static void ssl_locking_function(int mode, int n, const char *file, int line) {
-	(void) file;
-	(void) line;
-
-	if (mode & CRYPTO_LOCK)
-		pthread_mutex_lock(&ssl_locks[n]);
-	else
-		pthread_mutex_unlock(&ssl_locks[n]);
-}
-
-static unsigned long ssl_id_callback(void) {
-	return (unsigned long) pthread_self();
-}
-
 void ThreadSSL::initialise() {
 	n_ssl_locks = CRYPTO_num_locks();
 	ssl_locks = (pthread_mutex_t *) malloc(n_ssl_locks * sizeof(pthread_mutex_t));

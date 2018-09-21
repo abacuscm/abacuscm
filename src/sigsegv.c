@@ -48,7 +48,7 @@ using __cxxabiv1::__cxa_demangle;
 
 #if defined(REG_RIP)
 # define SIGSEGV_STACK_IA64
-# define REGFORMAT "%016lx"
+# define REGFORMAT "%016llx"
 #elif defined(REG_EIP)
 # define SIGSEGV_STACK_X86
 # define REGFORMAT "%08x"

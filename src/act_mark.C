@@ -28,6 +28,7 @@
 #include <time.h>
 #include <sstream>
 #include <memory>
+#include <cstring>
 
 using namespace std;
 

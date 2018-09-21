@@ -93,7 +93,8 @@ bool Message::makeMessage() {
 	} catch(...) {
 		log(LOG_ERR, "Failed to pack message, exception caught");
 		if (db)
-			db->release(); db = NULL;
+			db->release();
+		db = NULL;
 		return false;
 		// I only ever expect a memory exception...
 	}
@@ -195,7 +196,7 @@ Message* Message::buildMessage(uint32_t server_id, uint32_t message_id,
 
 	Message *tmp = func();
 
-	if(~0U == tmp->buildMessage(server_id, message_id, time, signature, data,
+	if(!tmp->buildMessage(server_id, message_id, time, signature, data,
 				data_len, NULL, 0)) {
 		delete tmp;
 		return NULL;
