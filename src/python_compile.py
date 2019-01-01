@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 """
-Use PyInstaller to create a stand-alone directory for a Python script, which
+Use cxfreeze to create a stand-alone directory for a Python script, which
 can be run as a chroot jail. It thus requires all library files to be copied
-in, including ones that PyInstaller doesn't handle (such as libc).
+in, including ones that cxfreeze doesn't handle (such as libc).
 """
 
 from __future__ import print_function, division, absolute_import, unicode_literals

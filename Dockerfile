@@ -1,8 +1,8 @@
-FROM ubuntu:xenial-20180417 as build
+FROM ubuntu:bionic-20181204 as build
 
 RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y install \
         build-essential \
-        g++ openjdk-8-jre-headless openjdk-8-jdk-headless python2.7 python3 \
+        g++ openjdk-11-jre-headless openjdk-11-jdk-headless python2.7 python3 \
         libssl-dev libmysqlclient-dev maven \
         xsltproc docbook-xsl docbook-xml w3c-sgml-lib fop libxml2-utils \
         wget \
@@ -12,7 +12,7 @@ RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-rec
         python-setuptools python3-setuptools \
         zlib1g-dev
 
-ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
+ENV JAVA_HOME /usr/lib/jvm/java-11-openjdk-amd64
 
 # Allows mvn to use caching
 COPY docker/settings.xml /root/.m2/settings.xml
@@ -24,7 +24,7 @@ RUN for artifact in \
         com.google.javascript:closure-compiler:v20130722 \
         com.samaxes.maven:minify-maven-plugin:1.7.1 \
         com.yahoo.platform.yui:yuicompressor:2.4.7 \
-        commons-fileupload:commons-fileupload:1.3 \
+        commons-fileupload:commons-fileupload:1.3.3 \
         commons-io:commons-io:1.3.2 \
         javax.servlet:servlet-api:2.5 \
         org.apache.maven:maven-artifact:2.2.1 \
@@ -74,15 +74,15 @@ COPY webapp /usr/src/abacuscm/webapp
 RUN cd /usr/src/abacuscm/webapp && mvn
 COPY . /usr/src/abacuscm
 RUN mkdir -p \
-       /install/etc/jetty8/contexts \
+       /install/etc/jetty9/contexts \
+       /install/etc/jetty9/start.d \
+       /install/var/cache/jetty9/data \
+       /install/var/lib/jetty9/webapps \
        /install/usr/bin \
        /install/var/lib/abacuscm
-RUN cp /usr/src/abacuscm/docker/abacuscm.xml \
-       /usr/src/abacuscm/docker/root.xml \
-    /install/etc/jetty8/contexts/
-RUN cp /usr/src/abacuscm/docker/abacuscm-secret-web.xml \
-       /usr/src/abacuscm/docker/jetty*.xml \
-    /install/etc/jetty8/
+RUN cp /usr/src/abacuscm/docker/webapps/*.xml /install/var/lib/jetty9/webapps/
+RUN cp /usr/src/abacuscm/docker/abacuscm-secret-web.xml /install/etc/jetty9/
+RUN cp /usr/src/abacuscm/docker/start.d/*.ini /install/etc/jetty9/start.d/
 RUN cp /usr/src/abacuscm/docker/run.py /usr/src/abacuscm/docker/inichange.py /install/usr/bin/
 RUN cp /usr/src/abacuscm/webapp/target/abacuscm-1.0-SNAPSHOT.war \
        /usr/src/abacuscm/conf/java.policy \
@@ -98,19 +98,22 @@ RUN pip3 install --root /install cx_Freeze==5.*
 #######################################################################
 # Runtime image, which copies artefacts from the build image
 
-FROM ubuntu:xenial-20180417
+FROM ubuntu:bionic-20181204
 MAINTAINER Bruce Merry <bmerry@gmail.com>
 
+# Ensure we get the documentation we want
+COPY docker/dpkg-excludes /etc/dpkg/dpkg.cfg.d/excludes
+
 RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y install \
-        gcc g++ openjdk-8-jre-headless openjdk-8-jdk-headless python2.7 python3 \
-        libpython2.7 libpython3.5 \
-        gcc-doc libstdc++-5-doc openjdk-8-doc python-doc python3-doc \
+        gcc g++ openjdk-11-jre-headless openjdk-11-jdk-headless python2.7 python3 \
+        libpython2.7 libpython3.6 python3-distutils \
+        gcc-doc libstdc++-7-doc openjdk-11-doc python-doc python3-doc \
         cppreference-doc-en-html stl-manual \
-        libssl1.0.0 libmysqlclient20 \
-        openssl mariadb-server jetty8 supervisor sudo && \
+        libssl1.1 libmysqlclient20 \
+        openssl mariadb-server jetty9 supervisor sudo && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
+ENV JAVA_HOME /usr/lib/jvm/java-11-openjdk-amd64
 
 # Install from build image
 COPY --from=build /install /
@@ -120,27 +123,27 @@ RUN sed -i 's!^datadir\s*= /var/lib/mysql!datadir = /data/mysql/db!' /etc/mysql/
 RUN mkdir /var/run/mysqld && chown mysql:mysql /var/run/mysqld
 
 # Make logging go onto the mount, so that it is preserved
-RUN rm -rf /var/log/supervisor /var/log/mysql /var/log/jetty8 && \
+RUN rm -rf /var/log/supervisor /var/log/mysql /var/log/jetty9 && \
     ln -s /data/supervisor/log /var/log/supervisor && \
     ln -s /data/mysql/log /var/log/mysql && \
-    ln -s /data/jetty8/log /var/log/jetty8 && \
-    mv /usr/share/jetty8/webapps/root /www && \
-    ln -s /data/standings /usr/share/jetty8/webapps/standings
+    ln -s /data/jetty9/log /var/log/jetty9 && \
+    mv /usr/share/jetty9/webapps/root /www && \
+    ln -s /data/standings /usr/share/jetty9/webapps/standings
 
 # Make language documentation available
-RUN DOC_DIR=/usr/share/jetty8/webapps/docs && \
+RUN DOC_DIR=/usr/share/jetty9/webapps/docs && \
     mkdir -p $DOC_DIR && \
     ln -s /usr/share/cppreference/doc/html/ $DOC_DIR/cppreference && \
     ln -s /usr/share/doc/stl-manual/html/ $DOC_DIR/stl-manual && \
     ln -s /usr/share/doc/python-doc/html/ $DOC_DIR/python2 && \
     ln -s /usr/share/doc/python3-doc/html/ $DOC_DIR/python3 && \
-    ln -s /usr/share/doc/openjdk-8-doc/api/ $DOC_DIR/java && \
-    ln -s /usr/share/doc/gcc-5-base/libstdc++/ $DOC_DIR/libstdc++ && \
-    mkdir -p $DOC_DIR/gcc && ln -s /usr/share/doc/gcc-doc/*.html $DOC_DIR/gcc && \
-    rm /etc/jetty8/contexts/javadoc.xml
-COPY docker/doc/* /usr/share/jetty8/webapps/docs/
-# Patch the webdefault.xml to allow symlinks for the docs
-RUN sed -i '\!<param-name>aliases</param-name>!,+2 s!<param-value>false</param-value>!<param-value>true</param-value>!' /etc/jetty8/webdefault.xml
+    ln -s /usr/share/doc/openjdk-11-doc/api/ $DOC_DIR/java && \
+    ln -s /usr/share/doc/gcc-7-base/libstdc++/ $DOC_DIR/libstdc++ && \
+    mkdir -p $DOC_DIR/gcc && ln -s /usr/share/doc/gcc-doc/*.html $DOC_DIR/gcc
+COPY docker/doc/* /usr/share/jetty9/webapps/docs/
+
+# Fix permissions
+RUN chown -R jetty:adm /var/lib/jetty9 /var/cache/jetty9
 
 # Create a user for abacus to run as, and users for an interactive tournament
 RUN adduser --disabled-password --gecos 'abacus user' abacus && \

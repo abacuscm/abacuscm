@@ -24,7 +24,7 @@ LIB_DIR = '/var/lib/abacuscm'
 CONF_DIR = '/conf'
 DATA_DIR = '/data'
 CONTEST_DIR = '/contest'
-JETTY_DIR = '/etc/jetty8'
+JETTY_DIR = '/etc/jetty9'
 
 JETTY_CERT_DIR = os.path.join(CONF_DIR, 'jetty-certs')
 ABACUS_CERT_DIR = os.path.join(CONF_DIR, 'abacus-certs')
@@ -330,8 +330,6 @@ def make_server_crypto(args):
     create_jks_truststore(CA_CERT, TRUSTSTORE, 'abacuscert', password)
     create_jks_keystore(JETTY_CERT, JETTY_KEY, KEYSTORE, password)
     shutil.chown(KEYSTORE, 'jetty', 'jetty')
-    subprocess.check_call([
-        'sed', '-i', 's/OBF:[a-zA-Z0-9]*/password/g', '/etc/jetty8/jetty-ssl.xml'])
 
     mkdir_p('/etc/abacus', 0o700)
     shutil.chown('/etc/abacus', 'abacus', 'abacus')
@@ -368,12 +366,9 @@ def add_standings_user():
     add_user('standings', 'Standings bot', password, 'contestant')
 
 def adjust_https_port(args):
-    logging.debug('Adjusting Jetty to use port %d', args.https_port)
-    subprocess.check_call([
-        'sed', '-i',
-        's!<Set name="confidentialPort">[0-9]*</Set>' + \
-            '!<Set name="confidentialPort">{}</Set>!'.format(args.https_port),
-        os.path.join(JETTY_DIR, 'jetty.xml')])
+    logging.debug('Adjusting Jetty to use port %d on host', args.https_port)
+    with open(os.path.join(JETTY_DIR, 'start.d', 'https-port.ini'), 'w') as f:
+        print('jetty.secure.port={}'.format(args.https_port), file=f)
 
 def suid_runlimit(args):
     logging.debug('Setting permissions on runlimit')
@@ -386,7 +381,7 @@ def install_supervisor_conf(basename, args):
                 os.path.join('/etc/supervisor/conf.d', basename))
 
 def mkdir_logs(services):
-    for service in ['supervisor', 'mysql', 'jetty8', 'abacus']:
+    for service in ['supervisor', 'mysql', 'jetty9', 'abacus']:
         mkdir_p(os.path.join(DATA_DIR, service, 'log'))
 
 def mkdir_standings():
@@ -401,7 +396,7 @@ def fix_permissions(args):
     shutil.chown(DATA_DIR, 'root', 'root')
     os.chmod(DATA_DIR, 0o755)
     fix_permission(os.path.join(DATA_DIR, 'abacus'), 'abacus', 'abacus')
-    fix_permission(os.path.join(DATA_DIR, 'jetty8'), 'jetty', 'jetty')
+    fix_permission(os.path.join(DATA_DIR, 'jetty9'), 'jetty', 'jetty')
     fix_permission(os.path.join(DATA_DIR, 'supervisor'), 'root', 'root')
     fix_permission(os.path.join(DATA_DIR, 'mysql'), 'mysql', 'mysql')
 
@@ -423,7 +418,7 @@ def run_shell(args):
     os.execv('/bin/bash', ['/bin/bash'] + args.args)
 
 def run_server(args):
-    mkdir_logs(['supervisor', 'mysql', 'jetty8', 'abacus'])
+    mkdir_logs(['supervisor', 'mysql', 'jetty9', 'abacus'])
     mkdir_standings()
     make_abacus_certs(args)
     make_jetty_certs(args)
