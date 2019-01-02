@@ -21,9 +21,11 @@
                 </para>
             </listitem>
             <listitem>
-                <para><application>Jetty</application>, the web server (only
-                    version 6.x has been tested; newer versions might or might
-                    not work).
+                <para><application>Jetty</application>, the web server. These
+                    instructions are for version 9.2 on Ubuntu 18.04. AbacusCM
+                    has previously been used on older versions (going back to
+                    Jetty 6.x), but the configuration syntax changes between
+                    versions.
                 </para>
             </listitem>
             <listitem>
@@ -38,8 +40,8 @@
                     these will be fetched from the internet on each build,
                     which can be very slow.
                 </para>
-                <para>The Ubuntu installation of the DTD also has some flaws that
-                    prevent them from working properly (see <ulink
+                <para>Older Ubuntu installations of the DTD had a bug that
+                    prevent it from working properly (see <ulink
                         url="https://bugs.launchpad.net/ubuntu/+source/w3c-dtd-xhtml/+bug/400259">this
                         bug</ulink>). In short, you need to look for
                     <filename>catalog.xml</filename> files in <filename
@@ -93,14 +95,6 @@
             <userinput>JAVA_OPTIONS="-Djava.net.preferIPv4Stack=true"</userinput>
             to <filename>/etc/default/jetty</filename>.
         </para>
-        <para>
-            You should also ensure that Jetty is set up for hot deployment from
-            a directory like <filename
-                class="directory">/etc/jetty/contexts</filename>; this might
-            require uncommenting some configuration options in
-            <filename>/etc/jetty/jetty.xml</filename>, but again, this is
-            platform-specific.
-        </para>
         <section id="administrator-webapp.configuration.keystore">
             <title>Creating the keystore</title>
             <para>
@@ -136,9 +130,9 @@ Certificate was added to keystore</computeroutput></screen>
         <section id="administrator-webapp.configuration.context">
             <title>Configuring the context</title>
             <para>
-                In the directory configured for hot context deployment (e.g.,
-                <filename class="directory">/etc/jetty/contexts</filename>,
-                create an XML file with the following contents (the filename
+                In <filename class="directory">/var/lib/jetty9/webapps</filename>
+                (or wherever Jetty is configured to find webapps),
+                create an XML file with the following content (the filename
                 is arbitrary; we use <filename>abacuscm.xml</filename>):
             </para>
             <programlisting language="xml">&lt;?xml version="1.0"  encoding="ISO-8859-1"?&gt;
@@ -176,8 +170,7 @@ Certificate was added to keystore</computeroutput></screen>
                 data specific to this deployment. It should contain the
                 following:
             </para>
-            <programlisting language="xml">
-&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+            <programlisting language="xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
 &lt;web-app xmlns="http://java.sun.com/xml/ns/javaee"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
@@ -203,6 +196,16 @@ Certificate was added to keystore</computeroutput></screen>
             &lt;param-value&gt;<replaceable>password</replaceable>&lt;/param-value&gt;
         &lt;/init-param&gt;
     &lt;/servlet&gt;
+
+    &lt;security-constraint&gt;
+        &lt;web-resource-collection&gt;
+            &lt;web-resource-name&gt;abacus&lt;/web-resource-name&gt;
+            &lt;url-pattern&gt;/*&lt;/url-pattern&gt;
+        &lt;/web-resource-collection&gt;
+        &lt;user-data-constraint&gt;
+            &lt;transport-guarantee&gt;CONFIDENTIAL&lt;/transport-guarantee&gt;
+        &lt;/user-data-constraint&gt;
+    &lt;/security-constraint&gt;
 &lt;/web-app&gt;</programlisting>
             <para>
                 The <varname>abacusHost</varname> and
@@ -216,28 +219,17 @@ Certificate was added to keystore</computeroutput></screen>
                 If the file is on the local machine, it must use a
                 <systemitem>file://</systemitem> URL rather than a filename.
             </para>
-        </section>
-        <section id="administrator-webapp.configuration.connector">
-            <title>Choosing the right connector</title>
             <para>
-                Depending on the configuration files provided by your
-                platform, Jetty may be using a sub-optimal method to handle
-                large numbers of connections. You should use
-                <classname>SelectChannelConnector</classname> or
-                <classname>SSLSelectChannelConnector</classname> to avoid
-                creating a separate thread per connection. See the <ulink
-                    url="http://docs.codehaus.org/display/JETTY/Configuring+Connectors">Jetty
-                    documentation</ulink> for more information.
+                The <literal>security-constraint</literal> section redirects
+                HTTP traffic to HTTPS; do not use it if you are serving over HTTP.
             </para>
         </section>
         <section id="administrator-webapp.configuration.ports">
             <title>Running Jetty on standard ports</title>
             <para>
-                Without running jetty as root, seriously not recommended, it's
-                (to the best of the this Author's knowledge) not possible to
-                run jetty or even Tomcat on standard ports.
-            </para>
-            <para>As a workaround we recommend using iptables (<ulink
+                Ubuntu 18.04 can run Jetty on ports 80/443 by using
+                authbind, but I have not tried it. An alternative is to use
+                iptables (<ulink
                     url="http://www.netfilter.org/">netfilter</ulink>) to redirect
                 the standard ports to the jetty ports.  Assuming you don't have
                 any NAT rules already set up, but do have iptables installed,
@@ -249,34 +241,45 @@ iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT \
 iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT \
     --to-ports <replaceable>8080</replaceable></programlisting>
         </section>
-	</section>
-	<section id="administrator-webapp.configuration.ssl">
-		<title>Configuring SSL certificates for Jetty</title>
-		<para>Configuring SSL for Jetty is a little more complicated than for Apache, so you may want to consider using haproxy, apache, nginx or lighttpd to offload SSL instead.</para>
-		<para>For the purposes of this discussion I'm going to assume you have
-			three files called key.pem, cert.pem and cachain.pem that contains
-			your private key, X.509 certificate (as signed by your certificate
-			authority) and the CA's certificate chain, all in PEM
-			format.</para>
-		<para>First we need to convert the PEM files into PKCS12 format as
-			required by the java keytool.</para>
-		<programlisting>openssl pkcs12 -inkey key.pem -in &lt;(cat cert.pem cachain.pem) -export -out jetty.pkcs12</programlisting>
-		<para>This will generate a password protected pkcs12 file containing
-			both the certificate, along with it's chain, and the private key,
-			which we can import into a java keystore:</para>
-		<programlisting>keytool -importkeystore -srckeystore ~/jetty.pkcs12 -srcstoretype PKCS12 -destkeystore keystore</programlisting>
-		<para>TODO: Explain how to configure the sslengine</para>
-		<para>In order to redirect http to https:</para>
-		<programlisting>
-			&lt;security-constraint&gt;
-				&lt;web-resource-collection&gt;
-					&lt;web-resource-name&gt;Everything in the webapp&lt;/web-resource-name&gt;
-					&lt;url-pattern&gt;/*&lt;/url-pattern&gt;
-				&lt;/web-resource-collection&gt;
-				&lt;user-data-constraint&gt;
-					&lt;transport-guarantee&gt;CONFIDENTIAL&lt;/transport-guarantee&gt;
-				&lt;/user-data-constraint&gt;
-			&lt;/security-constraint&gt;
-		</programlisting>
-	</section>
+    </section>
+    <section id="administrator-webapp.configuration.ssl">
+        <title>Enabling TLS in Jetty</title>
+        <para>
+            Configuring TLS for Jetty is a little more complicated than for
+            Apache, so you may want to consider using haproxy, apache, nginx or
+            lighttpd to offload SSL instead.
+        </para>
+        <para>For the purposes of this discussion I'm going to assume you have
+            three files called <filename>key.pem</filename>,
+            <filename>cert.pem</filename> and <filename>cachain.pem</filename>
+            that contains your private key, X.509 certificate (as signed by
+            your certificate authority) and the CA's certificate chain, all in
+            PEM format.
+        </para>
+        <para>
+            First we need to convert the PEM files into PKCS12 format as
+            required by the java keytool.
+        </para>
+        <programlisting>openssl pkcs12 -inkey key.pem -in &lt;(cat cert.pem cachain.pem) \
+    -export -out jetty.pkcs12</programlisting>
+        <para>
+            This will generate a password-protected pkcs12 file containing
+            both the certificate, along with its chain, and the private key,
+            which we can import into a java keystore:
+        </para>
+        <programlisting>keytool -importkeystore -srckeystore ~/jetty.pkcs12 \
+    -srcstoretype PKCS12 -destkeystore /etc/jetty9/keystore</programlisting>
+        <para>
+            Create a file in <filename
+                class="directory">/etc/jetty9/start.d</filename> (e.g.
+            called <filename>https.ini</filename>), with the following
+            content. Use the password you specified for the keystore in the
+            previous step.
+        </para>
+        <programlisting>--module=ssl,https
+https.port=8443
+jetty.truststore.password=password
+jetty.keystore.password=password
+jetty.keymanager.password=password</programlisting>
+    </section>
 </chapter>

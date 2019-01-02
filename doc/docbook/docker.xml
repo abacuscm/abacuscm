@@ -31,9 +31,10 @@
         <title>Requirements</title>
         <para>
             There are only two software requirements: Linux and
-            Docker! Development uses Docker 1.5, but you might be
-            successful with older versions. For Ubuntu, one can obtain the
-            latest version from <ulink
+            Docker! Development uses recent versions of Docker (18.06.1-ce at
+            the time of writing), but you might be successful with older
+            versions. For Ubuntu, one can obtain the latest version from
+            <ulink
                 url="https://get.docker.com/ubuntu/"/>.
         </para>
         <para>
@@ -87,9 +88,7 @@
         </para>
         <para>
             You will need four directories on the host (they could also live
-            entirely in Docker <ulink
-                url="https://docs.docker.com/userguide/dockervolumes/#creating-and-mounting-a-data-volume-container">volume-only
-                containers</ulink>, but this guide assumes they live on the
+            entirely in Docker volumes, but this guide assumes they live on the
             host). They are
         </para>
         <variablelist>
@@ -221,12 +220,16 @@ languages = <replaceable>C,C++,Python 2.x,Python 3.x,Java</replaceable></screen>
                     override the cache control by creating
                     <filename><replaceable>www-dir</replaceable>/WEB-INF/web.xml</filename>
                     with the following content. The resources page is
-                    refreshed every 15 seconds.
+                    refreshed every 15 seconds (note: this has not been tested
+                    with more recent versions of Jetty and is not guaranteed to
+                    work).
                 </para>
                 <screen><![CDATA[<web-app>
     <servlet>
         <servlet-name>default</servlet-name>
-        <servlet-class>org.eclipse.jetty.servlet.DefaultServlet</servlet-class>
+        <servlet-class>
+            org.eclipse.jetty.servlet.DefaultServlet
+        </servlet-class>
         <init-param>
             <param-name>cacheControl</param-name>
             <param-value>max-age=0,must-revalidate</param-value>
@@ -243,7 +246,8 @@ languages = <replaceable>C,C++,Python 2.x,Python 3.x,Java</replaceable></screen>
                     Start the server by running
                 </para>
                 <screen><userinput>docker run -d -p 443:8443 -p 7368:7368 -p 80:8080 \
-    -v <replaceable>config-dir</replaceable>:/conf -v <replaceable>data-dir</replaceable>:/data -v <replaceable>contest-dir</replaceable>:/contest -v <replaceable>www-dir</replaceable>:/www \
+    -v <replaceable>config-dir</replaceable>:/conf -v <replaceable>data-dir</replaceable>:/data \
+    -v <replaceable>contest-dir</replaceable>:/contest -v <replaceable>www-dir</replaceable>:/www \
     bmerry/abacuscm server <optional>--server <replaceable>hostname</replaceable></optional></userinput></screen>
                 <para>
                     This makes the various services available to the outside
@@ -289,7 +293,9 @@ languages = <replaceable>C,C++,Python 2.x,Python 3.x,Java</replaceable></screen>
                     Start a marker by running (keeping in mind that each container must have
                     its own data directory):
                 </para>
-                <screen><userinput>docker run -d -v <replaceable>config-dir</replaceable>:/conf -v <replaceable>data-dir</replaceable>:/data bmerry/abacuscm marker <optional>--server <replaceable>server-address</replaceable></optional></userinput></screen>
+                <screen><userinput>docker run -d \
+    -v <replaceable>config-dir</replaceable>:/conf -v <replaceable>data-dir</replaceable>:/data \
+    bmerry/abacuscm marker <optional>--server <replaceable>server-address</replaceable></optional></userinput></screen>
             </step>
             <step>
                 <para>
