@@ -350,9 +350,9 @@ public abstract class AbacusServerConnection {
 		try {
 			mySocket = (SSLSocket)socketFactory.createSocket(hostname, port);
 
-			// The abacus server expects us to connect with _only_ TLSv1 SSL
+			// The abacus server expects us to connect with at least TLSv1.2 SSL
 			// support; any other enabled protocols will cause problems!
-			mySocket.setEnabledProtocols(new String[] {"TLSv1"});
+			mySocket.setEnabledProtocols(new String[] {"TLSv1.2"});
 
 			// Start the SSL handshake.
 			mySocket.startHandshake();
