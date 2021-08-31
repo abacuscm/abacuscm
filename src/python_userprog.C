@@ -49,7 +49,7 @@ string version_extension(PythonVersion v) {
 	case PYTHON2x:
 		return ".py";
 	case PYTHON3x:
-		return ".py3";
+		return ".py";
 	default:
 		log(LOG_ERR, "Invalid value for PythonVersion in version_extension: %d. Defaulting to 2.", (int)v);
 		return ".py";

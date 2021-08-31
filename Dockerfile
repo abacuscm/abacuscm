@@ -50,7 +50,7 @@ RUN cp /usr/src/abacuscm/webapp/target/abacuscm-1.0-SNAPSHOT.war \
     /install/var/lib/abacuscm
 
 # Install cx_Freeze
-RUN pip3 install --root /install cx_Freeze==5.*
+RUN pip3 install --root /install cx_Freeze==6.7
 
 
 #######################################################################
@@ -64,7 +64,7 @@ COPY docker/dpkg-excludes /etc/dpkg/dpkg.cfg.d/excludes
 
 RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y install \
         gcc g++ openjdk-11-jre-headless openjdk-11-jdk-headless python3 \
-        libpython3.8 python3-distutils \
+        libpython3.8 python3-distutils python3-setuptools patchelf \
         gcc-doc libstdc++-9-doc openjdk-11-doc python3-doc \
         cppreference-doc-en-html stl-manual \
         libssl1.1 libmysqlclient21 \

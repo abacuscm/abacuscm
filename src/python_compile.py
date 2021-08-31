@@ -36,7 +36,7 @@ def main():
     dep_re = re.compile('^\t(?:(.+) => )?(/.*) \\(0x[a-f0-9]+\\)$')
     req = {}
     libs = glob.glob(os.path.join(args.output_dir, '*.so*'))
-    for so in libs:
+    for so in libs + [os.path.join(args.output_dir, 'userprog')]:
         deps = subprocess.check_output(['ldd', '--', so]).decode('utf-8')
         deps = deps.splitlines()
         for line in deps:
