@@ -1,3 +1,7 @@
+# syntax=docker/dockerfile:1
+# Note: requires building with BuildKit. See
+# https://docs.docker.com/develop/develop-images/build_enhancements/
+
 FROM ubuntu:bionic-20181204 as build
 
 RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y install \
@@ -14,51 +18,6 @@ RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-rec
 
 ENV JAVA_HOME /usr/lib/jvm/java-11-openjdk-amd64
 
-# Allows mvn to use caching
-COPY docker/settings.xml /root/.m2/settings.xml
-
-# Install a bunch of mvn dependencies, so that they do not need to be
-# re-fetched every time the abacus source changes
-RUN for artifact in \
-        args4j:args4j:2.0.16 \
-        com.google.javascript:closure-compiler:v20130722 \
-        com.samaxes.maven:minify-maven-plugin:1.7.1 \
-        com.yahoo.platform.yui:yuicompressor:2.4.7 \
-        commons-fileupload:commons-fileupload:1.3.3 \
-        commons-io:commons-io:1.3.2 \
-        javax.servlet:servlet-api:2.5 \
-        org.apache.maven:maven-artifact:2.2.1 \
-        org.apache.maven:maven-artifact-manager:2.2.1 \
-        org.apache.maven:maven-error-diagnostics:2.2.1 \
-        org.apache.maven:maven-monitor:2.2.1 \
-        org.apache.maven:maven-monitor-manager:2.2.1 \
-        org.apache.maven:maven-plugin-descriptor:2.2.1 \
-        org.apache.maven:maven-plugin-parameter-documenter:2.2.1 \
-        org.apache.maven:maven-profile:2.2.1 \
-        org.apache.maven:maven-project:2.2.1 \
-        org.apache.maven:maven-repository-metadata:2.2.1 \
-        org.apache.maven:maven-settings:2.2.1 \
-        org.apache.maven.plugins:maven-compiler-plugin:3.1 \
-        org.apache.maven.plugins:maven-install-plugin:2.3 \
-        org.apache.maven.plugins:maven-resources-plugin:2.3 \
-        org.apache.maven.plugins:maven-surefire-plugin:2.10 \
-        org.apache.maven.plugins:maven-war-plugin:2.3 \
-        org.apache.maven.surefire:surefire-junit3:2.10 \
-        org.apache.maven.plugins:maven-install-plugin:2.4 \
-        org.apache.maven.plugins:maven-war-plugin:2.3 \
-        org.codehaus.mojo:xml-maven-plugin:1.0 \
-        org.cometd.java:bayeux-api:2.6.0 \
-        org.cometd.java:cometd-java-server:2.6.0 \
-        org.cometd.javascript:cometd-javascript-jquery:2.6.0:war \
-        org.mortbay.jetty:maven-jetty-plugin:6.1.24 \
-        org.slf4j:slf4j-jdk14:1.5.6 \
-        org.slf4j:jcl-over-slf4j:1.5.6 \
-        org.slf4j:slf4j-jdk14:1.7.5 \
-        org.sonatype.forge:forge-parent:4 \
-        org.sonatype.plexus:plexus-cipher:1.4 \
-        org.sonatype.plexus:plexus-sec-dispatcher:1.3 \
-    ; do cd ~ && mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=$artifact; done
-
 RUN mkdir -p /install/sbin
 RUN wget https://github.com/krallin/tini/releases/download/v0.18.0/tini -O /install/sbin/tini && \
     chmod +x /install/sbin/tini
@@ -71,7 +30,7 @@ COPY include /usr/src/abacuscm/include
 COPY doc /usr/src/abacuscm/doc
 RUN cd /usr/src/abacuscm && make && make DESTDIR=/install install
 COPY webapp /usr/src/abacuscm/webapp
-RUN cd /usr/src/abacuscm/webapp && mvn
+RUN --mount=type=cache,target=/root/.m2 cd /usr/src/abacuscm/webapp && mvn
 COPY . /usr/src/abacuscm
 RUN mkdir -p \
        /install/etc/jetty9/contexts \
