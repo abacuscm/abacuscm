@@ -26,12 +26,7 @@
 
 using namespace std;
 
-/* See comment in header file */
-#if OPENSSL_VERSION_NUMBER < 0x10000000
-SSL_METHOD *ClientConnection::_method = NULL;
-#else
 const SSL_METHOD *ClientConnection::_method = NULL;
-#endif
 SSL_CTX *ClientConnection::_context = NULL;
 
 ClientConnection::ClientConnection(int sock) {
@@ -259,20 +254,20 @@ bool ClientConnection::init() {
 
 	log(LOG_DEBUG, "Loaded %d bytes from /dev/urandom", RAND_load_file("/dev/urandom", 4096));
 
-	_method = TLSv1_server_method();
+	_method = TLS_server_method();
 	if(!_method) {
-		log_ssl_errors("SSL_server_method");
+		log_ssl_errors("TLS_server_method");
 		goto err;
 	}
 
-	/* OpenSSL versions prior to 1.0.0 don't take a const parameter, so we have
-	 * to explicitly make it unconst. Simply changing _method to be non-const
-	 * doesn't work, because in 1.0.0 the return from TLSv1_server_method is
-	 * const.
-	 */
 	_context = SSL_CTX_new(_method);
 	if(!_context) {
 		log_ssl_errors("SSL_CTX_new");
+		goto err;
+	}
+
+	if(!SSL_CTX_set_min_proto_version(_context, TLS1_2_VERSION)) {
+		log_ssl_errors("SSL_CTX_set_min_proto_version");
 		goto err;
 	}
 

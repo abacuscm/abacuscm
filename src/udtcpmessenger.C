@@ -267,9 +267,14 @@ short UDTCPPeerMessenger::TCPRetriever::socket_process()
 	mb["server_id"] = to_string(_server_id);
 	mb["message_id"] = to_string(_message_id);
 
-	SSL_CTX *ctx = SSL_CTX_new(TLSv1_client_method());
+	SSL_CTX *ctx = SSL_CTX_new(TLS_client_method());
 	if(!ctx) {
 		log_ssl_errors("SSL_CTX_new");
+		goto quit;
+	}
+
+	if(!SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION)) {
+		log_ssl_errors("SSL_CTX_set_min_proto_version");
 		goto quit;
 	}
 

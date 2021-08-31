@@ -87,9 +87,16 @@ bool ServerConnection::connect(string server, string service) {
 	}
 
 	if(!_ctx) {
-		_ctx = SSL_CTX_new(TLSv1_client_method());
+		_ctx = SSL_CTX_new(TLS_client_method());
 		if(!_ctx) {
 			log_ssl_errors("SSL_CTX_new");
+			goto err;
+		}
+
+		if(!SSL_CTX_set_min_proto_version(_ctx, TLS1_2_VERSION)) {
+			log(LOG_ERR, "SSL_CTX_set_min_proto_version");
+			SSL_CTX_free(_ctx);
+			_ctx = NULL;
 			goto err;
 		}
 
