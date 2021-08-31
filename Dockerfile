@@ -96,7 +96,7 @@ RUN DOC_DIR=/usr/share/jetty9/webapps/docs && \
     ln -s /usr/share/doc/python3-doc/html/ $DOC_DIR/python3 && \
     ln -s /usr/share/doc/openjdk-11-doc/api/ $DOC_DIR/java && \
     ln -s /usr/share/doc/gcc-9-base/libstdc++/ $DOC_DIR/libstdc++ && \
-    mkdir -p $DOC_DIR/gcc && ln -s /usr/share/doc/gcc-doc/*.html $DOC_DIR/gcc
+    mkdir -p $DOC_DIR/gcc && ln -s /usr/share/doc/gcc-9-base/*.html $DOC_DIR/gcc
 COPY docker/doc/* /usr/share/jetty9/webapps/docs/
 
 # Fix permissions
