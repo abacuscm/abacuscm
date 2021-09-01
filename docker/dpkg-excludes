@@ -14,7 +14,6 @@ path-include=/usr/share/doc/*/changelog.Debian.*
 # actually want.
 
 path-include=/usr/share/doc/openjdk-11*
-path-include=/usr/share/doc/python/*
 path-include=/usr/share/doc/python3.8/*
 path-include=/usr/share/doc/gcc-9-base/*
 path-include=/usr/share/doc/stl-manual/*

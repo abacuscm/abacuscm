@@ -23,10 +23,6 @@ runtime=/usr/bin/java
 policy=conf/java.policy
 
 [python]
-interpreter=/usr/bin/python
-compiler=/usr/bin/python_compile.py
-
-[python3]
 interpreter=/usr/bin/python3
 compiler=/usr/bin/python_compile.py
 

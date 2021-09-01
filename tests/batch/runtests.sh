@@ -163,8 +163,7 @@ getlanguages
 ?language0:C
 ?language1:C++
 ?language2:Java
-?language3:Python 2.x
-?language4:Python 3.x
+?language3:Python
 
 getprobtypes
 ?ok
@@ -549,7 +548,7 @@ lang:C++
 
 submit
 prob_id:1
-lang:Python 3.x
+lang:Python
 <tests/solutions/do_nothing.py
 ?ok
 ?submission_id:97
@@ -577,7 +576,7 @@ lang:Java
 
 submit
 prob_id:1
-lang:Python 3.x
+lang:Python
 <tests/solutions/empty.py
 ?ok
 ?submission_id:161
@@ -598,7 +597,7 @@ lang:Java
 
 submit
 prob_id:1
-lang:Python 3.x
+lang:Python
 <tests/solutions/exception.py
 ?ok
 ?submission_id:209
@@ -612,7 +611,7 @@ lang:C++
 
 submit
 prob_id:1
-lang:Python 3.x
+lang:Python
 <tests/solutions/infinite_stream.py
 ?ok
 ?submission_id:241
@@ -640,7 +639,7 @@ lang:C++
 
 submit
 prob_id:1
-lang:Python 3.x
+lang:Python
 <tests/solutions/sleep_forever.py
 ?ok
 ?submission_id:305
@@ -661,7 +660,7 @@ lang:Java
 
 submit
 prob_id:1
-lang:Python 3.x
+lang:Python
 <tests/solutions/spin_forever.py
 ?ok
 ?submission_id:353
@@ -675,21 +674,21 @@ lang:C++
 
 submit
 prob_id:1
-lang:Python 3.x
+lang:Python
 <tests/solutions/wrong_retcode.py
 ?ok
 ?submission_id:385
 
 submit
 prob_id:1
-lang:Python 3.x
+lang:Python
 <tests/solutions/exact.py
 ?ok
 ?submission_id:401
 
 submit
 prob_id:1
-lang:Python 3.x
+lang:Python
 <tests/solutions/whitespace.py
 ?ok
 ?submission_id:417
@@ -703,7 +702,7 @@ lang:C++
 
 submit
 prob_id:33
-lang:Python 3.x
+lang:Python
 <tests/solutions/whitespace.py
 ?ok
 ?submission_id:449

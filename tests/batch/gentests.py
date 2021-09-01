@@ -24,7 +24,7 @@ comments = {
 exts = {
         '.cpp': 'C++',
         '.java': 'Java',
-        '.py': 'Python 3.x'
+        '.py': 'Python'
 }
 
 files = [

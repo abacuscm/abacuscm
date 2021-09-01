@@ -191,7 +191,7 @@ password = <replaceable>password</replaceable></screen>
                 <screen>[contest]
 duration = <replaceable>18000</replaceable> # 5 hours
 blinds = <replaceable>3600</replaceable>    # 1 hour
-languages = <replaceable>C,C++,Python 2.x,Python 3.x,Java</replaceable></screen>
+languages = <replaceable>C,C++,Python,Java</replaceable></screen>
             </step>
             <step>
                 <para>
