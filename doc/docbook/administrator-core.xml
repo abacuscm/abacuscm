@@ -706,15 +706,14 @@ Sun Nov 28 19:13:07 2010 [NOTICE]: Added user 'admin'</computeroutput></screen>
             <step>
                 <para>
                     In the <literal>[compilers]</literal>,
-                    <literal>[java]</literal>, <literal>[python]</literal>
-                    and <literal>[python3]</literal>
+                    <literal>[java]</literal> and <literal>[python]</literal>
                     sections, configure the paths to the compilers and
                     interpreters. The <literal>[java]</literal>
                     <parameter>policy</parameter> must point at the policy
                     file provided with the abacuscm source bundle.
                 </para>
                 <para>
-                    For Python (2 and 3), the <parameter>compiler</parameter>
+                    For Python, the <parameter>compiler</parameter>
                     must point to <filename>python_compile.py</filename>. This
                     is installed by <command>make install</command>, and if
                     not specified the install path is used.

@@ -1,67 +1,26 @@
-FROM ubuntu:bionic-20181204 as build
+# syntax=docker/dockerfile:1
+# Note: requires building with BuildKit. See
+# https://docs.docker.com/develop/develop-images/build_enhancements/
+
+FROM ubuntu:focal-20210827 as build
 
 RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y install \
         build-essential \
-        g++ openjdk-11-jre-headless openjdk-11-jdk-headless python2.7 python3 \
+        g++ openjdk-11-jre-headless openjdk-11-jdk-headless python3 \
         libssl-dev libmysqlclient-dev maven \
         xsltproc docbook-xsl docbook-xml w3c-sgml-lib fop libxml2-utils \
         wget \
-        python-dev python3-dev \
-        python-pip python3-pip \
-        python-wheel python3-wheel \
-        python-setuptools python3-setuptools \
+        python3-dev \
+        python3-pip \
+        python3-wheel \
+        python3-setuptools \
         zlib1g-dev
 
 ENV JAVA_HOME /usr/lib/jvm/java-11-openjdk-amd64
 
-# Allows mvn to use caching
-COPY docker/settings.xml /root/.m2/settings.xml
-
-# Install a bunch of mvn dependencies, so that they do not need to be
-# re-fetched every time the abacus source changes
-RUN for artifact in \
-        args4j:args4j:2.0.16 \
-        com.google.javascript:closure-compiler:v20130722 \
-        com.samaxes.maven:minify-maven-plugin:1.7.1 \
-        com.yahoo.platform.yui:yuicompressor:2.4.7 \
-        commons-fileupload:commons-fileupload:1.3.3 \
-        commons-io:commons-io:1.3.2 \
-        javax.servlet:servlet-api:2.5 \
-        org.apache.maven:maven-artifact:2.2.1 \
-        org.apache.maven:maven-artifact-manager:2.2.1 \
-        org.apache.maven:maven-error-diagnostics:2.2.1 \
-        org.apache.maven:maven-monitor:2.2.1 \
-        org.apache.maven:maven-monitor-manager:2.2.1 \
-        org.apache.maven:maven-plugin-descriptor:2.2.1 \
-        org.apache.maven:maven-plugin-parameter-documenter:2.2.1 \
-        org.apache.maven:maven-profile:2.2.1 \
-        org.apache.maven:maven-project:2.2.1 \
-        org.apache.maven:maven-repository-metadata:2.2.1 \
-        org.apache.maven:maven-settings:2.2.1 \
-        org.apache.maven.plugins:maven-compiler-plugin:3.1 \
-        org.apache.maven.plugins:maven-install-plugin:2.3 \
-        org.apache.maven.plugins:maven-resources-plugin:2.3 \
-        org.apache.maven.plugins:maven-surefire-plugin:2.10 \
-        org.apache.maven.plugins:maven-war-plugin:2.3 \
-        org.apache.maven.surefire:surefire-junit3:2.10 \
-        org.apache.maven.plugins:maven-install-plugin:2.4 \
-        org.apache.maven.plugins:maven-war-plugin:2.3 \
-        org.codehaus.mojo:xml-maven-plugin:1.0 \
-        org.cometd.java:bayeux-api:2.6.0 \
-        org.cometd.java:cometd-java-server:2.6.0 \
-        org.cometd.javascript:cometd-javascript-jquery:2.6.0:war \
-        org.mortbay.jetty:maven-jetty-plugin:6.1.24 \
-        org.slf4j:slf4j-jdk14:1.5.6 \
-        org.slf4j:jcl-over-slf4j:1.5.6 \
-        org.slf4j:slf4j-jdk14:1.7.5 \
-        org.sonatype.forge:forge-parent:4 \
-        org.sonatype.plexus:plexus-cipher:1.4 \
-        org.sonatype.plexus:plexus-sec-dispatcher:1.3 \
-    ; do cd ~ && mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=$artifact; done
-
-RUN mkdir -p /install/sbin
-RUN wget https://github.com/krallin/tini/releases/download/v0.18.0/tini -O /install/sbin/tini && \
-    chmod +x /install/sbin/tini
+RUN mkdir -p /install/usr/sbin
+RUN wget https://github.com/krallin/tini/releases/download/v0.19.0/tini -O /install/usr/sbin/tini && \
+    chmod +x /install/usr/sbin/tini
 
 # Install abacus. Copies are done piecemeal to make the build cache more
 # effective.
@@ -71,7 +30,7 @@ COPY include /usr/src/abacuscm/include
 COPY doc /usr/src/abacuscm/doc
 RUN cd /usr/src/abacuscm && make && make DESTDIR=/install install
 COPY webapp /usr/src/abacuscm/webapp
-RUN cd /usr/src/abacuscm/webapp && mvn
+RUN --mount=type=cache,target=/root/.m2 cd /usr/src/abacuscm/webapp && mvn
 COPY . /usr/src/abacuscm
 RUN mkdir -p \
        /install/etc/jetty9/contexts \
@@ -91,25 +50,24 @@ RUN cp /usr/src/abacuscm/webapp/target/abacuscm-1.0-SNAPSHOT.war \
     /install/var/lib/abacuscm
 
 # Install cx_Freeze
-RUN pip install --root /install cx_Freeze==5.*
-RUN pip3 install --root /install cx_Freeze==5.*
+RUN pip3 install --root /install cx_Freeze==6.7
 
 
 #######################################################################
 # Runtime image, which copies artefacts from the build image
 
-FROM ubuntu:bionic-20181204
-MAINTAINER Bruce Merry <bmerry@gmail.com>
+FROM ubuntu:focal-20210827
+LABEL org.opencontainers.image.authors="Bruce Merry <bmerry@gmail.com>"
 
 # Ensure we get the documentation we want
 COPY docker/dpkg-excludes /etc/dpkg/dpkg.cfg.d/excludes
 
 RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y install \
-        gcc g++ openjdk-11-jre-headless openjdk-11-jdk-headless python2.7 python3 \
-        libpython2.7 libpython3.6 python3-distutils \
-        gcc-doc libstdc++-7-doc openjdk-11-doc python-doc python3-doc \
+        gcc g++ openjdk-11-jre-headless openjdk-11-jdk-headless python3 \
+        libpython3.8 python3-distutils python3-setuptools patchelf \
+        gcc-doc libstdc++-9-doc openjdk-11-doc python3-doc \
         cppreference-doc-en-html stl-manual \
-        libssl1.1 libmysqlclient20 \
+        libssl1.1 libmysqlclient21 \
         openssl mariadb-server jetty9 supervisor sudo && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -135,11 +93,10 @@ RUN DOC_DIR=/usr/share/jetty9/webapps/docs && \
     mkdir -p $DOC_DIR && \
     ln -s /usr/share/cppreference/doc/html/ $DOC_DIR/cppreference && \
     ln -s /usr/share/doc/stl-manual/html/ $DOC_DIR/stl-manual && \
-    ln -s /usr/share/doc/python-doc/html/ $DOC_DIR/python2 && \
-    ln -s /usr/share/doc/python3-doc/html/ $DOC_DIR/python3 && \
+    ln -s /usr/share/doc/python3-doc/html/ $DOC_DIR/python && \
     ln -s /usr/share/doc/openjdk-11-doc/api/ $DOC_DIR/java && \
-    ln -s /usr/share/doc/gcc-7-base/libstdc++/ $DOC_DIR/libstdc++ && \
-    mkdir -p $DOC_DIR/gcc && ln -s /usr/share/doc/gcc-doc/*.html $DOC_DIR/gcc
+    ln -s /usr/share/doc/gcc-9-base/libstdc++/ $DOC_DIR/libstdc++ && \
+    mkdir -p $DOC_DIR/gcc && ln -s /usr/share/doc/gcc-9-base/*.html $DOC_DIR/gcc
 COPY docker/doc/* /usr/share/jetty9/webapps/docs/
 
 # Fix permissions
@@ -152,4 +109,4 @@ RUN adduser --disabled-password --gecos 'abacus user' abacus && \
 
 VOLUME /conf /data /contest /www
 EXPOSE 8080 8443 7368
-ENTRYPOINT ["/sbin/tini", "--", "/usr/bin/run.py"]
+ENTRYPOINT ["/usr/sbin/tini", "--", "/usr/bin/run.py"]

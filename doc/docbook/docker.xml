@@ -31,11 +31,9 @@
         <title>Requirements</title>
         <para>
             There are only two software requirements: Linux and
-            Docker! Development uses recent versions of Docker (18.06.1-ce at
+            Docker! Development uses recent versions of Docker (20.10.7 at
             the time of writing), but you might be successful with older
-            versions. For Ubuntu, one can obtain the latest version from
-            <ulink
-                url="https://get.docker.com/ubuntu/"/>.
+            versions.
         </para>
         <para>
             Docker currently plays fast-and-loose with security, and many files
@@ -64,7 +62,7 @@
             To build the image, change to the root of the AbacusCM repository,
             and run
         </para>
-        <screen><userinput>docker build -t bmerry/abacuscm . </userinput></screen>
+        <screen><userinput>DOCKER_BUILDKIT=1 docker build -t bmerry/abacuscm . </userinput></screen>
         <para>
             This will download a lot of files, so you should have a cheap, fast
             internet connection for this step. After the first time, Docker
@@ -191,7 +189,7 @@ password = <replaceable>password</replaceable></screen>
                 <screen>[contest]
 duration = <replaceable>18000</replaceable> # 5 hours
 blinds = <replaceable>3600</replaceable>    # 1 hour
-languages = <replaceable>C,C++,Python 2.x,Python 3.x,Java</replaceable></screen>
+languages = <replaceable>C,C++,Python,Java</replaceable></screen>
             </step>
             <step>
                 <para>

@@ -13,10 +13,7 @@ path-include=/usr/share/doc/*/changelog.Debian.*
 # The above is the default in the Ubuntu Docker image. Now we put back docs we
 # actually want.
 
-# Put back documentation we actually care about
 path-include=/usr/share/doc/openjdk-11*
-path-include=/usr/share/doc/python/*
-path-include=/usr/share/doc/python2.7/*
-path-include=/usr/share/doc/python3.6/*
-path-include=/usr/share/doc/gcc-7-base/libstdc++/*
+path-include=/usr/share/doc/python3.8/*
+path-include=/usr/share/doc/gcc-9-base/*
 path-include=/usr/share/doc/stl-manual/*

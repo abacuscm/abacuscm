@@ -163,8 +163,7 @@ getlanguages
 ?language0:C
 ?language1:C++
 ?language2:Java
-?language3:Python 2.x
-?language4:Python 3.x
+?language3:Python
 
 getprobtypes
 ?ok
@@ -549,7 +548,7 @@ lang:C++
 
 submit
 prob_id:1
-lang:Python 2.x
+lang:Python
 <tests/solutions/do_nothing.py
 ?ok
 ?submission_id:97
@@ -577,7 +576,7 @@ lang:Java
 
 submit
 prob_id:1
-lang:Python 2.x
+lang:Python
 <tests/solutions/empty.py
 ?ok
 ?submission_id:161
@@ -598,7 +597,7 @@ lang:Java
 
 submit
 prob_id:1
-lang:Python 2.x
+lang:Python
 <tests/solutions/exception.py
 ?ok
 ?submission_id:209
@@ -612,7 +611,7 @@ lang:C++
 
 submit
 prob_id:1
-lang:Python 2.x
+lang:Python
 <tests/solutions/infinite_stream.py
 ?ok
 ?submission_id:241
@@ -640,7 +639,7 @@ lang:C++
 
 submit
 prob_id:1
-lang:Python 2.x
+lang:Python
 <tests/solutions/sleep_forever.py
 ?ok
 ?submission_id:305
@@ -661,7 +660,7 @@ lang:Java
 
 submit
 prob_id:1
-lang:Python 2.x
+lang:Python
 <tests/solutions/spin_forever.py
 ?ok
 ?submission_id:353
@@ -675,45 +674,38 @@ lang:C++
 
 submit
 prob_id:1
-lang:Python 2.x
+lang:Python
 <tests/solutions/wrong_retcode.py
 ?ok
 ?submission_id:385
 
 submit
 prob_id:1
-lang:Python 2.x
+lang:Python
 <tests/solutions/exact.py
 ?ok
 ?submission_id:401
 
 submit
 prob_id:1
-lang:Python 3.x
-<tests/solutions/exact.py3
-?ok
-?submission_id:417
-
-submit
-prob_id:1
-lang:Python 2.x
+lang:Python
 <tests/solutions/whitespace.py
 ?ok
-?submission_id:433
+?submission_id:417
 
 submit
 prob_id:33
 lang:C++
 <tests/solutions/do_nothing.cpp
 ?ok
-?submission_id:449
+?submission_id:433
 
 submit
 prob_id:33
-lang:Python 2.x
+lang:Python
 <tests/solutions/whitespace.py
 ?ok
-?submission_id:465
+?submission_id:449
 ### END OF GENERATED TESTS
 
 # TEST: Contestants must not be able to see problems with unmet dependencies.
@@ -1015,30 +1007,22 @@ getsubmissions
 ?submission_id26:417
 ?group_id26:1
 ?time26:*
-?comment27:Correct answer
+?comment27:Deferred to judge
 ?contesttime27:*
-?prob_id27:1
-?problem27:test
-?result27:0
+?prob_id27:33
+?problem27:test3
+?result27:5
 ?submission_id27:433
 ?group_id27:1
 ?time27:*
-?comment28:Deferred to judge
+?comment28:Correct answer
 ?contesttime28:*
 ?prob_id28:33
 ?problem28:test3
-?result28:5
+?result28:0
 ?submission_id28:449
 ?group_id28:1
 ?time28:*
-?comment29:Correct answer
-?contesttime29:*
-?prob_id29:33
-?problem29:test3
-?result29:0
-?submission_id29:465
-?group_id29:1
-?time29:*
 
 # TEST: Time penalties must not apply for failed compilation
 standings

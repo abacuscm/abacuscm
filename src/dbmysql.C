@@ -1557,7 +1557,7 @@ bool MySQL::init() {
 
 	mysql_init(&_mysql);
 
-	my_bool reconnect = 1;
+	bool reconnect = 1;
 	mysql_options(&_mysql, MYSQL_OPT_RECONNECT, &reconnect);
 
 	if(!mysql_real_connect(&_mysql, host.c_str(), user.c_str(), pass.c_str(), db.c_str(), port, NULL, 0)) {

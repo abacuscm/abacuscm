@@ -77,7 +77,7 @@ public class AbacusService extends AbstractService {
 		try {
 			char[] passPhrase = trustStorePassword.toCharArray();
 
-			SSLContext context = SSLContext.getInstance("TLSv1");
+			SSLContext context = SSLContext.getInstance("TLSv1.2");
 			KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
 			KeyStore ks = KeyStore.getInstance("JKS");
 			TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());

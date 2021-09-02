@@ -378,8 +378,7 @@ language1:<replaceable>language</replaceable>
                     <replaceable>language</replaceable> are
                     <literal>C</literal>,
                     <literal>C++</literal>,
-                    <literal>Python 2.x</literal>,
-                    <literal>Python 3.x</literal> and
+                    <literal>Python</literal> and
                     <literal>Java</literal> (although more languages may be
                     available in future).
                 </para>

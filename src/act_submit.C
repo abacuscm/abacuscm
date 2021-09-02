@@ -525,7 +525,7 @@ static vector<string> split_list(const string &s) {
 }
 
 ActGetLanguages::ActGetLanguages() {
-	const char * const all_languages = "C,C++,Python 2.x,Python 3.x,Java";
+	const char * const all_languages = "C,C++,Python,Java";
 	vector<string> all = split_list(all_languages);
 
 	Config &conf = Config::getConfig();
