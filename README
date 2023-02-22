@@ -1,2 +1,6 @@
+NOTE: AbacusCM is not currently maintained, and several of the pinned
+dependencies have known security vulnerabilities (which might or might not
+impact AbacusCM). Use at your own risk.
+
 The documentation is maintained in DocBook, in doc/docbook. It can be built
 by running 'make docs' (or 'make htmldoc' or 'make pdfdoc' to build a subset).
